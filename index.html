@@ -953,8 +953,7 @@
         <div class="modal-header"><h3>Kelola Buku Kas</h3><button class="modal-close" onclick="closeModal('bookManagerModal')">×</button></div>
         <div id="bookListContainer"></div>
         <form onsubmit="addNewBook(event)" style="border-top:1px solid #eee; padding-top:16px; margin-bottom:16px"><input type="text" id="newBookName" class="form-control" placeholder="Nama buku baru..." required><button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px">Buat Buku Baru</button></form>
-        <div class="data-management-panel"><div class="panel-title">Cadangan Data</div><div class="panel-actions-row"><button class="btn btn-secondary" onclick="exportToCSV()">📥 CSV</button><button class="btn btn-secondary" onclick="exportToJSON()">📦 JSON</button><button class="btn btn-secondary" onclick="triggerJsonImport()">📤 Impor</button></div><input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)"></div>
-        
+
         <div style="border-top:2px dashed #1a1a1a; padding-top:16px">
             <div class="form-group">
                 <label>Supabase URL Connection</label>
@@ -968,19 +967,30 @@
             </div>
         </div>
 
-        <!-- Panel Sinkronisasi Setelan -->
+        <!-- Sinkronisasi Setelan — otomatis, hanya tampilkan status -->
         <div class="data-management-panel" style="border-color:#0088cc; background:#f0f8ff;">
-            <div class="panel-title" style="color:#0055aa;">☁️ Sinkronisasi Setelan</div>
-            <div style="font-size:.7rem; color:#555; margin-bottom:12px; line-height:1.6;">
-                Sinkronkan daftar buku kas, anggaran bulanan, dan konfigurasi Telegram ke Supabase agar tidak hilang saat ganti browser atau hapus cache.
+            <div class="panel-title" style="color:#0055aa; display:flex; align-items:center; gap:8px;">
+                ☁️ Sinkronisasi Setelan
+                <span id="settingsSyncBadge" style="font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:10px; background:#e3fcef; color:#006644;">Otomatis</span>
             </div>
-            <div id="settingsSyncStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
-            <div style="display:flex; gap:8px;">
-                <button class="btn btn-secondary" style="flex:1;" onclick="manualPullSettings()">⬇️ Pull dari Cloud</button>
-                <button class="btn btn-secondary" style="flex:1;" onclick="manualPushSettings()">⬆️ Push ke Cloud</button>
+            <div style="font-size:.7rem; color:#555; line-height:1.6;">
+                Daftar buku kas, anggaran bulanan, dan konfigurasi Telegram tersinkronisasi otomatis ke Supabase setiap kali ada perubahan.
             </div>
+            <div id="settingsSyncStatus" style="font-size:.68rem; color:#888; margin-top:8px;"></div>
         </div>
 
+        <!-- Cadangan Data -->
+        <div class="data-management-panel">
+            <div class="panel-title">Cadangan Data</div>
+            <div class="panel-actions-row">
+                <button class="btn btn-secondary" onclick="exportToCSV()">📥 CSV</button>
+                <button class="btn btn-secondary" onclick="exportToJSON()">📦 JSON</button>
+                <button class="btn btn-secondary" onclick="triggerJsonImport()">📤 Impor</button>
+            </div>
+            <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)">
+        </div>
+
+        <!-- Arsipkan & Kosongkan -->
         <div class="data-management-panel" style="border-color:#de350b; background:#fff5f5;">
             <div class="panel-title" style="color:#de350b;">🗃️ Arsipkan & Kosongkan Database</div>
             <div style="font-size:.7rem; color:#666; margin-bottom:12px; line-height:1.6;">
@@ -1618,7 +1628,7 @@ async function pullAllSettings() {
     // ── PASS 2: Sekarang books sudah lengkap — ambil budgets untuk semua buku ──
     if (books.length === 0) {
         console.log('[pullAllSettings] Tidak ada buku ditemukan, selesai.');
-        showToast('Setelan berhasil disinkronkan dari cloud ☁️', 'info');
+        updateSettingsSyncStatus('pull');
         return;
     }
 
@@ -1644,24 +1654,27 @@ async function pullAllSettings() {
     }
 
     console.log(`[pullAllSettings] Selesai — ${books.length} buku, ${budgetCount} anggaran dimuat.`);
-    showToast('Setelan berhasil disinkronkan dari cloud ☁️', 'info');
+    updateSettingsSyncStatus('pull');
 }
 
 // Push setelan books (global) ke Supabase
 async function pushSettingBooks() {
     await pushSetting('books', books, 'global');
+    updateSettingsSyncStatus('push');
 }
 
 // Push setelan budgets buku aktif ke Supabase
 async function pushSettingBudgets() {
     const bud = JSON.parse(localStorage.getItem('af_budgets_' + currentBookId) || '{}');
     await pushSetting('budgets', bud, currentBookId);
+    updateSettingsSyncStatus('push');
 }
 
 // Push konfigurasi Telegram (global) ke Supabase
 async function pushSettingTelegram() {
     const cfg = getTgConfig();
     await pushSetting('telegram_config', { token: cfg.token, edgeUrl: cfg.edgeUrl, chatId: cfg.chatId }, 'global');
+    updateSettingsSyncStatus('push');
 }
 
 // Push setelan budgets semua buku ke Supabase (dipakai saat buku dihapus/ditambah)
@@ -1672,40 +1685,13 @@ async function pushSettingAllBudgets() {
     }
 }
 
-// Tombol manual: Pull setelan dari Supabase
-async function manualPullSettings() {
-    const st = document.getElementById('settingsSyncStatus');
-    if (!getCloudUrl() || !getSupabaseKey()) {
-        st.style.display = 'block'; st.style.background = '#ffebe6'; st.style.color = '#bf2600';
-        st.innerText = '❌ Supabase belum terhubung!'; return;
-    }
-    st.style.display = 'block'; st.style.background = '#fff3e0'; st.style.color = '#cc7b00';
-    st.innerText = '⏳ Menarik setelan dari cloud...';
-    await pullAllSettings();
-    updateBookSelectDropdown();
-    budgets = JSON.parse(localStorage.getItem('af_budgets_' + currentBookId) || '{}');
-    updateTgStatusBadge();
-    renderBudget();
-    st.style.background = '#e3fcef'; st.style.color = '#006644';
-    st.innerText = '✅ Setelan berhasil ditarik dari cloud!';
-    setTimeout(() => { st.style.display = 'none'; }, 3000);
-}
-
-// Tombol manual: Push semua setelan ke Supabase
-async function manualPushSettings() {
-    const st = document.getElementById('settingsSyncStatus');
-    if (!getCloudUrl() || !getSupabaseKey()) {
-        st.style.display = 'block'; st.style.background = '#ffebe6'; st.style.color = '#bf2600';
-        st.innerText = '❌ Supabase belum terhubung!'; return;
-    }
-    st.style.display = 'block'; st.style.background = '#fff3e0'; st.style.color = '#cc7b00';
-    st.innerText = '⏳ Mendorong semua setelan ke cloud...';
-    await pushSettingBooks();
-    await pushSettingAllBudgets();
-    await pushSettingTelegram();
-    st.style.background = '#e3fcef'; st.style.color = '#006644';
-    st.innerText = '✅ Semua setelan berhasil disimpan ke cloud!';
-    setTimeout(() => { st.style.display = 'none'; }, 3000);
+// Update label status sinkronisasi setelan di panel book manager
+function updateSettingsSyncStatus(direction) {
+    const el = document.getElementById('settingsSyncStatus');
+    if (!el) return;
+    const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const label = direction === 'pull' ? 'Ditarik dari cloud' : 'Disimpan ke cloud';
+    el.innerText = `Terakhir ${label}: ${now}`;
 }
 
 // ==================== END SINKRONISASI SETELAN ====================
