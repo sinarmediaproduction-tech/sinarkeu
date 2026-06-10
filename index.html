@@ -922,42 +922,6 @@
             line-height: 32px;
         }
 
-        .setup-step {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        .setup-step-num {
-            width: 24px;
-            height: 24px;
-            min-width: 24px;
-            background: #1a1a1a;
-            color: #fff;
-            border-radius: 50%;
-            font-size: .7rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 2px;
-        }
-        .setup-step-text {
-            font-size: .75rem;
-            color: #555;
-            line-height: 1.5;
-        }
-        .setup-status {
-            font-size: .75rem;
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-bottom: 12px;
-            display: none;
-        }
-        .setup-status.error   { background: #ffebe6; color: #bf2600; display: block; }
-        .setup-status.warning { background: #fff3e0; color: #cc7b00; display: block; }
-        .setup-status.success { background: #e3fcef; color: #006644; display: block; }
-
         #passwordLockScreen {
             position: fixed;
             inset: 0;
@@ -1013,30 +977,6 @@
             border-color: #00875a;
             box-shadow: 0 0 0 3px rgba(0,135,90,0.15);
         }
-        .lock-input.error-shake {
-            border-color: #de350b;
-            animation: shake 0.4s ease;
-        }
-        @keyframes shake {
-            0%,100%{ transform: translateX(0); }
-            20%    { transform: translateX(-8px); }
-            40%    { transform: translateX(8px); }
-            60%    { transform: translateX(-5px); }
-            80%    { transform: translateX(5px); }
-        }
-        .lock-eye-btn {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-            color: #999;
-            padding: 0;
-            line-height: 1;
-        }
         .lock-btn {
             width: 100%;
             padding: 12px;
@@ -1051,226 +991,12 @@
             font-family: inherit;
         }
         .lock-btn:hover { background: #333; }
-        .lock-btn:active { transform: scale(0.98); }
-        .lock-btn:disabled { background: #999; cursor: not-allowed; }
         .lock-status {
             font-size: .72rem;
             margin-top: 12px;
             min-height: 18px;
             color: #de350b;
             font-weight: 500;
-        }
-        .lock-warning {
-            background: #fff3e0;
-            border: 1px solid #ffab00;
-            border-radius: 8px;
-            padding: 10px 12px;
-            font-size: .7rem;
-            color: #7a4f00;
-            margin-top: 16px;
-            text-align: left;
-            line-height: 1.6;
-        }
-        .pwd-strength {
-            height: 4px;
-            border-radius: 2px;
-            background: #eee;
-            margin-top: 6px;
-            overflow: hidden;
-        }
-        .pwd-strength-fill {
-            height: 100%;
-            border-radius: 2px;
-            transition: width 0.3s, background 0.3s;
-            width: 0%;
-        }
-
-        #manualModal .modal-content {
-            max-width: 780px;
-            max-height: 92vh;
-        }
-        .manual-nav {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-            padding-bottom: 14px;
-            border-bottom: 2px solid #1a1a1a;
-        }
-        .manual-nav-btn {
-            padding: 6px 14px;
-            font-size: .72rem;
-            font-weight: 600;
-            border: 1.5px solid #ddd;
-            border-radius: 20px;
-            background: #fff;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #555;
-        }
-        .manual-nav-btn:hover { border-color: #1a1a1a; color: #1a1a1a; }
-        .manual-nav-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
-        .manual-section { display: none; }
-        .manual-section.active { display: block; }
-        .manual-h2 {
-            font-size: .95rem;
-            font-weight: 700;
-            margin-bottom: 14px;
-            padding-bottom: 8px;
-            border-bottom: 1.5px solid #eee;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .manual-h3 {
-            font-size: .82rem;
-            font-weight: 700;
-            margin: 18px 0 8px;
-            color: #1a1a1a;
-        }
-        .manual-p {
-            font-size: .78rem;
-            color: #444;
-            line-height: 1.75;
-            margin-bottom: 10px;
-        }
-        .manual-step {
-            display: flex;
-            gap: 12px;
-            align-items: flex-start;
-            margin-bottom: 14px;
-            padding: 12px 14px;
-            background: #fafafa;
-            border-radius: 10px;
-            border-left: 3px solid #1a1a1a;
-        }
-        .manual-step-num {
-            min-width: 26px;
-            height: 26px;
-            background: #1a1a1a;
-            color: #fff;
-            border-radius: 50%;
-            font-size: .7rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 1px;
-        }
-        .manual-step-body { flex: 1; }
-        .manual-step-title {
-            font-size: .78rem;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 4px;
-        }
-        .manual-step-desc {
-            font-size: .74rem;
-            color: #555;
-            line-height: 1.65;
-        }
-        .manual-code {
-            background: #1a1a1a;
-            color: #a8ff78;
-            padding: 14px 16px;
-            border-radius: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: .7rem;
-            line-height: 1.8;
-            margin: 10px 0;
-            overflow-x: auto;
-            white-space: pre;
-        }
-        .manual-code-label {
-            font-size: .65rem;
-            font-weight: 700;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-        }
-        .manual-tip {
-            background: #e3fcef;
-            border: 1px solid #b7e4cc;
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-size: .74rem;
-            color: #006644;
-            line-height: 1.65;
-            margin: 10px 0;
-        }
-        .manual-warn {
-            background: #fff3e0;
-            border: 1px solid #ffab00;
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-size: .74rem;
-            color: #7a4f00;
-            line-height: 1.65;
-            margin: 10px 0;
-        }
-        .manual-info {
-            background: #f0f8ff;
-            border: 1px solid #b3d4f5;
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-size: .74rem;
-            color: #0055aa;
-            line-height: 1.65;
-            margin: 10px 0;
-        }
-        .manual-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: .74rem;
-            margin: 10px 0;
-        }
-        .manual-table th {
-            background: #f5f5f5;
-            padding: 8px 10px;
-            text-align: left;
-            font-weight: 700;
-            border: 1px solid #ddd;
-            font-size: .7rem;
-            color: #333;
-        }
-        .manual-table td {
-            padding: 8px 10px;
-            border: 1px solid #eee;
-            color: #444;
-            vertical-align: top;
-            line-height: 1.5;
-        }
-        .manual-table tr:nth-child(even) td { background: #fafafa; }
-        .manual-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: .65rem;
-            font-weight: 700;
-        }
-        .badge-new { background: #e3fcef; color: #006644; }
-        .badge-req { background: #ffebe6; color: #bf2600; }
-        .badge-opt { background: #f0f0f0; color: #555; }
-        .manual-divider { border: none; border-top: 1px dashed #ddd; margin: 18px 0; }
-        .lock-guide-link {
-            display: inline-block;
-            margin-top: 14px;
-            font-size: .72rem;
-            color: #0088cc;
-            cursor: pointer;
-            text-decoration: underline;
-            background: none;
-            border: none;
-            font-family: inherit;
-        }
-        .lock-guide-link:hover { color: #005fa3; }
-        
-        #manualSyncBtn {
-            background: #00875a;
-        }
-        #manualSyncBtn:hover {
-            background: #006644;
         }
     </style>
 </head>
@@ -1287,27 +1013,18 @@
                    placeholder="Password"
                    onkeydown="if(event.key==='Enter') submitLockPassword()"
                    oninput="clearLockError()">
-            <button class="lock-eye-btn" onclick="toggleLockEye()" id="lockEyeBtn" title="Tampilkan/sembunyikan">👁</button>
         </div>
 
         <div id="lockConfirmWrap" style="display:none;">
-            <div class="lock-input-wrap" style="margin-bottom:6px;">
-                <input type="password" id="lockConfirmInput" class="lock-input"
-                       placeholder="Konfirmasi Password"
-                       onkeydown="if(event.key==='Enter') submitLockPassword()">
+            <div class="lock-input-wrap">
+                <input type="password" id="lockConfirmInput" class="lock-input" placeholder="Konfirmasi Password">
             </div>
-            <div class="pwd-strength"><div class="pwd-strength-fill" id="pwdStrengthFill"></div></div>
-            <div style="font-size:.65rem; color:#888; margin-top:4px;" id="pwdStrengthLabel"></div>
         </div>
 
         <div style="margin-top:14px;">
             <button class="lock-btn" id="lockSubmitBtn" onclick="submitLockPassword()">🔓 Buka</button>
         </div>
         <div class="lock-status" id="lockStatus"></div>
-
-        <div class="lock-warning" id="lockWarning" style="display:none;">
-            ⚠️ <strong>Perhatian:</strong> Jika password lupa, tidak ada cara untuk memulihkan data. Simpan password Anda di tempat yang aman.
-        </div>
     </div>
 </div>
 
@@ -1315,7 +1032,7 @@
     <div class="header">
         <div>
             <h1>Sinarkeu</h1>
-            <p>Sistem Multi Buku Kas dengan Supabase Cloud Storage · v9</p>
+            <p>Sistem Multi Buku Kas dengan Supabase Cloud Storage · v9 Stable</p>
         </div>
         <div class="book-selector">
             <div id="syncStatusWrapper" class="sync-status-container offline">
@@ -1327,7 +1044,6 @@
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
             <button class="manage-books-btn" onclick="openBookManager()">Kelola</button>
             <button class="manage-books-btn" onclick="openTelegramSettings()" style="background:#0088cc;" title="Setelan Notifikasi Telegram">Telegram</button>
-
         </div>
     </div>
 
@@ -1358,12 +1074,6 @@
                 <div class="budget-mini-progress-fill" id="budgetProgressFill"></div>
             </div>
             <span id="budgetProgressPct" style="font-size:.75rem; font-weight:700; color:#666; min-width:36px;">0%</span>
-        </div>
-        <div class="budget-mini-progress-row" style="display:none;">
-            <div class="budget-mini-progress">
-                <div class="budget-mini-progress-fill" id="budgetProgressFill2"></div>
-            </div>
-            <span id="budgetProgressPct2" style="font-size:.78rem; font-weight:700; color:#666; min-width:38px; text-align:right;">0%</span>
         </div>
         <div class="budget-mini-actions">
             <button class="btn-icon" onclick="openBudgetModal()">✏️ Anggarkan</button>
@@ -1426,7 +1136,6 @@
             <h2> Audit Log (Supabase Real-time)</h2>
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-secondary" style="padding: 4px 10px;" onclick="refreshLogsFromCloud()">🔄 Refresh</button>
-                <button class="btn btn-secondary" style="padding: 4px 10px; background:#00875a; color:#fff;" onclick="testAddLog()">🔍 Test Log</button>
             </div>
         </div>
         <div id="logSummaryArea" class="log-container-box">Memuat log...</div>
@@ -1440,9 +1149,7 @@
 
 <div id="toastMessage" class="toast-message"><span id="toastIcon">✅</span><span id="toastText"></span></div>
 
-<!-- MODAL-MODAL -->
-
-
+<!-- MODALS -->
 <div id="addModal" class="modal">
     <div class="modal-content">
         <div class="modal-header"><h3>Transaksi Baru</h3><button class="modal-close" onclick="closeModal('addModal')">×</button></div>
@@ -1468,7 +1175,7 @@
             <div class="form-group" id="editCategoryGroup"><label>Kategori</label><select id="editTxCategory" class="form-control"><option value="">-- Pilih Kategori --</option><option value="Makanan & Minuman">🍽️ Makanan & Minuman</option><option value="Transportasi">🚗 Transportasi</option><option value="Belanja & Pakaian">🛍️ Belanja & Pakaian</option><option value="Tagihan">💡 Tagihan</option><option value="Hiburan">🎬 Hiburan</option><option value="Kesehatan">🏥 Kesehatan</option><option value="Pendidikan">📚 Pendidikan</option><option value="Cicilan & Hutang">🏦 Cicilan & Hutang</option><option value="Investasi">📈 Investasi</option><option value="Lain-lain">📌 Lain-lain</option></select></div>
             <div class="form-group"><label>Deskripsi</label><input type="text" id="editTxDesc" class="form-control" required></div>
             <div class="form-group"><label>Jumlah (Rp)</label><input type="text" id="editTxAmount" class="form-control" oninput="formatRupiah(this)" required></div>
-            <div class="form-group"><label>Lampiran Nota</label><input type="file" id="editTxAttachment" accept="image/*" class="form-control" onchange="previewEditAttachment(this)"><div id="editAttachmentInfo" style="font-size:.65rem; color:#666; margin-top:4px;"></div><img id="editAttachmentPreview" class="attachment-preview"></div>
+            <div class="form-group"><label>Lampiran Nota</label><input type="file" id="editTxAttachment" accept="image/*" class="form-control" onchange="previewEditAttachment(this)"><img id="editAttachmentPreview" class="attachment-preview"></div>
             <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div>
         </form>
     </div>
@@ -1489,2944 +1196,495 @@
 
         <div style="border-top:2px dashed #1a1a1a; padding-top:16px">
             <div class="form-group">
-                <div style="font-size:.72rem; font-weight:700; color:#1a1a1a; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-                    ☁️ Koneksi Supabase
-                    <span style="font-size:.6rem; background:#e3fcef; color:#006644; padding:2px 8px; border-radius:10px; font-weight:600;">Berlaku untuk semua buku</span>
-                </div>
-                <label>Supabase URL Connection</label>
+                <label>Supabase URL</label>
                 <input type="text" id="supabaseUrlInput" class="form-control" placeholder="https://yourproject.supabase.co" style="margin-bottom: 10px;">
                 <label>Supabase Anon Key</label>
-                <input type="password" id="supabaseKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-                <div class="cloud-connect-row">
-                    <button class="btn btn-primary" style="width:100%" onclick="testCloudConnection()">Hubungkan & Sinkronkan Semua Buku</button>
-                </div>
-                <div id="connectionStatus" style="margin-top:8px"></div>
+                <input type="password" id="supabaseKeyInput" class="form-control" placeholder="Anon Key...">
+                <button class="btn btn-primary" style="width:100%; margin-top: 10px;" onclick="testCloudConnection()">Hubungkan Cloud</button>
+                <div id="connectionStatus"></div>
             </div>
-        </div>
-
-        <div class="data-management-panel" style="border-color:#1a1a1a; background:#fafafa;">
-            <div class="panel-title">🔐 Ganti Password Keamanan</div>
-            <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
-                Ganti password yang digunakan untuk mengenkripsi koneksi Supabase Anda.
-            </div>
-            <input type="password" id="changePwdOld" class="form-control" placeholder="Password saat ini" style="margin-bottom:8px;">
-            <input type="password" id="changePwdNew" class="form-control" placeholder="Password baru (min. 6 karakter)" style="margin-bottom:8px;">
-            <input type="password" id="changePwdNew2" class="form-control" placeholder="Konfirmasi password baru" style="margin-bottom:10px;">
-            <div id="changePwdStatus" style="font-size:.7rem; min-height:16px; margin-bottom:8px;"></div>
-            <button class="btn btn-primary" style="width:100%;" onclick="changePassword()">🔐 Ganti Password</button>
-        </div>
-
-        <div class="data-management-panel" style="border-color:#0088cc; background:#f0f8ff;">
-            <div class="panel-title" style="color:#0055aa; display:flex; align-items:center; gap:8px;">
-                ☁️ Sinkronisasi Setelan
-                <span id="settingsSyncBadge" style="font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:10px; background:#e3fcef; color:#006644;">Otomatis</span>
-            </div>
-            <div style="font-size:.7rem; color:#555; line-height:1.6;">
-                Daftar buku kas, anggaran bulanan, dan konfigurasi Telegram tersinkronisasi otomatis ke Supabase setiap kali ada perubahan.
-            </div>
-            <div id="settingsSyncStatus" style="font-size:.68rem; color:#888; margin-top:8px;"></div>
-        </div>
-
-        <div class="data-management-panel">
-            <div class="panel-title">Cadangan Data</div>
-            <div class="panel-actions-row">
-                <button class="btn btn-secondary" onclick="exportToCSV()">📥 CSV</button>
-                <button class="btn btn-secondary" onclick="exportToJSON()">📦 JSON</button>
-                <button class="btn btn-secondary" onclick="triggerJsonImport()">📤 Impor</button>
-            </div>
-            <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)">
         </div>
 
         <div class="data-management-panel" style="border-color:#de350b; background:#fff5f5;">
-            <div class="panel-title" style="color:#de350b;">🗃️ Arsipkan & Kosongkan Database</div>
-            <div style="font-size:.7rem; color:#666; margin-bottom:12px; line-height:1.6;">
-                Export semua transaksi buku ini ke file JSON sebagai arsip, lalu <b>hapus permanen</b> seluruh data dari Supabase dan lokal. Gunakan saat storage hampir penuh.
-            </div>
-            <div id="archiveStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
-            <button class="btn btn-danger" style="width:100%;" onclick="archiveAndClearData()">
-                🗃️ Arsipkan JSON & Kosongkan Database
-            </button>
+            <div class="panel-title" style="color:#de350b;">🗃️ Arsipkan & Kosongkan</div>
+            <button class="btn btn-danger" style="width:100%;" onclick="archiveAndClearData()">🗃️ Export JSON & Hapus Data</button>
         </div>
     </div>
 </div>
 
 <div id="telegramSettingsModal" class="modal">
     <div class="modal-content">
-        <div class="modal-header">
-            <h3>📲 Notifikasi Telegram</h3>
-            <button class="modal-close" onclick="closeModal('telegramSettingsModal')">×</button>
-        </div>
-        <div class="form-group">
-            <label style="display:flex; align-items:center; gap:8px;">
-                Status
-                <span id="tgStatusBadge" style="font-size:.6rem; padding:2px 8px; border-radius:10px; background:#eee; color:#666;">Belum dikonfigurasi</span>
-            </label>
-        </div>
-        <div style="background:#f9f9f9; border:1px solid #e0e0e0; border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:.72rem; line-height:1.8; color:#444;">
-            <b>Cara setup (3 langkah):</b><br>
-            <b>1.</b> Buka <a href="https://t.me/BotFather" target="_blank" style="color:#0088cc;">@BotFather</a> → kirim <code>/newbot</code> → ikuti instruksi → copy <b>Bot Token</b><br>
-            <b>2.</b> Buka bot kamu di Telegram → klik <b>Start</b> (wajib, agar bot bisa kirim pesan)<br>
-            <b>3.</b> Buka <a href="https://t.me/userinfobot" target="_blank" style="color:#0088cc;">@userinfobot</a> → kirim pesan apapun → copy angka <b>Id</b> sebagai Chat ID
-        </div>
-        <div class="form-group">
-            <label>Bot Token <span style="font-weight:400;color:#888;font-size:.7rem;">dari @BotFather</span></label>
-            <input type="text" id="tgBotTokenInput" class="form-control" placeholder="123456789:AAF-contoh-token-dari-botfather" autocomplete="off">
-        </div>
-        <div class="form-group">
-            <label>Chat ID <span style="font-weight:400;color:#888;font-size:.7rem;">dari @userinfobot (angka, bisa negatif untuk grup)</span></label>
-            <input type="text" id="tgChatIdInput" class="form-control" placeholder="123456789" autocomplete="off">
-        </div>
-        <input type="hidden" id="tgEdgeUrlInput" value="">
-        <div id="tgTestStatus" style="font-size:.72rem; margin-bottom:12px; min-height:20px; padding: 0 2px;"></div>
-        <div class="modal-footer" style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn btn-secondary" onclick="testTelegramNotif()" style="flex:1">📤 Tes Kirim</button>
-            <button class="btn btn-secondary" onclick="sendDailySummaryToTelegram(); showToast('Ringkasan dikirim ke Telegram ✅','success')" style="flex:1; background:#0088cc; color:#fff; border-color:#0088cc;">📊 Kirim Ringkasan</button>
-            <button class="btn btn-danger" onclick="clearTelegramConfig()" style="flex:1">🗑️ Hapus</button>
-            <button class="btn btn-primary" onclick="saveTelegramConfig()" style="flex:1">💾 Simpan</button>
-        </div>
-        <div style="background:#f0f8ff; border:1px solid #cce0ff; border-radius:8px; padding:10px 12px; margin-top:12px; font-size:.68rem; color:#0055aa; line-height:1.8;">
-            <b>🔔 Notifikasi yang dikirim otomatis:</b><br>
-            ➕ Transaksi baru · ✏️ Transaksi diubah · 🗑️ Transaksi dihapus<br>
-            ⚠️ Peringatan anggaran 80% & 🚨 anggaran habis<br>
-            📅 Ringkasan harian otomatis pukul <b>21:00</b>
-        </div>
+        <div class="modal-header"><h3>📲 Notifikasi Telegram</h3><button class="modal-close" onclick="closeModal('telegramSettingsModal')">×</button></div>
+        <div class="form-group"><label>Bot Token</label><input type="text" id="tgBotTokenInput" class="form-control" placeholder="Token dari @BotFather"></div>
+        <div class="form-group"><label>Chat ID</label><input type="text" id="tgChatIdInput" class="form-control" placeholder="ID dari @userinfobot"></div>
+        <div class="modal-footer"><button class="btn btn-secondary" onclick="testTelegramNotif()">📤 Tes Kirim</button><button class="btn btn-primary" onclick="saveTelegramConfig()">💾 Simpan</button></div>
     </div>
 </div>
 
 <div id="backupModal" class="modal">
     <div class="modal-content">
-        <div class="modal-header"><h3>🔒 Manajer Cadangan</h3><button class="modal-close" onclick="closeModal('backupModal')">×</button></div>
-        <div class="form-group"><label>Auto-Backup Terakhir</label><div id="lastBackupInfo" style="background:#f5f5f5; padding:10px; border-radius:8px; font-size:.75rem">Memuat...</div></div>
-        <div class="form-group">
-            <label>Cadangan Lokal</label>
-            <div id="backupListContainer" style="max-height:130px; overflow-y:auto; border:1px solid #ddd; border-radius:8px; padding:10px"></div>
-        </div>
-        <div class="form-group">
-            <label style="display:flex; align-items:center; gap:8px;">
-                ☁️ Cadangan Cloud (Supabase)
-                <span id="cloudBackupStatus" style="font-size:.65rem; padding:2px 8px; border-radius:10px; background:#e3fcef; color:#006644;">Otomatis Harian</span>
-            </label>
-            <div id="cloudBackupListContainer" style="max-height:130px; overflow-y:auto; border:1px solid #ddd; border-radius:8px; padding:10px">
-                <div style="color:#888; font-size:.7rem; text-align:center;">Memuat cadangan cloud...</div>
-            </div>
-        </div>
+        <div class="modal-header"><h3>🔒 Cadangan Data</h3><button class="modal-close" onclick="closeModal('backupModal')">×</button></div>
+        <div class="form-group"><label>Terakhir</label><div id="lastBackupInfo" style="background:#f5f5f5; padding:10px; border-radius:8px; font-size:.75rem">Memuat...</div></div>
         <div class="panel-actions-row">
-            <button class="btn btn-primary" onclick="createBackup()" style="flex:1">💾 Cadangan Lokal</button>
-            <button class="btn btn-success" onclick="createCloudBackup()" style="flex:1">☁️ Cadangan Cloud</button>
-            <button class="btn btn-warning" onclick="restoreFromBackup()" style="flex:1">🔄 Pulihkan</button>
+            <button class="btn btn-primary" onclick="createBackup()" style="flex:1">💾 Lokal</button>
+            <button class="btn btn-success" onclick="createCloudBackup()" style="flex:1">☁️ Cloud</button>
         </div>
-        <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('backupModal')">Tutup</button></div>
     </div>
 </div>
 
 <div id="budgetModal" class="modal">
-    <div class="modal-content wide"> <div class="modal-header"><h3>📊 Atur Anggaran Bulanan</h3><button class="modal-close" onclick="closeModal('budgetModal')">×</button></div> <div class="form-group"><label>Bulan & Tahun</label><div style="display:flex; gap:10px"><select id="budgetModalMonth" class="form-control" style="flex:1"></select><input type="number" id="budgetModalYear" class="form-control" style="flex:1"></div></div> <div id="budgetCategoriesContainer"></div> <div id="budgetSummary" class="budget-summary-row"></div> <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('budgetModal')">Batal</button><button class="btn btn-primary" onclick="saveBudget()">Simpan</button></div> </div>
+    <div class="modal-content wide"><div class="modal-header"><h3>📊 Atur Anggaran</h3><button class="modal-close" onclick="closeModal('budgetModal')">×</button></div><div id="budgetCategoriesContainer"></div><div id="budgetSummary" class="budget-summary-row"></div><div class="modal-footer"><button class="btn btn-primary" onclick="saveBudget()">Simpan</button></div></div>
 </div>
 
 <div id="monthlyReportModal" class="modal">
-    <div class="modal-content report"> <div class="modal-header"> <h3 id="reportModalTitle">📊 Laporan Bulanan</h3> <button class="modal-close" onclick="closeModal('monthlyReportModal')">×</button> </div> <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;"> <select id="reportMonth" class="form-control" style="width: auto; flex: 1;"> <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option> <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option> <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option> <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option> </select> <input type="number" id="reportYear" class="form-control" style="width: 100px;" value="2026"> <button class="btn btn-primary" onclick="generateMonthlyReport()">Tampilkan</button> <button class="btn btn-secondary" onclick="exportReportAsPDF()">📄 Export PDF</button> </div> <div id="reportContent"> <div style="text-align: center; padding: 50px;">Pilih bulan dan tahun, lalu klik Tampilkan</div> </div> </div>
+    <div class="modal-content report"><div class="modal-header"><h3>📊 Laporan Bulanan</h3><button class="modal-close" onclick="closeModal('monthlyReportModal')">×</button></div><div id="reportContent"></div></div>
 </div>
 
 <div id="viewAttachmentModal" class="modal">
-    <div class="modal-content" style="max-width:600px; text-align:center"> <div class="modal-header"><h3>📎 Lampiran Nota</h3><button class="modal-close" onclick="closeModal('viewAttachmentModal')">×</button></div> <img id="fullAttachmentImage" style="max-width:100%; max-height:60vh; border-radius:8px"><br><br> <button class="btn btn-secondary" onclick="downloadAttachment()">💾 Unduh Gambar</button> </div>
+    <div class="modal-content" style="text-align:center"><div class="modal-header"><h3>📎 Nota</h3><button class="modal-close" onclick="closeModal('viewAttachmentModal')">×</button></div><img id="fullAttachmentImage" style="max-width:100%; border-radius:8px"></div>
 </div>
 
 <div id="firstTimeSetupModal" class="modal" style="z-index:2000;">
     <div class="modal-content" style="max-width:460px;">
         <div style="text-align:center; margin-bottom:24px;">
-            <div style="font-size:2.5rem; margin-bottom:8px;">☁️</div>
-            <div style="font-size:1rem; font-weight:700; margin-bottom:4px;">Setup Sinarkeu</div>
-            <div style="font-size:.75rem; color:#888;">Masukkan kredensial Supabase dan buat password keamanan</div>
+            <h3>Enkripsi Keamanan</h3>
+            <p style="font-size: .75rem; color: #888;">Buat password untuk mengunci aplikasi dan mengenkripsi kunci Supabase.</p>
         </div>
-
-        <div class="form-group">
-            <label>Supabase Project URL</label>
-            <input type="text" id="setupUrlInput" class="form-control" placeholder="https://xxxxxxxx.supabase.co">
-        </div>
-        <div class="form-group">
-            <label>Supabase Anon Key</label>
-            <input type="password" id="setupKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-            <div style="display:flex; align-items:center; gap:6px; margin-top:6px;">
-                <input type="checkbox" id="showKeyToggle" onchange="document.getElementById('setupKeyInput').type = this.checked ? 'text' : 'password'">
-                <label for="showKeyToggle" style="font-size:.7rem; color:#888; cursor:pointer; text-transform:none; letter-spacing:0;">Tampilkan key</label>
-            </div>
-        </div>
-
-        <div style="border-top:1px dashed #ddd; margin: 16px 0;"></div>
-
-        <div class="form-group">
-            <label>🔐 Buat Password Keamanan</label>
-            <div style="position:relative; margin-bottom:8px;">
-                <input type="password" id="setupPwdInput" class="form-control" placeholder="Buat password (min. 6 karakter)"
-                    oninput="evalSetupPwdStrength()">
-            </div>
-            <div class="pwd-strength"><div class="pwd-strength-fill" id="setupPwdStrengthFill"></div></div>
-            <div style="font-size:.65rem; color:#888; margin-top:4px;" id="setupPwdStrengthLabel"></div>
-        </div>
-        <div class="form-group">
-            <label>Konfirmasi Password</label>
-            <input type="password" id="setupPwdConfirm" class="form-control" placeholder="Ulangi password">
-        </div>
-        <div style="background:#fff3e0; border:1px solid #ffab00; border-radius:8px; padding:10px 12px; font-size:.7rem; color:#7a4f00; margin-bottom:16px; line-height:1.6;">
-            ⚠️ Password ini <strong>tidak bisa dipulihkan</strong>. Jika lupa, seluruh data akan terhapus. Simpan di tempat yang aman.
-        </div>
-
-        <div id="setupStatusMsg" class="setup-status"></div>
-
-        <button id="setupConnectBtn" class="btn btn-primary" style="width:100%; margin-bottom:16px;" onclick="doFirstTimeSetup()">
-            🔐 Simpan & Mulai
-        </button>
+        <div class="form-group"><label>Supabase URL</label><input type="text" id="setupUrlInput" class="form-control"></div>
+        <div class="form-group"><label>Supabase Key</label><input type="password" id="setupKeyInput" class="form-control"></div>
+        <div class="form-group"><label>🔐 Password Baru</label><input type="password" id="setupPwdInput" class="form-control" placeholder="Min. 6 Karakter"></div>
+        <div class="form-group"><label>Konfirmasi Password</label><input type="password" id="setupPwdConfirm" class="form-control"></div>
+        <button id="setupConnectBtn" class="btn btn-primary" style="width:100%;" onclick="doFirstTimeSetup()">💾 Simpan & Mulai</button>
     </div>
 </div>
 
 <script>
-// ==================== GLOBAL VARIABLES ====================
+// ==================== STATE & GLOBALS ====================
 let txs = [];
 let books = [];
+let budgets = {};
 let currentBookId = 'b_default';
 let globalSupabaseUrl = '';
 let globalSupabaseKey = '';
+let deviceId = '';
 let _sessionCryptoKey = null;
 let currentFilter = 'all';
-let filterStartDate = '';
-let filterEndDate = '';
-let actionId = null;
-let deviceId = '';
-let currentAttachmentData = null;
-let budgets = {};
-let reportChart = null;
-const EXPENSE_CATEGORIES = ['Makanan & Minuman', 'Transportasi', 'Belanja & Pakaian', 'Tagihan', 'Hiburan', 'Kesehatan', 'Pendidikan', 'Cicilan & Hutang', 'Investasi', 'Lain-lain'];
-const PAGE_SIZE = 10;
 let currentPage = 1;
-let _supabaseClient = null;
-let _realtimeChannel = null;
-let _autoSyncInterval = null;
-let _bookCheckInterval = null;
-
-// ==================== FUNGSI PROTEKSI TAMBAHAN ====================
-let _isProcessingCriticalAction = false;
-
-async function withLock(action, actionName) {
-    if (_isProcessingCriticalAction) {
-        showToast(`⚠️ Sedang memproses ${actionName} lain, tunggu sebentar...`, 'warning');
-        return false;
-    }
-    _isProcessingCriticalAction = true;
-    try {
-        await action();
-        return true;
-    } catch (e) {
-        console.error(`Error in ${actionName}:`, e);
-        showToast(`Gagal: ${e.message}`, 'error');
-        return false;
-    } finally {
-        _isProcessingCriticalAction = false;
-    }
-}
-
-async function syncBeforeCriticalAction() {
-    if (!getCloudUrl() || !getSupabaseKey()) return;
-    showToast('🔄 Sinkronisasi data terbaru sebelum melanjutkan...', 'info');
-    await forceFullSync();
-}
+const PAGE_SIZE = 15;
+const EXPENSE_CATEGORIES = ['Makanan & Minuman', 'Transportasi', 'Belanja & Pakaian', 'Tagihan', 'Hiburan', 'Kesehatan', 'Pendidikan', 'Cicilan & Hutang', 'Investasi', 'Lain-lain'];
 
 // ==================== CRYPTO ENGINE ====================
-const CRYPTO_SALT_KEY   = 'sk_crypto_salt';
-const CRYPTO_CHECK_KEY  = 'sk_crypto_check';
-const CRYPTO_URL_KEY    = 'sk_enc_supabase_url';
-const CRYPTO_AKEY_KEY   = 'sk_enc_supabase_key';
-const SENTINEL_PLAIN    = 'sinarkeu_ok';
+const CRYPTO_SALT_KEY = 'sk_salt';
+const CRYPTO_CHECK_KEY = 'sk_check';
+const CRYPTO_URL_KEY = 'sk_enc_url';
+const CRYPTO_AKEY_KEY = 'sk_enc_key';
+const SENTINEL = 'sinarkeu_ok';
 
 async function deriveKey(password, saltBuf) {
     const enc = new TextEncoder();
-    const baseKey = await crypto.subtle.importKey(
-        'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
-    );
+    const baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
     return crypto.subtle.deriveKey(
         { name: 'PBKDF2', salt: saltBuf, iterations: 300000, hash: 'SHA-256' },
-        baseKey,
-        { name: 'AES-GCM', length: 256 },
-        false,
-        ['encrypt', 'decrypt']
+        baseKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
     );
 }
 
-async function encryptStr(cryptoKey, plaintext) {
+async function encryptStr(key, text) {
     const enc = new TextEncoder();
-    const iv  = crypto.getRandomValues(new Uint8Array(12));
-    const ct  = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, enc.encode(plaintext));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(text));
     const combined = new Uint8Array(iv.byteLength + ct.byteLength);
-    combined.set(iv, 0);
-    combined.set(new Uint8Array(ct), iv.byteLength);
+    combined.set(iv, 0); combined.set(new Uint8Array(ct), iv.byteLength);
     return btoa(String.fromCharCode(...combined));
 }
 
-async function decryptStr(cryptoKey, b64) {
+async function decryptStr(key, b64) {
     const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-    const iv    = bytes.slice(0, 12);
-    const ct    = bytes.slice(12);
-    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, ct);
+    const iv = bytes.slice(0, 12);
+    const ct = bytes.slice(12);
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
     return new TextDecoder().decode(plain);
 }
 
-function isPasswordConfigured() {
-    return !!localStorage.getItem(CRYPTO_CHECK_KEY);
-}
-
-async function saveEncryptedCredentials(cryptoKey, url, apiKey) {
-    const encUrl   = await encryptStr(cryptoKey, url);
-    const encAKey  = await encryptStr(cryptoKey, apiKey);
-    const encCheck = await encryptStr(cryptoKey, SENTINEL_PLAIN);
-    localStorage.setItem(CRYPTO_URL_KEY,   encUrl);
-    localStorage.setItem(CRYPTO_AKEY_KEY,  encAKey);
-    localStorage.setItem(CRYPTO_CHECK_KEY, encCheck);
-}
-
-async function unlockWithPassword(password) {
-    const saltB64 = localStorage.getItem(CRYPTO_SALT_KEY);
-    if (!saltB64) return false;
-    const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
-    let key;
-    try {
-        key = await deriveKey(password, salt);
-        const plain = await decryptStr(key, localStorage.getItem(CRYPTO_CHECK_KEY));
-        if (plain !== SENTINEL_PLAIN) return false;
-    } catch { return false; }
-    try {
-        globalSupabaseUrl = await decryptStr(key, localStorage.getItem(CRYPTO_URL_KEY));
-        globalSupabaseKey = await decryptStr(key, localStorage.getItem(CRYPTO_AKEY_KEY));
-    } catch { return false; }
-    _sessionCryptoKey = key;
-    sessionStorage.setItem('sk_session_unlocked', '1');
-    return true;
-}
-
-async function setupNewPassword(password, url, apiKey) {
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    localStorage.setItem(CRYPTO_SALT_KEY, btoa(String.fromCharCode(...salt)));
-    const key = await deriveKey(password, salt);
-    await saveEncryptedCredentials(key, url, apiKey);
-    _sessionCryptoKey = key;
-    sessionStorage.setItem('sk_session_unlocked', '1');
-}
-
-async function reEncryptCredentials(url, apiKey) {
-    if (!_sessionCryptoKey) return;
-    await saveEncryptedCredentials(_sessionCryptoKey, url, apiKey);
-}
-
-function wipeAllCryptoData() {
-    [CRYPTO_SALT_KEY, CRYPTO_CHECK_KEY, CRYPTO_URL_KEY, CRYPTO_AKEY_KEY,
-     'sk_supabase_url_global','sk_supabase_key_global'].forEach(k => localStorage.removeItem(k));
-    sessionStorage.removeItem('sk_session_unlocked');
-    _sessionCryptoKey = null;
-    globalSupabaseUrl = '';
-    globalSupabaseKey = '';
-}
-
-// ==================== PASSWORD LOCK SCREEN ====================
-function showPasswordLock() {
-    const screen = document.getElementById('passwordLockScreen');
-    screen.style.display = 'flex';
-    document.getElementById('lockTitle').innerText    = 'Sinarkeu';
-    document.getElementById('lockSubtitle').innerText = 'Masukkan password untuk membuka aplikasi';
-    document.getElementById('lockSubmitBtn').innerText = '🔓 Buka';
-    document.getElementById('lockIcon').innerText      = '🔒';
-    document.getElementById('lockWarning').style.display = 'none';
-    setTimeout(() => document.getElementById('lockPasswordInput').focus(), 100);
-}
-
-function hideLockScreen() {
-    document.getElementById('passwordLockScreen').style.display = 'none';
-}
-
-function clearLockError() {
-    document.getElementById('lockStatus').innerText = '';
-    document.getElementById('lockPasswordInput').classList.remove('error-shake');
-}
-
-function toggleLockEye() {
-    const inp = document.getElementById('lockPasswordInput');
-    const btn = document.getElementById('lockEyeBtn');
-    if (inp.type === 'password') { inp.type = 'text'; btn.innerText = '🙈'; }
-    else { inp.type = 'password'; btn.innerText = '👁'; }
-}
-
+// ==================== LOCK SCREEN ====================
 async function submitLockPassword() {
-    const pwd    = document.getElementById('lockPasswordInput').value;
+    const pwd = document.getElementById('lockPasswordInput').value;
     const status = document.getElementById('lockStatus');
-    const btn    = document.getElementById('lockSubmitBtn');
-    if (!pwd) { status.innerText = '❌ Password tidak boleh kosong'; return; }
-    btn.disabled = true;
-    btn.innerText = '⏳ Memverifikasi...';
-    status.innerText = '';
-    const ok = await unlockWithPassword(pwd);
-    if (ok) {
-        hideLockScreen();
-        continueAppInit();
-    } else {
-        btn.disabled = false;
-        btn.innerText = '🔓 Buka';
-        status.innerText = '❌ Password salah';
-        const inp = document.getElementById('lockPasswordInput');
-        inp.classList.remove('error-shake');
-        void inp.offsetWidth;
-        inp.classList.add('error-shake');
-        inp.value = '';
-        inp.focus();
-    }
-}
+    if (!pwd) return;
 
-function evalSetupPwdStrength() {
-    const pwd  = document.getElementById('setupPwdInput') ? document.getElementById('setupPwdInput').value : '';
-    const fill = document.getElementById('setupPwdStrengthFill');
-    const lbl  = document.getElementById('setupPwdStrengthLabel');
-    if (!fill || !lbl) return;
-    let score = 0;
-    if (pwd.length >= 6)  score++;
-    if (pwd.length >= 10) score++;
-    if (/[A-Z]/.test(pwd)) score++;
-    if (/[0-9]/.test(pwd)) score++;
-    if (/[^A-Za-z0-9]/.test(pwd)) score++;
-    const levels = [
-        { w:'0%',   bg:'#eee',     t:'' },
-        { w:'25%',  bg:'#de350b',  t:'Sangat lemah' },
-        { w:'50%',  bg:'#ff8b00',  t:'Lemah' },
-        { w:'70%',  bg:'#ffab00',  t:'Cukup' },
-        { w:'88%',  bg:'#00875a',  t:'Kuat' },
-        { w:'100%', bg:'#006644',  t:'Sangat kuat' },
-    ];
-    const l = levels[score] || levels[0];
-    fill.style.width = l.w;
-    fill.style.background = l.bg;
-    lbl.innerText = l.t;
-    lbl.style.color = l.bg;
-}
-
-// ==================== UTILITIES ====================
-function showToast(msg, type = 'success') {
-    let toast = document.getElementById('toastMessage');
-    let icon = document.getElementById('toastIcon');
-    let text = document.getElementById('toastText');
-    if (type === 'success') { icon.innerHTML = '✅'; toast.style.background = '#00875a'; }
-    else if (type === 'error') { icon.innerHTML = '❌'; toast.style.background = '#de350b'; }
-    else if (type === 'warning') { icon.innerHTML = '⚠️'; toast.style.background = '#cc7b00'; }
-    else { icon.innerHTML = 'ℹ️'; toast.style.background = '#1a1a1a'; }
-    text.innerText = msg;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3000);
-}
-
-function rp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
-function unRp(s) { return Number(String(s).replace(/[^0-9]/g, '')) || 0; }
-function formatRupiah(el) {
-    let v = el.value.replace(/[^0-9]/g, '');
-    el.value = v ? Number(v).toLocaleString('id-ID') : '';
-}
-function escapeHtml(str) {
-    if(!str) return '';
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-function formatDateTime(dtStr) {
-    if(!dtStr) return '-';
-    let d = new Date(dtStr);
-    if(isNaN(d.getTime())) return dtStr;
-    return d.toLocaleDateString('id-ID', {day:'2-digit', month:'2-digit', year:'numeric'}) + ' ' + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
-}
-
-function getCloudUrl() { return globalSupabaseUrl || ''; }
-function getSupabaseKey() { return globalSupabaseKey || ''; }
-
-// ==================== TELEGRAM ====================
-function getTgConfig() {
-    let token = localStorage.getItem('sk_tg_token') || '';
-    let edgeUrl = localStorage.getItem('sk_tg_edge_url') || '';
-    let chatId = localStorage.getItem('sk_tg_chatid') || '';
-    return { token, edgeUrl, chatId, active: !!(token || edgeUrl) };
-}
-
-function saveTelegramConfig() {
-    let token = document.getElementById('tgBotTokenInput').value.trim();
-    let chatId = document.getElementById('tgChatIdInput').value.trim();
-
-    if (!chatId) { showToast('Chat ID penerima wajib diisi!', 'error'); return; }
-    if (!token) { showToast('Bot Token wajib diisi!', 'error'); return; }
-
-    localStorage.setItem('sk_tg_token', token);
-    localStorage.setItem('sk_tg_chatid', chatId);
-    localStorage.removeItem('sk_tg_edge_url');
-    updateTgStatusBadge();
-    showToast('Konfigurasi Telegram disimpan ✅', 'success');
-    pushSettingTelegram();
-}
-
-function clearTelegramConfig() {
-    if (!confirm('Hapus konfigurasi Telegram?')) return;
-    localStorage.removeItem('sk_tg_token');
-    localStorage.removeItem('sk_tg_edge_url');
-    localStorage.removeItem('sk_tg_chatid');
-    document.getElementById('tgBotTokenInput').value = '';
-    document.getElementById('tgEdgeUrlInput').value = '';
-    document.getElementById('tgChatIdInput').value = '';
-    updateTgStatusBadge();
-    showToast('Konfigurasi Telegram dihapus', 'warning');
-    pushSettingTelegram();
-}
-
-function updateTgStatusBadge() {
-    let badge = document.getElementById('tgStatusBadge');
-    if (!badge) return;
-    let cfg = getTgConfig();
-    if (cfg.active) {
-        badge.style.background = '#e3fcef';
-        badge.style.color = '#006644';
-        badge.innerText = '✅ Aktif';
-    } else {
-        badge.style.background = '#eee';
-        badge.style.color = '#666';
-        badge.innerText = 'Belum dikonfigurasi';
-    }
-}
-
-function loadTgConfigToForm() {
-    let cfg = getTgConfig();
-    let tokenEl = document.getElementById('tgBotTokenInput');
-    let edgeEl = document.getElementById('tgEdgeUrlInput');
-    let chatEl = document.getElementById('tgChatIdInput');
-    if (tokenEl) tokenEl.value = cfg.token;
-    if (edgeEl) edgeEl.value = cfg.edgeUrl;
-    if (chatEl) chatEl.value = cfg.chatId;
-    updateTgStatusBadge();
-}
-
-async function sendTelegramNotif(msg) {
-    let cfg = getTgConfig();
-    if (!cfg.active) return;
-    try {
-        if (cfg.edgeUrl) {
-            const body = { message: msg };
-            if (cfg.chatId) body.chat_id = cfg.chatId;
-            const res = await fetch(cfg.edgeUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${getSupabaseKey()}`
-                },
-                body: JSON.stringify(body)
-            });
-            if (!res.ok) console.warn('[Telegram] Edge Function error:', await res.text());
-        } else if (cfg.token && cfg.chatId) {
-            const res = await fetch(`https://api.telegram.org/bot${cfg.token}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: cfg.chatId, text: msg, parse_mode: 'HTML' })
-            });
-            const data = await res.json();
-            if (!data.ok) console.warn('[Telegram] Gagal kirim:', data.description);
-        }
-    } catch(e) {
-        console.warn('[Telegram] Gagal kirim notifikasi:', e.message);
-    }
-}
-
-async function testTelegramNotif() {
-    let token = document.getElementById('tgBotTokenInput').value.trim();
-    let edgeUrl = document.getElementById('tgEdgeUrlInput').value.trim();
-    let chatId = document.getElementById('tgChatIdInput').value.trim();
-    let statusEl = document.getElementById('tgTestStatus');
-
-    if (!chatId) { showToast('Chat ID penerima wajib diisi!', 'error'); return; }
-    if (!token && !edgeUrl) { showToast('Isi Bot Token!', 'error'); return; }
-
-    if (token) localStorage.setItem('sk_tg_token', token);
-    else localStorage.removeItem('sk_tg_token');
-    if (edgeUrl) localStorage.setItem('sk_tg_edge_url', edgeUrl);
-    else localStorage.removeItem('sk_tg_edge_url');
-    localStorage.setItem('sk_tg_chatid', chatId);
-    updateTgStatusBadge();
-
-    statusEl.innerHTML = '<span style="color:#cc7b00;">⏳ Mengirim pesan tes...</span>';
-
-    const testMsg = `🔔 <b>Sinarkeu — Tes Notifikasi</b>\n\nKonfigurasi berhasil! Notifikasi transaksi akan dikirim ke sini.\n\n<i>Chat ID: ${chatId}</i>`;
+    const saltB64 = localStorage.getItem(CRYPTO_SALT_KEY);
+    if (!saltB64) return;
+    const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
 
     try {
-        let res, data;
-        if (edgeUrl) {
-            res = await fetch(edgeUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${getSupabaseKey()}`
-                },
-                body: JSON.stringify({ message: testMsg, chat_id: chatId })
-            });
-            data = await res.json();
-            if (data.ok) {
-                statusEl.innerHTML = '<span style="color:#006644;">✅ Berhasil via Edge Function!</span>';
-                showToast('Tes Telegram berhasil! ✅', 'success');
-            } else {
-                statusEl.innerHTML = `<span style="color:#de350b;">❌ Gagal: ${escapeHtml(data.error || JSON.stringify(data))}</span>`;
-            }
-        } else {
-            res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: chatId, text: testMsg, parse_mode: 'HTML' })
-            });
-            data = await res.json();
-            if (data.ok) {
-                statusEl.innerHTML = '<span style="color:#006644;">✅ Berhasil! Cek Telegram kamu.</span>';
-                showToast('Tes Telegram berhasil! ✅', 'success');
-            } else {
-                let errMsg = data.description || JSON.stringify(data);
-                if (errMsg.includes('chat not found')) errMsg = 'Chat ID tidak ditemukan. Pastikan bot sudah di-/start atau ditambah ke grup.';
-                if (errMsg.includes('Unauthorized')) errMsg = 'Bot Token tidak valid. Cek kembali dari @BotFather.';
-                statusEl.innerHTML = `<span style="color:#de350b;">❌ ${escapeHtml(errMsg)}</span>`;
-            }
-        }
-    } catch(e) {
-        statusEl.innerHTML = `<span style="color:#de350b;">❌ Error jaringan: ${escapeHtml(e.message)}</span>`;
+        const key = await deriveKey(pwd, salt);
+        const check = await decryptStr(key, localStorage.getItem(CRYPTO_CHECK_KEY));
+        if (check === SENTINEL) {
+            _sessionCryptoKey = key;
+            globalSupabaseUrl = await decryptStr(key, localStorage.getItem(CRYPTO_URL_KEY));
+            globalSupabaseKey = await decryptStr(key, localStorage.getItem(CRYPTO_AKEY_KEY));
+            sessionStorage.setItem('unlocked', '1');
+            document.getElementById('passwordLockScreen').style.display = 'none';
+            continueAppInit();
+        } else { throw new Error(); }
+    } catch (e) {
+        status.innerText = "❌ Password Salah";
+        document.getElementById('lockPasswordInput').value = '';
     }
 }
 
-function buildTxNotifMessage(action, tx, bookName) {
-    let emoji = tx.type === 'income' ? '💰' : '💸';
-    let typeLabel = tx.type === 'income' ? 'PEMASUKAN' : 'PENGELUARAN';
-    let actionLabel = action === 'TAMBAH' ? '➕ Transaksi Baru' : action === 'UBAH' ? '✏️ Transaksi Diubah' : '🗑️ Transaksi Dihapus';
+function clearLockError() { document.getElementById('lockStatus').innerText = ""; }
 
-    let totalIncome = 0, totalExpense = 0;
-    txs.forEach(t => {
-        let amt = Number(t.amount) || 0;
-        if (t.type === 'income') totalIncome += amt;
-        else totalExpense += amt;
-    });
-    let saldoSekarang = totalIncome - totalExpense;
-    if (action === 'HAPUS') {
-        if (tx.type === 'income') saldoSekarang -= (Number(tx.amount) || 0);
-        else saldoSekarang += (Number(tx.amount) || 0);
-    }
-    let saldoEmoji = saldoSekarang >= 0 ? '🟢' : '🔴';
-
-    return `${emoji} <b>${actionLabel}</b>\n━━━━━━━━━━━━━━━━━━\n📒 <b>${bookName}</b>\n📂 ${typeLabel}${tx.category && tx.category !== 'Pemasukan' ? ' · <i>' + tx.category + '</i>' : ''}\n📝 ${tx.description}\n💵 <b>${rp(tx.amount)}</b>\n🕐 ${formatDateTime(tx.date)}\n━━━━━━━━━━━━━━━━━━\n${saldoEmoji} <b>Saldo Saat Ini: ${rp(saldoSekarang)}</b>`;
-}
-
-function getCurrentBookName() {
-    let book = books.find(b => b.id === currentBookId);
-    return book ? book.name : currentBookId;
-}
-
-function sendDailySummaryToTelegram() {
-    let cfg = getTgConfig();
-    if (!cfg.active) return;
-    let now = new Date();
-    let today = now.toLocaleDateString('id-ID', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
-    let m = now.getMonth() + 1;
-    let y = now.getFullYear();
-    let monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-    
-    let incToday = 0, expToday = 0;
-    let todayStr = now.toISOString().slice(0,10);
-    let txToday = [];
-    txs.forEach(t => {
-        if (!t.date) return;
-        let d = t.date.slice(0,10);
-        if (d === todayStr) {
-            let amt = Number(t.amount) || 0;
-            if (t.type === 'income') incToday += amt;
-            else expToday += amt;
-            txToday.push(t);
-        }
-    });
-
-    let incBulan = 0, expBulan = 0;
-    txs.forEach(t => {
-        let d = new Date(t.date);
-        if ((d.getMonth()+1) === m && d.getFullYear() === y) {
-            let amt = Number(t.amount) || 0;
-            if (t.type === 'income') incBulan += amt;
-            else expBulan += amt;
-        }
-    });
-
-    let totalInc = 0, totalExp = 0;
-    txs.forEach(t => {
-        let amt = Number(t.amount) || 0;
-        if (t.type === 'income') totalInc += amt;
-        else totalExp += amt;
-    });
-    let saldo = totalInc - totalExp;
-
-    let msg = `📅 <b>Ringkasan Harian Sinarkeu</b>\n${today}\n📒 Buku: <b>${getCurrentBookName()}</b>\n━━━━━━━━━━━━━━━━━━\n<b>Hari Ini:</b>\n💰 Masuk: ${rp(incToday)}\n💸 Keluar: ${rp(expToday)}\n📊 Selisih: ${rp(incToday - expToday)}\n\n<b>Bulan ${monthNames[m-1]} ${y}:</b>\n💰 Pemasukan: ${rp(incBulan)}\n💸 Pengeluaran: ${rp(expBulan)}\n📊 Selisih: ${rp(incBulan - expBulan)}\n━━━━━━━━━━━━━━━━━━\n${saldo >= 0 ? '🟢' : '🔴'} <b>Saldo Total: ${rp(saldo)}</b>`;
-
-    sendTelegramNotif(msg);
-}
-
-function scheduleDailySummary() {
-    let cfg = getTgConfig();
-    if (!cfg.active) return;
-    let now = new Date();
-    let target = new Date(now);
-    target.setHours(21, 0, 0, 0);
-    if (now >= target) target.setDate(target.getDate() + 1);
-    let msUntil = target - now;
-    setTimeout(() => {
-        sendDailySummaryToTelegram();
-        setInterval(sendDailySummaryToTelegram, 24 * 60 * 60 * 1000);
-    }, msUntil);
-    console.log(`[Telegram] Ringkasan harian dijadwalkan pukul 21:00`);
-}
-
-// ==================== SUPABASE API ====================
-async function callSupabaseAPI(table, method, body = null, queryString = '') {
-    const baseUrl = getCloudUrl();
-    const apiKey = getSupabaseKey();
-    if (!baseUrl || !apiKey) return null;
-
-    const url = `${baseUrl}/rest/v1/${table}${queryString}`;
+// ==================== STABLE SYNC ENGINE ====================
+async function callSupabase(table, method, body = null, query = '') {
+    if (!globalSupabaseUrl || !globalSupabaseKey) return null;
     const headers = {
-        'apikey': apiKey,
-        'Authorization': `Bearer ${apiKey}`,
+        'apikey': globalSupabaseKey,
+        'Authorization': `Bearer ${globalSupabaseKey}`,
         'Content-Type': 'application/json',
         'Prefer': 'resolution=merge-duplicates,return=representation'
     };
-
-    const config = { method: method, headers: headers };
-    if (body) config.body = JSON.stringify(body);
-
     try {
-        const res = await fetch(url, config);
-        if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(errText || `HTTP error! status: ${res.status}`);
-        }
+        const res = await fetch(`${globalSupabaseUrl}/rest/v1/${table}${query}`, {
+            method, headers, body: body ? JSON.stringify(body) : null
+        });
+        if (!res.ok) return null;
         const text = await res.text();
         return text ? JSON.parse(text) : true;
-    } catch (e) {
-        console.error(`Supabase API Error (${table}):`, e);
-        return null;
-    }
+    } catch (e) { return null; }
 }
 
-// ==================== PUSH SETTINGS ====================
-async function pushSetting(key, value, bookId) {
-    if (!getCloudUrl() || !getSupabaseKey()) return;
-    const payload = [{
-        book_id: bookId || currentBookId,
-        key: key,
-        value: JSON.stringify(value),
-        updated_at: new Date().toISOString()
-    }];
-    const result = await callSupabaseAPI('settings', 'POST', payload);
-    if (result === null) {
-        console.warn(`[pushSetting] Gagal push key="${key}"`);
-    }
-}
-
-async function pushSettingBooks() {
-    if (!getCloudUrl() || !getSupabaseKey()) return;
-    
-    const payload = [{
-        book_id: 'global',
-        key: 'books',
-        value: JSON.stringify(books),
-        updated_at: new Date().toISOString()
-    }];
-    
-    let retries = 3;
-    let success = false;
-    
-    while (retries > 0 && !success) {
-        const result = await callSupabaseAPI('settings', 'POST', payload);
-        if (result !== null) {
-            success = true;
-            console.log('[Sync] Buku berhasil disimpan ke cloud');
-        } else {
-            retries--;
-            if (retries > 0) await new Promise(r => setTimeout(r, 1000));
-        }
-    }
-    
-    if (!success) {
-        console.warn('[Sync] Gagal menyimpan daftar buku ke cloud');
-    }
-    
-    updateSettingsSyncStatus('push');
-}
-
-async function pushSettingBudgets() {
-    const bud = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
-    await pushSetting('budgets', bud, currentBookId);
-    updateSettingsSyncStatus('push');
-}
-
-async function pushSettingTelegram() {
-    const cfg = getTgConfig();
-    await pushSetting('telegram_config', { token: cfg.token, edgeUrl: cfg.edgeUrl, chatId: cfg.chatId }, 'global');
-    updateSettingsSyncStatus('push');
-}
-
-function updateSettingsSyncStatus(direction) {
-    const el = document.getElementById('settingsSyncStatus');
-    if (!el) return;
-    const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const label = direction === 'pull' ? 'Ditarik dari cloud' : 'Disimpan ke cloud';
-    el.innerText = `Terakhir ${label}: ${now}`;
-}
-
-// ==================== PULL SETTINGS ====================
 async function pullAllSettings() {
-    if (!getCloudUrl() || !getSupabaseKey()) return;
-
-    const allRows = await callSupabaseAPI('settings', 'GET', null, '?order=updated_at.desc');
-    
-    if (allRows && Array.isArray(allRows)) {
-        let booksUpdated = false;
-        let telegramUpdated = false;
-        
-        for (const row of allRows) {
-            let parsed;
-            try { parsed = JSON.parse(row.value); } catch { continue; }
-
-            if (row.key === 'books' && Array.isArray(parsed) && parsed.length > 0) {
-                const localIds = new Set(books.map(b => b.id));
-                let merged = [...books];
-                let changed = false;
-                
-                parsed.forEach(cb => {
-                    if (!localIds.has(cb.id)) {
-                        merged.push(cb);
-                        changed = true;
-                        console.log('[Sync] Buku baru dari cloud:', cb.name);
-                    } else {
-                        const idx = merged.findIndex(b => b.id === cb.id);
-                        if (idx !== -1 && merged[idx].name !== cb.name) {
-                            merged[idx].name = cb.name;
-                            changed = true;
-                        }
-                    }
-                });
-                
-                if (changed) {
-                    books = merged;
-                    localStorage.setItem('sk_books', JSON.stringify(books));
-                    booksUpdated = true;
-                    
-                    if (!books.find(b => b.id === currentBookId) && books.length > 0) {
-                        currentBookId = books[0].id;
-                        localStorage.setItem('sk_current_book_id', currentBookId);
-                    }
-                }
+    const rows = await callSupabase('settings', 'GET', null, '?order=updated_at.desc');
+    if (rows) {
+        for (const row of rows) {
+            const val = JSON.parse(row.value);
+            if (row.key === 'books') {
+                const local = JSON.parse(localStorage.getItem('sk_books') || '[]');
+                const merged = [...local];
+                val.forEach(cb => { if (!merged.find(lb => lb.id === cb.id)) merged.push(cb); });
+                books = merged;
+                localStorage.setItem('sk_books', JSON.stringify(books));
             }
-
-            if (row.key === 'telegram_config') {
-                const oldToken = localStorage.getItem('sk_tg_token');
-                if (parsed.token) localStorage.setItem('sk_tg_token', parsed.token);
-                else localStorage.removeItem('sk_tg_token');
-                if (parsed.edgeUrl) localStorage.setItem('sk_tg_edge_url', parsed.edgeUrl);
-                else localStorage.removeItem('sk_tg_edge_url');
-                if (parsed.chatId) localStorage.setItem('sk_tg_chatid', parsed.chatId);
-                else localStorage.removeItem('sk_tg_chatid');
-                
-                if (oldToken !== parsed.token) telegramUpdated = true;
+            if (row.key === 'telegram_config' && row.book_id === 'global') {
+                localStorage.setItem('sk_tg_token', val.token);
+                localStorage.setItem('sk_tg_chatid', val.chatId);
             }
-            
             if (row.key === 'budgets') {
-                localStorage.setItem('sk_budgets_' + row.book_id, JSON.stringify(parsed));
-                if (row.book_id === currentBookId) budgets = parsed;
+                localStorage.setItem('sk_budgets_' + row.book_id, JSON.stringify(val));
+                if (row.book_id === currentBookId) budgets = val;
             }
         }
-        
-        if (booksUpdated) {
-            updateBookSelectDropdown();
-            showToast('📚 Daftar buku diperbarui dari cloud', 'info');
-        }
-        if (telegramUpdated) {
-            updateTgStatusBadge();
-        }
-    }
-    
-    updateSettingsSyncStatus('pull');
-}
-
-// ==================== PULL TRANSACTIONS ====================
-async function pullFromCloudSilently() {
-    if (!getCloudUrl() || !getSupabaseKey()) return;
-    
-    let cloudData = await callSupabaseAPI('transactions', 'GET', null, `?book_id=eq.${currentBookId}&order=date.desc`);
-    
-    if (cloudData && Array.isArray(cloudData)) {
-        const cloudMapped = cloudData.map(c => ({
-            id: c.id,
-            type: c.type,
-            amount: Number(c.amount),
-            category: c.category,
-            description: c.description,
-            date: c.date,
-            attachment: c.attachment
-        }));
-
-        const cloudById = new Map(cloudMapped.map(c => [c.id, c]));
-        const currentLocal = [...txs];
-        const localOnlyTxs = currentLocal.filter(local => !cloudById.has(local.id));
-        
-        const newTxs = [...cloudMapped, ...localOnlyTxs];
-        newTxs.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        const oldCount = txs.length;
-        
-        if (oldCount !== newTxs.length) {
-            txs = newTxs;
-            localStorage.setItem('sk_txs_' + currentBookId, JSON.stringify(txs));
-            render();
-            
-            const addedCount = newTxs.length - oldCount;
-            if (addedCount > 0) {
-                showToast(`📥 ${addedCount} transaksi baru dari cloud`, 'info');
-            } else if (newTxs.length !== oldCount) {
-                showToast(`🔄 Transaksi diperbarui dari cloud`, 'info');
-            }
-        }
-
-        if (localOnlyTxs.length > 0) {
-            console.log(`[Sync] Mengirim ${localOnlyTxs.length} transaksi lokal ke cloud...`);
-            await pushToCloud();
-        }
-    }
-    
-    refreshLogsFromCloud();
-}
-
-// ==================== PULL ALL BOOKS ====================
-async function pullAllBooksFromCloud() {
-    if (!getCloudUrl() || !getSupabaseKey()) return;
-    
-    await pullAllSettings();
-    
-    const bookIds = books.map(b => b.id);
-    if (bookIds.length === 0) return;
-
-    let anyChange = false;
-
-    for (const bookId of bookIds) {
-        let cloudData = await callSupabaseAPI('transactions', 'GET', null, `?book_id=eq.${bookId}&order=date.desc`);
-        if (!cloudData || !Array.isArray(cloudData)) continue;
-
-        const cloudMapped = cloudData.map(c => ({
-            id: c.id,
-            type: c.type,
-            amount: Number(c.amount),
-            category: c.category,
-            description: c.description,
-            date: c.date,
-            attachment: c.attachment
-        }));
-
-        const localStored = JSON.parse(localStorage.getItem('sk_txs_' + bookId) || '[]');
-        const cloudById = new Map(cloudMapped.map(c => [c.id, c]));
-        const localOnly = localStored.filter(t => !cloudById.has(t.id));
-        const merged = [...cloudMapped, ...localOnly];
-        
-        if (merged.length !== localStored.length) {
-            anyChange = true;
-        }
-        
-        merged.sort((a, b) => new Date(b.date) - new Date(a.date));
-        localStorage.setItem('sk_txs_' + bookId, JSON.stringify(merged));
-
-        if (bookId === currentBookId) {
-            const oldCount = txs.length;
-            txs = merged;
-            if (oldCount !== txs.length) {
-                render();
-            }
-        }
-        
-        if (localOnly.length > 0) {
-            const savedBookId = currentBookId;
-            currentBookId = bookId;
-            await pushToCloud();
-            currentBookId = savedBookId;
-        }
-    }
-    
-    if (anyChange && currentBookId) {
-        render();
-    }
-    
-    console.log('[Sync] Selesai pull semua buku —', bookIds.length, 'buku diproses');
-}
-
-// ==================== FORCE FULL SYNC ====================
-async function forceFullSync() {
-    showToast('🔄 Memulai sinkronisasi penuh...', 'info');
-    
-    stopAutoSync();
-    stopRealtimeSync();
-    
-    try {
-        await pullAllSettings();
-        await pullAllBooksFromCloud();
-        updateBookSelectDropdown();
-        updateTgStatusBadge();
-        budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
-        renderBudget();
-        showToast('✅ Sinkronisasi selesai!', 'success');
-        await addCloudLog('SISTEM', 'Sinkronisasi penuh manual dari perangkat ' + deviceId);
-    } catch (e) {
-        console.error('[Sync] Gagal sinkronisasi:', e);
-        showToast('❌ Gagal sinkronisasi: ' + e.message, 'error');
-    } finally {
-        startAutoSync();
-        startRealtimeSync();
     }
 }
 
-function addSyncButton() {
-    const bookSelector = document.querySelector('.book-selector');
-    if (bookSelector && !document.getElementById('manualSyncBtn')) {
-        const syncBtn = document.createElement('button');
-        syncBtn.id = 'manualSyncBtn';
-        syncBtn.className = 'manage-books-btn';
-        syncBtn.style.background = '#00875a';
-        syncBtn.innerHTML = '🔄 Sinkronisasi';
-        syncBtn.onclick = forceFullSync;
-        syncBtn.title = 'Sinkronisasi manual semua data dari cloud';
-        bookSelector.appendChild(syncBtn);
+async function syncTransactions() {
+    const cloud = await callSupabase('transactions', 'GET', null, `?book_id=eq.${currentBookId}`);
+    if (cloud) {
+        const local = JSON.parse(localStorage.getItem('sk_txs_' + currentBookId) || '[]');
+        const cloudMap = new Map(cloud.map(t => [t.id, t]));
+        const merged = [...cloud.map(c => ({
+            id: c.id, type: c.type, amount: c.amount, category: c.category,
+            description: c.description, date: c.date, attachment: c.attachment
+        }))];
+        
+        local.forEach(lt => { if (!cloudMap.has(lt.id)) merged.push(lt); });
+        txs = merged.sort((a,b) => new Date(b.date) - new Date(a.date));
+        localStorage.setItem('sk_txs_' + currentBookId, JSON.stringify(txs));
+        
+        const toPush = local.filter(lt => !cloudMap.has(lt.id));
+        if (toPush.length > 0) pushToCloud();
     }
 }
 
-function startBookCheck() {
-    if (_bookCheckInterval) clearInterval(_bookCheckInterval);
-    
-    _bookCheckInterval = setInterval(async () => {
-        if (!getCloudUrl() || !getSupabaseKey()) return;
-        if (document.hidden) return;
-        
-        const prevBooksJson = JSON.stringify(books);
-        await pullAllSettings();
-        
-        if (JSON.stringify(books) !== prevBooksJson) {
-            console.log('[Sync] Buku berubah, refresh UI...');
-            updateBookSelectDropdown();
-            render();
-            showToast('📚 Daftar buku diperbarui', 'info');
-        }
-    }, 5000);
-}
-
-// ==================== PUSH TO CLOUD ====================
 async function pushToCloud() {
-    if (!getCloudUrl() || !getSupabaseKey()) return;
-
     const payload = txs.map(t => ({
-        id: t.id,
-        book_id: currentBookId,
-        device_id: deviceId,
-        type: t.type,
-        amount: parseFloat(t.amount) || 0,
-        category: t.category || '',
-        description: t.description || '',
-        date: t.date,
-        attachment: t.attachment || null
+        id: t.id, book_id: currentBookId, device_id: deviceId,
+        type: t.type, amount: t.amount, category: t.category,
+        description: t.description, date: t.date, attachment: t.attachment
     }));
-
-    if (payload.length === 0) return;
-
-    let res = await callSupabaseAPI('transactions', 'POST', payload);
-    if(res && Array.isArray(res)) {
-        console.log(`Sinkronisasi ${res.length} transaksi ke Supabase Cloud berhasil.`);
-    } else if(res === null) {
-        console.warn("pushToCloud: respons null — cek koneksi atau konfigurasi Supabase.");
-    }
+    await callSupabase('transactions', 'POST', payload);
 }
 
-// ==================== ADD CLOUD LOG ====================
-async function addCloudLog(actionType, detailsText) {
-    let localLogs = JSON.parse(localStorage.getItem('sk_logs_' + currentBookId) || '[]');
-    let logObj = {
-        timestamp: new Date().toISOString(),
-        device_id: deviceId,
-        action: actionType,
-        details: detailsText
-    };
-    localLogs.unshift(logObj);
-    if(localLogs.length > 50) localLogs.pop();
-    localStorage.setItem('sk_logs_' + currentBookId, JSON.stringify(localLogs));
-    renderLogs(localLogs);
+// ==================== APP LOGIC ====================
+function initApp() {
+    deviceId = localStorage.getItem('sk_device_id') || 'DEV-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+    localStorage.setItem('sk_device_id', deviceId);
+    document.getElementById('deviceIdDisplay').innerText = deviceId;
 
-    if (!getCloudUrl() || !getSupabaseKey()) return;
-
-    const logPayload = [{
-        book_id: currentBookId,
-        device_id: deviceId,
-        action: actionType,
-        details: detailsText,
-        timestamp: new Date().toISOString()
-    }];
-
-    await callSupabaseAPI('audit_logs', 'POST', logPayload);
-}
-
-// ==================== REFRESH LOGS ====================
-async function refreshLogsFromCloud() {
-    let area = document.getElementById('logSummaryArea');
-    if (!getCloudUrl() || !getSupabaseKey()) {
-        refreshLogsLocal();
-        return;
-    }
-    
-    area.innerText = "Memuat log dari cloud...";
-    let cloudLogs = await callSupabaseAPI('audit_logs', 'GET', null, `?book_id=eq.${currentBookId}&order=timestamp.desc&limit=30`);
-    
-    if (cloudLogs && Array.isArray(cloudLogs)) {
-        renderLogs(cloudLogs);
+    if (!localStorage.getItem(CRYPTO_SALT_KEY)) {
+        document.getElementById('passwordLockScreen').style.display = 'none';
+        openModal('firstTimeSetupModal');
+    } else if (!sessionStorage.getItem('unlocked')) {
+        document.getElementById('passwordLockScreen').style.display = 'flex';
     } else {
-        area.innerText = "Gagal memuat log dari cloud, menampilkan log lokal jika ada.";
-        refreshLogsLocal();
+        submitLockPassword(); // Auto-unlock if session exists (handled by crypto logic)
     }
 }
 
-function refreshLogsLocal() {
-    let localLogs = JSON.parse(localStorage.getItem('sk_logs_' + currentBookId) || '[]');
-    renderLogs(localLogs);
-}
-
-function renderLogs(logArray) {
-    let area = document.getElementById('logSummaryArea');
-    if(!area) return;
-    if(logArray.length === 0) {
-        area.innerText = "Belum ada log aktivitas.";
-        return;
+async function continueAppInit() {
+    currentBookId = localStorage.getItem('sk_current_book_id') || 'b_default';
+    books = JSON.parse(localStorage.getItem('sk_books') || '[{"id":"b_default","name":"Buku Utama"}]');
+    
+    initYearSelectors();
+    updateCloudIndicator();
+    loadTransactions();
+    
+    if (globalSupabaseUrl) {
+        await pullAllSettings();
+        await syncTransactions();
+        startRealtime();
     }
-    area.innerHTML = '';
-    logArray.forEach(l => {
-        let div = document.createElement('div');
-        div.className = 'log-line';
-        
-        let tagClass = 'tag-system';
-        if(l.action === 'TAMBAH') tagClass = 'tag-add';
-        else if(l.action === 'UBAH') tagClass = 'tag-edit';
-        else if(l.action === 'HAPUS') tagClass = 'tag-delete';
-        
-        let t = l.timestamp ? new Date(l.timestamp).toLocaleTimeString('id-ID') : '';
-        div.innerHTML = `<span class="log-tag ${tagClass}">${escapeHtml(l.action)}</span> [${escapeHtml(t)}] Device:${escapeHtml(l.device_id || 'UNKNOWN')} - ${escapeHtml(l.details)}`;
-        area.appendChild(div);
-    });
-}
-
-async function testAddLog() {
-    await addCloudLog('SISTEM', 'Melakukan pengujian pengiriman log manual.');
-    showToast("Log pengujian terkirim!");
-}
-
-function toggleAuditLog() {
-    const section = document.getElementById('auditLogSection');
-    const btn = document.getElementById('auditLogToggleBtn');
-    const isHidden = section.style.display === 'none';
-    section.style.display = isHidden ? 'block' : 'none';
-    btn.style.background = isHidden ? '#1a1a1a' : '';
-    btn.style.color = isHidden ? '#fff' : '';
-    if (isHidden) refreshLogsFromCloud();
-}
-
-// ==================== LOAD & SAVE TRANSACTIONS ====================
-function loadTransactions() {
-    let stored = localStorage.getItem('sk_txs_' + currentBookId);
-    txs = stored ? JSON.parse(stored) : [];
-    txs.sort((a,b) => new Date(b.date) - new Date(a.date));
+    
+    setInterval(() => document.getElementById('liveClock').innerText = new Date().toLocaleTimeString('id-ID'), 1000);
     render();
 }
 
-function saveTransactions() {
-    localStorage.setItem('sk_txs_' + currentBookId, JSON.stringify(txs));
-    render();
-    pushToCloud();
+function initYearSelectors() {
+    const cy = new Date().getFullYear();
+    const sel = document.getElementById('budgetYear');
+    sel.innerHTML = '';
+    for(let y = cy-2; y <= cy+2; y++) {
+        let opt = document.createElement('option');
+        opt.value = y; opt.innerText = y;
+        if(y === cy) opt.selected = true;
+        sel.appendChild(opt);
+    }
+    document.getElementById('budgetMonth').value = new Date().getMonth() + 1;
 }
 
-// ==================== RENDER ====================
+// ==================== UI RENDERING ====================
 function render() {
-    let body = document.getElementById('transactionTableBody');
+    const body = document.getElementById('transactionTableBody');
     body.innerHTML = '';
-
-    let search = document.getElementById('searchInput').value.toLowerCase();
+    const search = document.getElementById('searchInput').value.toLowerCase();
     
     let filtered = txs.filter(t => {
-        if(currentFilter === 'income' && t.type !== 'income') return false;
-        if(currentFilter === 'expense' && t.type !== 'expense') return false;
-        
-        if(filterStartDate && t.date < filterStartDate) return false;
-        if(filterEndDate) {
-            let endLimit = filterEndDate + 'T23:59:59';
-            if(t.date > endLimit) return false;
-        }
-
-        if(search) {
-            let d = (t.description || '').toLowerCase();
-            let c = (t.category || '').toLowerCase();
-            return d.includes(search) || c.includes(search);
-        }
-        return true;
+        if (currentFilter === 'income' && t.type !== 'income') return false;
+        if (currentFilter === 'expense' && t.type !== 'expense') return false;
+        const ds = document.getElementById('dateFilterStart').value;
+        const de = document.getElementById('dateFilterEnd').value;
+        if (ds && t.date < ds) return false;
+        if (de && t.date > de + 'T23:59:59') return false;
+        return (t.description + t.category).toLowerCase().includes(search);
     });
-
-    document.getElementById('transactionCount').innerText = filtered.length + ' transaksi';
 
     let totalInc = 0, totalExp = 0;
-    txs.forEach(t => {
-        let amt = Number(t.amount) || 0;
-        if(t.type === 'income') totalInc += amt;
-        else totalExp += amt;
-    });
-    
-    let currentBalance = totalInc - totalExp;
-    document.getElementById('statBalance').innerText = rp(currentBalance);
+    txs.forEach(t => t.type === 'income' ? totalInc += Number(t.amount) : totalExp += Number(t.amount));
+    document.getElementById('statBalance').innerText = rp(totalInc - totalExp);
     document.getElementById('statIncome').innerText = rp(totalInc);
     document.getElementById('statExpense').innerText = rp(totalExp);
 
-    let allSorted = [...txs].sort((a,b) => new Date(a.date) - new Date(b.date));
-    let balanceMap = {};
-    let tempBal = 0;
-    allSorted.forEach(t => {
-        let amt = Number(t.amount) || 0;
-        if(t.type === 'income') tempBal += amt;
-        else tempBal -= amt;
-        balanceMap[t.id] = tempBal;
-    });
-
-    if(filtered.length === 0) {
-        body.innerHTML = '<tr><td colspan="9" class="text-center" style="color:#888; padding:30px;">Tidak ada transaksi ditemukan</td></tr>';
-        document.getElementById('paginationBar').style.display = 'none';
-        renderBudget();
-        return;
-    }
-
-    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-    if (currentPage > totalPages) currentPage = totalPages;
-    if (currentPage < 1) currentPage = 1;
-
-    const startIdx = (currentPage - 1) * PAGE_SIZE;
-    const paginated = filtered.slice(startIdx, startIdx + PAGE_SIZE);
-
-    paginated.forEach((t, index) => {
-        let tr = document.createElement('tr');
-        
-        let amt = Number(t.amount) || 0;
-        let incText = t.type === 'income' ? rp(amt) : '-';
-        let expText = t.type === 'expense' ? rp(amt) : '-';
-        
-        let badge = t.type === 'income' ? '<span class="type-badge badge-inc">MASUK</span>' : '<span class="type-badge badge-exp">KELUAR</span>';
-        let catText = t.category ? `<span class="category-badge">${escapeHtml(t.category)}</span>` : '-';
-        
-        let attCell = '<span class="no-attachment">❌</span>';
-        if(t.attachment) {
-            attCell = `<span class="attachment-link" onclick="viewAttachment('${t.id}')">🖼️</span>`;
-        }
-
-        const globalIndex = startIdx + index + 1;
-
+    const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    paginated.forEach((t, i) => {
+        const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td class="text-center col-no">${globalIndex}</td>
-            <td>${formatDateTime(t.date)}</td>
-            <td>${badge}${catText}</td>
-            <td>${escapeHtml(t.description)}</td>
-            <td class="text-right" style="color:#00875a; font-weight:500;">${incText}</td>
-            <td class="text-right" style="color:#de350b; font-weight:500;">${expText}</td>
-            <td class="text-right col-saldo" style="font-weight:600;">${rp(balanceMap[t.id] || 0)}</td>
-            <td class="text-center col-nota">${attCell}</td>
-            <td class="text-center"><button class="action-btn" onclick="openActionMenu('${t.id}')">⋮</button></td>
+            <td class="col-no">${(currentPage - 1) * PAGE_SIZE + i + 1}</td>
+            <td>${fmtDate(t.date)}</td>
+            <td><span class="type-badge ${t.type==='income'?'badge-inc':'badge-exp'}">${t.type==='income'?'MASUK':'KELUAR'}</span> <span class="category-badge">${t.category}</span></td>
+            <td>${t.description}</td>
+            <td class="text-right" style="color:#00875a">${t.type==='income'?rp(t.amount):'-'}</td>
+            <td class="text-right" style="color:#de350b">${t.type==='expense'?rp(t.amount):'-'}</td>
+            <td class="text-right col-saldo">-</td>
+            <td class="text-center">${t.attachment?`<span onclick="viewAtt('${t.id}')" style="cursor:pointer">🖼️</span>`:'-'}</td>
+            <td class="text-center"><button class="action-btn" onclick="openAction('${t.id}')">⋮</button></td>
         `;
         body.appendChild(tr);
     });
 
-    renderPagination(filtered.length, totalPages);
+    renderPagination(filtered.length);
     renderBudget();
+    updateBookSelectDropdown();
 }
 
-function renderPagination(totalCount, totalPages) {
-    const bar = document.getElementById('paginationBar');
-    const info = document.getElementById('paginationInfo');
-    const controls = document.getElementById('paginationControls');
-
-    if (totalPages <= 1) {
-        bar.style.display = 'none';
-        return;
-    }
-
-    bar.style.display = 'flex';
-    const startItem = (currentPage - 1) * PAGE_SIZE + 1;
-    const endItem = Math.min(currentPage * PAGE_SIZE, totalCount);
-    info.textContent = `Menampilkan ${startItem}–${endItem} dari ${totalCount} transaksi`;
-
-    controls.innerHTML = '';
-
-    const prevBtn = document.createElement('button');
-    prevBtn.className = 'page-btn';
-    prevBtn.textContent = '‹';
-    prevBtn.disabled = currentPage === 1;
-    prevBtn.onclick = () => goToPage(currentPage - 1);
-    controls.appendChild(prevBtn);
-
-    const pages = buildPageNumbers(currentPage, totalPages);
-    pages.forEach(p => {
-        if (p === '...') {
-            const el = document.createElement('span');
-            el.className = 'page-ellipsis';
-            el.textContent = '…';
-            controls.appendChild(el);
-        } else {
-            const btn = document.createElement('button');
-            btn.className = 'page-btn' + (p === currentPage ? ' active' : '');
-            btn.textContent = p;
-            btn.onclick = () => goToPage(p);
-            controls.appendChild(btn);
-        }
-    });
-
-    const nextBtn = document.createElement('button');
-    nextBtn.className = 'page-btn';
-    nextBtn.textContent = '›';
-    nextBtn.disabled = currentPage === totalPages;
-    nextBtn.onclick = () => goToPage(currentPage + 1);
-    controls.appendChild(nextBtn);
-}
-
-function buildPageNumbers(current, total) {
-    const pages = [];
-    const add = (n) => { if (!pages.includes(n) && n >= 1 && n <= total) pages.push(n); };
-
-    add(1);
-    add(current - 1);
-    add(current);
-    add(current + 1);
-    add(total);
-
-    pages.sort((a, b) => a - b);
-
-    const result = [];
-    for (let i = 0; i < pages.length; i++) {
-        if (i > 0 && pages[i] - pages[i - 1] > 1) result.push('...');
-        result.push(pages[i]);
-    }
-    return result;
-}
-
-function goToPage(page) {
-    currentPage = page;
-    render();
-    document.querySelector('.table-container').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-// ==================== CRUD OPERATIONS ====================
-function openModal(id) {
-    document.getElementById(id).classList.add('show');
-    if(id === 'addModal') {
-        let now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        document.getElementById('txDate').value = now.toISOString().slice(0, 16);
-        document.getElementById('addForm').reset();
-        document.getElementById('attachmentPreview').style.display = 'none';
-        currentAttachmentData = null;
-        toggleCategoryField();
+function renderPagination(total) {
+    const pages = Math.ceil(total / PAGE_SIZE);
+    const container = document.getElementById('paginationControls');
+    container.innerHTML = '';
+    for(let i=1; i<=pages; i++) {
+        const btn = document.createElement('button');
+        btn.className = `page-btn ${i===currentPage?'active':''}`;
+        btn.innerText = i;
+        btn.onclick = () => { currentPage = i; render(); };
+        container.appendChild(btn);
     }
 }
 
-function closeModal(id) {
-    document.getElementById(id).classList.remove('show');
-}
-
-function toggleCategoryField() {
-    let type = document.querySelector('input[name="type"]:checked').value;
-    let group = document.getElementById('categoryGroup');
-    if(type === 'income') group.style.display = 'none';
-    else group.style.display = 'block';
-}
-
-function toggleEditCategoryField() {
-    let type = document.querySelector('input[name="editType"]:checked').value;
-    let group = document.getElementById('editCategoryGroup');
-    if(type === 'income') group.style.display = 'none';
-    else group.style.display = 'block';
-}
-
-function previewAttachment(input) {
-    let prev = document.getElementById('attachmentPreview');
-    if(input.files && input.files[0]) {
-        let r = new FileReader();
-        r.onload = function(e) {
-            prev.src = e.target.result;
-            prev.style.display = 'block';
-            currentAttachmentData = e.target.result;
-        };
-        r.readAsDataURL(input.files[0]);
-    }
-}
-
-function previewEditAttachment(input) {
-    let prev = document.getElementById('editAttachmentPreview');
-    if(input.files && input.files[0]) {
-        let r = new FileReader();
-        r.onload = function(e) {
-            prev.src = e.target.result;
-            prev.style.display = 'block';
-            currentAttachmentData = e.target.result;
-            document.getElementById('editAttachmentInfo').innerText = "Nota baru siap disimpan";
-        };
-        r.readAsDataURL(input.files[0]);
-    }
-}
-
+// ==================== CRUD & ACTIONS ====================
 async function handleSubmit(e) {
     e.preventDefault();
-    let type = document.querySelector('input[name="type"]:checked').value;
-    let date = document.getElementById('txDate').value;
-    let category = type === 'expense' ? document.getElementById('txCategory').value : 'Pemasukan';
-    let description = document.getElementById('txDesc').value.trim();
-    let amount = unRp(document.getElementById('txAmount').value);
-
-    if(type === 'expense' && !category) { alert('Harap pilih kategori!'); return; }
-    if(amount <= 0) { alert('Jumlah nominal harus lebih dari 0!'); return; }
-
-    let newTx = {
-        id: 'tx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-        type, date, category, description, amount,
-        attachment: currentAttachmentData
+    const type = document.querySelector('input[name="type"]:checked').value;
+    const tx = {
+        id: 'tx_' + Date.now() + Math.random().toString(36).substr(2,4),
+        type, date: document.getElementById('txDate').value,
+        category: type==='expense'?document.getElementById('txCategory').value:'Pemasukan',
+        description: document.getElementById('txDesc').value,
+        amount: unRp(document.getElementById('txAmount').value),
+        attachment: document.getElementById('attachmentPreview').src.startsWith('data') ? document.getElementById('attachmentPreview').src : null
     };
-
-    txs.unshift(newTx);
+    txs.unshift(tx);
+    saveLocal();
     closeModal('addModal');
-    saveTransactions();
-    showToast("Transaksi berhasil disimpan");
-
-    if(type === 'expense') {
-        checkBudgetWarningAfterSave(date, category);
-    }
-
-    await addCloudLog('TAMBAH', `Menambah item baru: "${description}" sebesar ${rp(amount)}`);
-    sendTelegramNotif(buildTxNotifMessage('TAMBAH', newTx, getCurrentBookName()));
-}
-
-function checkBudgetWarningAfterSave(date, category) {
-    let d = new Date(date);
-    let m = d.getMonth() + 1;
-    let y = d.getFullYear();
-    let key = `${y}-${m}`;
-    let currentBudget = budgets[key] || {};
-
-    let totalBulan = 0, totalKat = 0;
-    let totalTarget = 0;
-    EXPENSE_CATEGORIES.forEach(c => totalTarget += (currentBudget[c] || 0));
-
-    txs.forEach(t => {
-        if(t.type !== 'expense') return;
-        let td = new Date(t.date);
-        if((td.getMonth() + 1) == m && td.getFullYear() == y) {
-            totalBulan += (Number(t.amount) || 0);
-            if(t.category === category) totalKat += (Number(t.amount) || 0);
-        }
-    });
-
-    let monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-    let bookName = getCurrentBookName();
-
-    let katTarget = currentBudget[category] || 0;
-    if(katTarget > 0) {
-        let katPct = (totalKat / katTarget) * 100;
-        if(katPct >= 100) {
-            setTimeout(() => showToast(`🚨 Anggaran "${category}" HABIS! (${Math.round(katPct)}% terpakai)`, 'error'), 500);
-            sendTelegramNotif(
-                `🚨 <b>ANGGARAN HABIS!</b>\n\n📒 Buku: <b>${bookName}</b>\n📂 Kategori: <b>${category}</b>\n📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n💸 Terpakai: <b>${rp(totalKat)}</b> (${Math.round(katPct)}%)\n🎯 Target: ${rp(katTarget)}`
-            );
-            return;
-        } else if(katPct >= 80) {
-            setTimeout(() => showToast(`⚠️ Anggaran "${category}" hampir habis (${Math.round(katPct)}%)`, 'warning'), 500);
-            sendTelegramNotif(
-                `⚠️ <b>Anggaran Hampir Habis</b>\n\n📒 Buku: <b>${bookName}</b>\n📂 Kategori: <b>${category}</b>\n📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n💸 Terpakai: ${rp(totalKat)} (${Math.round(katPct)}%)\n🎯 Target: ${rp(katTarget)}`
-            );
-            return;
-        }
-    }
-
-    if(totalTarget > 0) {
-        let totalPct = (totalBulan / totalTarget) * 100;
-        if(totalPct >= 100) {
-            setTimeout(() => showToast(`🚨 Total anggaran bulanan HABIS! (${Math.round(totalPct)}% terpakai)`, 'error'), 500);
-            sendTelegramNotif(
-                `🚨 <b>TOTAL ANGGARAN BULANAN HABIS!</b>\n\n📒 Buku: <b>${bookName}</b>\n📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n💸 Total Pengeluaran: <b>${rp(totalBulan)}</b> (${Math.round(totalPct)}%)\n🎯 Total Anggaran: ${rp(totalTarget)}`
-            );
-        } else if(totalPct >= 80) {
-            setTimeout(() => showToast(`⚠️ Total anggaran bulanan hampir habis (${Math.round(totalPct)}%)`, 'warning'), 500);
-            sendTelegramNotif(
-                `⚠️ <b>Anggaran Bulanan Hampir Habis</b>\n\n📒 Buku: <b>${bookName}</b>\n📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n💸 Total Pengeluaran: ${rp(totalBulan)} (${Math.round(totalPct)}%)\n🎯 Total Anggaran: ${rp(totalTarget)}`
-            );
-        }
-    }
-}
-
-function openActionMenu(id) {
-    actionId = id;
-    openModal('actionMenuModal');
-    document.getElementById('actionEditBtn').onclick = () => { closeModal('actionMenuModal'); loadEditData(id); };
-    document.getElementById('actionDeleteBtn').onclick = () => { closeModal('actionMenuModal'); confirmDelete(id); };
-}
-
-function loadEditData(id) {
-    let t = txs.find(x => x.id === id);
-    if(!t) return;
-    
-    document.getElementById('editId').value = t.id;
-    if(t.type === 'income') {
-        document.getElementById('editTypeIncome').checked = true;
-    } else {
-        document.getElementById('editTypeExpense').checked = true;
-    }
-    toggleEditCategoryField();
-    
-    document.getElementById('editTxDate').value = t.date;
-    if(t.type === 'expense') document.getElementById('editTxCategory').value = t.category;
-    document.getElementById('editTxDesc').value = t.description;
-    document.getElementById('editTxAmount').value = Number(t.amount).toLocaleString('id-ID');
-    
-    let info = document.getElementById('editAttachmentInfo');
-    let prev = document.getElementById('editAttachmentPreview');
-    currentAttachmentData = t.attachment;
-    
-    if(t.attachment) {
-        info.innerText = "Sudah memiliki lampiran nota.";
-        prev.src = t.attachment;
-        prev.style.display = 'block';
-    } else {
-        info.innerText = "Belum ada lampiran.";
-        prev.style.display = 'none';
-    }
-    
-    openModal('editModal');
-}
-
-async function handleEditSubmit(e) {
-    e.preventDefault();
-    let id = document.getElementById('editId').value;
-    let idx = txs.findIndex(x => x.id === id);
-    if(idx === -1) return;
-
-    let type = document.querySelector('input[name="editType"]:checked').value;
-    let date = document.getElementById('editTxDate').value;
-    let category = type === 'expense' ? document.getElementById('editTxCategory').value : 'Pemasukan';
-    let description = document.getElementById('editTxDesc').value.trim();
-    let amount = unRp(document.getElementById('editTxAmount').value);
-
-    if(type === 'expense' && !category) { alert('Harap pilih kategori!'); return; }
-    if(amount <= 0) { alert('Nominal harus valid!'); return; }
-
-    txs[idx] = {
-        id, type, date, category, description, amount,
-        attachment: currentAttachmentData
-    };
-
-    closeModal('editModal');
-    saveTransactions();
-    showToast("Perubahan data disimpan");
-    await addCloudLog('UBAH', `Mengubah transaksi "${description}" menjadi senilai ${rp(amount)}`);
-    sendTelegramNotif(buildTxNotifMessage('UBAH', txs[idx], getCurrentBookName()));
-}
-
-async function confirmDelete(id) {
-    let t = txs.find(x => x.id === id);
-    if(!t) return;
-    if(confirm(`Apakah Anda yakin ingin menghapus transaksi "${t.description}"?`)) {
-        
-        if (getCloudUrl() && getSupabaseKey()) {
-            callSupabaseAPI('transactions', 'DELETE', null, `?id=eq.${id}`);
-        }
-        
-        txs = txs.filter(x => x.id !== id);
-        saveTransactions();
-        showToast("Transaksi dihapus", "warning");
-        await addCloudLog('HAPUS', `Menghapus transaksi "${t.description}" ber-ID: ${id}`);
-        sendTelegramNotif(buildTxNotifMessage('HAPUS', t, getCurrentBookName()));
-    }
-}
-
-function viewAttachment(id) {
-    let t = txs.find(x => x.id === id);
-    if(t && t.attachment) {
-        actionId = id;
-        document.getElementById('fullAttachmentImage').src = t.attachment;
-        openModal('viewAttachmentModal');
-    }
-}
-
-function downloadAttachment() {
-    let t = txs.find(x => x.id === actionId);
-    if(t && t.attachment) {
-        let a = document.createElement('a');
-        a.href = t.attachment;
-        a.download = 'nota-' + t.id + '.png';
-        a.click();
-    }
-}
-
-// ==================== FILTERS ====================
-function setFilter(f) {
-    currentPage = 1;
-    currentFilter = f;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.filter-btn').forEach(b => {
-        const btnText = b.innerText.trim().toLowerCase();
-        const match = (f === 'all' && btnText === 'semua') ||
-                      (f === 'income' && btnText === 'masuk') ||
-                      (f === 'expense' && btnText === 'keluar');
-        if(match) b.classList.add('active');
-    });
-    render();
-}
-
-function applyDateFilter() {
-    currentPage = 1;
-    filterStartDate = document.getElementById('dateFilterStart').value;
-    filterEndDate = document.getElementById('dateFilterEnd').value;
-    let btn = document.querySelector('.date-clear-btn');
-    if(filterStartDate || filterEndDate) btn.style.display = 'inline-block';
-    render();
-}
-
-function resetDateFilter() {
-    currentPage = 1;
-    document.getElementById('dateFilterStart').value = '';
-    document.getElementById('dateFilterEnd').value = '';
-    filterStartDate = ''; filterEndDate = '';
-    document.querySelector('.date-clear-btn').style.display = 'none';
-    render();
-}
-
-// ==================== BOOK MANAGEMENT ====================
-function openBookManager() {
-    openModal('bookManagerModal');
-    renderBookList();
-    document.getElementById('supabaseUrlInput').value = getCloudUrl();
-    document.getElementById('supabaseKeyInput').value = getSupabaseKey();
-    document.getElementById('connectionStatus').innerHTML = '';
-}
-
-async function openTelegramSettings() {
-    document.getElementById('tgTestStatus').innerHTML = '';
-    openModal('telegramSettingsModal');
-    loadTgConfigToForm();
-    if (getCloudUrl() && getSupabaseKey()) {
-        const allRows = await callSupabaseAPI('settings', 'GET', null, '?key=eq.telegram_config&order=updated_at.desc&limit=1');
-        if (allRows && Array.isArray(allRows) && allRows.length > 0) {
-            try {
-                const parsed = JSON.parse(allRows[0].value);
-                if (parsed.token) localStorage.setItem('sk_tg_token', parsed.token);
-                else localStorage.removeItem('sk_tg_token');
-                if (parsed.edgeUrl) localStorage.setItem('sk_tg_edge_url', parsed.edgeUrl);
-                else localStorage.removeItem('sk_tg_edge_url');
-                if (parsed.chatId) localStorage.setItem('sk_tg_chatid', parsed.chatId);
-                else localStorage.removeItem('sk_tg_chatid');
-            } catch(e) {}
-        }
-        loadTgConfigToForm();
-    }
-}
-
-function renderBookList() {
-    let container = document.getElementById('bookListContainer');
-    container.innerHTML = '';
-    books.forEach(b => {
-        let div = document.createElement('div');
-        div.className = 'book-list-item';
-        let isCurrent = b.id === currentBookId;
-        
-        let delBtn = books.length > 1 ? `<button class="btn-mini btn-mini-danger" onclick="deleteBook('${b.id}')">Hapus</button>` : '';
-        if(isCurrent) delBtn = '<span style="font-size:.65rem; color:#00875a; font-weight:bold;">✨ SEDANG AKTIF</span>';
-
-        div.innerHTML = `
-            <span class="book-list-name">${escapeHtml(b.name)}</span>
-            <div class="book-list-actions">
-                ${!isCurrent ? `<button class="btn-mini" onclick="switchBook('${b.id}')">Buka</button>` : ''}
-                ${delBtn}
-            </div>
-        `;
-        container.appendChild(div);
-    });
+    pushToCloud();
+    sendTg(`➕ <b>Transaksi Baru</b>\nBuku: ${currBookName()}\nKet: ${tx.description}\nNilai: ${rp(tx.amount)}`);
+    addLog('TAMBAH', `Input: ${tx.description}`);
 }
 
 async function addNewBook(e) {
     e.preventDefault();
-    let input = document.getElementById('newBookName');
-    let name = input.value.trim();
-    if(!name) return;
-
-    let id = 'b_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
-    const newBook = {id, name};
-    
-    books.push(newBook);
+    const name = document.getElementById('newBookName').value.trim();
+    if (!name) return;
+    const nb = { id: 'b_'+Date.now(), name };
+    books.push(nb);
     localStorage.setItem('sk_books', JSON.stringify(books));
-    input.value = '';
-    
-    await pushSettingBooks();
-    await new Promise(r => setTimeout(r, 500));
-    await pullAllSettings();
-    
-    renderBookList();
-    updateBookSelectDropdown();
-    showToast(`📚 Buku "${name}" berhasil dibuat dan tersinkron ke cloud`, 'success');
-    await addCloudLog('SISTEM', `Membuat buku kas baru: "${name}" dengan ID ${id}`);
-    
-    const cfg = getTgConfig();
-    if (cfg.active) {
-        sendTelegramNotif(`📚 <b>Buku Baru Dibuat</b>\n\nNama: ${name}\nID: ${id}\nDevice: ${deviceId}`);
-    }
+    await callSupabase('settings', 'POST', [{ book_id: 'global', key: 'books', value: JSON.stringify(books), updated_at: new Date().toISOString() }]);
+    document.getElementById('newBookName').value = '';
+    render();
 }
 
 function switchBook(id) {
-    if(!books.find(b => b.id === id)) return;
     currentBookId = id;
-    localStorage.setItem('sk_current_book_id', currentBookId);
-    budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
-    
-    updateBookSelectDropdown();
+    localStorage.setItem('sk_current_book_id', id);
     loadTransactions();
-    updateCloudIndicator();
-    
-    if(document.getElementById('bookManagerModal').classList.contains('show')) {
-        renderBookList();
-        document.getElementById('supabaseUrlInput').value = getCloudUrl();
-        document.getElementById('supabaseKeyInput').value = getSupabaseKey();
-        document.getElementById('connectionStatus').innerHTML = '';
-    }
-    
-    showToast("Berhasil beralih buku kas");
-    
-    if (getCloudUrl() && getSupabaseKey()) {
-        pullFromCloudSilently();
-    } else {
-        refreshLogsLocal();
-    }
+    syncTransactions().then(render);
 }
 
-async function deleteBook(id) {
-    if(id === currentBookId) { 
-        alert('Tidak bisa menghapus buku kas yang sedang dibuka! Silakan pindah ke buku lain terlebih dahulu.');
-        return; 
-    }
-    
-    let b = books.find(x => x.id === id);
-    if(!b) {
-        showToast('Buku sudah tidak ada (mungkin sudah dihapus device lain)', 'warning');
-        return;
-    }
-    
-    const confirm1 = confirm(`⚠️ Hapus permanen buku "${b.name}"?\n\nData yang dihapus:\n- Semua transaksi dalam buku ini\n- Anggaran bulanan\n- Log aktivitas\n\nData TIDAK BISA dikembalikan!`);
-    if (!confirm1) return;
-    
-    const confirm2 = prompt(`Ketik "HAPUS ${b.name}" untuk konfirmasi penghapusan buku ini:`);
-    if (confirm2 !== `HAPUS ${b.name}`) {
-        alert('Konfirmasi gagal. Penghapusan dibatalkan.');
-        return;
-    }
-    
-    const cfg = getTgConfig();
-    if (cfg.active) {
-        sendTelegramNotif(`⚠️ <b>Penghapusan Buku</b>\n\nBuku <b>${b.name}</b> akan dihapus oleh device ${deviceId}\n\nData akan dihapus dalam 3 detik...`);
-        await new Promise(r => setTimeout(r, 2000));
-    }
-    
-    if(globalSupabaseUrl && globalSupabaseKey) {
-        const prevBookId = currentBookId;
-        currentBookId = id;
-        try {
-            await pushBackupToSupabaseForBook(id, JSON.parse(localStorage.getItem('sk_txs_' + id) || '[]'), 'BACKUP_BEFORE_DELETE');
-            await callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${id}`);
-            await callSupabaseAPI('audit_logs', 'DELETE', null, `?book_id=eq.${id}`);
-            await callSupabaseAPI('settings', 'DELETE', null, `?book_id=eq.${id}`);
-            console.log(`Data cloud buku "${b.name}" berhasil dihapus.`);
-        } catch(e) {
-            console.error('Gagal hapus data cloud:', e);
-            showToast('Gagal menghapus data cloud, coba lagi', 'error');
-            currentBookId = prevBookId;
-            return;
-        }
-        currentBookId = prevBookId;
-    }
+// ==================== HELPERS ====================
+function rp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
+function unRp(s) { return Number(String(s).replace(/[^0-9]/g, '')) || 0; }
+function formatRupiah(el) { el.value = rp(unRp(el.value)).replace('Rp ', ''); }
+function fmtDate(s) { return new Date(s).toLocaleString('id-ID', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}); }
+function saveLocal() { localStorage.setItem('sk_txs_' + currentBookId, JSON.stringify(txs)); render(); }
+function loadTransactions() { txs = JSON.parse(localStorage.getItem('sk_txs_' + currentBookId) || '[]'); budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}'); }
+function currBookName() { return (books.find(b => b.id === currentBookId) || {}).name || ''; }
 
-    localStorage.removeItem('sk_txs_' + id);
-    localStorage.removeItem('sk_budgets_' + id);
-    localStorage.removeItem('sk_logs_' + id);
-    localStorage.removeItem('sk_manual_backups_' + id);
-    localStorage.removeItem('sk_last_auto_backup_' + id);
-    localStorage.removeItem('sk_last_cloud_backup_' + id);
-
-    books = books.filter(x => x.id !== id);
-    localStorage.setItem('sk_books', JSON.stringify(books));
-    
-    renderBookList();
-    updateBookSelectDropdown();
-    showToast(`Buku "${b.name}" & data cloud dihapus`, "warning");
-    await pushSettingBooks();
-    
-    if (cfg.active) {
-        sendTelegramNotif(`✅ <b>Buku Dihapus</b>\n\nBuku <b>${b.name}</b> telah dihapus permanen.\nDevice: ${deviceId}`);
-    }
+function updateCloudIndicator() {
+    const el = document.getElementById('syncStatusWrapper');
+    el.className = globalSupabaseUrl ? 'sync-status-container online' : 'sync-status-container offline';
+    document.getElementById('syncStatusTag').innerText = globalSupabaseUrl ? '☁️ SUPABASE ON' : '📴 CLOUD OFF';
 }
 
 function updateBookSelectDropdown() {
-    let sel = document.getElementById('currentBookSelect');
+    const sel = document.getElementById('currentBookSelect');
     sel.innerHTML = '';
     books.forEach(b => {
-        let opt = document.createElement('option');
+        const opt = document.createElement('option');
         opt.value = b.id; opt.innerText = b.name;
         if(b.id === currentBookId) opt.selected = true;
         sel.appendChild(opt);
     });
 }
 
-function updateCloudIndicator() {
-    let wrapper = document.getElementById('syncStatusWrapper');
-    let tag = document.getElementById('syncStatusTag');
-    if(getCloudUrl() && getSupabaseKey()) {
-        wrapper.className = "sync-status-container online";
-        tag.innerText = "☁️ SUPABASE ON";
-    } else {
-        wrapper.className = "sync-status-container offline";
-        tag.innerText = "📴 CLOUD OFF";
-    }
+function showToast(msg) {
+    const t = document.getElementById('toastMessage');
+    document.getElementById('toastText').innerText = msg;
+    t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ==================== TEST CLOUD CONNECTION ====================
-async function testCloudConnection() {
-    let urlInput = document.getElementById('supabaseUrlInput').value.trim();
-    let keyInput = document.getElementById('supabaseKeyInput').value.trim();
-    let statusDiv = document.getElementById('connectionStatus');
-
-    if(!urlInput || !keyInput) {
-        statusDiv.innerHTML = '<div class="connection-status error">Gagal: Harap isi URL & Anon Key!</div>';
-        return;
-    }
-
-    statusDiv.innerHTML = '<div class="connection-status testing">Sedang mengetes koneksi ke Supabase...</div>';
-
-    globalSupabaseUrl = urlInput;
-    globalSupabaseKey = keyInput;
-
-    const testFetch = await callSupabaseAPI('transactions', 'GET', null, '?limit=1');
-    
-    if (testFetch !== null) {
-        await reEncryptCredentials(globalSupabaseUrl, globalSupabaseKey);
-        localStorage.removeItem('sk_supabase_url_global');
-        localStorage.removeItem('sk_supabase_key_global');
-        statusDiv.innerHTML = '<div class="connection-status success">Sukses! Koneksi terenkripsi & berlaku untuk semua buku. Memulai unduh data...</div>';
-        showToast("Supabase terhubung & terenkripsi!", "success");
-        updateCloudIndicator();
-        await pullAllSettings();
-        updateBookSelectDropdown();
-        budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
-        updateTgStatusBadge();
-        await pullAllBooksFromCloud();
-    } else {
-        globalSupabaseUrl = '';
-        globalSupabaseKey = '';
-        statusDiv.innerHTML = '<div class="connection-status error">Koneksi Gagal: Silakan periksa URL, Key, atau Skema Tabel SQL Anda!</div>';
-        showToast("Koneksi cloud gagal!", "error");
-        updateCloudIndicator();
-    }
-}
-
-// ==================== EXPORT & IMPORT ====================
-function exportToCSV() {
-    if(txs.length === 0) { alert('Tidak ada data untuk diekspor!'); return; }
-    let csv = 'No,Tanggal,Kategori,Deskripsi,Pemasukan,Pengeluaran\n';
-    txs.forEach((t, i) => {
-        let inc = t.type === 'income' ? t.amount : 0;
-        let exp = t.type === 'expense' ? t.amount : 0;
-        let desc = (t.description || '').replace(/"/g, '""');
-        csv += `${i+1},"${t.date}","${t.category}","${desc}",${inc},${exp}\n`;
+// ==================== BUDGET & REPORTS ====================
+function renderBudget() {
+    const m = document.getElementById('budgetMonth').value;
+    const y = document.getElementById('budgetYear').value;
+    const b = budgets[`${y}-${m}`] || {};
+    const target = Object.values(b).reduce((a,b)=>a+b, 0);
+    let act = 0;
+    txs.forEach(t => {
+        const d = new Date(t.date);
+        if (t.type==='expense' && (d.getMonth()+1) == m && d.getFullYear() == y) act += t.amount;
     });
-    let blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-    let a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `Sinarkeu-Export-${currentBookId}.csv`;
-    a.click();
+    document.getElementById('budgetTargetDisplay').innerText = rp(target);
+    document.getElementById('budgetActualDisplay').innerText = rp(act);
+    document.getElementById('budgetRemainingDisplay').innerText = rp(target - act);
+    const pct = target > 0 ? Math.min((act/target)*100, 100) : 0;
+    document.getElementById('budgetProgressFill').style.width = pct+'%';
+    document.getElementById('budgetProgressPct').innerText = Math.round(pct)+'%';
 }
 
-function exportToJSON() {
-    if(txs.length === 0) { alert('Tidak ada data!'); return; }
-    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(txs, null, 2));
-    let dlAnchorElem = document.createElement('a');
-    dlAnchorElem.setAttribute("href", dataStr);
-    dlAnchorElem.setAttribute("download", `Sinarkeu-Backup-${currentBookId}.json`);
-    dlAnchorElem.click();
-}
-
-async function archiveAndClearData() {
-    if (txs.length === 0) {
-        alert('Tidak ada data transaksi untuk diarsipkan!');
-        return;
-    }
-
-    const st = document.getElementById('archiveStatus');
-    
-    const confirm1 = confirm(`⚠️ PERINGATAN PENTING ⚠️\n\nAnda akan mengarsipkan ${txs.length} transaksi ke file JSON, lalu menghapus SEMUA data buku ini dari Supabase dan lokal.\n\n⚠️ TINDAKAN INI TIDAK DAPAT DIBATALKAN!\n\nKlik OK untuk melanjutkan ke konfirmasi kedua.`);
-    if (!confirm1) return;
-    
-    const bookName = getCurrentBookName();
-    const userInput = prompt(`Ketik nama buku "${bookName}" untuk konfirmasi penghapusan permanen:\n\n(pengetikan harus persis sama)`);
-    if (userInput !== bookName) {
-        alert('Nama buku tidak cocok. Penghapusan dibatalkan.');
-        return;
-    }
-    
-    const confirm3 = confirm(`💀 KONFIRMASI FINAL 💀\n\nApakah Anda SANGAT YAKIN ingin menghapus SEMUA data buku "${bookName}" secara permanen?\n\nData yang dihapus TIDAK BISA dikembalikan!\n\nKlik OK untuk menghapus permanen.`);
-    if (!confirm3) return;
-    
-    const cfg = getTgConfig();
-    if (cfg.active) {
-        sendTelegramNotif(`⚠️ <b>PERINGATAN!</b>\n\nPengguna dari device <code>${deviceId}</code> akan menghapus SEMUA data buku <b>${bookName}</b>\n\nWaktu: ${new Date().toLocaleString('id-ID')}\n\nData akan dihapus dalam 5 detik...`);
-        await new Promise(r => setTimeout(r, 2000));
-    }
-    
-    st.style.display = 'block';
-    st.style.background = '#fff3e0'; st.style.color = '#cc7b00';
-    st.innerText = '⏳ Mengekspor data ke JSON...';
-
-    const fileName = `Sinarkeu-Arsip-${currentBookId}-${new Date().toISOString().slice(0,10)}.json`;
-    const dataStr  = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(txs, null, 2));
-    const a = document.createElement('a');
-    a.setAttribute("href", dataStr);
-    a.setAttribute("download", fileName);
-    a.click();
-
-    await new Promise(r => setTimeout(r, 1000));
-
-    st.innerText = '⏳ Menghapus data dari Supabase...';
-    
-    if (getCloudUrl() && getSupabaseKey()) {
-        await pushBackupToSupabase('FINAL_BACKUP_BEFORE_DELETE');
-        await callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${currentBookId}`);
-        await callSupabaseAPI('audit_logs',   'DELETE', null, `?book_id=eq.${currentBookId}`);
-    }
-
-    txs = [];
-    localStorage.removeItem('sk_txs_'              + currentBookId);
-    localStorage.removeItem('sk_logs_'             + currentBookId);
-    localStorage.removeItem('sk_manual_backups_'   + currentBookId);
-    localStorage.removeItem('sk_last_auto_backup_' + currentBookId);
-    localStorage.removeItem('sk_budgets_'          + currentBookId);
-    budgets = {};
-
-    render();
-
-    st.style.background = '#e3fcef'; st.style.color = '#006644';
-    st.innerText = `✅ Selesai! ${fileName} tersimpan & database telah dikosongkan. Backup final telah disimpan ke cloud.`;
-    showToast('Database berhasil dikosongkan', 'success');
-    
-    if (cfg.active) {
-        sendTelegramNotif(`✅ <b>EKSEKUSI SELESAI</b>\n\nData buku <b>${bookName}</b> telah dihapus permanen.\n\nArsip tersimpan di: ${fileName}\nDevice: ${deviceId}`);
-    }
-    
-    setTimeout(() => { st.style.display = 'none'; }, 5000);
-}
-
-function triggerJsonImport() { document.getElementById('jsonFileInput').click(); }
-function handleJsonImport(e) {
-    let file = e.target.files[0];
-    if(!file) return;
-    let r = new FileReader();
-    r.onload = function(evt) {
-        try {
-            let imported = JSON.parse(evt.target.result);
-            if(Array.isArray(imported)) {
-                const existingIds = new Set(txs.map(t => t.id));
-                const newTxs = imported.filter(t => !existingIds.has(t.id));
-                const duplicates = imported.length - newTxs.length;
-                
-                let message = `Impor ${imported.length} transaksi.`;
-                if (duplicates > 0) {
-                    message += `\n⚠️ ${duplicates} transaksi duplikat (ID sama) akan dilewati.`;
-                }
-                message += `\n\n${newTxs.length} transaksi baru akan ditambahkan. Lanjutkan?`;
-                
-                if (confirm(message)) {
-                    txs = [...txs, ...newTxs];
-                    const uniqueTxs = [];
-                    const seenIds = new Set();
-                    for (const tx of txs) {
-                        if (!seenIds.has(tx.id)) {
-                            seenIds.add(tx.id);
-                            uniqueTxs.push(tx);
-                        }
-                    }
-                    txs = uniqueTxs;
-                    saveTransactions();
-                    showToast(`✅ ${newTxs.length} transaksi berhasil diimpor!`, 'success');
-                    addCloudLog('IMPORT', `Import ${newTxs.length} transaksi dari JSON`);
-                }
-            } else { 
-                alert('Format berkas JSON cadangan tidak valid!'); 
-            }
-        } catch(err) { 
-            alert('Gagal membaca berkas JSON!'); 
-        }
-    };
-    r.readAsText(file);
-}
-
-// ==================== BACKUP ====================
-function openBackupManager() {
-    openModal('backupModal');
-    renderBackupList();
-    loadCloudBackupList();
-}
-
-function renderBackupList() {
-    let info = document.getElementById('lastBackupInfo');
-    let container = document.getElementById('backupListContainer');
-    
-    let lastLocal = localStorage.getItem('sk_last_auto_backup_' + currentBookId);
-    let lastCloud = localStorage.getItem('sk_last_cloud_backup_' + currentBookId);
-    let infoText = 'Lokal: ' + (lastLocal ? formatDateTime(lastLocal) : 'Belum ada');
-    infoText += ' | Cloud: ' + (lastCloud ? formatDateTime(lastCloud) : 'Belum ada');
-    info.innerText = infoText;
-    
-    let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + currentBookId) || '[]');
-    container.innerHTML = '';
-    
-    if(localBackups.length === 0) {
-        container.innerHTML = '<div style="color:#888; font-size:.7rem; text-align:center;">Tidak ada cadangan manual internal</div>';
-        return;
-    }
-    
-    localBackups.forEach((b, i) => {
-        let div = document.createElement('div');
-        div.style = 'display:flex; justify-content:space-between; align-items:center; font-size:.7rem; padding:6px 0; border-bottom:1px solid #eee;';
-        div.innerHTML = `
-            <span>📦 ${escapeHtml(formatDateTime(b.timestamp))} (${escapeHtml(String(b.count))} Txs)</span>
-            <div>
-                <button class="btn-mini" onclick="restoreFromIndex(${i})">Restore</button>
-                <button class="btn-mini btn-mini-danger" onclick="deleteBackupIndex(${i})">X</button>
-            </div>
-        `;
-        container.appendChild(div);
-    });
-}
-
-function createBackup() {
-    let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + currentBookId) || '[]');
-    localBackups.unshift({
-        timestamp: new Date().toISOString(),
-        count: txs.length,
-        data: txs
-    });
-    if(localBackups.length > 5) localBackups.pop();
-    localStorage.setItem('sk_manual_backups_' + currentBookId, JSON.stringify(localBackups));
-    localStorage.setItem('sk_last_auto_backup_' + currentBookId, new Date().toISOString());
-    renderBackupList();
-    showToast("Snapshot cadangan berhasil dibuat");
-}
-
-function restoreFromIndex(i) {
-    let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + currentBookId) || '[]');
-    if(localBackups[i] && confirm("Pulihkan data dari snapshot cadangan ini? Data saat ini akan diganti.")) {
-        txs = localBackups[i].data;
-        saveTransactions();
-        closeModal('backupModal');
-        showToast("Data berhasil dipulihkan");
-    }
-}
-
-function deleteBackupIndex(i) {
-    let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + currentBookId) || '[]');
-    localBackups.splice(i, 1);
-    localStorage.setItem('sk_manual_backups_' + currentBookId, JSON.stringify(localBackups));
-    renderBackupList();
-    showToast("Snapshot cadangan dihapus", "warning");
-}
-
-function restoreFromBackup() {
-    let backups = JSON.parse(localStorage.getItem('sk_manual_backups_' + currentBookId) || '[]');
-    if(backups.length === 0) { alert('Tidak ditemukan snapshot cadangan. Buat backup manual terlebih dahulu.'); return; }
-    openBackupManager();
-    showToast('Pilih snapshot yang ingin di-restore dari daftar di bawah.');
-}
-
-async function checkAndRunDailyAutoBackup() {
-    if (!getCloudUrl() || !getSupabaseKey()) return;
-
-    const tableOk = await checkBackupsTableExists();
-    if (!tableOk) {
-        console.warn('[AutoBackup] Tabel backups belum ada di Supabase');
-        return;
-    }
-
-    let now = new Date();
-    let backedUpBooks = 0;
-
-    for (const book of books) {
-        let lastKey = 'sk_last_cloud_backup_' + book.id;
-        let last = localStorage.getItem(lastKey);
-        if (last) {
-            let sameDay = new Date(last).toDateString() === now.toDateString();
-            if (sameDay) continue;
-        }
-
-        const bookTxs = JSON.parse(localStorage.getItem('sk_txs_' + book.id) || '[]');
-        const result = await pushBackupToSupabaseForBook(book.id, bookTxs, 'AUTO');
-        if (result) {
-            localStorage.setItem(lastKey, now.toISOString());
-            backedUpBooks++;
-        }
-    }
-
-    if (backedUpBooks > 0) {
-        await addCloudLog('BACKUP', 'Autobackup harian: ' + backedUpBooks + ' buku');
-        renderBackupList();
-    }
-}
-
-async function createCloudBackup() {
-    if (!getCloudUrl() || !getSupabaseKey()) {
-        showToast('Hubungkan Supabase terlebih dahulu!', 'error');
-        return;
-    }
-    const tableOk = await checkBackupsTableExists();
-    if (!tableOk) {
-        showToast('❌ Tabel backups belum dibuat di Supabase!', 'error');
-        return;
-    }
-    showToast('Menyimpan cadangan ke cloud...', 'info');
-    let result = await pushBackupToSupabase('MANUAL');
-    if (result) {
-        let lastKey = 'sk_last_cloud_backup_' + currentBookId;
-        localStorage.setItem(lastKey, new Date().toISOString());
-        showToast('☁️ Cadangan cloud berhasil disimpan!', 'success');
-        await addCloudLog('BACKUP', 'Backup manual cloud: ' + txs.length + ' transaksi');
-        loadCloudBackupList();
-    } else {
-        showToast('Gagal menyimpan cadangan ke cloud!', 'error');
-    }
-}
-
-async function checkBackupsTableExists() {
-    const baseUrl = getCloudUrl();
-    const apiKey = getSupabaseKey();
-    if (!baseUrl || !apiKey) return false;
-    try {
-        const res = await fetch(`${baseUrl}/rest/v1/backups?limit=1`, {
-            headers: { 'apikey': apiKey, 'Authorization': `Bearer ${apiKey}` }
-        });
-        return res.ok;
-    } catch(e) {
-        return false;
-    }
-}
-
-async function pushBackupToSupabaseForBook(bookId, bookTxs, backupType) {
-    const baseUrl = getCloudUrl();
-    const apiKey = getSupabaseKey();
-    const payload = [{
-        book_id: bookId,
-        device_id: deviceId,
-        backup_type: backupType,
-        tx_count: bookTxs.length,
-        data: JSON.stringify(bookTxs),
-        created_at: new Date().toISOString()
-    }];
-    try {
-        const res = await fetch(`${baseUrl}/rest/v1/backups`, {
-            method: 'POST',
-            headers: {
-                'apikey': apiKey,
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'return=representation'
-            },
-            body: JSON.stringify(payload)
-        });
-        if (!res.ok) { console.error('[CloudBackup] Error:', await res.text()); return null; }
-        return await res.json();
-    } catch(e) {
-        console.error('[CloudBackup] Exception:', e);
-        return null;
-    }
-}
-
-async function pushBackupToSupabase(backupType) {
-    return await pushBackupToSupabaseForBook(currentBookId, txs, backupType);
-}
-
-async function loadCloudBackupList() {
-    let container = document.getElementById('cloudBackupListContainer');
-    if (!container) return;
-
-    if (!getCloudUrl() || !getSupabaseKey()) {
-        container.innerHTML = '<div style="color:#888; font-size:.7rem; text-align:center; padding:8px;">Supabase belum terhubung</div>';
-        return;
-    }
-
-    try {
-        const baseUrl = getCloudUrl();
-        const apiKey = getSupabaseKey();
-        const res = await fetch(`${baseUrl}/rest/v1/backups?book_id=eq.${currentBookId}&order=created_at.desc&limit=10`, {
-            headers: { 'apikey': apiKey, 'Authorization': `Bearer ${apiKey}` }
-        });
-        if (!res.ok) throw new Error(await res.text());
-        const backups = await res.json();
-        renderCloudBackupList(backups);
-    } catch(e) {
-        container.innerHTML = '<div style="color:#bf2600; font-size:.7rem; text-align:center; padding:8px;">Gagal memuat — pastikan tabel <b>backups</b> sudah dibuat di Supabase</div>';
-    }
-}
-
-function renderCloudBackupList(backups) {
-    let container = document.getElementById('cloudBackupListContainer');
-    if (!container) return;
-
-    if (!backups || backups.length === 0) {
-        container.innerHTML = '<div style="color:#888; font-size:.7rem; text-align:center; padding:8px;">Belum ada cadangan cloud</div>';
-        return;
-    }
-
-    container.innerHTML = '';
-    backups.forEach((b, i) => {
-        let typeBadge = b.backup_type === 'AUTO'
-            ? '<span style="background:#e3fcef;color:#006644;padding:1px 6px;border-radius:8px;font-size:.6rem;font-weight:700;">AUTO</span>'
-            : '<span style="background:#e8f0fe;color:#1a56db;padding:1px 6px;border-radius:8px;font-size:.6rem;font-weight:700;">MANUAL</span>';
-        let div = document.createElement('div');
-        div.style = 'display:flex; justify-content:space-between; align-items:center; font-size:.7rem; padding:7px 0; border-bottom:1px solid #eee;';
-        div.innerHTML = `
-            <span>☁️ ${escapeHtml(formatDateTime(b.created_at))} ${typeBadge} (${escapeHtml(String(b.tx_count))} Txs)</span>
-            <button class="btn-mini" onclick="restoreFromCloudBackup('${b.id}', ${i})">Restore</button>
-        `;
-        container.appendChild(div);
-    });
-}
-
-async function restoreFromCloudBackup(backupId, idx) {
-    if (!confirm('Pulihkan data dari cadangan cloud ini? Data saat ini akan diganti.')) return;
-    
-    const baseUrl = getCloudUrl();
-    const apiKey = getSupabaseKey();
-    try {
-        const res = await fetch(`${baseUrl}/rest/v1/backups?id=eq.${backupId}&book_id=eq.${currentBookId}`, {
-            headers: { 'apikey': apiKey, 'Authorization': `Bearer ${apiKey}` }
-        });
-        const rows = await res.json();
-        if (!rows || rows.length === 0) { showToast('Data backup tidak ditemukan', 'error'); return; }
-        txs = JSON.parse(rows[0].data);
-        saveTransactions();
-        closeModal('backupModal');
-        showToast('✅ Data berhasil dipulihkan dari cloud!', 'success');
-        await addCloudLog('RESTORE', 'Restore dari cloud backup id: ' + backupId);
-    } catch(e) {
-        showToast('Gagal memulihkan data dari cloud', 'error');
-    }
-}
-
-// ==================== BUDGET ====================
 function openBudgetModal() {
-    let m = document.getElementById('budgetMonth').value;
-    let y = document.getElementById('budgetYear').value;
-    
-    let modalMonth = document.getElementById('budgetModalMonth');
-    modalMonth.innerHTML = document.getElementById('budgetMonth').innerHTML;
-    modalMonth.value = m;
-    
-    document.getElementById('budgetModalYear').value = y;
-    
-    renderBudgetFormFields();
+    const m = document.getElementById('budgetMonth').value, y = document.getElementById('budgetYear').value;
+    const b = budgets[`${y}-${m}`] || {};
+    const cont = document.getElementById('budgetCategoriesContainer');
+    cont.innerHTML = '';
+    EXPENSE_CATEGORIES.forEach(c => {
+        cont.innerHTML += `<div class="budget-cat-row"><span>${c}</span><input type="text" class="form-control b-inp" data-cat="${c}" value="${rp(b[c]||0).replace('Rp ','')}" oninput="formatRupiah(this)"></div>`;
+    });
     openModal('budgetModal');
 }
 
-function renderBudgetFormFields() {
-    let container = document.getElementById('budgetCategoriesContainer');
-    container.innerHTML = '';
-    
-    let m = document.getElementById('budgetModalMonth').value;
-    let y = document.getElementById('budgetModalYear').value;
-    let key = `${y}-${m}`;
-    let currentBudget = budgets[key] || {};
-    
-    EXPENSE_CATEGORIES.forEach(cat => {
-        let val = currentBudget[cat] || 0;
-        let div = document.createElement('div');
-        div.className = 'budget-cat-row';
-        div.innerHTML = `
-            <span class="budget-cat-label">${escapeHtml(cat)}</span>
-            <input type="text" class="form-control budget-input-field" data-cat="${escapeHtml(cat)}" value="${val ? Number(val).toLocaleString('id-ID') : ''}" oninput="formatRupiah(this); updateBudgetSummary();" placeholder="Rp 0">
-        `;
-        container.appendChild(div);
-    });
-    updateBudgetSummary();
-}
-
-function updateBudgetSummary() {
-    let inputs = document.querySelectorAll('.budget-input-field');
-    let total = 0;
-    inputs.forEach(input => { total += unRp(input.value); });
-    document.getElementById('budgetSummary').innerText = 'Total Rencana Anggaran Pengeluaran: ' + rp(total);
-}
-
-function saveBudget() {
-    let m = document.getElementById('budgetModalMonth').value;
-    let y = document.getElementById('budgetModalYear').value;
-    let key = `${y}-${m}`;
-    
-    if(!budgets[key]) budgets[key] = {};
-    
-    let inputs = document.querySelectorAll('.budget-input-field');
-    let invalidCategories = [];
-    
-    inputs.forEach(input => {
-        let cat = input.getAttribute('data-cat');
-        if (EXPENSE_CATEGORIES.includes(cat)) {
-            budgets[key][cat] = unRp(input.value);
-        } else {
-            invalidCategories.push(cat);
-        }
-    });
-    
-    Object.keys(budgets[key]).forEach(cat => {
-        if (!EXPENSE_CATEGORIES.includes(cat)) {
-            delete budgets[key][cat];
-            invalidCategories.push(cat);
-        }
-    });
-    
-    if (invalidCategories.length > 0) {
-        showToast(`⚠️ ${invalidCategories.length} kategori tidak valid telah dihapus`, 'warning');
-    }
-    
+async function saveBudget() {
+    const m = document.getElementById('budgetMonth').value, y = document.getElementById('budgetYear').value;
+    const key = `${y}-${m}`; if(!budgets[key]) budgets[key] = {};
+    document.querySelectorAll('.b-inp').forEach(i => budgets[key][i.dataset.cat] = unRp(i.value));
     localStorage.setItem('sk_budgets_' + currentBookId, JSON.stringify(budgets));
-    closeModal('budgetModal');
-    renderBudget();
-    showToast("Anggaran bulanan berhasil diperbarui", "success");
-    pushSettingBudgets();
+    await callSupabase('settings', 'POST', [{ book_id: currentBookId, key: 'budgets', value: JSON.stringify(budgets), updated_at: new Date().toISOString() }]);
+    closeModal('budgetModal'); renderBudget();
 }
 
-function renderBudget() {
-    let m = document.getElementById('budgetMonth').value;
-    let y = document.getElementById('budgetYear').value;
-    let key = `${y}-${m}`;
-    
-    let currentBudget = budgets[key] || {};
-    let totalTarget = 0;
-    EXPENSE_CATEGORIES.forEach(cat => { totalTarget += (currentBudget[cat] || 0); });
-    
-    let totalActual = 0;
-    txs.forEach(t => {
-        if(t.type === 'expense') {
-            let d = new Date(t.date);
-            if((d.getMonth() + 1) == m && d.getFullYear() == y) {
-                totalActual += (Number(t.amount) || 0);
-            }
-        }
+// ==================== AUDIT & REALTIME ====================
+async function addLog(action, details) {
+    const log = [{ book_id: currentBookId, device_id: deviceId, action, details, timestamp: new Date().toISOString() }];
+    await callSupabase('audit_logs', 'POST', log);
+}
+
+async function refreshLogsFromCloud() {
+    const logs = await callSupabase('audit_logs', 'GET', null, `?book_id=eq.${currentBookId}&order=timestamp.desc&limit=20`);
+    const cont = document.getElementById('logSummaryArea');
+    cont.innerHTML = '';
+    if(logs) logs.forEach(l => {
+        cont.innerHTML += `<div class="log-line"><span class="log-tag tag-system">${l.action}</span> [${new Date(l.timestamp).toLocaleTimeString()}] ${l.details}</div>`;
     });
-    
-    document.getElementById('budgetTargetDisplay').innerText = rp(totalTarget);
-    document.getElementById('budgetActualDisplay').innerText = rp(totalActual);
-    
-    let remaining = totalTarget - totalActual;
-    let remEl = document.getElementById('budgetRemainingDisplay');
-    remEl.innerText = rp(remaining);
-    
-    if(remaining >= 0) { remEl.className = "budget-mini-value positive"; }
-    else { remEl.className = "budget-mini-value negative"; }
-    
-    let pct = 0;
-    if(totalTarget > 0) { pct = Math.min((totalActual / totalTarget) * 100, 100); }
-    else if(totalActual > 0) { pct = 100; }
-    
-    let fill = document.getElementById('budgetProgressFill');
-    fill.style.width = pct + '%';
-    let fill2 = document.getElementById('budgetProgressFill2');
-    if(fill2) fill2.style.width = pct + '%';
-    
-    let pctEl = document.getElementById('budgetProgressPct');
-    pctEl.innerText = Math.round(pct) + '%';
-    let pctEl2 = document.getElementById('budgetProgressPct2');
-    if(pctEl2) pctEl2.innerText = Math.round(pct) + '%';
-    
-    if(pct >= 100 && totalTarget > 0) {
-        fill.className = "budget-mini-progress-fill danger";
-        if(fill2) fill2.className = "budget-mini-progress-fill danger";
-        pctEl.style.color = '#de350b';
-        if(pctEl2) pctEl2.style.color = '#de350b';
-    } else if(pct >= 80) {
-        fill.className = "budget-mini-progress-fill warning";
-        if(fill2) fill2.className = "budget-mini-progress-fill warning";
-        pctEl.style.color = '#cc7b00';
-        if(pctEl2) pctEl2.style.color = '#cc7b00';
-    } else {
-        fill.className = "budget-mini-progress-fill";
-        if(fill2) fill2.className = "budget-mini-progress-fill";
-        pctEl.style.color = '#00875a';
-        if(pctEl2) pctEl2.style.color = '#00875a';
-    }
 }
 
-// ==================== REPORT ====================
-function openMonthlyReport() {
-    let m = document.getElementById('budgetMonth').value;
-    let y = document.getElementById('budgetYear').value;
-    document.getElementById('reportMonth').value = m;
-    document.getElementById('reportYear').value = y;
-    openModal('monthlyReportModal');
-    generateMonthlyReport();
+function startRealtime() {
+    const client = supabase.createClient(globalSupabaseUrl, globalSupabaseKey);
+    client.channel('any').on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+        if (payload.table === 'transactions') syncTransactions().then(render);
+        if (payload.table === 'settings') pullAllSettings().then(render);
+    }).subscribe();
 }
 
-function generateMonthlyReport() {
-    let m = parseInt(document.getElementById('reportMonth').value);
-    let y = parseInt(document.getElementById('reportYear').value);
-    let key = `${y}-${m}`;
-    
-    let monthsText = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    document.getElementById('reportModalTitle').innerText = `📊 Laporan Bulanan - ${monthsText[m-1]} ${y}`;
-    
-    let budgetMap = budgets[key] || {};
-    let actualMap = {};
-    EXPENSE_CATEGORIES.forEach(c => actualMap[c] = 0);
-    
-    let totalInc = 0, totalExp = 0;
-    
-    txs.forEach(t => {
-        let d = new Date(t.date);
-        if((d.getMonth() + 1) === m && d.getFullYear() === y) {
-            let amt = Number(t.amount) || 0;
-            if(t.type === 'income') {
-                totalInc += amt;
-            } else {
-                totalExp += amt;
-                if(actualMap[t.category] !== undefined) actualMap[t.category] += amt;
-                else actualMap['Lain-lain'] += amt;
-            }
-        }
-    });
-    
-    let html = `
-        <div class="report-stats">
-            <div class="report-stat-card"><div class="report-stat-label">Pemasukan Bulanan</div><div class="report-stat-value" style="color:#00875a">${rp(totalInc)}</div></div>
-            <div class="report-stat-card"><div class="report-stat-label">Pengeluaran Bulanan</div><div class="report-stat-value" style="color:#de350b">${rp(totalExp)}</div></div>
-            <div class="report-stat-card"><div class="report-stat-label">Selisih Kas Bulanan</div><div class="report-stat-value">${rp(totalInc - totalExp)}</div></div>
-        </div>
-        <div class="chart-container"><canvas id="reportChartCanvas"></canvas></div>
-        <div class="report-table-wrap">
-        <table class="report-table">
-            <thead><tr><th>Kategori Pengeluaran</th><th>Target Anggaran</th><th>Realisasi</th><th>Sisa / Lebih</th><th>Persentase</th></tr></thead>
-            <tbody>
-    `;
-    
-    let chartLabels = [];
-    let chartTargetData = [];
-    let chartActualData = [];
-    
-    EXPENSE_CATEGORIES.forEach(cat => {
-        let tar = budgetMap[cat] || 0;
-        let act = actualMap[cat] || 0;
-        let diff = tar - act;
-        let pct = tar > 0 ? ((act / tar) * 100).toFixed(0) + '%' : (act > 0 ? '100%' : '0%');
-        
-        let diffStyle = diff >= 0 ? 'color:#00875a' : 'color:#de350b';
-        
-        if(tar > 0 || act > 0) {
-            const shortLabel = {
-                'Makanan & Minuman': 'Makanan',
-                'Transportasi': 'Transport',
-                'Belanja & Pakaian': 'Belanja',
-                'Tagihan': 'Tagihan',
-                'Hiburan': 'Hiburan',
-                'Kesehatan': 'Kesehatan',
-                'Pendidikan': 'Pendidikan',
-                'Cicilan & Hutang': 'Cicilan',
-                'Investasi': 'Investasi',
-                'Lain-lain': 'Lain-lain'
-            };
-            chartLabels.push(shortLabel[cat] || cat);
-            chartTargetData.push(tar);
-            chartActualData.push(act);
-        }
-        
-        html += `
-            <tr>
-                <td>${escapeHtml(cat)}</td>
-                <td>${rp(tar)}</td>
-                <td>${rp(act)}</td>
-                <td style="${diffStyle}">${rp(diff)}</td>
-                <td>${pct}</td>
-            </tr>
-        `;
-    });
-    
-    html += `</tbody></table></div>`;
-    document.getElementById('reportContent').innerHTML = html;
-    
-    if(chartLabels.length === 0) {
-        chartLabels = ['Belum ada Anggaran']; chartTargetData = [0]; chartActualData = [0];
-    }
-    
-    setTimeout(() => {
-        let ctx = document.getElementById('reportChartCanvas').getContext('2d');
-        if(reportChart) reportChart.destroy();
-        reportChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: chartLabels,
-                datasets: [
-                    { label: 'Target Anggaran', data: chartTargetData, backgroundColor: '#4a5568' },
-                    { label: 'Realisasi Aktual', data: chartActualData, backgroundColor: '#de350b' }
-                ]
-            },
-            options: { responsive: true, scales: { y: { beginAtZero: true } } }
-        });
-    }, 100);
-}
-
-function exportReportAsPDF() {
-    let element = document.getElementById('reportContent');
-    let titleText = document.getElementById('reportModalTitle').innerText;
-    let opt = {
-        margin: 10,
-        filename: titleText + '.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    html2pdf().set(opt).from(element).save();
-}
-
-function generatePDFReport() {
-    let element = document.querySelector('.table-container');
-    let opt = {
-        margin: 10,
-        filename: 'Sinarkeu-Daftar-Transaksi-' + currentBookId + '.pdf',
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-    };
-    html2pdf().set(opt).from(element).save();
-}
-
-// ==================== AUTO SYNC ====================
-function startAutoSync() {
-    if (_autoSyncInterval) clearInterval(_autoSyncInterval);
-    const INTERVAL_MS = 15 * 1000;
-
-    _autoSyncInterval = setInterval(async () => {
-        if (!getCloudUrl() || !getSupabaseKey()) return;
-
-        const prevBooksCount = books.length;
-        await pullAllSettings();
-        
-        if (books.length !== prevBooksCount) {
-            console.log('[Sync] Deteksi buku baru, menarik semua data...');
-            await pullAllBooksFromCloud();
-            updateBookSelectDropdown();
-            showToast(`📚 Buku baru ditemukan (${books.length} total buku)`, 'info');
-        } else {
-            await pullFromCloudSilently();
-        }
-        
-        updateAutoSyncBadge();
-    }, INTERVAL_MS);
-
-    console.log('[AutoSync] Dimulai, interval 15 detik.');
-    updateAutoSyncBadge();
-}
-
-function stopAutoSync() {
-    if (_autoSyncInterval) {
-        clearInterval(_autoSyncInterval);
-        _autoSyncInterval = null;
-    }
-    if (_bookCheckInterval) {
-        clearInterval(_bookCheckInterval);
-        _bookCheckInterval = null;
-    }
-    console.log('[AutoSync] Dihentikan.');
-}
-
-function updateAutoSyncBadge() {
-    const el = document.getElementById('autoSyncBadge');
-    if (!el) return;
-    const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    el.innerText = `⟳ Sync otomatis aktif · ${now}`;
-    el.style.color = '#00875a';
-}
-
-// ==================== SUPABASE REALTIME ====================
-function initSupabaseClient() {
-    const url = getCloudUrl();
-    const key = getSupabaseKey();
-    if (!url || !key) return null;
-    if (_supabaseClient) return _supabaseClient;
-    _supabaseClient = supabase.createClient(url, key);
-    console.log('[Realtime] Supabase client dibuat.');
-    return _supabaseClient;
-}
-
-function startRealtimeSync() {
-    const client = initSupabaseClient();
-    if (!client) return;
-
-    if (_realtimeChannel) {
-        client.removeChannel(_realtimeChannel);
-        _realtimeChannel = null;
-    }
-
-    _realtimeChannel = client
-        .channel('sinarkeu-realtime')
-        .on('postgres_changes',
-            { event: '*', schema: 'public', table: 'transactions' },
-            (payload) => {
-                console.log('[Realtime] Perubahan transactions:', payload.eventType);
-                handleRealtimeTransaction(payload);
-            }
-        )
-        .on('postgres_changes',
-            { event: '*', schema: 'public', table: 'settings' },
-            (payload) => {
-                console.log('[Realtime] Perubahan settings:', payload.eventType, payload.new?.key);
-                handleRealtimeSettings(payload);
-            }
-        )
-        .subscribe((status) => {
-            console.log('[Realtime] Status:', status);
-            updateRealtimeBadge(status);
-        });
-}
-
-function stopRealtimeSync() {
-    if (_supabaseClient && _realtimeChannel) {
-        _supabaseClient.removeChannel(_realtimeChannel);
-        _realtimeChannel = null;
-        console.log('[Realtime] Channel dihentikan.');
-    }
-}
-
-async function handleRealtimeTransaction(payload) {
-    const rec = payload.new || payload.old;
-    if (rec && rec.book_id && rec.book_id !== currentBookId) return;
-    await pullFromCloudSilently();
-    showAutoSyncToast('⚡ Transaksi diperbarui secara real-time');
-}
-
-async function handleRealtimeSettings(payload) {
-    const rec = payload.new;
-    if (!rec) return;
-
-    if (rec.key === 'books') {
-        const prevBooksJson = JSON.stringify(books);
-        await pullAllSettings();
-        if (JSON.stringify(books) !== prevBooksJson) {
-            updateBookSelectDropdown();
-            updateTgStatusBadge();
-            showAutoSyncToast('⚡ Daftar buku diperbarui secara real-time');
-        }
-    } else if (rec.key === 'telegram_config') {
-        await pullAllSettings();
-        updateTgStatusBadge();
-        showAutoSyncToast('⚡ Setelan Telegram diperbarui secara real-time');
-    } else if (rec.key === 'budgets') {
-        await pullAllSettings();
-        budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
-        renderBudget();
-        showAutoSyncToast('⚡ Anggaran diperbarui secara real-time');
-    }
-}
-
-function updateRealtimeBadge(status) {
-    const el = document.getElementById('autoSyncBadge');
-    if (!el) return;
-    if (status === 'SUBSCRIBED') {
-        el.innerText = '⚡ Real-time aktif';
-        el.style.color = '#00875a';
-    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        el.innerText = '⟳ Realtime error — fallback polling aktif';
-        el.style.color = '#cc7b00';
-        startAutoSync();
-    } else {
-        el.innerText = '⟳ Menghubungkan real-time...';
-        el.style.color = '#aaa';
-    }
-}
-
-let _autoSyncToastTimer = null;
-function showAutoSyncToast(msg) {
-    const el = document.getElementById('autoSyncBadge');
-    if (!el) return;
-    el.innerText = msg;
-    el.style.color = '#cc7b00';
-    if (_autoSyncToastTimer) clearTimeout(_autoSyncToastTimer);
-    _autoSyncToastTimer = setTimeout(updateAutoSyncBadge, 3000);
-}
-
-// ==================== SETUP AWAL ====================
-function openSetupModal() {
-    let st = document.getElementById('setupStatusMsg');
-    st.className = 'setup-status';
-    st.innerText = '';
-    document.getElementById('setupUrlInput').value  = getCloudUrl();
-    document.getElementById('setupKeyInput').value  = getSupabaseKey();
-    document.getElementById('setupConnectBtn').disabled = false;
-    document.getElementById('setupConnectBtn').innerText = '🔌 Hubungkan & Mulai';
-    openModal('firstTimeSetupModal');
-}
-
+// ==================== SETUP & SECURITY ====================
 async function doFirstTimeSetup() {
-    const url  = document.getElementById('setupUrlInput').value.trim();
-    const key  = document.getElementById('setupKeyInput').value.trim();
-    const pwd  = document.getElementById('setupPwdInput').value;
-    const pwd2 = document.getElementById('setupPwdConfirm').value;
-    const st   = document.getElementById('setupStatusMsg');
-    const btn  = document.getElementById('setupConnectBtn');
+    const url = document.getElementById('setupUrlInput').value, key = document.getElementById('setupKeyInput').value;
+    const pwd = document.getElementById('setupPwdInput').value, cnf = document.getElementById('setupPwdConfirm').value;
+    if (pwd !== cnf || pwd.length < 6) return alert("Password tidak cocok/lemah");
 
-    if (!url || !key) {
-        st.className = 'setup-status error';
-        st.innerText = '❌ Supabase URL dan Anon Key wajib diisi!';
-        return;
-    }
-    if (!pwd || pwd.length < 6) {
-        st.className = 'setup-status error';
-        st.innerText = '❌ Password minimal 6 karakter!';
-        return;
-    }
-    if (pwd !== pwd2) {
-        st.className = 'setup-status error';
-        st.innerText = '❌ Konfirmasi password tidak cocok!';
-        return;
-    }
-
-    btn.disabled = true;
-    btn.innerText = '⏳ Mengetes koneksi...';
-    st.className = 'setup-status warning';
-    st.innerText = '⏳ Menghubungkan ke Supabase...';
-
-    globalSupabaseUrl = url;
-    globalSupabaseKey = key;
-
-    const test = await callSupabaseAPI('transactions', 'GET', null, '?limit=1');
-
-    if (test === null) {
-        globalSupabaseUrl = '';
-        globalSupabaseKey = '';
-        btn.disabled = false;
-        btn.innerText = '🔐 Simpan & Mulai';
-        st.className = 'setup-status error';
-        st.innerText = '❌ Koneksi gagal! Periksa kembali URL dan Anon Key Anda.';
-        return;
-    }
-
-    st.innerText = '⏳ Mengenkripsi kredensial...';
-    await setupNewPassword(pwd, url, key);
-
-    localStorage.removeItem('sk_supabase_url_global');
-    localStorage.removeItem('sk_supabase_key_global');
-    localStorage.removeItem('sk_cloud_urls');
-    localStorage.removeItem('sk_supabase_keys');
-
-    updateCloudIndicator();
-    st.className = 'setup-status success';
-    st.innerText = '✅ Berhasil! Kredensial terenkripsi dengan password Anda.';
-    btn.innerText = '✅ Tersambung';
-
-    setTimeout(async () => {
-        closeModal('firstTimeSetupModal');
-        showToast('Setup selesai! Data terenkripsi aman 🔐', 'success');
-        await continueAppInit();
-    }, 900);
-}
-
-// ==================== LOCK APP ====================
-function lockApp() {
-    stopRealtimeSync();
-    stopAutoSync();
-    sessionStorage.removeItem('sk_session_unlocked');
-    _sessionCryptoKey = null;
-    globalSupabaseUrl = '';
-    globalSupabaseKey = '';
-    document.getElementById('lockPasswordInput').value = '';
-    clearLockError();
-    showPasswordLock();
-}
-
-async function changePassword() {
-    const oldPwd  = document.getElementById('changePwdOld').value;
-    const newPwd  = document.getElementById('changePwdNew').value;
-    const newPwd2 = document.getElementById('changePwdNew2').value;
-    const status  = document.getElementById('changePwdStatus');
-
-    status.style.color = '#de350b';
-    if (!oldPwd || !newPwd || !newPwd2) { status.innerText = '❌ Semua field wajib diisi.'; return; }
-    if (newPwd.length < 6) { status.innerText = '❌ Password baru minimal 6 karakter.'; return; }
-    if (newPwd !== newPwd2) { status.innerText = '❌ Konfirmasi tidak cocok.'; return; }
-
-    status.style.color = '#cc7b00';
-    status.innerText = '⏳ Memverifikasi...';
-
-    const saltB64 = localStorage.getItem(CRYPTO_SALT_KEY);
-    if (!saltB64) { status.style.color='#de350b'; status.innerText='❌ Data enkripsi tidak ditemukan.'; return; }
-    const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
-
-    let oldKey;
-    try {
-        oldKey = await deriveKey(oldPwd, salt);
-        const plain = await decryptStr(oldKey, localStorage.getItem(CRYPTO_CHECK_KEY));
-        if (plain !== SENTINEL_PLAIN) throw new Error('wrong');
-    } catch {
-        status.style.color = '#de350b';
-        status.innerText = '❌ Password lama salah.';
-        return;
-    }
-
-    let url, apiKey;
-    try {
-        url    = await decryptStr(oldKey, localStorage.getItem(CRYPTO_URL_KEY));
-        apiKey = await decryptStr(oldKey, localStorage.getItem(CRYPTO_AKEY_KEY));
-    } catch {
-        status.style.color = '#de350b';
-        status.innerText = '❌ Gagal membaca data terenkripsi.';
-        return;
-    }
-
-    status.innerText = '⏳ Mengenkripsi ulang...';
-    await setupNewPassword(newPwd, url, apiKey);
-
-    status.style.color = '#00875a';
-    status.innerText = '✅ Password berhasil diganti!';
-    document.getElementById('changePwdOld').value  = '';
-    document.getElementById('changePwdNew').value  = '';
-    document.getElementById('changePwdNew2').value = '';
-    showToast('Password berhasil diganti 🔐', 'success');
-}
-
-// ==================== INIT APP ====================
-function initApp() {
-    deviceId = localStorage.getItem('sk_device_id');
-    if(!deviceId) {
-        deviceId = 'DEV-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-        localStorage.setItem('sk_device_id', deviceId);
-    }
-    document.getElementById('deviceIdDisplay').innerText = deviceId;
-
-    let storedBooks = localStorage.getItem('sk_books');
-    if(storedBooks) {
-        books = JSON.parse(storedBooks);
-    } else {
-        books = [{id: 'b_default', name: 'Buku Utama'}];
-        localStorage.setItem('sk_books', JSON.stringify(books));
-    }
-
-    currentBookId = localStorage.getItem('sk_current_book_id') || 'b_default';
-    if(!books.find(b => b.id === currentBookId)) currentBookId = books[0].id;
-
-    if (!isPasswordConfigured()) {
-        hideLockScreen();
-        const legacyUrls = JSON.parse(localStorage.getItem('sk_cloud_urls') || '{}');
-        const legacyUrl  = localStorage.getItem('sk_supabase_url_global') || '';
-        const firstKey   = Object.keys(legacyUrls)[0];
-        if (legacyUrl || firstKey) {
-            document.getElementById('setupUrlInput').value = legacyUrl || legacyUrls[firstKey] || '';
-            document.getElementById('setupKeyInput').value = localStorage.getItem('sk_supabase_key_global') || '';
-        }
-        setTimeout(() => openSetupModal(), 300);
-        return;
-    }
-
-    if (!sessionStorage.getItem('sk_session_unlocked')) {
-        showPasswordLock();
-        return;
-    }
-
-    continueAppInit();
-}
-
-async function continueAppInit() {
-    if (!globalSupabaseUrl && !_sessionCryptoKey) {
-        sessionStorage.removeItem('sk_session_unlocked');
-        showPasswordLock();
-        return;
-    }
-
-    budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
-
-    let currentYear = new Date().getFullYear();
-    let selectYear = document.getElementById('budgetYear');
-    selectYear.innerHTML = '';
-    for(let y = currentYear - 2; y <= currentYear + 2; y++) {
-        let opt = document.createElement('option');
-        opt.value = y; opt.innerText = y;
-        if(y === currentYear) opt.selected = true;
-        selectYear.appendChild(opt);
-    }
-    document.getElementById('budgetMonth').value = new Date().getMonth() + 1;
-
-    updateBookSelectDropdown();
-    loadTransactions();
-    updateCloudIndicator();
-
-    if (!getCloudUrl() || !getSupabaseKey()) {
-        setTimeout(() => openSetupModal(), 400);
-    } else {
-        await pullAllSettings();
-        updateBookSelectDropdown();
-        budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
-        updateTgStatusBadge();
-        await pullAllBooksFromCloud();
-        setTimeout(checkAndRunDailyAutoBackup, 3000);
-        setTimeout(scheduleDailySummary, 5000);
-        startRealtimeSync();
-    }
-
-    setInterval(() => {
-        let clock = document.getElementById('liveClock');
-        if(clock) clock.innerText = new Date().toLocaleTimeString('id-ID');
-    }, 1000);
-
-    startAutoSync();
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const cryptoKey = await deriveKey(pwd, salt);
     
-    addSyncButton();
-    startBookCheck();
+    localStorage.setItem(CRYPTO_SALT_KEY, btoa(String.fromCharCode(...salt)));
+    localStorage.setItem(CRYPTO_CHECK_KEY, await encryptStr(cryptoKey, SENTINEL));
+    localStorage.setItem(CRYPTO_URL_KEY, await encryptStr(cryptoKey, url));
+    localStorage.setItem(CRYPTO_AKEY_KEY, await encryptStr(cryptoKey, key));
     
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && getCloudUrl() && getSupabaseKey()) {
-            console.log('[Sync] Tab menjadi aktif, melakukan sinkronisasi...');
-            forceFullSync();
-        }
+    alert("Setup Berhasil! Silakan muat ulang.");
+    location.reload();
+}
+
+// ==================== TELEGRAM ====================
+async function saveTelegramConfig() {
+    const token = document.getElementById('tgBotTokenInput').value, chatId = document.getElementById('tgChatIdInput').value;
+    await callSupabase('settings', 'POST', [{ book_id: 'global', key: 'telegram_config', value: JSON.stringify({token, chatId}), updated_at: new Date().toISOString() }]);
+    localStorage.setItem('sk_tg_token', token); localStorage.setItem('sk_tg_chatid', chatId);
+    showToast("Telegram disimpan");
+}
+
+async function sendTg(msg) {
+    const t = localStorage.getItem('sk_tg_token'), c = localStorage.getItem('sk_tg_chatid');
+    if(!t || !c) return;
+    fetch(`https://api.telegram.org/bot${t}/sendMessage`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ chat_id: c, text: msg, parse_mode: 'HTML' })
     });
 }
 
-// ==================== MANUAL ====================
-function openManual(section) {
-    document.getElementById('manualModal').classList.add('show');
-    if (section) showManualSection(section);
-}
+// ==================== UTILS ====================
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function toggleCategoryField() { document.getElementById('categoryGroup').style.display = document.querySelector('input[name="type"]:checked').value === 'income' ? 'none' : 'block'; }
+function previewAttachment(i) { const r = new FileReader(); r.onload = (e) => { const p = document.getElementById('attachmentPreview'); p.src = e.target.result; p.style.display='block'; }; if(i.files[0]) r.readAsDataURL(i.files[0]); }
 
-function closeManual() {
-    document.getElementById('manualModal').classList.remove('show');
-}
-
-function showManualSection(id) {
-    document.querySelectorAll('.manual-section').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.manual-nav-btn').forEach(b => b.classList.remove('active'));
-    const sec = document.getElementById('manual-' + id);
-    if (sec) sec.classList.add('active');
-    document.querySelectorAll('.manual-nav-btn').forEach(b => {
-        if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + id + "'")) {
-            b.classList.add('active');
-        }
-    });
-}
-
-// ==================== SERVICE WORKER ====================
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(reg => {
-                console.log('[SW] Terdaftar, scope:', reg.scope);
-                reg.update();
-            })
-            .catch(err => console.warn('[SW] Gagal daftar:', err));
-    });
-}
-
-window.addEventListener('DOMContentLoaded', initApp);
+window.onload = initApp;
 </script>
 </body>
 </html>
