@@ -725,20 +725,117 @@
             overflow-x: auto;
         }
         
-        /* ===== TABLET (769px – 1024px): sembunyikan kolom No & Nota ===== */
+        /* Progress row: hanya tampil di tablet (diatur ulang di media query tablet) */
+        .budget-mini-progress-row { display: none; }
+
+        /* ===== TABLET (769px – 1024px) ===== */
         @media(min-width:769px) and (max-width:1024px) {
             table { min-width: unset; }
             .col-no, .col-nota { display: none; }
 
-            /* Budget bar: progress bar lebih compact di tablet */
-            .budget-mini-progress { width: 140px; }
-            .budget-mini-info { gap: 12px; }
+            /* ── Budget Panel: modern card redesign untuk tablet portrait ── */
+            .budget-mini {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 0;
+                gap: 0;
+                border-radius: 16px;
+                border: none;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.05);
+                overflow: hidden;
+                margin-bottom: 24px;
+            }
+            .budget-mini-info {
+                display: grid;
+                grid-template-columns: auto 1fr 1fr 1fr;
+                align-items: center;
+                gap: 0;
+                padding: 18px 20px 16px;
+                background: #fff;
+                border-bottom: 1px solid #f0f0f0;
+                flex-wrap: unset;
+            }
+            .budget-mini-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 3px;
+                padding: 0 16px;
+                border-right: 1px solid #f0f0f0;
+            }
+            .budget-mini-item:first-child { padding-left: 0; }
+            .budget-mini-item:last-child { border-right: none; padding-right: 0; }
+            .budget-mini-label {
+                font-size: .62rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: #999;
+            }
+            .budget-mini-value {
+                font-size: 1rem;
+                font-weight: 700;
+                letter-spacing: -0.3px;
+            }
+            /* Sembunyikan progress bar dari grid info atas */
+            .budget-mini-info > .budget-mini-progress { display: none; }
+            .budget-mini-info > span[id="budgetProgressPct"] { display: none; }
+            /* Progress bar full-width row */
+            .budget-mini-progress-row {
+                display: flex !important;
+                align-items: center;
+                gap: 12px;
+                padding: 10px 20px;
+                background: #fafafa;
+                border-bottom: 1px solid #f0f0f0;
+            }
+            .budget-mini-progress-row .budget-mini-progress {
+                flex: 1;
+                width: unset;
+                min-width: unset;
+                height: 8px;
+                border-radius: 6px;
+                display: block;
+            }
+            .budget-mini-progress-row #budgetProgressPct {
+                font-size: .78rem;
+                font-weight: 700;
+                min-width: 38px;
+                text-align: right;
+            }
+            /* Tombol aksi grid 3 kolom */
+            .budget-mini-actions {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0;
+                background: #fff;
+            }
+            .btn-icon {
+                border-radius: 0;
+                border: none;
+                border-right: 1px solid #f0f0f0;
+                padding: 14px 10px;
+                font-size: .78rem;
+                font-weight: 600;
+                text-align: center;
+                justify-content: center;
+                background: #fff;
+                color: #1a1a1a;
+            }
+            .btn-icon:last-child { border-right: none; }
+            .btn-icon:hover { background: #f5f5f5; border-color: #f0f0f0; }
+            .budget-select {
+                padding: 6px 10px;
+                font-size: .78rem;
+                border-radius: 8px;
+                border: 1.5px solid #e0e0e0;
+                background: #f9f9f9;
+            }
 
-            /* Report stats: kurangi font agar nominal panjang tidak overflow */
+            /* Report stats */
             .report-stat-value { font-size: 1rem; }
             .report-stat-card { padding: 10px 12px; }
 
-            /* Report table: font sedikit lebih kecil di tablet portrait */
+            /* Report table */
             .report-table { font-size: .7rem; }
             .report-table th, .report-table td { padding: 6px 8px; }
         }
@@ -1272,10 +1369,17 @@
             </div>
             <span id="budgetProgressPct" style="font-size:.75rem; font-weight:700; color:#666; min-width:36px;">0%</span>
         </div>
+        <!-- Row progress bar khusus tablet portrait (disembunyikan di desktop & mobile via CSS) -->
+        <div class="budget-mini-progress-row" style="display:none;">
+            <div class="budget-mini-progress">
+                <div class="budget-mini-progress-fill" id="budgetProgressFill2"></div>
+            </div>
+            <span id="budgetProgressPct2" style="font-size:.78rem; font-weight:700; color:#666; min-width:38px; text-align:right;">0%</span>
+        </div>
         <div class="budget-mini-actions">
-            <button class="btn-icon" onclick="openBudgetModal()">Anggarkan</button>
-            <button class="btn-icon" onclick="openMonthlyReport()">Laporan Bulanan</button>
-            <button class="btn-icon" onclick="generatePDFReport()">PDF</button>
+            <button class="btn-icon" onclick="openBudgetModal()">✏️ Anggarkan</button>
+            <button class="btn-icon" onclick="openMonthlyReport()">📊 Laporan</button>
+            <button class="btn-icon" onclick="generatePDFReport()">📄 PDF</button>
         </div>
     </div>
 
@@ -4623,19 +4727,29 @@ function renderBudget() {
     
     let fill = document.getElementById('budgetProgressFill');
     fill.style.width = pct + '%';
+    let fill2 = document.getElementById('budgetProgressFill2');
+    if(fill2) fill2.style.width = pct + '%';
     
     let pctEl = document.getElementById('budgetProgressPct');
     pctEl.innerText = Math.round(pct) + '%';
+    let pctEl2 = document.getElementById('budgetProgressPct2');
+    if(pctEl2) pctEl2.innerText = Math.round(pct) + '%';
     
     if(pct >= 100 && totalTarget > 0) {
         fill.className = "budget-mini-progress-fill danger";
+        if(fill2) fill2.className = "budget-mini-progress-fill danger";
         pctEl.style.color = '#de350b';
+        if(pctEl2) pctEl2.style.color = '#de350b';
     } else if(pct >= 80) {
         fill.className = "budget-mini-progress-fill warning";
+        if(fill2) fill2.className = "budget-mini-progress-fill warning";
         pctEl.style.color = '#cc7b00';
+        if(pctEl2) pctEl2.style.color = '#cc7b00';
     } else {
         fill.className = "budget-mini-progress-fill";
+        if(fill2) fill2.className = "budget-mini-progress-fill";
         pctEl.style.color = '#00875a';
+        if(pctEl2) pctEl2.style.color = '#00875a';
     }
 }
 
