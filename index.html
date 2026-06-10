@@ -130,6 +130,7 @@
         }
         .budget-mini-progress {
             width: 200px;
+            min-width: 100px;
             height: 10px;
             background: #eee;
             border-radius: 4px;
@@ -720,11 +721,26 @@
             background: #f5f5f5;
             font-weight: 600;
         }
+        .report-table-wrap {
+            overflow-x: auto;
+        }
         
         /* ===== TABLET (769px – 1024px): sembunyikan kolom No & Nota ===== */
         @media(min-width:769px) and (max-width:1024px) {
             table { min-width: unset; }
             .col-no, .col-nota { display: none; }
+
+            /* Budget bar: progress bar lebih compact di tablet */
+            .budget-mini-progress { width: 140px; }
+            .budget-mini-info { gap: 12px; }
+
+            /* Report stats: kurangi font agar nominal panjang tidak overflow */
+            .report-stat-value { font-size: 1rem; }
+            .report-stat-card { padding: 10px 12px; }
+
+            /* Report table: font sedikit lebih kecil di tablet portrait */
+            .report-table { font-size: .7rem; }
+            .report-table th, .report-table td { padding: 6px 8px; }
         }
 
         @media(max-width:768px) {
@@ -736,6 +752,7 @@
             .book-selector { width: 100%; justify-content: space-between; }
             .budget-mini { flex-direction: column; align-items: stretch; }
             .budget-mini-info { justify-content: space-between; }
+            .budget-mini-progress { width: 100%; }
             .budget-cat-row { flex-direction: column; align-items: stretch; }
             .budget-cat-row .budget-cat-label { width: auto; }
             .modal-content.wide { max-width: 95%; }
@@ -4667,6 +4684,7 @@ function generateMonthlyReport() {
             <div class="report-stat-card"><div class="report-stat-label">Selisih Kas Bulanan</div><div class="report-stat-value">${rp(totalInc - totalExp)}</div></div>
         </div>
         <div class="chart-container"><canvas id="reportChartCanvas"></canvas></div>
+        <div class="report-table-wrap">
         <table class="report-table">
             <thead><tr><th>Kategori Pengeluaran</th><th>Target Anggaran</th><th>Realisasi</th><th>Sisa / Lebih</th><th>Persentase</th></tr></thead>
             <tbody>
@@ -4714,7 +4732,7 @@ function generateMonthlyReport() {
         `;
     });
     
-    html += `</tbody></table>`;
+    html += `</tbody></table></div>`;
     document.getElementById('reportContent').innerHTML = html;
     
     if(chartLabels.length === 0) {
