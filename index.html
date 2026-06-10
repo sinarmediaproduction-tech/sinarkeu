@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Sinarkeu - Multi Buku Kas dengan Supabase Cloud</title>
+    <title>Sinarkeu v8 - Multi Buku Kas dengan Supabase Cloud</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a1a1a">
@@ -1248,9 +1248,9 @@
             <span id="budgetProgressPct" style="font-size:.75rem; font-weight:700; color:#666; min-width:36px;">0%</span>
         </div>
         <div class="budget-mini-actions">
-            <button class="btn-icon" onclick="openBudgetModal()">Atur</button>
-            <button class="btn-icon" onclick="openMonthlyReport()">Laporan Bulanan</button>
-            <button class="btn-icon" onclick="generatePDFReport()"> PDF</button>
+            <button class="btn-icon" onclick="openBudgetModal()">✏️ Atur</button>
+            <button class="btn-icon" onclick="openMonthlyReport()">📊 Laporan Bulanan</button>
+            <button class="btn-icon" onclick="generatePDFReport()">📄 PDF</button>
         </div>
     </div>
 
@@ -1284,7 +1284,7 @@
         </div>
         <div class="actions">
             <button class="btn btn-primary" onclick="openModal('addModal')">+ Transaksi</button>
-            <button class="btn btn-secondary" onclick="openBackupManager()"> Backup</button>
+            <button class="btn btn-secondary" onclick="openBackupManager()">🔒 Backup</button>
         </div>
     </div>
 
@@ -2883,10 +2883,10 @@ async function continueAppInit() {
             updateBookSelectDropdown();
             budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
             updateTgStatusBadge();
-            return pullFromCloudSilently();
+            return pullAllBooksFromCloud();
         }).then(() => {
             setTimeout(checkAndRunDailyAutoBackup, 3000);
-            setTimeout(scheduleDailySummary, 5000); // jadwalkan ringkasan harian setelah init
+            setTimeout(scheduleDailySummary, 5000);
         });
     }
 
@@ -3368,6 +3368,55 @@ async function pullFromCloudSilently() {
     refreshLogsFromCloud();
 }
 
+// Pull transaksi dari cloud untuk SEMUA buku (dipakai saat init / device baru)
+async function pullAllBooksFromCloud() {
+    if (!getCloudUrl() || !getSupabaseKey()) return;
+    // Pastikan semua book_id valid dari daftar buku yang sudah di-merge
+    const bookIds = books.map(b => b.id);
+    if (bookIds.length === 0) return;
+
+    for (const bookId of bookIds) {
+        let cloudData = await callSupabaseAPI('transactions', 'GET', null, '?book_id=eq.' + bookId);
+        if (!cloudData || !Array.isArray(cloudData)) continue;
+
+        const cloudMapped = cloudData.map(c => ({
+            id: c.id,
+            type: c.type,
+            amount: Number(c.amount),
+            category: c.category,
+            description: c.description,
+            date: c.date,
+            attachment: c.attachment
+        }));
+
+        // Merge dengan data lokal yang belum tersinkron
+        const localStored = JSON.parse(localStorage.getItem('sk_txs_' + bookId) || '[]');
+        const cloudById = new Map(cloudMapped.map(c => [c.id, c]));
+        const localOnly = localStored.filter(t => !cloudById.has(t.id));
+        const merged = [...cloudMapped, ...localOnly];
+        merged.sort((a, b) => new Date(b.date) - new Date(a.date));
+        localStorage.setItem('sk_txs_' + bookId, JSON.stringify(merged));
+
+        // Jika ini buku aktif, update state txs dan render
+        if (bookId === currentBookId) {
+            txs = merged;
+            render();
+            // Push data lokal yang belum ada di cloud
+            if (localOnly.length > 0) pushToCloud();
+        } else if (localOnly.length > 0) {
+            // Push data offline buku lain ke cloud juga
+            const savedBookId = currentBookId;
+            currentBookId = bookId;
+            await pushToCloud();
+            currentBookId = savedBookId;
+        }
+    }
+
+    // Refresh log dari cloud setelah semua buku selesai
+    refreshLogsFromCloud();
+    console.log('[pullAllBooksFromCloud] Selesai — ' + bookIds.length + ' buku ditarik dari cloud.');
+}
+
 // Tombol manual tes koneksi database di panel kelola buku
 async function testCloudConnection() {
     let urlInput = document.getElementById('supabaseUrlInput').value.trim();
@@ -3401,7 +3450,7 @@ async function testCloudConnection() {
         updateBookSelectDropdown();
         budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
         updateTgStatusBadge();
-        await pullFromCloudSilently();
+        await pullAllBooksFromCloud();
     } else {
         // Kembalikan ke nilai kosong jika gagal terkoneksi
         globalSupabaseUrl = '';
