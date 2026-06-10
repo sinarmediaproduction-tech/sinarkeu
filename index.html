@@ -1017,12 +1017,16 @@
 
         <div style="border-top:2px dashed #1a1a1a; padding-top:16px">
             <div class="form-group">
+                <div style="font-size:.72rem; font-weight:700; color:#1a1a1a; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+                    ☁️ Koneksi Supabase
+                    <span style="font-size:.6rem; background:#e3fcef; color:#006644; padding:2px 8px; border-radius:10px; font-weight:600;">Berlaku untuk semua buku</span>
+                </div>
                 <label>Supabase URL Connection</label>
                 <input type="text" id="supabaseUrlInput" class="form-control" placeholder="https://yourproject.supabase.co" style="margin-bottom: 10px;">
                 <label>Supabase Anon Key</label>
                 <input type="password" id="supabaseKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
                 <div class="cloud-connect-row">
-                    <button class="btn btn-primary" style="width:100%" onclick="testCloudConnection()">Hubungkan & Sinkronkan</button>
+                    <button class="btn btn-primary" style="width:100%" onclick="testCloudConnection()">Hubungkan & Sinkronkan Semua Buku</button>
                 </div>
                 <div id="connectionStatus" style="margin-top:8px"></div>
             </div>
@@ -1183,8 +1187,8 @@
 let txs = [];
 let books = [];
 let currentBookId = 'b_default';
-let cloudUrls = {}; // Menyimpan Supabase URL
-let supabaseKeys = {}; // Menyimpan Supabase Key
+let globalSupabaseUrl = ''; // Supabase URL global (1 untuk semua buku)
+let globalSupabaseKey = ''; // Supabase Anon Key global (1 untuk semua buku)
 let currentFilter = 'all';
 let filterStartDate = '';
 let filterEndDate = '';
@@ -1426,8 +1430,22 @@ function initApp() {
     currentBookId = localStorage.getItem('af_current_book_id') || 'b_default';
     if(!books.find(b => b.id === currentBookId)) currentBookId = books[0].id;
 
-    cloudUrls = JSON.parse(localStorage.getItem('af_cloud_urls') || '{}');
-    supabaseKeys = JSON.parse(localStorage.getItem('af_supabase_keys') || '{}');
+    // Migrasi: ambil URL & key dari format lama (per-buku) jika ada
+    if (!localStorage.getItem('af_supabase_url_global')) {
+        // Coba ambil dari buku mana saja yang sudah tersimpan
+        const legacyUrls = JSON.parse(localStorage.getItem('af_cloud_urls') || '{}');
+        const legacyKeys = JSON.parse(localStorage.getItem('af_supabase_keys') || '{}');
+        const firstBookWithUrl = Object.keys(legacyUrls)[0];
+        if (firstBookWithUrl) {
+            globalSupabaseUrl = legacyUrls[firstBookWithUrl] || '';
+            globalSupabaseKey = legacyKeys[firstBookWithUrl] || '';
+            localStorage.setItem('af_supabase_url_global', globalSupabaseUrl);
+            localStorage.setItem('af_supabase_key_global', globalSupabaseKey);
+        }
+    } else {
+        globalSupabaseUrl = localStorage.getItem('af_supabase_url_global') || '';
+        globalSupabaseKey = localStorage.getItem('af_supabase_key_global') || '';
+    }
     budgets = JSON.parse(localStorage.getItem('af_budgets_' + currentBookId) || '{}');
 
     let currentYear = new Date().getFullYear();
@@ -1466,8 +1484,8 @@ function initApp() {
     }, 1000);
 }
 
-function getCloudUrl() { return cloudUrls[currentBookId] || ''; }
-function getSupabaseKey() { return supabaseKeys[currentBookId] || ''; }
+function getCloudUrl() { return globalSupabaseUrl || ''; }
+function getSupabaseKey() { return globalSupabaseKey || ''; }
 
 function updateCloudIndicator() {
     let wrapper = document.getElementById('syncStatusWrapper');
@@ -1511,14 +1529,14 @@ async function doFirstTimeSetup() {
     st.innerText = '⏳ Menghubungkan ke Supabase...';
 
     // Simpan sementara untuk test
-    cloudUrls[currentBookId]    = url;
-    supabaseKeys[currentBookId] = key;
+    globalSupabaseUrl = url;
+    globalSupabaseKey = key;
 
     const test = await callSupabaseAPI('transactions', 'GET', null, '?limit=1');
 
     if (test === null) {
-        delete cloudUrls[currentBookId];
-        delete supabaseKeys[currentBookId];
+        globalSupabaseUrl = '';
+        globalSupabaseKey = '';
         btn.disabled = false;
         btn.innerText = '🔌 Hubungkan & Mulai';
         st.className = 'setup-status error';
@@ -1526,9 +1544,9 @@ async function doFirstTimeSetup() {
         return;
     }
 
-    // Koneksi berhasil — simpan permanen
-    localStorage.setItem('af_cloud_urls',    JSON.stringify(cloudUrls));
-    localStorage.setItem('af_supabase_keys', JSON.stringify(supabaseKeys));
+    // Koneksi berhasil — simpan permanen ke global
+    localStorage.setItem('af_supabase_url_global', globalSupabaseUrl);
+    localStorage.setItem('af_supabase_key_global', globalSupabaseKey);
     updateCloudIndicator();
 
     st.className = 'setup-status success';
@@ -1873,17 +1891,17 @@ async function testCloudConnection() {
     statusDiv.innerHTML = '<div class="connection-status testing">Sedang mengetes koneksi ke Supabase...</div>';
 
     // Setel sementara untuk testing endpoint
-    cloudUrls[currentBookId] = urlInput;
-    supabaseKeys[currentBookId] = keyInput;
+    globalSupabaseUrl = urlInput;
+    globalSupabaseKey = keyInput;
 
     // Lakukan pengetesan select ringkas ke tabel transactions dengan batas baris terendah
     const testFetch = await callSupabaseAPI('transactions', 'GET', null, '?limit=1');
     
     if (testFetch !== null) {
-        localStorage.setItem('af_cloud_urls', JSON.stringify(cloudUrls));
-        localStorage.setItem('af_supabase_keys', JSON.stringify(supabaseKeys));
-        statusDiv.innerHTML = '<div class="connection-status success">Sukses terhubung ke Supabase Cloud! Memulai unduh data...</div>';
-        showToast("Supabase terhubung!", "success");
+        localStorage.setItem('af_supabase_url_global', globalSupabaseUrl);
+        localStorage.setItem('af_supabase_key_global', globalSupabaseKey);
+        statusDiv.innerHTML = '<div class="connection-status success">Sukses terhubung ke Supabase Cloud! Berlaku untuk semua buku. Memulai unduh data...</div>';
+        showToast("Supabase terhubung untuk semua buku!", "success");
         updateCloudIndicator();
         await pullAllSettings();
         updateBookSelectDropdown();
@@ -1892,8 +1910,8 @@ async function testCloudConnection() {
         await pullFromCloudSilently();
     } else {
         // Kembalikan ke nilai kosong jika gagal terkoneksi
-        delete cloudUrls[currentBookId];
-        delete supabaseKeys[currentBookId];
+        globalSupabaseUrl = '';
+        globalSupabaseKey = '';
         statusDiv.innerHTML = '<div class="connection-status error">Koneksi Gagal: Silakan periksa URL, Key, atau Skema Tabel SQL Anda!</div>';
         showToast("Koneksi cloud gagal!", "error");
         updateCloudIndicator();
@@ -2497,11 +2515,8 @@ async function deleteBook(id) {
     let b = books.find(x => x.id === id);
     if(b && confirm(`Hapus permanen buku "${b.name}" beserta seluruh data lokal dan cloud?`)) {
         
-        // Hapus data di Supabase cloud jika buku ini terhubung
-        const savedUrl = cloudUrls[id];
-        const savedKey = supabaseKeys[id];
-        if(savedUrl && savedKey) {
-            // Simpan sementara agar callSupabaseAPI bisa pakai
+        // Hapus data di Supabase cloud jika ada koneksi global
+        if(globalSupabaseUrl && globalSupabaseKey) {
             const prevBookId = currentBookId;
             currentBookId = id;
             try {
@@ -2511,7 +2526,6 @@ async function deleteBook(id) {
                 } else {
                     console.warn(`Gagal hapus data cloud buku "${b.name}" — hapus manual di Supabase jika perlu.`);
                 }
-                // Hapus audit log cloud juga
                 await callSupabaseAPI('audit_logs', 'DELETE', null, `?book_id=eq.${id}`);
             } catch(e) {
                 console.error('Gagal hapus data cloud:', e);
@@ -2525,12 +2539,6 @@ async function deleteBook(id) {
         localStorage.removeItem('af_logs_' + id);
         localStorage.removeItem('af_manual_backups_' + id);
         localStorage.removeItem('af_last_auto_backup_' + id);
-
-        // Hapus dari konfigurasi cloud
-        delete cloudUrls[id];
-        delete supabaseKeys[id];
-        localStorage.setItem('af_cloud_urls', JSON.stringify(cloudUrls));
-        localStorage.setItem('af_supabase_keys', JSON.stringify(supabaseKeys));
 
         books = books.filter(x => x.id !== id);
         localStorage.setItem('af_books', JSON.stringify(books));
