@@ -1286,10 +1286,17 @@
 
         <div id="tgTestStatus" style="font-size:.72rem; margin-bottom:12px; min-height:20px; padding: 0 2px;"></div>
 
-        <div class="modal-footer" style="display:flex; gap:8px;">
+        <div class="modal-footer" style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn btn-secondary" onclick="testTelegramNotif()" style="flex:1">📤 Tes Kirim</button>
+            <button class="btn btn-secondary" onclick="sendDailySummaryToTelegram(); showToast('Ringkasan dikirim ke Telegram ✅','success')" style="flex:1; background:#0088cc; color:#fff; border-color:#0088cc;">📊 Kirim Ringkasan</button>
             <button class="btn btn-danger" onclick="clearTelegramConfig()" style="flex:1">🗑️ Hapus</button>
             <button class="btn btn-primary" onclick="saveTelegramConfig()" style="flex:1">💾 Simpan</button>
+        </div>
+        <div style="background:#f0f8ff; border:1px solid #cce0ff; border-radius:8px; padding:10px 12px; margin-top:12px; font-size:.68rem; color:#0055aa; line-height:1.8;">
+            <b>🔔 Notifikasi yang dikirim otomatis:</b><br>
+            ➕ Transaksi baru · ✏️ Transaksi diubah · 🗑️ Transaksi dihapus<br>
+            ⚠️ Peringatan anggaran 80% & 🚨 anggaran habis<br>
+            📅 Ringkasan harian otomatis pukul <b>21:00</b>
         </div>
     </div>
 </div>
@@ -1772,17 +1779,184 @@ function buildTxNotifMessage(action, tx, bookName) {
     let typeLabel = tx.type === 'income' ? 'PEMASUKAN' : 'PENGELUARAN';
     let actionLabel = action === 'TAMBAH' ? '➕ Transaksi Baru' : action === 'UBAH' ? '✏️ Transaksi Diubah' : '🗑️ Transaksi Dihapus';
 
+    // Hitung saldo terkini buku aktif
+    let totalIncome = 0, totalExpense = 0;
+    txs.forEach(t => {
+        let amt = Number(t.amount) || 0;
+        if (t.type === 'income') totalIncome += amt;
+        else totalExpense += amt;
+    });
+    let saldoSekarang = totalIncome - totalExpense;
+    // Sesuaikan saldo jika aksi HAPUS (tx sudah dihapus dari array)
+    if (action === 'HAPUS') {
+        if (tx.type === 'income') saldoSekarang -= (Number(tx.amount) || 0);
+        else saldoSekarang += (Number(tx.amount) || 0);
+    }
+    let saldoEmoji = saldoSekarang >= 0 ? '🟢' : '🔴';
+
+    // Hitung ringkasan bulan ini
+    let txDate = new Date(tx.date);
+    let m = txDate.getMonth() + 1;
+    let y = txDate.getFullYear();
+    let monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    let bulankini = `${monthNames[m-1]} ${y}`;
+    let incBulan = 0, expBulan = 0;
+    txs.forEach(t => {
+        let d = new Date(t.date);
+        if ((d.getMonth()+1) === m && d.getFullYear() === y) {
+            let amt = Number(t.amount) || 0;
+            if (t.type === 'income') incBulan += amt;
+            else expBulan += amt;
+        }
+    });
+    let selisihBulan = incBulan - expBulan;
+    let selisihEmoji = selisihBulan >= 0 ? '✅' : '⚠️';
+
+    // Cek budget kategori bulan ini (hanya untuk pengeluaran)
+    let budgetLine = '';
+    if (tx.type === 'expense' && action !== 'HAPUS') {
+        let key = `${y}-${m}`;
+        let currentBudget = budgets[key] || {};
+        let katTarget = currentBudget[tx.category] || 0;
+        if (katTarget > 0) {
+            let katActual = 0;
+            txs.forEach(t => {
+                if (t.type === 'expense' && t.category === tx.category) {
+                    let d = new Date(t.date);
+                    if ((d.getMonth()+1) === m && d.getFullYear() === y) {
+                        katActual += Number(t.amount) || 0;
+                    }
+                }
+            });
+            let pct = Math.round((katActual / katTarget) * 100);
+            let barFilled = Math.min(Math.round(pct / 10), 10);
+            let bar = '█'.repeat(barFilled) + '░'.repeat(10 - barFilled);
+            let budgetEmoji = pct >= 100 ? '🚨' : pct >= 80 ? '⚠️' : '✅';
+            budgetLine = `\n${budgetEmoji} Anggaran <i>${tx.category}</i>: ${bar} ${pct}%\n   Terpakai ${rp(katActual)} dari ${rp(katTarget)}`;
+        }
+    }
+
+    // Lampiran info
+    let attachLine = tx.attachment ? '\n📎 <i>Nota terlampir</i>' : '';
+
     return `${emoji} <b>${actionLabel}</b>
-📒 Buku: <b>${bookName}</b>
-📂 Jenis: ${typeLabel}${tx.category && tx.category !== 'Pemasukan' ? ' · ' + tx.category : ''}
+━━━━━━━━━━━━━━━━━━
+📒 <b>${bookName}</b>
+📂 ${typeLabel}${tx.category && tx.category !== 'Pemasukan' ? ' · <i>' + tx.category + '</i>' : ''}
 📝 ${tx.description}
 💵 <b>${rp(tx.amount)}</b>
-🕐 ${formatDateTime(tx.date)}`;
+🕐 ${formatDateTime(tx.date)}${attachLine}
+━━━━━━━━━━━━━━━━━━
+${saldoEmoji} <b>Saldo Saat Ini: ${rp(saldoSekarang)}</b>
+${selisihEmoji} Bulan ${bulankini}: +${rp(incBulan)} / -${rp(expBulan)} = ${rp(selisihBulan)}${budgetLine}`;
 }
 
 function getCurrentBookName() {
     let book = books.find(b => b.id === currentBookId);
     return book ? book.name : currentBookId;
+}
+
+/** Kirim ringkasan harian ke Telegram */
+function sendDailySummaryToTelegram() {
+    let cfg = getTgConfig();
+    if (!cfg.active) return;
+    let now = new Date();
+    let today = now.toLocaleDateString('id-ID', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+    let m = now.getMonth() + 1;
+    let y = now.getFullYear();
+    let monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    
+    // Hitung hari ini
+    let incToday = 0, expToday = 0;
+    let todayStr = now.toISOString().slice(0,10);
+    let txToday = [];
+    txs.forEach(t => {
+        if (!t.date) return;
+        let d = t.date.slice(0,10);
+        if (d === todayStr) {
+            let amt = Number(t.amount) || 0;
+            if (t.type === 'income') incToday += amt;
+            else expToday += amt;
+            txToday.push(t);
+        }
+    });
+
+    // Hitung bulan ini
+    let incBulan = 0, expBulan = 0;
+    txs.forEach(t => {
+        let d = new Date(t.date);
+        if ((d.getMonth()+1) === m && d.getFullYear() === y) {
+            let amt = Number(t.amount) || 0;
+            if (t.type === 'income') incBulan += amt;
+            else expBulan += amt;
+        }
+    });
+
+    // Saldo total
+    let totalInc = 0, totalExp = 0;
+    txs.forEach(t => {
+        let amt = Number(t.amount) || 0;
+        if (t.type === 'income') totalInc += amt;
+        else totalExp += amt;
+    });
+    let saldo = totalInc - totalExp;
+
+    // Budget bulan ini
+    let key = `${y}-${m}`;
+    let currentBudget = budgets[key] || {};
+    let totalTarget = 0;
+    EXPENSE_CATEGORIES.forEach(c => totalTarget += (currentBudget[c] || 0));
+    let budgetLine = totalTarget > 0
+        ? `\n📊 Anggaran ${monthNames[m-1]}: ${rp(expBulan)} / ${rp(totalTarget)} (${Math.round((expBulan/totalTarget)*100)}%)`
+        : '';
+
+    // Detail transaksi hari ini (maks 5)
+    let txLines = '';
+    if (txToday.length > 0) {
+        txLines = '\n\n<b>Transaksi Hari Ini:</b>';
+        txToday.slice(0,5).forEach(t => {
+            let sign = t.type === 'income' ? '↑' : '↓';
+            txLines += `\n${sign} ${t.description} — <b>${rp(t.amount)}</b>`;
+        });
+        if (txToday.length > 5) txLines += `\n<i>... dan ${txToday.length - 5} transaksi lainnya</i>`;
+    } else {
+        txLines = '\n\n<i>Belum ada transaksi hari ini.</i>';
+    }
+
+    let msg = `📅 <b>Ringkasan Harian ArtaFlow</b>
+${today}
+📒 Buku: <b>${getCurrentBookName()}</b>
+━━━━━━━━━━━━━━━━━━
+<b>Hari Ini:</b>
+💰 Masuk: ${rp(incToday)}
+💸 Keluar: ${rp(expToday)}
+📊 Selisih: ${rp(incToday - expToday)}
+
+<b>Bulan ${monthNames[m-1]} ${y}:</b>
+💰 Pemasukan: ${rp(incBulan)}
+💸 Pengeluaran: ${rp(expBulan)}
+📊 Selisih: ${rp(incBulan - expBulan)}${budgetLine}
+━━━━━━━━━━━━━━━━━━
+${saldo >= 0 ? '🟢' : '🔴'} <b>Saldo Total: ${rp(saldo)}</b>${txLines}`;
+
+    sendTelegramNotif(msg);
+}
+
+/** Jadwalkan ringkasan harian otomatis pukul 21:00 */
+function scheduleDailySummary() {
+    let cfg = getTgConfig();
+    if (!cfg.active) return;
+    let now = new Date();
+    let target = new Date(now);
+    target.setHours(21, 0, 0, 0);
+    if (now >= target) target.setDate(target.getDate() + 1);
+    let msUntil = target - now;
+    setTimeout(() => {
+        sendDailySummaryToTelegram();
+        // Ulangi setiap 24 jam
+        setInterval(sendDailySummaryToTelegram, 24 * 60 * 60 * 1000);
+    }, msUntil);
+    console.log(`[Telegram] Ringkasan harian dijadwalkan pukul 21:00 (dalam ${Math.round(msUntil/60000)} menit)`);
 }
 
 // ==================== NOTIFIKASI TELEGRAM ====================
@@ -1873,6 +2047,7 @@ async function continueAppInit() {
             return pullFromCloudSilently();
         }).then(() => {
             setTimeout(checkAndRunDailyAutoBackup, 3000);
+            setTimeout(scheduleDailySummary, 5000); // jadwalkan ringkasan harian setelah init
         });
     }
 
@@ -2748,15 +2923,36 @@ function checkBudgetWarningAfterSave(date, category) {
         }
     });
 
+    let monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    let bookName = getCurrentBookName();
+
     // Warning per kategori
     let katTarget = currentBudget[category] || 0;
     if(katTarget > 0) {
         let katPct = (totalKat / katTarget) * 100;
         if(katPct >= 100) {
             setTimeout(() => showToast(`🚨 Anggaran "${category}" HABIS! (${Math.round(katPct)}% terpakai)`, 'error'), 500);
+            sendTelegramNotif(
+                `🚨 <b>ANGGARAN HABIS!</b>\n\n` +
+                `📒 Buku: <b>${bookName}</b>\n` +
+                `📂 Kategori: <b>${category}</b>\n` +
+                `📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n` +
+                `💸 Terpakai: <b>${rp(totalKat)}</b> (${Math.round(katPct)}%)\n` +
+                `🎯 Target: ${rp(katTarget)}\n` +
+                `❌ Melebihi: ${rp(totalKat - katTarget)}`
+            );
             return;
         } else if(katPct >= 80) {
             setTimeout(() => showToast(`⚠️ Anggaran "${category}" hampir habis (${Math.round(katPct)}%)`, 'warning'), 500);
+            sendTelegramNotif(
+                `⚠️ <b>Anggaran Hampir Habis</b>\n\n` +
+                `📒 Buku: <b>${bookName}</b>\n` +
+                `📂 Kategori: <b>${category}</b>\n` +
+                `📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n` +
+                `💸 Terpakai: ${rp(totalKat)} (${Math.round(katPct)}%)\n` +
+                `🎯 Target: ${rp(katTarget)}\n` +
+                `💡 Sisa: ${rp(katTarget - totalKat)}`
+            );
             return;
         }
     }
@@ -2766,8 +2962,24 @@ function checkBudgetWarningAfterSave(date, category) {
         let totalPct = (totalBulan / totalTarget) * 100;
         if(totalPct >= 100) {
             setTimeout(() => showToast(`🚨 Total anggaran bulanan HABIS! (${Math.round(totalPct)}% terpakai)`, 'error'), 500);
+            sendTelegramNotif(
+                `🚨 <b>TOTAL ANGGARAN BULANAN HABIS!</b>\n\n` +
+                `📒 Buku: <b>${bookName}</b>\n` +
+                `📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n` +
+                `💸 Total Pengeluaran: <b>${rp(totalBulan)}</b> (${Math.round(totalPct)}%)\n` +
+                `🎯 Total Anggaran: ${rp(totalTarget)}\n` +
+                `❌ Melebihi: ${rp(totalBulan - totalTarget)}`
+            );
         } else if(totalPct >= 80) {
             setTimeout(() => showToast(`⚠️ Total anggaran bulanan hampir habis (${Math.round(totalPct)}%)`, 'warning'), 500);
+            sendTelegramNotif(
+                `⚠️ <b>Anggaran Bulanan Hampir Habis</b>\n\n` +
+                `📒 Buku: <b>${bookName}</b>\n` +
+                `📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n` +
+                `💸 Total Pengeluaran: ${rp(totalBulan)} (${Math.round(totalPct)}%)\n` +
+                `🎯 Total Anggaran: ${rp(totalTarget)}\n` +
+                `💡 Sisa Anggaran: ${rp(totalTarget - totalBulan)}`
+            );
         }
     }
 }
