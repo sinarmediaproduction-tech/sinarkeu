@@ -1106,7 +1106,7 @@ async function callSupabaseAPI(table, method, body = null, queryString = '') {
         'apikey': apiKey,
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates' // Fitur upsert untuk bentrokan data
+        'Prefer': 'resolution=merge-duplicates,return=representation' // upsert + konfirmasi respons
     };
 
     const config = {
@@ -1150,8 +1150,10 @@ async function pushToCloud() {
     if (payload.length === 0) return;
 
     let res = await callSupabaseAPI('transactions', 'POST', payload);
-    if(res) {
-        console.log("Sinkronisasi transaksi ke Supabase Cloud Berhasil.");
+    if(res && Array.isArray(res)) {
+        console.log(`Sinkronisasi ${res.length} transaksi ke Supabase Cloud berhasil.`);
+    } else if(res === null) {
+        console.warn("pushToCloud: respons null — cek koneksi atau konfigurasi Supabase.");
     }
 }
 
@@ -1341,13 +1343,11 @@ function render() {
     let runningBalance = currentBalance;
     
     // Jalankan kalkulasi saldo bertingkat dari urutan waktu terlama ke terbaru
-    let copyForBalance = [...filtered].sort((a,b) => new Date(a.date) - new Date(b.date));
+    // Hitung balanceMap dari SEMUA txs (tidak difilter) supaya saldo akurat saat filter aktif
+    let allSorted = [...txs].sort((a,b) => new Date(a.date) - new Date(b.date));
     let balanceMap = {};
     let tempBal = 0;
-    
-    // Catatan: Jika tabel difilter, saldo bertingkat dihitung berdasarkan total absolut seluruh database internal 
-    // agar pembukuan tidak kacau. Di bawah ini disederhanakan berdasarkan item terfilter untuk visual yang bersih.
-    copyForBalance.forEach(t => {
+    allSorted.forEach(t => {
         let amt = Number(t.amount) || 0;
         if(t.type === 'income') tempBal += amt;
         else tempBal -= amt;
@@ -1581,8 +1581,14 @@ function downloadAttachment() {
 function setFilter(f) {
     currentFilter = f;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    let eventTarget = event ? event.target : null;
-    if(eventTarget) eventTarget.classList.add('active');
+    // Tandai tombol aktif berdasarkan nilai filter, bukan event global (lebih aman)
+    document.querySelectorAll('.filter-btn').forEach(b => {
+        const btnText = b.innerText.trim().toLowerCase();
+        const match = (f === 'all' && btnText === 'semua') ||
+                      (f === 'income' && btnText === 'masuk') ||
+                      (f === 'expense' && btnText === 'keluar');
+        if(match) b.classList.add('active');
+    });
     render();
 }
 
@@ -1675,17 +1681,41 @@ function switchBook(id) {
     }
 }
 
-function deleteBook(id) {
+async function deleteBook(id) {
     if(id === currentBookId) { alert('Tidak bisa menghapus buku kas yang sedang dibuka!'); return; }
     let b = books.find(x => x.id === id);
-    if(b && confirm(`Hapus permanen buku "${b.name}" beserta seluruh data lokal didalamnya?`)) {
+    if(b && confirm(`Hapus permanen buku "${b.name}" beserta seluruh data lokal dan cloud?`)) {
         
+        // Hapus data di Supabase cloud jika buku ini terhubung
+        const savedUrl = cloudUrls[id];
+        const savedKey = supabaseKeys[id];
+        if(savedUrl && savedKey) {
+            // Simpan sementara agar callSupabaseAPI bisa pakai
+            const prevBookId = currentBookId;
+            currentBookId = id;
+            try {
+                const delRes = await callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${id}`);
+                if(delRes !== null) {
+                    console.log(`Data cloud buku "${b.name}" berhasil dihapus.`);
+                } else {
+                    console.warn(`Gagal hapus data cloud buku "${b.name}" — hapus manual di Supabase jika perlu.`);
+                }
+                // Hapus audit log cloud juga
+                await callSupabaseAPI('audit_logs', 'DELETE', null, `?book_id=eq.${id}`);
+            } catch(e) {
+                console.error('Gagal hapus data cloud:', e);
+            }
+            currentBookId = prevBookId;
+        }
+
         // Bersihkan data lokal buku tersebut
         localStorage.removeItem('af_txs_' + id);
         localStorage.removeItem('af_budgets_' + id);
         localStorage.removeItem('af_logs_' + id);
-        
-        // Hapus dari konfigurasi cloud jika ada
+        localStorage.removeItem('af_manual_backups_' + id);
+        localStorage.removeItem('af_last_auto_backup_' + id);
+
+        // Hapus dari konfigurasi cloud
         delete cloudUrls[id];
         delete supabaseKeys[id];
         localStorage.setItem('af_cloud_urls', JSON.stringify(cloudUrls));
@@ -1696,7 +1726,7 @@ function deleteBook(id) {
         
         renderBookList();
         updateBookSelectDropdown();
-        showToast("Buku kas dihapus", "warning");
+        showToast("Buku kas & data cloud dihapus", "warning");
     }
 }
 
@@ -1814,14 +1844,11 @@ function deleteBackupIndex(i) {
 }
 
 function restoreFromBackup() {
-    let last = localStorage.getItem('af_last_auto_backup_' + currentBookId);
-    if(!last) { alert('Tidak ditemukan cadangan otomatis.'); return; }
     let backups = JSON.parse(localStorage.getItem('af_manual_backups_' + currentBookId) || '[]');
-    if(backups.length > 0) {
-        restoreFromIndex(0);
-    } else {
-        alert('Data snapshot kosong.');
-    }
+    if(backups.length === 0) { alert('Tidak ditemukan snapshot cadangan. Buat backup manual terlebih dahulu.'); return; }
+    // Arahkan user ke panel backup untuk pilih snapshot secara eksplisit
+    openBackupManager();
+    showToast('Pilih snapshot yang ingin di-restore dari daftar di bawah.');
 }
 
 // ==================== MANAJER BUDGETING & BAR ANGGARAN ====================
