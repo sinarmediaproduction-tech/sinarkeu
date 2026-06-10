@@ -1126,6 +1126,13 @@
         #manualSyncBtn:hover:not(:disabled) {
             background: #006644;
         }
+        
+        .telegram-badge {
+            background: #0088cc;
+        }
+        .telegram-badge:hover:not(:disabled) {
+            background: #006699;
+        }
     </style>
 </head>
 <body>
@@ -1169,7 +1176,7 @@
     <div class="header">
         <div>
             <h1>Sinarkeu</h1>
-            <p>Sistem Multi Buku Kas dengan Supabase Cloud · v11 (Only Online Mode)</p>
+            <p>Sistem Multi Buku Kas dengan Supabase Cloud · v12 (Full Sync)</p>
         </div>
         <div class="book-selector">
             <div id="syncStatusWrapper" class="sync-status-container offline">
@@ -1180,7 +1187,8 @@
             <label>BUKU:</label>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
             <button class="manage-books-btn" id="kelolaBukuBtn" onclick="openBookManager()">Kelola</button>
-            <button class="manage-books-btn" id="telegramBtn" onclick="openTelegramSettings()" style="background:#0088cc;" title="Setelan Notifikasi Telegram">Telegram</button>
+            <button class="manage-books-btn telegram-badge" id="telegramBtn" onclick="openTelegramSettings()" style="background:#0088cc;" title="Setelan Notifikasi Telegram">Telegram</button>
+            <button class="manage-books-btn" id="manualSyncBtn" style="background:#00875a;" onclick="forceFullSync()">🔄 Sinkronisasi</button>
         </div>
     </div>
 
@@ -1298,7 +1306,7 @@
 
 <div id="toastMessage" class="toast-message"><span id="toastIcon">✅</span><span id="toastText"></span></div>
 
-<!-- MODALS (sama seperti sebelumnya, tapi akan ditambahkan disabled logic) -->
+<!-- MODALS -->
 <div id="addModal" class="modal">
     <div class="modal-content">
         <div class="modal-header"><h3>Transaksi Baru</h3><button class="modal-close" onclick="closeModal('addModal')">×</button></div>
@@ -1554,8 +1562,6 @@ let reportChart = null;
 const EXPENSE_CATEGORIES = ['Makanan & Minuman', 'Transportasi', 'Belanja & Pakaian', 'Tagihan', 'Hiburan', 'Kesehatan', 'Pendidikan', 'Cicilan & Hutang', 'Investasi', 'Lain-lain'];
 const PAGE_SIZE = 10;
 let currentPage = 1;
-let _supabaseClient = null;
-let _realtimeChannel = null;
 let _lastSyncTime = null;
 let _syncInterval = null;
 
@@ -1572,92 +1578,23 @@ function requireOnline(operationName) {
     return true;
 }
 
-function updateUIForOnlineStatus() {
-    const online = isOnline();
-    const offlineWarning = document.getElementById('offlineWarningBar');
-    const actionButtons = [
-        'tambahTransaksiBtn',
-        'kelolaBukuBtn',
-        'telegramBtn',
-        'anggaranBtn',
-        'manualSyncBtn'
-    ];
-    
-    if (online) {
-        if (offlineWarning) offlineWarning.classList.remove('show');
-        // Enable action buttons
-        actionButtons.forEach(id => {
-            const btn = document.getElementById(id);
-            if (btn) {
-                btn.removeAttribute('disabled');
-                btn.style.opacity = '1';
-            }
-        });
-        // Enable action buttons in tables (will be applied in render)
-        document.querySelectorAll('.action-btn').forEach(btn => {
-            btn.removeAttribute('disabled');
-        });
-    } else {
-        if (offlineWarning) offlineWarning.classList.add('show');
-        // Disable action buttons
-        actionButtons.forEach(id => {
-            const btn = document.getElementById(id);
-            if (btn) {
-                btn.setAttribute('disabled', true);
-                btn.style.opacity = '0.5';
-            }
-        });
-        // Disable action buttons in tables
-        document.querySelectorAll('.action-btn').forEach(btn => {
-            btn.setAttribute('disabled', true);
-        });
-    }
-    
-    updateSyncStatusBadge();
-}
-
-function updateSyncStatusBadge() {
-    const wrapper = document.getElementById('syncStatusWrapper');
-    const tag = document.getElementById('syncStatusTag');
-    const online = isOnline();
-    
-    if (online && getCloudUrl() && getSupabaseKey()) {
-        wrapper.className = 'sync-status-container online';
-        tag.innerHTML = '☁️ SUPABASE ON';
-    } else if (!navigator.onLine) {
-        wrapper.className = 'sync-status-container offline';
-        tag.innerHTML = '📴 MODE BACA SAJA';
-    } else {
-        wrapper.className = 'sync-status-container offline';
-        tag.innerHTML = '📴 CLOUD OFF';
-    }
-}
-
 // ==================== CRYPTO ENGINE ====================
-const CRYPTO_SALT_KEY   = 'sk_crypto_salt';
-const CRYPTO_CHECK_KEY  = 'sk_crypto_check';
-const CRYPTO_URL_KEY    = 'sk_enc_supabase_url';
-const CRYPTO_AKEY_KEY   = 'sk_enc_supabase_key';
-const SENTINEL_PLAIN    = 'sinarkeu_ok';
+const CRYPTO_SALT_KEY = 'sk_crypto_salt';
+const CRYPTO_CHECK_KEY = 'sk_crypto_check';
+const CRYPTO_URL_KEY = 'sk_enc_supabase_url';
+const CRYPTO_AKEY_KEY = 'sk_enc_supabase_key';
+const SENTINEL_PLAIN = 'sinarkeu_ok';
 
 async function deriveKey(password, saltBuf) {
     const enc = new TextEncoder();
-    const baseKey = await crypto.subtle.importKey(
-        'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
-    );
-    return crypto.subtle.deriveKey(
-        { name: 'PBKDF2', salt: saltBuf, iterations: 300000, hash: 'SHA-256' },
-        baseKey,
-        { name: 'AES-GCM', length: 256 },
-        false,
-        ['encrypt', 'decrypt']
-    );
+    const baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: saltBuf, iterations: 300000, hash: 'SHA-256' }, baseKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
 }
 
 async function encryptStr(cryptoKey, plaintext) {
     const enc = new TextEncoder();
-    const iv  = crypto.getRandomValues(new Uint8Array(12));
-    const ct  = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, enc.encode(plaintext));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, enc.encode(plaintext));
     const combined = new Uint8Array(iv.byteLength + ct.byteLength);
     combined.set(iv, 0);
     combined.set(new Uint8Array(ct), iv.byteLength);
@@ -1666,8 +1603,8 @@ async function encryptStr(cryptoKey, plaintext) {
 
 async function decryptStr(cryptoKey, b64) {
     const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-    const iv    = bytes.slice(0, 12);
-    const ct    = bytes.slice(12);
+    const iv = bytes.slice(0, 12);
+    const ct = bytes.slice(12);
     const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, ct);
     return new TextDecoder().decode(plain);
 }
@@ -1677,11 +1614,11 @@ function isPasswordConfigured() {
 }
 
 async function saveEncryptedCredentials(cryptoKey, url, apiKey) {
-    const encUrl   = await encryptStr(cryptoKey, url);
-    const encAKey  = await encryptStr(cryptoKey, apiKey);
+    const encUrl = await encryptStr(cryptoKey, url);
+    const encAKey = await encryptStr(cryptoKey, apiKey);
     const encCheck = await encryptStr(cryptoKey, SENTINEL_PLAIN);
-    localStorage.setItem(CRYPTO_URL_KEY,   encUrl);
-    localStorage.setItem(CRYPTO_AKEY_KEY,  encAKey);
+    localStorage.setItem(CRYPTO_URL_KEY, encUrl);
+    localStorage.setItem(CRYPTO_AKEY_KEY, encAKey);
     localStorage.setItem(CRYPTO_CHECK_KEY, encCheck);
 }
 
@@ -1721,90 +1658,11 @@ async function reEncryptCredentials(url, apiKey) {
 function getCloudUrl() { return globalSupabaseUrl || ''; }
 function getSupabaseKey() { return globalSupabaseKey || ''; }
 
-// ==================== PASSWORD LOCK SCREEN ====================
-function showPasswordLock() {
-    const screen = document.getElementById('passwordLockScreen');
-    screen.style.display = 'flex';
-    document.getElementById('lockTitle').innerText    = 'Sinarkeu';
-    document.getElementById('lockSubtitle').innerText = 'Masukkan password untuk membuka aplikasi';
-    document.getElementById('lockSubmitBtn').innerText = '🔓 Buka';
-    document.getElementById('lockIcon').innerText      = '🔒';
-    document.getElementById('lockWarning').style.display = 'none';
-    setTimeout(() => document.getElementById('lockPasswordInput').focus(), 100);
-}
-
-function hideLockScreen() {
-    document.getElementById('passwordLockScreen').style.display = 'none';
-}
-
-function clearLockError() {
-    document.getElementById('lockStatus').innerText = '';
-    document.getElementById('lockPasswordInput').classList.remove('error-shake');
-}
-
-function toggleLockEye() {
-    const inp = document.getElementById('lockPasswordInput');
-    const btn = document.getElementById('lockEyeBtn');
-    if (inp.type === 'password') { inp.type = 'text'; btn.innerText = '🙈'; }
-    else { inp.type = 'password'; btn.innerText = '👁'; }
-}
-
-async function submitLockPassword() {
-    const pwd    = document.getElementById('lockPasswordInput').value;
-    const status = document.getElementById('lockStatus');
-    const btn    = document.getElementById('lockSubmitBtn');
-    if (!pwd) { status.innerText = '❌ Password tidak boleh kosong'; return; }
-    btn.disabled = true;
-    btn.innerText = '⏳ Memverifikasi...';
-    status.innerText = '';
-    const ok = await unlockWithPassword(pwd);
-    if (ok) {
-        hideLockScreen();
-        continueAppInit();
-    } else {
-        btn.disabled = false;
-        btn.innerText = '🔓 Buka';
-        status.innerText = '❌ Password salah';
-        const inp = document.getElementById('lockPasswordInput');
-        inp.classList.remove('error-shake');
-        void inp.offsetWidth;
-        inp.classList.add('error-shake');
-        inp.value = '';
-        inp.focus();
-    }
-}
-
-function evalSetupPwdStrength() {
-    const pwd  = document.getElementById('setupPwdInput') ? document.getElementById('setupPwdInput').value : '';
-    const fill = document.getElementById('setupPwdStrengthFill');
-    const lbl  = document.getElementById('setupPwdStrengthLabel');
-    if (!fill || !lbl) return;
-    let score = 0;
-    if (pwd.length >= 6)  score++;
-    if (pwd.length >= 10) score++;
-    if (/[A-Z]/.test(pwd)) score++;
-    if (/[0-9]/.test(pwd)) score++;
-    if (/[^A-Za-z0-9]/.test(pwd)) score++;
-    const levels = [
-        { w:'0%',   bg:'#eee',     t:'' },
-        { w:'25%',  bg:'#de350b',  t:'Sangat lemah' },
-        { w:'50%',  bg:'#ff8b00',  t:'Lemah' },
-        { w:'70%',  bg:'#ffab00',  t:'Cukup' },
-        { w:'88%',  bg:'#00875a',  t:'Kuat' },
-        { w:'100%', bg:'#006644',  t:'Sangat kuat' },
-    ];
-    const l = levels[score] || levels[0];
-    fill.style.width = l.w;
-    fill.style.background = l.bg;
-    lbl.innerText = l.t;
-    lbl.style.color = l.bg;
-}
-
 // ==================== UTILITIES ====================
 function showToast(msg, type = 'success') {
-    let toast = document.getElementById('toastMessage');
-    let icon = document.getElementById('toastIcon');
-    let text = document.getElementById('toastText');
+    const toast = document.getElementById('toastMessage');
+    const icon = document.getElementById('toastIcon');
+    const text = document.getElementById('toastText');
     if (type === 'success') { icon.innerHTML = '✅'; toast.style.background = '#00875a'; }
     else if (type === 'error') { icon.innerHTML = '❌'; toast.style.background = '#de350b'; }
     else if (type === 'warning') { icon.innerHTML = '⚠️'; toast.style.background = '#cc7b00'; }
@@ -1834,17 +1692,17 @@ function formatRupiah(el) {
     el.value = v ? Number(v).toLocaleString('id-ID') : '';
 }
 function escapeHtml(str) {
-    if(!str) return '';
+    if (!str) return '';
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 function formatDateTime(dtStr) {
-    if(!dtStr) return '-';
+    if (!dtStr) return '-';
     let d = new Date(dtStr);
-    if(isNaN(d.getTime())) return dtStr;
-    return d.toLocaleDateString('id-ID', {day:'2-digit', month:'2-digit', year:'numeric'}) + ' ' + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+    if (isNaN(d.getTime())) return dtStr;
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 }
 
-// ==================== TELEGRAM (Ringkasan) ====================
+// ==================== TELEGRAM ====================
 function getTgConfig() {
     let token = localStorage.getItem('sk_tg_token') || '';
     let chatId = localStorage.getItem('sk_tg_chatid') || '';
@@ -1898,6 +1756,22 @@ function loadTgConfigToForm() {
     updateTgStatusBadge();
 }
 
+async function sendTelegramNotif(msg) {
+    let cfg = getTgConfig();
+    if (!cfg.active) return;
+    try {
+        const res = await fetch(`https://api.telegram.org/bot${cfg.token}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: cfg.chatId, text: msg, parse_mode: 'HTML' })
+        });
+        const data = await res.json();
+        if (!data.ok) console.warn('[Telegram] Gagal kirim:', data.description);
+    } catch (e) {
+        console.warn('[Telegram] Gagal kirim notifikasi:', e.message);
+    }
+}
+
 async function testTelegramNotif() {
     let token = document.getElementById('tgBotTokenInput').value.trim();
     let chatId = document.getElementById('tgChatIdInput').value.trim();
@@ -1926,57 +1800,12 @@ async function testTelegramNotif() {
             showToast('Tes Telegram berhasil! ✅', 'success');
         } else {
             let errMsg = data.description || JSON.stringify(data);
+            if (errMsg.includes('chat not found')) errMsg = 'Chat ID tidak ditemukan. Pastikan bot sudah di-/start atau ditambah ke grup.';
+            if (errMsg.includes('Unauthorized')) errMsg = 'Bot Token tidak valid. Cek kembali dari @BotFather.';
             statusEl.innerHTML = `<span style="color:#de350b;">❌ ${escapeHtml(errMsg)}</span>`;
         }
-    } catch(e) {
+    } catch (e) {
         statusEl.innerHTML = `<span style="color:#de350b;">❌ Error jaringan: ${escapeHtml(e.message)}</span>`;
-    }
-}
-
-function sendDailySummaryToTelegram() {
-    let cfg = getTgConfig();
-    if (!cfg.active) return;
-    let now = new Date();
-    let today = now.toLocaleDateString('id-ID', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
-    
-    let incToday = 0, expToday = 0;
-    let todayStr = now.toISOString().slice(0,10);
-    txs.forEach(t => {
-        if (!t.date) return;
-        let d = t.date.slice(0,10);
-        if (d === todayStr) {
-            let amt = Number(t.amount) || 0;
-            if (t.type === 'income') incToday += amt;
-            else expToday += amt;
-        }
-    });
-
-    let totalInc = 0, totalExp = 0;
-    txs.forEach(t => {
-        let amt = Number(t.amount) || 0;
-        if (t.type === 'income') totalInc += amt;
-        else totalExp += amt;
-    });
-    let saldo = totalInc - totalExp;
-
-    let msg = `📅 <b>Ringkasan Harian Sinarkeu</b>\n${today}\n📒 Buku: <b>${getCurrentBookName()}</b>\n━━━━━━━━━━━━━━━━━━\n<b>Hari Ini:</b>\n💰 Masuk: ${rp(incToday)}\n💸 Keluar: ${rp(expToday)}\n━━━━━━━━━━━━━━━━━━\n${saldo >= 0 ? '🟢' : '🔴'} <b>Saldo Total: ${rp(saldo)}</b>`;
-
-    sendTelegramNotif(msg);
-}
-
-async function sendTelegramNotif(msg) {
-    let cfg = getTgConfig();
-    if (!cfg.active) return;
-    try {
-        const res = await fetch(`https://api.telegram.org/bot${cfg.token}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: cfg.chatId, text: msg, parse_mode: 'HTML' })
-        });
-        const data = await res.json();
-        if (!data.ok) console.warn('[Telegram] Gagal kirim:', data.description);
-    } catch(e) {
-        console.warn('[Telegram] Gagal kirim notifikasi:', e.message);
     }
 }
 
@@ -2006,6 +1835,50 @@ function getCurrentBookName() {
     return book ? book.name : currentBookId;
 }
 
+function sendDailySummaryToTelegram() {
+    let cfg = getTgConfig();
+    if (!cfg.active) return;
+    let now = new Date();
+    let today = now.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+    let m = now.getMonth() + 1;
+    let y = now.getFullYear();
+    let monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+    let incToday = 0, expToday = 0;
+    let todayStr = now.toISOString().slice(0, 10);
+    txs.forEach(t => {
+        if (!t.date) return;
+        let d = t.date.slice(0, 10);
+        if (d === todayStr) {
+            let amt = Number(t.amount) || 0;
+            if (t.type === 'income') incToday += amt;
+            else expToday += amt;
+        }
+    });
+
+    let incBulan = 0, expBulan = 0;
+    txs.forEach(t => {
+        let d = new Date(t.date);
+        if ((d.getMonth() + 1) === m && d.getFullYear() === y) {
+            let amt = Number(t.amount) || 0;
+            if (t.type === 'income') incBulan += amt;
+            else expBulan += amt;
+        }
+    });
+
+    let totalInc = 0, totalExp = 0;
+    txs.forEach(t => {
+        let amt = Number(t.amount) || 0;
+        if (t.type === 'income') totalInc += amt;
+        else totalExp += amt;
+    });
+    let saldo = totalInc - totalExp;
+
+    let msg = `📅 <b>Ringkasan Harian Sinarkeu</b>\n${today}\n📒 Buku: <b>${getCurrentBookName()}</b>\n━━━━━━━━━━━━━━━━━━\n<b>Hari Ini:</b>\n💰 Masuk: ${rp(incToday)}\n💸 Keluar: ${rp(expToday)}\n📊 Selisih: ${rp(incToday - expToday)}\n\n<b>Bulan ${monthNames[m - 1]} ${y}:</b>\n💰 Pemasukan: ${rp(incBulan)}\n💸 Pengeluaran: ${rp(expBulan)}\n📊 Selisih: ${rp(incBulan - expBulan)}\n━━━━━━━━━━━━━━━━━━\n${saldo >= 0 ? '🟢' : '🔴'} <b>Saldo Total: ${rp(saldo)}</b>`;
+
+    sendTelegramNotif(msg);
+}
+
 function scheduleDailySummary() {
     let cfg = getTgConfig();
     if (!cfg.active) return;
@@ -2018,6 +1891,7 @@ function scheduleDailySummary() {
         sendDailySummaryToTelegram();
         setInterval(sendDailySummaryToTelegram, 24 * 60 * 60 * 1000);
     }, msUntil);
+    console.log(`[Telegram] Ringkasan harian dijadwalkan pukul 21:00`);
 }
 
 // ==================== SUPABASE API ====================
@@ -2026,7 +1900,9 @@ async function callSupabaseAPI(table, method, body = null, queryString = '') {
     const apiKey = getSupabaseKey();
     if (!baseUrl || !apiKey) return null;
 
-    const url = `${baseUrl}/rest/v1/${table}${queryString}`;
+    let url = `${baseUrl}/rest/v1/${table}`;
+    if (queryString) url += queryString;
+
     const headers = {
         'apikey': apiKey,
         'Authorization': `Bearer ${apiKey}`,
@@ -2041,7 +1917,7 @@ async function callSupabaseAPI(table, method, body = null, queryString = '') {
         const res = await fetch(url, config);
         if (!res.ok) {
             const errText = await res.text();
-            throw new Error(errText || `HTTP error! status: ${res.status}`);
+            throw new Error(errText);
         }
         const text = await res.text();
         return text ? JSON.parse(text) : true;
@@ -2051,7 +1927,7 @@ async function callSupabaseAPI(table, method, body = null, queryString = '') {
     }
 }
 
-// ==================== PUSH SETTINGS ====================
+// ==================== PUSH SETTINGS (UPSERT) ====================
 async function pushSetting(key, value, bookId) {
     if (!isOnline()) return;
     const payload = [{
@@ -2065,13 +1941,8 @@ async function pushSetting(key, value, bookId) {
 
 async function pushSettingBooks() {
     if (!isOnline()) return;
-    const payload = [{
-        book_id: 'global',
-        key: 'books',
-        value: JSON.stringify(books),
-        updated_at: new Date().toISOString()
-    }];
-    await callSupabaseAPI('settings', 'POST', payload);
+    await pushSetting('books', books, 'global');
+    console.log('[Sync] Books saved to cloud:', books.length);
 }
 
 async function pushSettingBudgets() {
@@ -2091,23 +1962,25 @@ async function pullAllSettings() {
     if (!isOnline()) return;
 
     const allRows = await callSupabaseAPI('settings', 'GET', null, '?order=updated_at.desc');
-    
+
     if (allRows && Array.isArray(allRows)) {
         let booksUpdated = false;
-        
+        let telegramUpdated = false;
+
         for (const row of allRows) {
             let parsed;
             try { parsed = JSON.parse(row.value); } catch { continue; }
 
             if (row.key === 'books' && Array.isArray(parsed) && parsed.length > 0) {
-                const localIds = new Set(books.map(b => b.id));
+                const existingIds = new Set(books.map(b => b.id));
                 let merged = [...books];
                 let changed = false;
-                
+
                 parsed.forEach(cb => {
-                    if (!localIds.has(cb.id)) {
+                    if (!existingIds.has(cb.id)) {
                         merged.push(cb);
                         changed = true;
+                        console.log('[Sync] Buku baru dari cloud:', cb.name);
                     } else {
                         const idx = merged.findIndex(b => b.id === cb.id);
                         if (idx !== -1 && merged[idx].name !== cb.name) {
@@ -2116,12 +1989,12 @@ async function pullAllSettings() {
                         }
                     }
                 });
-                
+
                 if (changed) {
                     books = merged;
                     localStorage.setItem('sk_books', JSON.stringify(books));
                     booksUpdated = true;
-                    
+
                     if (!books.find(b => b.id === currentBookId) && books.length > 0) {
                         currentBookId = books[0].id;
                         localStorage.setItem('sk_current_book_id', currentBookId);
@@ -2130,22 +2003,27 @@ async function pullAllSettings() {
             }
 
             if (row.key === 'telegram_config') {
+                const oldToken = localStorage.getItem('sk_tg_token');
                 if (parsed.token) localStorage.setItem('sk_tg_token', parsed.token);
                 else localStorage.removeItem('sk_tg_token');
                 if (parsed.chatId) localStorage.setItem('sk_tg_chatid', parsed.chatId);
                 else localStorage.removeItem('sk_tg_chatid');
-                updateTgStatusBadge();
+
+                if (oldToken !== parsed.token) telegramUpdated = true;
             }
-            
+
             if (row.key === 'budgets') {
                 localStorage.setItem('sk_budgets_' + row.book_id, JSON.stringify(parsed));
                 if (row.book_id === currentBookId) budgets = parsed;
             }
         }
-        
+
         if (booksUpdated) {
             updateBookSelectDropdown();
             showToast('📚 Daftar buku diperbarui dari cloud', 'info');
+        }
+        if (telegramUpdated) {
+            updateTgStatusBadge();
         }
     }
 }
@@ -2153,15 +2031,15 @@ async function pullAllSettings() {
 // ==================== PULL TRANSACTIONS ====================
 async function pullFromCloudSilently() {
     if (!isOnline()) return;
-    
+
     let cloudData = await callSupabaseAPI('transactions', 'GET', null, `?book_id=eq.${currentBookId}&order=date.desc`);
-    
+
     if (cloudData && Array.isArray(cloudData)) {
         const cloudMapped = cloudData.map(c => ({
             id: c.id,
             type: c.type,
             amount: Number(c.amount),
-            category: c.category,
+            category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
             description: c.description,
             date: c.date,
             attachment: c.attachment
@@ -2170,7 +2048,7 @@ async function pullFromCloudSilently() {
         txs = cloudMapped;
         localStorage.setItem('sk_txs_' + currentBookId, JSON.stringify(txs));
         render();
-        
+
         _lastSyncTime = new Date();
         updateSyncTimeBadge();
     }
@@ -2178,9 +2056,9 @@ async function pullFromCloudSilently() {
 
 async function pullAllBooksFromCloud() {
     if (!isOnline()) return;
-    
+
     await pullAllSettings();
-    
+
     const bookIds = books.map(b => b.id);
     if (bookIds.length === 0) return;
 
@@ -2192,7 +2070,7 @@ async function pullAllBooksFromCloud() {
             id: c.id,
             type: c.type,
             amount: Number(c.amount),
-            category: c.category,
+            category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
             description: c.description,
             date: c.date,
             attachment: c.attachment
@@ -2205,17 +2083,18 @@ async function pullAllBooksFromCloud() {
             render();
         }
     }
-    
+
     _lastSyncTime = new Date();
     updateSyncTimeBadge();
+    console.log('[Sync] Selesai pull semua buku —', bookIds.length, 'buku diproses');
 }
 
 // ==================== FORCE FULL SYNC ====================
 async function forceFullSync() {
     if (!requireOnline('sinkronisasi')) return;
-    
+
     showToast('🔄 Memulai sinkronisasi penuh...', 'info');
-    
+
     try {
         await pullAllSettings();
         await pullAllBooksFromCloud();
@@ -2228,20 +2107,6 @@ async function forceFullSync() {
     } catch (e) {
         console.error('[Sync] Gagal sinkronisasi:', e);
         showToast('❌ Gagal sinkronisasi, coba lagi nanti', 'error');
-    }
-}
-
-function addSyncButton() {
-    const bookSelector = document.querySelector('.book-selector');
-    if (bookSelector && !document.getElementById('manualSyncBtn')) {
-        const syncBtn = document.createElement('button');
-        syncBtn.id = 'manualSyncBtn';
-        syncBtn.className = 'manage-books-btn';
-        syncBtn.style.background = '#00875a';
-        syncBtn.innerHTML = '🔄 Sinkronisasi';
-        syncBtn.onclick = forceFullSync;
-        syncBtn.title = 'Sinkronisasi manual semua data dari cloud';
-        bookSelector.appendChild(syncBtn);
     }
 }
 
@@ -2264,8 +2129,10 @@ async function pushToCloud() {
     if (payload.length === 0) return;
 
     let res = await callSupabaseAPI('transactions', 'POST', payload);
-    if(res && Array.isArray(res)) {
+    if (res && Array.isArray(res)) {
         console.log(`Sinkronisasi ${res.length} transaksi ke Supabase Cloud berhasil.`);
+        _lastSyncTime = new Date();
+        updateSyncTimeBadge();
     }
 }
 
@@ -2279,7 +2146,7 @@ async function addCloudLog(actionType, detailsText) {
         details: detailsText
     };
     localLogs.unshift(logObj);
-    if(localLogs.length > 50) localLogs.pop();
+    if (localLogs.length > 50) localLogs.pop();
     localStorage.setItem('sk_logs_' + currentBookId, JSON.stringify(localLogs));
     renderLogs(localLogs);
 
@@ -2303,10 +2170,10 @@ async function refreshLogsFromCloud() {
         refreshLogsLocal();
         return;
     }
-    
+
     area.innerText = "Memuat log dari cloud...";
     let cloudLogs = await callSupabaseAPI('audit_logs', 'GET', null, `?book_id=eq.${currentBookId}&order=timestamp.desc&limit=30`);
-    
+
     if (cloudLogs && Array.isArray(cloudLogs)) {
         renderLogs(cloudLogs);
     } else {
@@ -2322,8 +2189,8 @@ function refreshLogsLocal() {
 
 function renderLogs(logArray) {
     let area = document.getElementById('logSummaryArea');
-    if(!area) return;
-    if(logArray.length === 0) {
+    if (!area) return;
+    if (logArray.length === 0) {
         area.innerText = "Belum ada log aktivitas.";
         return;
     }
@@ -2331,12 +2198,12 @@ function renderLogs(logArray) {
     logArray.forEach(l => {
         let div = document.createElement('div');
         div.className = 'log-line';
-        
+
         let tagClass = 'tag-system';
-        if(l.action === 'TAMBAH') tagClass = 'tag-add';
-        else if(l.action === 'UBAH') tagClass = 'tag-edit';
-        else if(l.action === 'HAPUS') tagClass = 'tag-delete';
-        
+        if (l.action === 'TAMBAH') tagClass = 'tag-add';
+        else if (l.action === 'UBAH') tagClass = 'tag-edit';
+        else if (l.action === 'HAPUS') tagClass = 'tag-delete';
+
         let t = l.timestamp ? new Date(l.timestamp).toLocaleTimeString('id-ID') : '';
         div.innerHTML = `<span class="log-tag ${tagClass}">${escapeHtml(l.action)}</span> [${escapeHtml(t)}] Device:${escapeHtml(l.device_id || 'UNKNOWN')} - ${escapeHtml(l.details)}`;
         area.appendChild(div);
@@ -2362,9 +2229,9 @@ function toggleAuditLog() {
 function loadTransactions() {
     let stored = localStorage.getItem('sk_txs_' + currentBookId);
     txs = stored ? JSON.parse(stored) : [];
-    txs.sort((a,b) => new Date(b.date) - new Date(a.date));
+    txs.sort((a, b) => new Date(b.date) - new Date(a.date));
     render();
-    
+
     if (isOnline()) {
         pullFromCloudSilently();
     }
@@ -2382,18 +2249,18 @@ function render() {
     body.innerHTML = '';
 
     let search = document.getElementById('searchInput').value.toLowerCase();
-    
+
     let filtered = txs.filter(t => {
-        if(currentFilter === 'income' && t.type !== 'income') return false;
-        if(currentFilter === 'expense' && t.type !== 'expense') return false;
-        
-        if(filterStartDate && t.date < filterStartDate) return false;
-        if(filterEndDate) {
+        if (currentFilter === 'income' && t.type !== 'income') return false;
+        if (currentFilter === 'expense' && t.type !== 'expense') return false;
+
+        if (filterStartDate && t.date < filterStartDate) return false;
+        if (filterEndDate) {
             let endLimit = filterEndDate + 'T23:59:59';
-            if(t.date > endLimit) return false;
+            if (t.date > endLimit) return false;
         }
 
-        if(search) {
+        if (search) {
             let d = (t.description || '').toLowerCase();
             let c = (t.category || '').toLowerCase();
             return d.includes(search) || c.includes(search);
@@ -2406,26 +2273,26 @@ function render() {
     let totalInc = 0, totalExp = 0;
     txs.forEach(t => {
         let amt = Number(t.amount) || 0;
-        if(t.type === 'income') totalInc += amt;
+        if (t.type === 'income') totalInc += amt;
         else totalExp += amt;
     });
-    
+
     let currentBalance = totalInc - totalExp;
     document.getElementById('statBalance').innerText = rp(currentBalance);
     document.getElementById('statIncome').innerText = rp(totalInc);
     document.getElementById('statExpense').innerText = rp(totalExp);
 
-    let allSorted = [...txs].sort((a,b) => new Date(a.date) - new Date(b.date));
+    let allSorted = [...txs].sort((a, b) => new Date(a.date) - new Date(b.date));
     let balanceMap = {};
     let tempBal = 0;
     allSorted.forEach(t => {
         let amt = Number(t.amount) || 0;
-        if(t.type === 'income') tempBal += amt;
+        if (t.type === 'income') tempBal += amt;
         else tempBal -= amt;
         balanceMap[t.id] = tempBal;
     });
 
-    if(filtered.length === 0) {
+    if (filtered.length === 0) {
         body.innerHTML = '<tr><td colspan="9" class="text-center" style="color:#888; padding:30px;">Tidak ada transaksi ditemukan</td></tr>';
         document.getElementById('paginationBar').style.display = 'none';
         renderBudget();
@@ -2442,16 +2309,16 @@ function render() {
 
     paginated.forEach((t, index) => {
         let tr = document.createElement('tr');
-        
+
         let amt = Number(t.amount) || 0;
         let incText = t.type === 'income' ? rp(amt) : '-';
         let expText = t.type === 'expense' ? rp(amt) : '-';
-        
+
         let badge = t.type === 'income' ? '<span class="type-badge badge-inc">MASUK</span>' : '<span class="type-badge badge-exp">KELUAR</span>';
         let catText = t.category ? `<span class="category-badge">${escapeHtml(t.category)}</span>` : '-';
-        
+
         let attCell = '<span class="no-attachment">❌</span>';
-        if(t.attachment) {
+        if (t.attachment) {
             attCell = `<span class="attachment-link" onclick="viewAttachment('${t.id}')">🖼️</span>`;
         }
 
@@ -2558,7 +2425,7 @@ function openModal(id) {
         return;
     }
     document.getElementById(id).classList.add('show');
-    if(id === 'addModal') {
+    if (id === 'addModal') {
         let now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
         document.getElementById('txDate').value = now.toISOString().slice(0, 16);
@@ -2576,22 +2443,22 @@ function closeModal(id) {
 function toggleCategoryField() {
     let type = document.querySelector('input[name="type"]:checked').value;
     let group = document.getElementById('categoryGroup');
-    if(type === 'income') group.style.display = 'none';
+    if (type === 'income') group.style.display = 'none';
     else group.style.display = 'block';
 }
 
 function toggleEditCategoryField() {
     let type = document.querySelector('input[name="editType"]:checked').value;
     let group = document.getElementById('editCategoryGroup');
-    if(type === 'income') group.style.display = 'none';
+    if (type === 'income') group.style.display = 'none';
     else group.style.display = 'block';
 }
 
 function previewAttachment(input) {
     let prev = document.getElementById('attachmentPreview');
-    if(input.files && input.files[0]) {
+    if (input.files && input.files[0]) {
         let r = new FileReader();
-        r.onload = function(e) {
+        r.onload = function (e) {
             prev.src = e.target.result;
             prev.style.display = 'block';
             currentAttachmentData = e.target.result;
@@ -2602,9 +2469,9 @@ function previewAttachment(input) {
 
 function previewEditAttachment(input) {
     let prev = document.getElementById('editAttachmentPreview');
-    if(input.files && input.files[0]) {
+    if (input.files && input.files[0]) {
         let r = new FileReader();
-        r.onload = function(e) {
+        r.onload = function (e) {
             prev.src = e.target.result;
             prev.style.display = 'block';
             currentAttachmentData = e.target.result;
@@ -2616,17 +2483,17 @@ function previewEditAttachment(input) {
 
 async function handleSubmit(e) {
     e.preventDefault();
-    
+
     if (!requireOnline('menambah transaksi')) return;
-    
+
     let type = document.querySelector('input[name="type"]:checked').value;
     let date = document.getElementById('txDate').value;
     let category = type === 'expense' ? document.getElementById('txCategory').value : 'Pemasukan';
     let description = document.getElementById('txDesc').value.trim();
     let amount = unRp(document.getElementById('txAmount').value);
 
-    if(type === 'expense' && !category) { alert('Harap pilih kategori!'); return; }
-    if(amount <= 0) { alert('Jumlah nominal harus lebih dari 0!'); return; }
+    if (type === 'expense' && !category) { alert('Harap pilih kategori!'); return; }
+    if (amount <= 0) { alert('Jumlah nominal harus lebih dari 0!'); return; }
 
     let newTx = {
         id: 'tx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
@@ -2639,7 +2506,7 @@ async function handleSubmit(e) {
     saveTransactions();
     showToast("Transaksi berhasil disimpan");
 
-    if(type === 'expense') {
+    if (type === 'expense') {
         checkBudgetWarningAfterSave(date, category);
     }
 
@@ -2659,46 +2526,46 @@ function checkBudgetWarningAfterSave(date, category) {
     EXPENSE_CATEGORIES.forEach(c => totalTarget += (currentBudget[c] || 0));
 
     txs.forEach(t => {
-        if(t.type !== 'expense') return;
+        if (t.type !== 'expense') return;
         let td = new Date(t.date);
-        if((td.getMonth() + 1) == m && td.getFullYear() == y) {
+        if ((td.getMonth() + 1) == m && td.getFullYear() == y) {
             totalBulan += (Number(t.amount) || 0);
-            if(t.category === category) totalKat += (Number(t.amount) || 0);
+            if (t.category === category) totalKat += (Number(t.amount) || 0);
         }
     });
 
-    let monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    let monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     let bookName = getCurrentBookName();
 
     let katTarget = currentBudget[category] || 0;
-    if(katTarget > 0) {
+    if (katTarget > 0) {
         let katPct = (totalKat / katTarget) * 100;
-        if(katPct >= 100) {
+        if (katPct >= 100) {
             setTimeout(() => showToast(`🚨 Anggaran "${category}" HABIS! (${Math.round(katPct)}% terpakai)`, 'error'), 500);
             sendTelegramNotif(
-                `🚨 <b>ANGGARAN HABIS!</b>\n\n📒 Buku: <b>${bookName}</b>\n📂 Kategori: <b>${category}</b>\n📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n💸 Terpakai: <b>${rp(totalKat)}</b> (${Math.round(katPct)}%)\n🎯 Target: ${rp(katTarget)}`
+                `🚨 <b>ANGGARAN HABIS!</b>\n\n📒 Buku: <b>${bookName}</b>\n📂 Kategori: <b>${category}</b>\n📅 Periode: <b>${monthNames[m - 1]} ${y}</b>\n\n💸 Terpakai: <b>${rp(totalKat)}</b> (${Math.round(katPct)}%)\n🎯 Target: ${rp(katTarget)}`
             );
             return;
-        } else if(katPct >= 80) {
+        } else if (katPct >= 80) {
             setTimeout(() => showToast(`⚠️ Anggaran "${category}" hampir habis (${Math.round(katPct)}%)`, 'warning'), 500);
             sendTelegramNotif(
-                `⚠️ <b>Anggaran Hampir Habis</b>\n\n📒 Buku: <b>${bookName}</b>\n📂 Kategori: <b>${category}</b>\n📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n💸 Terpakai: ${rp(totalKat)} (${Math.round(katPct)}%)\n🎯 Target: ${rp(katTarget)}`
+                `⚠️ <b>Anggaran Hampir Habis</b>\n\n📒 Buku: <b>${bookName}</b>\n📂 Kategori: <b>${category}</b>\n📅 Periode: <b>${monthNames[m - 1]} ${y}</b>\n\n💸 Terpakai: ${rp(totalKat)} (${Math.round(katPct)}%)\n🎯 Target: ${rp(katTarget)}`
             );
             return;
         }
     }
 
-    if(totalTarget > 0) {
+    if (totalTarget > 0) {
         let totalPct = (totalBulan / totalTarget) * 100;
-        if(totalPct >= 100) {
+        if (totalPct >= 100) {
             setTimeout(() => showToast(`🚨 Total anggaran bulanan HABIS! (${Math.round(totalPct)}% terpakai)`, 'error'), 500);
             sendTelegramNotif(
-                `🚨 <b>TOTAL ANGGARAN BULANAN HABIS!</b>\n\n📒 Buku: <b>${bookName}</b>\n📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n💸 Total Pengeluaran: <b>${rp(totalBulan)}</b> (${Math.round(totalPct)}%)\n🎯 Total Anggaran: ${rp(totalTarget)}`
+                `🚨 <b>TOTAL ANGGARAN BULANAN HABIS!</b>\n\n📒 Buku: <b>${bookName}</b>\n📅 Periode: <b>${monthNames[m - 1]} ${y}</b>\n\n💸 Total Pengeluaran: <b>${rp(totalBulan)}</b> (${Math.round(totalPct)}%)\n🎯 Total Anggaran: ${rp(totalTarget)}`
             );
-        } else if(totalPct >= 80) {
+        } else if (totalPct >= 80) {
             setTimeout(() => showToast(`⚠️ Total anggaran bulanan hampir habis (${Math.round(totalPct)}%)`, 'warning'), 500);
             sendTelegramNotif(
-                `⚠️ <b>Anggaran Bulanan Hampir Habis</b>\n\n📒 Buku: <b>${bookName}</b>\n📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n💸 Total Pengeluaran: ${rp(totalBulan)} (${Math.round(totalPct)}%)\n🎯 Total Anggaran: ${rp(totalTarget)}`
+                `⚠️ <b>Anggaran Bulanan Hampir Habis</b>\n\n📒 Buku: <b>${bookName}</b>\n📅 Periode: <b>${monthNames[m - 1]} ${y}</b>\n\n💸 Total Pengeluaran: ${rp(totalBulan)} (${Math.round(totalPct)}%)\n🎯 Total Anggaran: ${rp(totalTarget)}`
             );
         }
     }
@@ -2717,26 +2584,26 @@ function openActionMenu(id) {
 
 function loadEditData(id) {
     let t = txs.find(x => x.id === id);
-    if(!t) return;
-    
+    if (!t) return;
+
     document.getElementById('editId').value = t.id;
-    if(t.type === 'income') {
+    if (t.type === 'income') {
         document.getElementById('editTypeIncome').checked = true;
     } else {
         document.getElementById('editTypeExpense').checked = true;
     }
     toggleEditCategoryField();
-    
+
     document.getElementById('editTxDate').value = t.date;
-    if(t.type === 'expense') document.getElementById('editTxCategory').value = t.category;
+    if (t.type === 'expense') document.getElementById('editTxCategory').value = t.category;
     document.getElementById('editTxDesc').value = t.description;
     document.getElementById('editTxAmount').value = Number(t.amount).toLocaleString('id-ID');
-    
+
     let info = document.getElementById('editAttachmentInfo');
     let prev = document.getElementById('editAttachmentPreview');
     currentAttachmentData = t.attachment;
-    
-    if(t.attachment) {
+
+    if (t.attachment) {
         info.innerText = "Sudah memiliki lampiran nota.";
         prev.src = t.attachment;
         prev.style.display = 'block';
@@ -2744,18 +2611,18 @@ function loadEditData(id) {
         info.innerText = "Belum ada lampiran.";
         prev.style.display = 'none';
     }
-    
+
     openModal('editModal');
 }
 
 async function handleEditSubmit(e) {
     e.preventDefault();
-    
+
     if (!requireOnline('mengubah transaksi')) return;
-    
+
     let id = document.getElementById('editId').value;
     let idx = txs.findIndex(x => x.id === id);
-    if(idx === -1) return;
+    if (idx === -1) return;
 
     let type = document.querySelector('input[name="editType"]:checked').value;
     let date = document.getElementById('editTxDate').value;
@@ -2763,8 +2630,8 @@ async function handleEditSubmit(e) {
     let description = document.getElementById('editTxDesc').value.trim();
     let amount = unRp(document.getElementById('editTxAmount').value);
 
-    if(type === 'expense' && !category) { alert('Harap pilih kategori!'); return; }
-    if(amount <= 0) { alert('Nominal harus valid!'); return; }
+    if (type === 'expense' && !category) { alert('Harap pilih kategori!'); return; }
+    if (amount <= 0) { alert('Nominal harus valid!'); return; }
 
     txs[idx] = {
         id, type, date, category, description, amount,
@@ -2780,15 +2647,15 @@ async function handleEditSubmit(e) {
 
 async function confirmDelete(id) {
     if (!requireOnline('menghapus transaksi')) return;
-    
+
     let t = txs.find(x => x.id === id);
-    if(!t) return;
-    if(confirm(`Apakah Anda yakin ingin menghapus transaksi "${t.description}"?`)) {
-        
+    if (!t) return;
+    if (confirm(`Apakah Anda yakin ingin menghapus transaksi "${t.description}"?`)) {
+
         if (isOnline()) {
             callSupabaseAPI('transactions', 'DELETE', null, `?id=eq.${id}`);
         }
-        
+
         txs = txs.filter(x => x.id !== id);
         saveTransactions();
         showToast("Transaksi dihapus", "warning");
@@ -2799,7 +2666,7 @@ async function confirmDelete(id) {
 
 function viewAttachment(id) {
     let t = txs.find(x => x.id === id);
-    if(t && t.attachment) {
+    if (t && t.attachment) {
         actionId = id;
         document.getElementById('fullAttachmentImage').src = t.attachment;
         openModal('viewAttachmentModal');
@@ -2808,7 +2675,7 @@ function viewAttachment(id) {
 
 function downloadAttachment() {
     let t = txs.find(x => x.id === actionId);
-    if(t && t.attachment) {
+    if (t && t.attachment) {
         let a = document.createElement('a');
         a.href = t.attachment;
         a.download = 'nota-' + t.id + '.png';
@@ -2824,9 +2691,9 @@ function setFilter(f) {
     document.querySelectorAll('.filter-btn').forEach(b => {
         const btnText = b.innerText.trim().toLowerCase();
         const match = (f === 'all' && btnText === 'semua') ||
-                      (f === 'income' && btnText === 'masuk') ||
-                      (f === 'expense' && btnText === 'keluar');
-        if(match) b.classList.add('active');
+            (f === 'income' && btnText === 'masuk') ||
+            (f === 'expense' && btnText === 'keluar');
+        if (match) b.classList.add('active');
     });
     render();
 }
@@ -2836,7 +2703,7 @@ function applyDateFilter() {
     filterStartDate = document.getElementById('dateFilterStart').value;
     filterEndDate = document.getElementById('dateFilterEnd').value;
     let btn = document.querySelector('.date-clear-btn');
-    if(filterStartDate || filterEndDate) btn.style.display = 'inline-block';
+    if (filterStartDate || filterEndDate) btn.style.display = 'inline-block';
     render();
 }
 
@@ -2844,7 +2711,8 @@ function resetDateFilter() {
     currentPage = 1;
     document.getElementById('dateFilterStart').value = '';
     document.getElementById('dateFilterEnd').value = '';
-    filterStartDate = ''; filterEndDate = '';
+    filterStartDate = '';
+    filterEndDate = '';
     document.querySelector('.date-clear-btn').style.display = 'none';
     render();
 }
@@ -2873,7 +2741,7 @@ async function openTelegramSettings() {
                 else localStorage.removeItem('sk_tg_token');
                 if (parsed.chatId) localStorage.setItem('sk_tg_chatid', parsed.chatId);
                 else localStorage.removeItem('sk_tg_chatid');
-            } catch(e) {}
+            } catch (e) { }
         }
         loadTgConfigToForm();
     }
@@ -2886,9 +2754,9 @@ function renderBookList() {
         let div = document.createElement('div');
         div.className = 'book-list-item';
         let isCurrent = b.id === currentBookId;
-        
+
         let delBtn = books.length > 1 ? `<button class="btn-mini btn-mini-danger" onclick="deleteBook('${b.id}')">Hapus</button>` : '';
-        if(isCurrent) delBtn = '<span style="font-size:.65rem; color:#00875a; font-weight:bold;">✨ SEDANG AKTIF</span>';
+        if (isCurrent) delBtn = '<span style="font-size:.65rem; color:#00875a; font-weight:bold;">✨ SEDANG AKTIF</span>';
 
         div.innerHTML = `
             <span class="book-list-name">${escapeHtml(b.name)}</span>
@@ -2903,29 +2771,29 @@ function renderBookList() {
 
 async function addNewBook(e) {
     e.preventDefault();
-    
+
     if (!requireOnline('membuat buku baru')) return;
-    
+
     let input = document.getElementById('newBookName');
     let name = input.value.trim();
-    if(!name) return;
+    if (!name) return;
 
     let id = 'b_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
-    const newBook = {id, name};
-    
+    const newBook = { id, name };
+
     books.push(newBook);
     localStorage.setItem('sk_books', JSON.stringify(books));
     input.value = '';
-    
+
     await pushSettingBooks();
     await new Promise(r => setTimeout(r, 500));
     await pullAllSettings();
-    
+
     renderBookList();
     updateBookSelectDropdown();
     showToast(`📚 Buku "${name}" berhasil dibuat dan tersinkron ke cloud`, 'success');
     await addCloudLog('SISTEM', `Membuat buku kas baru: "${name}" dengan ID ${id}`);
-    
+
     const cfg = getTgConfig();
     if (cfg.active) {
         sendTelegramNotif(`📚 <b>Buku Baru Dibuat</b>\n\nNama: ${name}\nID: ${id}\nDevice: ${deviceId}`);
@@ -2933,61 +2801,93 @@ async function addNewBook(e) {
 }
 
 function switchBook(id) {
-    if(!books.find(b => b.id === id)) return;
+    if (!books.find(b => b.id === id)) return;
     currentBookId = id;
     localStorage.setItem('sk_current_book_id', currentBookId);
     budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
-    
+
     updateBookSelectDropdown();
-    
+
     if (isOnline()) {
         pullFromCloudSilently();
     } else {
         loadTransactions();
     }
-    
-    if(document.getElementById('bookManagerModal').classList.contains('show')) {
+
+    if (document.getElementById('bookManagerModal').classList.contains('show')) {
         renderBookList();
+        document.getElementById('supabaseUrlInput').value = getCloudUrl();
+        document.getElementById('supabaseKeyInput').value = getSupabaseKey();
+        document.getElementById('connectionStatus').innerHTML = '';
     }
-    
+
     showToast("Berhasil beralih buku kas");
 }
 
 async function deleteBook(id) {
-    if(!requireOnline('menghapus buku')) return;
-    
-    if(id === currentBookId) { 
+    if (!requireOnline('menghapus buku')) return;
+
+    if (id === currentBookId) {
         alert('Tidak bisa menghapus buku kas yang sedang dibuka! Silakan pindah ke buku lain terlebih dahulu.');
-        return; 
-    }
-    
-    let b = books.find(x => x.id === id);
-    if(!b) {
-        showToast('Buku sudah tidak ada', 'warning');
         return;
     }
-    
-    const confirm1 = confirm(`⚠️ Hapus permanen buku "${b.name}"?\n\nData TIDAK BISA dikembalikan!`);
+
+    let b = books.find(x => x.id === id);
+    if (!b) {
+        showToast('Buku sudah tidak ada (mungkin sudah dihapus device lain)', 'warning');
+        return;
+    }
+
+    const confirm1 = confirm(`⚠️ Hapus permanen buku "${b.name}"?\n\nData yang dihapus:\n- Semua transaksi dalam buku ini\n- Anggaran bulanan\n- Log aktivitas\n\nData TIDAK BISA dikembalikan!`);
     if (!confirm1) return;
-    
-    if(isOnline()) {
-        await callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${id}`);
-        await callSupabaseAPI('audit_logs', 'DELETE', null, `?book_id=eq.${id}`);
-        await callSupabaseAPI('settings', 'DELETE', null, `?book_id=eq.${id}`);
+
+    const confirm2 = prompt(`Ketik "HAPUS ${b.name}" untuk konfirmasi penghapusan buku ini:`);
+    if (confirm2 !== `HAPUS ${b.name}`) {
+        alert('Konfirmasi gagal. Penghapusan dibatalkan.');
+        return;
+    }
+
+    const cfg = getTgConfig();
+    if (cfg.active) {
+        sendTelegramNotif(`⚠️ <b>Penghapusan Buku</b>\n\nBuku <b>${b.name}</b> akan dihapus oleh device ${deviceId}\n\nData akan dihapus dalam 3 detik...`);
+        await new Promise(r => setTimeout(r, 2000));
+    }
+
+    if (isOnline()) {
+        const prevBookId = currentBookId;
+        currentBookId = id;
+        try {
+            await callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${id}`);
+            await callSupabaseAPI('audit_logs', 'DELETE', null, `?book_id=eq.${id}`);
+            await callSupabaseAPI('settings', 'DELETE', null, `?book_id=eq.${id}`);
+            console.log(`Data cloud buku "${b.name}" berhasil dihapus.`);
+        } catch (e) {
+            console.error('Gagal hapus data cloud:', e);
+            showToast('Gagal menghapus data cloud, coba lagi', 'error');
+            currentBookId = prevBookId;
+            return;
+        }
+        currentBookId = prevBookId;
     }
 
     localStorage.removeItem('sk_txs_' + id);
     localStorage.removeItem('sk_budgets_' + id);
     localStorage.removeItem('sk_logs_' + id);
     localStorage.removeItem('sk_manual_backups_' + id);
+    localStorage.removeItem('sk_last_auto_backup_' + id);
+    localStorage.removeItem('sk_last_cloud_backup_' + id);
 
     books = books.filter(x => x.id !== id);
     localStorage.setItem('sk_books', JSON.stringify(books));
-    
+
     renderBookList();
     updateBookSelectDropdown();
-    showToast(`Buku "${b.name}" dihapus`, "warning");
+    showToast(`Buku "${b.name}" & data cloud dihapus`, "warning");
     await pushSettingBooks();
+
+    if (cfg.active) {
+        sendTelegramNotif(`✅ <b>Buku Dihapus</b>\n\nBuku <b>${b.name}</b> telah dihapus permanen.\nDevice: ${deviceId}`);
+    }
 }
 
 function updateBookSelectDropdown() {
@@ -2995,10 +2895,28 @@ function updateBookSelectDropdown() {
     sel.innerHTML = '';
     books.forEach(b => {
         let opt = document.createElement('option');
-        opt.value = b.id; opt.innerText = b.name;
-        if(b.id === currentBookId) opt.selected = true;
+        opt.value = b.id;
+        opt.innerText = b.name;
+        if (b.id === currentBookId) opt.selected = true;
         sel.appendChild(opt);
     });
+}
+
+function updateSyncStatusBadge() {
+    const wrapper = document.getElementById('syncStatusWrapper');
+    const tag = document.getElementById('syncStatusTag');
+    const online = isOnline();
+
+    if (online && getCloudUrl() && getSupabaseKey()) {
+        wrapper.className = 'sync-status-container online';
+        tag.innerHTML = '☁️ SUPABASE ON';
+    } else if (!navigator.onLine) {
+        wrapper.className = 'sync-status-container offline';
+        tag.innerHTML = '📴 MODE BACA SAJA';
+    } else {
+        wrapper.className = 'sync-status-container offline';
+        tag.innerHTML = '📴 CLOUD OFF';
+    }
 }
 
 // ==================== TEST CLOUD CONNECTION ====================
@@ -3007,7 +2925,7 @@ async function testCloudConnection() {
     let keyInput = document.getElementById('supabaseKeyInput').value.trim();
     let statusDiv = document.getElementById('connectionStatus');
 
-    if(!urlInput || !keyInput) {
+    if (!urlInput || !keyInput) {
         statusDiv.innerHTML = '<div class="connection-status error">Gagal: Harap isi URL & Anon Key!</div>';
         return;
     }
@@ -3018,7 +2936,7 @@ async function testCloudConnection() {
     globalSupabaseKey = keyInput;
 
     const testFetch = await callSupabaseAPI('transactions', 'GET', null, '?limit=1');
-    
+
     if (testFetch !== null) {
         await reEncryptCredentials(globalSupabaseUrl, globalSupabaseKey);
         statusDiv.innerHTML = '<div class="connection-status success">Sukses! Koneksi terenkripsi & berlaku untuk semua buku. Memulai unduh data...</div>';
@@ -3041,15 +2959,15 @@ async function testCloudConnection() {
 
 // ==================== EXPORT & IMPORT ====================
 function exportToCSV() {
-    if(txs.length === 0) { alert('Tidak ada data untuk diekspor!'); return; }
+    if (txs.length === 0) { alert('Tidak ada data untuk diekspor!'); return; }
     let csv = 'No,Tanggal,Kategori,Deskripsi,Pemasukan,Pengeluaran\n';
     txs.forEach((t, i) => {
         let inc = t.type === 'income' ? t.amount : 0;
         let exp = t.type === 'expense' ? t.amount : 0;
         let desc = (t.description || '').replace(/"/g, '""');
-        csv += `${i+1},"${t.date}","${t.category}","${desc}",${inc},${exp}\n`;
+        csv += `${i + 1},"${t.date}","${t.category}","${desc}",${inc},${exp}\n`;
     });
-    let blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+    let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     let a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `Sinarkeu-Export-${currentBookId}.csv`;
@@ -3057,7 +2975,7 @@ function exportToCSV() {
 }
 
 function exportToJSON() {
-    if(txs.length === 0) { alert('Tidak ada data!'); return; }
+    if (txs.length === 0) { alert('Tidak ada data!'); return; }
     let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(txs, null, 2));
     let dlAnchorElem = document.createElement('a');
     dlAnchorElem.setAttribute("href", dataStr);
@@ -3067,30 +2985,40 @@ function exportToJSON() {
 
 async function archiveAndClearData() {
     if (!requireOnline('mengarsipkan data')) return;
-    
+
     if (txs.length === 0) {
         alert('Tidak ada data transaksi untuk diarsipkan!');
         return;
     }
 
     const st = document.getElementById('archiveStatus');
-    
-    const confirm1 = confirm(`⚠️ PERINGATAN PENTING ⚠️\n\nAnda akan mengarsipkan ${txs.length} transaksi ke file JSON, lalu menghapus SEMUA data buku ini dari Supabase dan lokal.\n\n⚠️ TINDAKAN INI TIDAK DAPAT DIBATALKAN!\n\nKlik OK untuk melanjutkan.`);
+
+    const confirm1 = confirm(`⚠️ PERINGATAN PENTING ⚠️\n\nAnda akan mengarsipkan ${txs.length} transaksi ke file JSON, lalu menghapus SEMUA data buku ini dari Supabase dan lokal.\n\n⚠️ TINDAKAN INI TIDAK DAPAT DIBATALKAN!\n\nKlik OK untuk melanjutkan ke konfirmasi kedua.`);
     if (!confirm1) return;
-    
+
     const bookName = getCurrentBookName();
-    const userInput = prompt(`Ketik nama buku "${bookName}" untuk konfirmasi penghapusan permanen:`);
+    const userInput = prompt(`Ketik nama buku "${bookName}" untuk konfirmasi penghapusan permanen:\n\n(pengetikan harus persis sama)`);
     if (userInput !== bookName) {
         alert('Nama buku tidak cocok. Penghapusan dibatalkan.');
         return;
     }
-    
+
+    const confirm3 = confirm(`💀 KONFIRMASI FINAL 💀\n\nApakah Anda SANGAT YAKIN ingin menghapus SEMUA data buku "${bookName}" secara permanen?\n\nData yang dihapus TIDAK BISA dikembalikan!\n\nKlik OK untuk menghapus permanen.`);
+    if (!confirm3) return;
+
+    const cfg = getTgConfig();
+    if (cfg.active) {
+        sendTelegramNotif(`⚠️ <b>PERINGATAN!</b>\n\nPengguna dari device <code>${deviceId}</code> akan menghapus SEMUA data buku <b>${bookName}</b>\n\nWaktu: ${new Date().toLocaleString('id-ID')}\n\nData akan dihapus dalam 5 detik...`);
+        await new Promise(r => setTimeout(r, 2000));
+    }
+
     st.style.display = 'block';
-    st.style.background = '#fff3e0'; st.style.color = '#cc7b00';
+    st.style.background = '#fff3e0';
+    st.style.color = '#cc7b00';
     st.innerText = '⏳ Mengekspor data ke JSON...';
 
-    const fileName = `Sinarkeu-Arsip-${currentBookId}-${new Date().toISOString().slice(0,10)}.json`;
-    const dataStr  = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(txs, null, 2));
+    const fileName = `Sinarkeu-Arsip-${currentBookId}-${new Date().toISOString().slice(0, 10)}.json`;
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(txs, null, 2));
     const a = document.createElement('a');
     a.setAttribute("href", dataStr);
     a.setAttribute("download", fileName);
@@ -3099,38 +3027,55 @@ async function archiveAndClearData() {
     await new Promise(r => setTimeout(r, 1000));
 
     st.innerText = '⏳ Menghapus data dari Supabase...';
-    
+
     if (isOnline()) {
         await callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${currentBookId}`);
-        await callSupabaseAPI('audit_logs',   'DELETE', null, `?book_id=eq.${currentBookId}`);
+        await callSupabaseAPI('audit_logs', 'DELETE', null, `?book_id=eq.${currentBookId}`);
     }
 
     txs = [];
     localStorage.removeItem('sk_txs_' + currentBookId);
     localStorage.removeItem('sk_logs_' + currentBookId);
+    localStorage.removeItem('sk_manual_backups_' + currentBookId);
+    localStorage.removeItem('sk_last_auto_backup_' + currentBookId);
     localStorage.removeItem('sk_budgets_' + currentBookId);
     budgets = {};
 
     render();
 
-    st.style.background = '#e3fcef'; st.style.color = '#006644';
-    st.innerText = `✅ Selesai! ${fileName} tersimpan & database telah dikosongkan.`;
+    st.style.background = '#e3fcef';
+    st.style.color = '#006644';
+    st.innerText = `✅ Selesai! ${fileName} tersimpan & database telah dikosongkan. Backup final telah disimpan ke cloud.`;
     showToast('Database berhasil dikosongkan', 'success');
-    
+
+    if (cfg.active) {
+        sendTelegramNotif(`✅ <b>EKSEKUSI SELESAI</b>\n\nData buku <b>${bookName}</b> telah dihapus permanen.\n\nArsip tersimpan di: ${fileName}\nDevice: ${deviceId}`);
+    }
+
     setTimeout(() => { st.style.display = 'none'; }, 5000);
 }
 
 function triggerJsonImport() { document.getElementById('jsonFileInput').click(); }
 function handleJsonImport(e) {
     let file = e.target.files[0];
-    if(!file) return;
+    if (!file) return;
     let r = new FileReader();
-    r.onload = function(evt) {
+    r.onload = function (evt) {
         try {
             let imported = JSON.parse(evt.target.result);
-            if(Array.isArray(imported)) {
-                if (confirm(`Impor ${imported.length} transaksi?`)) {
-                    txs = [...txs, ...imported];
+            if (Array.isArray(imported)) {
+                const existingIds = new Set(txs.map(t => t.id));
+                const newTxs = imported.filter(t => !existingIds.has(t.id));
+                const duplicates = imported.length - newTxs.length;
+
+                let message = `Impor ${imported.length} transaksi.`;
+                if (duplicates > 0) {
+                    message += `\n⚠️ ${duplicates} transaksi duplikat (ID sama) akan dilewati.`;
+                }
+                message += `\n\n${newTxs.length} transaksi baru akan ditambahkan. Lanjutkan?`;
+
+                if (confirm(message)) {
+                    txs = [...txs, ...newTxs];
                     const uniqueTxs = [];
                     const seenIds = new Set();
                     for (const tx of txs) {
@@ -3141,14 +3086,14 @@ function handleJsonImport(e) {
                     }
                     txs = uniqueTxs;
                     saveTransactions();
-                    showToast(`✅ ${imported.length} transaksi berhasil diimpor!`, 'success');
-                    addCloudLog('IMPORT', `Import ${imported.length} transaksi dari JSON`);
+                    showToast(`✅ ${newTxs.length} transaksi berhasil diimpor!`, 'success');
+                    addCloudLog('IMPORT', `Import ${newTxs.length} transaksi dari JSON`);
                 }
-            } else { 
-                alert('Format berkas JSON cadangan tidak valid!'); 
+            } else {
+                alert('Format berkas JSON cadangan tidak valid!');
             }
-        } catch(err) { 
-            alert('Gagal membaca berkas JSON!'); 
+        } catch (err) {
+            alert('Gagal membaca berkas JSON!');
         }
     };
     r.readAsText(file);
@@ -3164,19 +3109,21 @@ function openBackupManager() {
 function renderBackupList() {
     let info = document.getElementById('lastBackupInfo');
     let container = document.getElementById('backupListContainer');
-    
+
     let lastLocal = localStorage.getItem('sk_last_auto_backup_' + currentBookId);
+    let lastCloud = localStorage.getItem('sk_last_cloud_backup_' + currentBookId);
     let infoText = 'Lokal: ' + (lastLocal ? formatDateTime(lastLocal) : 'Belum ada');
+    infoText += ' | Cloud: ' + (lastCloud ? formatDateTime(lastCloud) : 'Belum ada');
     info.innerText = infoText;
-    
+
     let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + currentBookId) || '[]');
     container.innerHTML = '';
-    
-    if(localBackups.length === 0) {
+
+    if (localBackups.length === 0) {
         container.innerHTML = '<div style="color:#888; font-size:.7rem; text-align:center;">Tidak ada cadangan manual internal</div>';
         return;
     }
-    
+
     localBackups.forEach((b, i) => {
         let div = document.createElement('div');
         div.style = 'display:flex; justify-content:space-between; align-items:center; font-size:.7rem; padding:6px 0; border-bottom:1px solid #eee;';
@@ -3198,7 +3145,7 @@ function createBackup() {
         count: txs.length,
         data: txs
     });
-    if(localBackups.length > 5) localBackups.pop();
+    if (localBackups.length > 5) localBackups.pop();
     localStorage.setItem('sk_manual_backups_' + currentBookId, JSON.stringify(localBackups));
     localStorage.setItem('sk_last_auto_backup_' + currentBookId, new Date().toISOString());
     renderBackupList();
@@ -3207,7 +3154,7 @@ function createBackup() {
 
 function restoreFromIndex(i) {
     let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + currentBookId) || '[]');
-    if(localBackups[i] && confirm("Pulihkan data dari snapshot cadangan ini? Data saat ini akan diganti.")) {
+    if (localBackups[i] && confirm("Pulihkan data dari snapshot cadangan ini? Data saat ini akan diganti.")) {
         txs = localBackups[i].data;
         saveTransactions();
         closeModal('backupModal');
@@ -3225,9 +3172,37 @@ function deleteBackupIndex(i) {
 
 function restoreFromBackup() {
     let backups = JSON.parse(localStorage.getItem('sk_manual_backups_' + currentBookId) || '[]');
-    if(backups.length === 0) { alert('Tidak ditemukan snapshot cadangan. Buat backup manual terlebih dahulu.'); return; }
+    if (backups.length === 0) { alert('Tidak ditemukan snapshot cadangan. Buat backup manual terlebih dahulu.'); return; }
     openBackupManager();
     showToast('Pilih snapshot yang ingin di-restore dari daftar di bawah.');
+}
+
+async function checkAndRunDailyAutoBackup() {
+    if (!isOnline()) return;
+
+    let now = new Date();
+    let backedUpBooks = 0;
+
+    for (const book of books) {
+        let lastKey = 'sk_last_cloud_backup_' + book.id;
+        let last = localStorage.getItem(lastKey);
+        if (last) {
+            let sameDay = new Date(last).toDateString() === now.toDateString();
+            if (sameDay) continue;
+        }
+
+        const bookTxs = JSON.parse(localStorage.getItem('sk_txs_' + book.id) || '[]');
+        const result = await pushBackupToSupabaseForBook(book.id, bookTxs, 'AUTO');
+        if (result) {
+            localStorage.setItem(lastKey, now.toISOString());
+            backedUpBooks++;
+        }
+    }
+
+    if (backedUpBooks > 0) {
+        await addCloudLog('BACKUP', 'Autobackup harian: ' + backedUpBooks + ' buku');
+        renderBackupList();
+    }
 }
 
 async function createCloudBackup() {
@@ -3236,25 +3211,32 @@ async function createCloudBackup() {
         return;
     }
     showToast('Menyimpan cadangan ke cloud...', 'info');
-    
-    const payload = [{
-        book_id: currentBookId,
-        device_id: deviceId,
-        backup_type: 'MANUAL',
-        tx_count: txs.length,
-        data: JSON.stringify(txs),
-        created_at: new Date().toISOString()
-    }];
-    
-    const result = await callSupabaseAPI('backups', 'POST', payload);
+    let result = await pushBackupToSupabase('MANUAL');
     if (result) {
-        localStorage.setItem('sk_last_cloud_backup_' + currentBookId, new Date().toISOString());
+        let lastKey = 'sk_last_cloud_backup_' + currentBookId;
+        localStorage.setItem(lastKey, new Date().toISOString());
         showToast('☁️ Cadangan cloud berhasil disimpan!', 'success');
         await addCloudLog('BACKUP', 'Backup manual cloud: ' + txs.length + ' transaksi');
         loadCloudBackupList();
     } else {
         showToast('Gagal menyimpan cadangan ke cloud!', 'error');
     }
+}
+
+async function pushBackupToSupabaseForBook(bookId, bookTxs, backupType) {
+    const payload = [{
+        book_id: bookId,
+        device_id: deviceId,
+        backup_type: backupType,
+        tx_count: bookTxs.length,
+        data: JSON.stringify(bookTxs),
+        created_at: new Date().toISOString()
+    }];
+    return await callSupabaseAPI('backups', 'POST', payload);
+}
+
+async function pushBackupToSupabase(backupType) {
+    return await pushBackupToSupabaseForBook(currentBookId, txs, backupType);
 }
 
 async function loadCloudBackupList() {
@@ -3269,7 +3251,7 @@ async function loadCloudBackupList() {
     try {
         const backups = await callSupabaseAPI('backups', 'GET', null, `?book_id=eq.${currentBookId}&order=created_at.desc&limit=10`);
         renderCloudBackupList(backups || []);
-    } catch(e) {
+    } catch (e) {
         container.innerHTML = '<div style="color:#bf2600; font-size:.7rem; text-align:center; padding:8px;">Gagal memuat cadangan cloud</div>';
     }
 }
@@ -3303,9 +3285,9 @@ async function restoreFromCloudBackup(backupId) {
         showToast('Anda harus ONLINE untuk restore dari cloud!', 'warning');
         return;
     }
-    
+
     if (!confirm('Pulihkan data dari cadangan cloud ini? Data saat ini akan diganti.')) return;
-    
+
     try {
         const rows = await callSupabaseAPI('backups', 'GET', null, `?id=eq.${backupId}&book_id=eq.${currentBookId}`);
         if (!rows || rows.length === 0) { showToast('Data backup tidak ditemukan', 'error'); return; }
@@ -3314,7 +3296,7 @@ async function restoreFromCloudBackup(backupId) {
         closeModal('backupModal');
         showToast('✅ Data berhasil dipulihkan dari cloud!', 'success');
         await addCloudLog('RESTORE', 'Restore dari cloud backup id: ' + backupId);
-    } catch(e) {
+    } catch (e) {
         showToast('Gagal memulihkan data dari cloud', 'error');
     }
 }
@@ -3322,16 +3304,16 @@ async function restoreFromCloudBackup(backupId) {
 // ==================== BUDGET ====================
 function openBudgetModal() {
     if (!requireOnline('mengatur anggaran')) return;
-    
+
     let m = document.getElementById('budgetMonth').value;
     let y = document.getElementById('budgetYear').value;
-    
+
     let modalMonth = document.getElementById('budgetModalMonth');
     modalMonth.innerHTML = document.getElementById('budgetMonth').innerHTML;
     modalMonth.value = m;
-    
+
     document.getElementById('budgetModalYear').value = y;
-    
+
     renderBudgetFormFields();
     openModal('budgetModal');
 }
@@ -3339,12 +3321,12 @@ function openBudgetModal() {
 function renderBudgetFormFields() {
     let container = document.getElementById('budgetCategoriesContainer');
     container.innerHTML = '';
-    
+
     let m = document.getElementById('budgetModalMonth').value;
     let y = document.getElementById('budgetModalYear').value;
     let key = `${y}-${m}`;
     let currentBudget = budgets[key] || {};
-    
+
     EXPENSE_CATEGORIES.forEach(cat => {
         let val = currentBudget[cat] || 0;
         let div = document.createElement('div');
@@ -3367,22 +3349,36 @@ function updateBudgetSummary() {
 
 function saveBudget() {
     if (!requireOnline('menyimpan anggaran')) return;
-    
+
     let m = document.getElementById('budgetModalMonth').value;
     let y = document.getElementById('budgetModalYear').value;
     let key = `${y}-${m}`;
-    
-    if(!budgets[key]) budgets[key] = {};
-    
+
+    if (!budgets[key]) budgets[key] = {};
+
     let inputs = document.querySelectorAll('.budget-input-field');
-    
+    let invalidCategories = [];
+
     inputs.forEach(input => {
         let cat = input.getAttribute('data-cat');
         if (EXPENSE_CATEGORIES.includes(cat)) {
             budgets[key][cat] = unRp(input.value);
+        } else {
+            invalidCategories.push(cat);
         }
     });
-    
+
+    Object.keys(budgets[key]).forEach(cat => {
+        if (!EXPENSE_CATEGORIES.includes(cat)) {
+            delete budgets[key][cat];
+            invalidCategories.push(cat);
+        }
+    });
+
+    if (invalidCategories.length > 0) {
+        showToast(`⚠️ ${invalidCategories.length} kategori tidak valid telah dihapus`, 'warning');
+    }
+
     localStorage.setItem('sk_budgets_' + currentBookId, JSON.stringify(budgets));
     closeModal('budgetModal');
     renderBudget();
@@ -3394,60 +3390,60 @@ function renderBudget() {
     let m = document.getElementById('budgetMonth').value;
     let y = document.getElementById('budgetYear').value;
     let key = `${y}-${m}`;
-    
+
     let currentBudget = budgets[key] || {};
     let totalTarget = 0;
     EXPENSE_CATEGORIES.forEach(cat => { totalTarget += (currentBudget[cat] || 0); });
-    
+
     let totalActual = 0;
     txs.forEach(t => {
-        if(t.type === 'expense') {
+        if (t.type === 'expense') {
             let d = new Date(t.date);
-            if((d.getMonth() + 1) == m && d.getFullYear() == y) {
+            if ((d.getMonth() + 1) == m && d.getFullYear() == y) {
                 totalActual += (Number(t.amount) || 0);
             }
         }
     });
-    
+
     document.getElementById('budgetTargetDisplay').innerText = rp(totalTarget);
     document.getElementById('budgetActualDisplay').innerText = rp(totalActual);
-    
+
     let remaining = totalTarget - totalActual;
     let remEl = document.getElementById('budgetRemainingDisplay');
     remEl.innerText = rp(remaining);
-    
-    if(remaining >= 0) { remEl.className = "budget-mini-value positive"; }
+
+    if (remaining >= 0) { remEl.className = "budget-mini-value positive"; }
     else { remEl.className = "budget-mini-value negative"; }
-    
+
     let pct = 0;
-    if(totalTarget > 0) { pct = Math.min((totalActual / totalTarget) * 100, 100); }
-    else if(totalActual > 0) { pct = 100; }
-    
+    if (totalTarget > 0) { pct = Math.min((totalActual / totalTarget) * 100, 100); }
+    else if (totalActual > 0) { pct = 100; }
+
     let fill = document.getElementById('budgetProgressFill');
     fill.style.width = pct + '%';
     let fill2 = document.getElementById('budgetProgressFill2');
-    if(fill2) fill2.style.width = pct + '%';
-    
+    if (fill2) fill2.style.width = pct + '%';
+
     let pctEl = document.getElementById('budgetProgressPct');
     pctEl.innerText = Math.round(pct) + '%';
     let pctEl2 = document.getElementById('budgetProgressPct2');
-    if(pctEl2) pctEl2.innerText = Math.round(pct) + '%';
-    
-    if(pct >= 100 && totalTarget > 0) {
+    if (pctEl2) pctEl2.innerText = Math.round(pct) + '%';
+
+    if (pct >= 100 && totalTarget > 0) {
         fill.className = "budget-mini-progress-fill danger";
-        if(fill2) fill2.className = "budget-mini-progress-fill danger";
+        if (fill2) fill2.className = "budget-mini-progress-fill danger";
         pctEl.style.color = '#de350b';
-        if(pctEl2) pctEl2.style.color = '#de350b';
-    } else if(pct >= 80) {
+        if (pctEl2) pctEl2.style.color = '#de350b';
+    } else if (pct >= 80) {
         fill.className = "budget-mini-progress-fill warning";
-        if(fill2) fill2.className = "budget-mini-progress-fill warning";
+        if (fill2) fill2.className = "budget-mini-progress-fill warning";
         pctEl.style.color = '#cc7b00';
-        if(pctEl2) pctEl2.style.color = '#cc7b00';
+        if (pctEl2) pctEl2.style.color = '#cc7b00';
     } else {
         fill.className = "budget-mini-progress-fill";
-        if(fill2) fill2.className = "budget-mini-progress-fill";
+        if (fill2) fill2.className = "budget-mini-progress-fill";
         pctEl.style.color = '#00875a';
-        if(pctEl2) pctEl2.style.color = '#00875a';
+        if (pctEl2) pctEl2.style.color = '#00875a';
     }
 }
 
@@ -3465,30 +3461,30 @@ function generateMonthlyReport() {
     let m = parseInt(document.getElementById('reportMonth').value);
     let y = parseInt(document.getElementById('reportYear').value);
     let key = `${y}-${m}`;
-    
+
     let monthsText = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    document.getElementById('reportModalTitle').innerText = `📊 Laporan Bulanan - ${monthsText[m-1]} ${y}`;
-    
+    document.getElementById('reportModalTitle').innerText = `📊 Laporan Bulanan - ${monthsText[m - 1]} ${y}`;
+
     let budgetMap = budgets[key] || {};
     let actualMap = {};
     EXPENSE_CATEGORIES.forEach(c => actualMap[c] = 0);
-    
+
     let totalInc = 0, totalExp = 0;
-    
+
     txs.forEach(t => {
         let d = new Date(t.date);
-        if((d.getMonth() + 1) === m && d.getFullYear() === y) {
+        if ((d.getMonth() + 1) === m && d.getFullYear() === y) {
             let amt = Number(t.amount) || 0;
-            if(t.type === 'income') {
+            if (t.type === 'income') {
                 totalInc += amt;
             } else {
                 totalExp += amt;
-                if(actualMap[t.category] !== undefined) actualMap[t.category] += amt;
+                if (actualMap[t.category] !== undefined) actualMap[t.category] += amt;
                 else actualMap['Lain-lain'] += amt;
             }
         }
     });
-    
+
     let html = `
         <div class="report-stats">
             <div class="report-stat-card"><div class="report-stat-label">Pemasukan Bulanan</div><div class="report-stat-value" style="color:#00875a">${rp(totalInc)}</div></div>
@@ -3501,20 +3497,20 @@ function generateMonthlyReport() {
             <thead><tr><th>Kategori Pengeluaran</th><th>Target Anggaran</th><th>Realisasi</th><th>Sisa / Lebih</th><th>Persentase</th></tr></thead>
             <tbody>
     `;
-    
+
     let chartLabels = [];
     let chartTargetData = [];
     let chartActualData = [];
-    
+
     EXPENSE_CATEGORIES.forEach(cat => {
         let tar = budgetMap[cat] || 0;
         let act = actualMap[cat] || 0;
         let diff = tar - act;
         let pct = tar > 0 ? ((act / tar) * 100).toFixed(0) + '%' : (act > 0 ? '100%' : '0%');
-        
+
         let diffStyle = diff >= 0 ? 'color:#00875a' : 'color:#de350b';
-        
-        if(tar > 0 || act > 0) {
+
+        if (tar > 0 || act > 0) {
             const shortLabel = {
                 'Makanan & Minuman': 'Makanan',
                 'Transportasi': 'Transport',
@@ -3531,28 +3527,27 @@ function generateMonthlyReport() {
             chartTargetData.push(tar);
             chartActualData.push(act);
         }
-        
+
         html += `
             <tr>
-                <td>${escapeHtml(cat)}</td>
-                <td>${rp(tar)}</td>
-                <td>${rp(act)}</td>
-                <td style="${diffStyle}">${rp(diff)}</td>
-                <td>${pct}</td>
-            </tr>
+                <td>${escapeHtml(cat)}</                 <td style="${diffStyle}">${rp(diff)}</td>
+                 <td>${pct}</td>
+             </tr>
         `;
     });
-    
+
     html += `</tbody></table></div>`;
     document.getElementById('reportContent').innerHTML = html;
-    
-    if(chartLabels.length === 0) {
-        chartLabels = ['Belum ada Anggaran']; chartTargetData = [0]; chartActualData = [0];
+
+    if (chartLabels.length === 0) {
+        chartLabels = ['Belum ada Anggaran'];
+        chartTargetData = [0];
+        chartActualData = [0];
     }
-    
+
     setTimeout(() => {
         let ctx = document.getElementById('reportChartCanvas').getContext('2d');
-        if(reportChart) reportChart.destroy();
+        if (reportChart) reportChart.destroy();
         reportChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -3618,25 +3613,208 @@ function stopAutoSync() {
     console.log('[AutoSync] Dihentikan.');
 }
 
-// ==================== SETUP AWAL ====================
+function updateUIForOnlineStatus() {
+    const online = isOnline();
+    const offlineWarning = document.getElementById('offlineWarningBar');
+    const actionButtons = [
+        'tambahTransaksiBtn', 'kelolaBukuBtn', 'telegramBtn', 
+        'manualSyncBtn', 'anggaranBtn', 'backupBtn'
+    ];
+    
+    if (online) {
+        if (offlineWarning) offlineWarning.classList.remove('show');
+        actionButtons.forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.removeAttribute('disabled');
+                btn.style.opacity = '1';
+            }
+        });
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.removeAttribute('disabled');
+        });
+        document.querySelectorAll('.btn-icon').forEach(btn => {
+            btn.removeAttribute('disabled');
+        });
+    } else {
+        if (offlineWarning) offlineWarning.classList.add('show');
+        actionButtons.forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.setAttribute('disabled', true);
+                btn.style.opacity = '0.5';
+            }
+        });
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.setAttribute('disabled', true);
+        });
+        document.querySelectorAll('.btn-icon').forEach(btn => {
+            btn.setAttribute('disabled', true);
+        });
+    }
+    
+    updateSyncStatusBadge();
+}
+
+// ==================== PASSWORD LOCK ====================
+function clearLockError() {
+    document.getElementById('lockStatus').innerText = '';
+    document.getElementById('lockPasswordInput').classList.remove('error-shake');
+}
+
+function toggleLockEye() {
+    const inp = document.getElementById('lockPasswordInput');
+    const btn = document.getElementById('lockEyeBtn');
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        btn.innerText = '🙈';
+    } else {
+        inp.type = 'password';
+        btn.innerText = '👁';
+    }
+}
+
+async function submitLockPassword() {
+    const pwd = document.getElementById('lockPasswordInput').value;
+    const status = document.getElementById('lockStatus');
+    const btn = document.getElementById('lockSubmitBtn');
+    
+    if (!pwd) {
+        status.innerText = '❌ Password tidak boleh kosong';
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.innerText = '⏳ Memverifikasi...';
+    status.innerText = '';
+    
+    const ok = await unlockWithPassword(pwd);
+    if (ok) {
+        document.getElementById('passwordLockScreen').style.display = 'none';
+        continueAppInit();
+    } else {
+        btn.disabled = false;
+        btn.innerText = '🔓 Buka';
+        status.innerText = '❌ Password salah';
+        const inp = document.getElementById('lockPasswordInput');
+        inp.classList.add('error-shake');
+        inp.value = '';
+        inp.focus();
+        setTimeout(() => inp.classList.remove('error-shake'), 400);
+    }
+}
+
+function evalSetupPwdStrength() {
+    const pwd = document.getElementById('setupPwdInput') ? document.getElementById('setupPwdInput').value : '';
+    const fill = document.getElementById('setupPwdStrengthFill');
+    const lbl = document.getElementById('setupPwdStrengthLabel');
+    if (!fill || !lbl) return;
+    
+    let score = 0;
+    if (pwd.length >= 6) score++;
+    if (pwd.length >= 10) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    
+    const levels = [
+        { w: '0%', bg: '#eee', t: '' },
+        { w: '25%', bg: '#de350b', t: 'Sangat lemah' },
+        { w: '50%', bg: '#ff8b00', t: 'Lemah' },
+        { w: '70%', bg: '#ffab00', t: 'Cukup' },
+        { w: '88%', bg: '#00875a', t: 'Kuat' },
+        { w: '100%', bg: '#006644', t: 'Sangat kuat' },
+    ];
+    const l = levels[score] || levels[0];
+    fill.style.width = l.w;
+    fill.style.background = l.bg;
+    lbl.innerText = l.t;
+    lbl.style.color = l.bg;
+}
+
+// ==================== CHANGE PASSWORD ====================
+async function changePassword() {
+    const oldPwd = document.getElementById('changePwdOld').value;
+    const newPwd = document.getElementById('changePwdNew').value;
+    const newPwd2 = document.getElementById('changePwdNew2').value;
+    const status = document.getElementById('changePwdStatus');
+
+    status.style.color = '#de350b';
+    if (!oldPwd || !newPwd || !newPwd2) {
+        status.innerText = '❌ Semua field wajib diisi.';
+        return;
+    }
+    if (newPwd.length < 6) {
+        status.innerText = '❌ Password baru minimal 6 karakter.';
+        return;
+    }
+    if (newPwd !== newPwd2) {
+        status.innerText = '❌ Konfirmasi tidak cocok.';
+        return;
+    }
+
+    status.style.color = '#cc7b00';
+    status.innerText = '⏳ Memverifikasi...';
+
+    const saltB64 = localStorage.getItem(CRYPTO_SALT_KEY);
+    if (!saltB64) {
+        status.style.color = '#de350b';
+        status.innerText = '❌ Data enkripsi tidak ditemukan.';
+        return;
+    }
+    const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+
+    let oldKey;
+    try {
+        oldKey = await deriveKey(oldPwd, salt);
+        const plain = await decryptStr(oldKey, localStorage.getItem(CRYPTO_CHECK_KEY));
+        if (plain !== SENTINEL_PLAIN) throw new Error('wrong');
+    } catch {
+        status.style.color = '#de350b';
+        status.innerText = '❌ Password lama salah.';
+        return;
+    }
+
+    let url, apiKey;
+    try {
+        url = await decryptStr(oldKey, localStorage.getItem(CRYPTO_URL_KEY));
+        apiKey = await decryptStr(oldKey, localStorage.getItem(CRYPTO_AKEY_KEY));
+    } catch {
+        status.style.color = '#de350b';
+        status.innerText = '❌ Gagal membaca data terenkripsi.';
+        return;
+    }
+
+    status.innerText = '⏳ Mengenkripsi ulang...';
+    await setupNewPassword(newPwd, url, apiKey);
+
+    status.style.color = '#00875a';
+    status.innerText = '✅ Password berhasil diganti!';
+    document.getElementById('changePwdOld').value = '';
+    document.getElementById('changePwdNew').value = '';
+    document.getElementById('changePwdNew2').value = '';
+    showToast('Password berhasil diganti 🔐', 'success');
+}
+
+// ==================== FIRST TIME SETUP ====================
 function openSetupModal() {
     let st = document.getElementById('setupStatusMsg');
     st.className = 'setup-status';
     st.innerText = '';
-    document.getElementById('setupUrlInput').value  = getCloudUrl();
-    document.getElementById('setupKeyInput').value  = getSupabaseKey();
+    document.getElementById('setupUrlInput').value = getCloudUrl();
+    document.getElementById('setupKeyInput').value = getSupabaseKey();
     document.getElementById('setupConnectBtn').disabled = false;
     document.getElementById('setupConnectBtn').innerText = '🔌 Hubungkan & Mulai';
     openModal('firstTimeSetupModal');
 }
 
 async function doFirstTimeSetup() {
-    const url  = document.getElementById('setupUrlInput').value.trim();
-    const key  = document.getElementById('setupKeyInput').value.trim();
-    const pwd  = document.getElementById('setupPwdInput').value;
+    const url = document.getElementById('setupUrlInput').value.trim();
+    const key = document.getElementById('setupKeyInput').value.trim();
+    const pwd = document.getElementById('setupPwdInput').value;
     const pwd2 = document.getElementById('setupPwdConfirm').value;
-    const st   = document.getElementById('setupStatusMsg');
-    const btn  = document.getElementById('setupConnectBtn');
+    const st = document.getElementById('setupStatusMsg');
+    const btn = document.getElementById('setupConnectBtn');
 
     if (!url || !key) {
         st.className = 'setup-status error';
@@ -3689,82 +3867,31 @@ async function doFirstTimeSetup() {
     }, 900);
 }
 
-// ==================== CHANGE PASSWORD ====================
-async function changePassword() {
-    const oldPwd  = document.getElementById('changePwdOld').value;
-    const newPwd  = document.getElementById('changePwdNew').value;
-    const newPwd2 = document.getElementById('changePwdNew2').value;
-    const status  = document.getElementById('changePwdStatus');
-
-    status.style.color = '#de350b';
-    if (!oldPwd || !newPwd || !newPwd2) { status.innerText = '❌ Semua field wajib diisi.'; return; }
-    if (newPwd.length < 6) { status.innerText = '❌ Password baru minimal 6 karakter.'; return; }
-    if (newPwd !== newPwd2) { status.innerText = '❌ Konfirmasi tidak cocok.'; return; }
-
-    status.style.color = '#cc7b00';
-    status.innerText = '⏳ Memverifikasi...';
-
-    const saltB64 = localStorage.getItem(CRYPTO_SALT_KEY);
-    if (!saltB64) { status.style.color='#de350b'; status.innerText='❌ Data enkripsi tidak ditemukan.'; return; }
-    const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
-
-    let oldKey;
-    try {
-        oldKey = await deriveKey(oldPwd, salt);
-        const plain = await decryptStr(oldKey, localStorage.getItem(CRYPTO_CHECK_KEY));
-        if (plain !== SENTINEL_PLAIN) throw new Error('wrong');
-    } catch {
-        status.style.color = '#de350b';
-        status.innerText = '❌ Password lama salah.';
-        return;
-    }
-
-    let url, apiKey;
-    try {
-        url    = await decryptStr(oldKey, localStorage.getItem(CRYPTO_URL_KEY));
-        apiKey = await decryptStr(oldKey, localStorage.getItem(CRYPTO_AKEY_KEY));
-    } catch {
-        status.style.color = '#de350b';
-        status.innerText = '❌ Gagal membaca data terenkripsi.';
-        return;
-    }
-
-    status.innerText = '⏳ Mengenkripsi ulang...';
-    await setupNewPassword(newPwd, url, apiKey);
-
-    status.style.color = '#00875a';
-    status.innerText = '✅ Password berhasil diganti!';
-    document.getElementById('changePwdOld').value  = '';
-    document.getElementById('changePwdNew').value  = '';
-    document.getElementById('changePwdNew2').value = '';
-    showToast('Password berhasil diganti 🔐', 'success');
-}
-
 // ==================== INIT APP ====================
 function initApp() {
     deviceId = localStorage.getItem('sk_device_id');
-    if(!deviceId) {
+    if (!deviceId) {
         deviceId = 'DEV-' + Math.random().toString(36).substring(2, 8).toUpperCase();
         localStorage.setItem('sk_device_id', deviceId);
     }
     document.getElementById('deviceIdDisplay').innerText = deviceId;
 
     let storedBooks = localStorage.getItem('sk_books');
-    if(storedBooks) {
+    if (storedBooks) {
         books = JSON.parse(storedBooks);
     } else {
-        books = [{id: 'b_default', name: 'Buku Utama'}];
+        books = [{ id: 'b_default', name: 'Buku Utama' }];
         localStorage.setItem('sk_books', JSON.stringify(books));
     }
 
     currentBookId = localStorage.getItem('sk_current_book_id') || 'b_default';
-    if(!books.find(b => b.id === currentBookId)) currentBookId = books[0].id;
+    if (!books.find(b => b.id === currentBookId)) currentBookId = books[0].id;
 
     if (!isPasswordConfigured()) {
-        hideLockScreen();
+        document.getElementById('passwordLockScreen').style.display = 'none';
         const legacyUrls = JSON.parse(localStorage.getItem('sk_cloud_urls') || '{}');
-        const legacyUrl  = localStorage.getItem('sk_supabase_url_global') || '';
-        const firstKey   = Object.keys(legacyUrls)[0];
+        const legacyUrl = localStorage.getItem('sk_supabase_url_global') || '';
+        const firstKey = Object.keys(legacyUrls)[0];
         if (legacyUrl || firstKey) {
             document.getElementById('setupUrlInput').value = legacyUrl || legacyUrls[firstKey] || '';
             document.getElementById('setupKeyInput').value = localStorage.getItem('sk_supabase_key_global') || '';
@@ -3774,7 +3901,8 @@ function initApp() {
     }
 
     if (!sessionStorage.getItem('sk_session_unlocked')) {
-        showPasswordLock();
+        document.getElementById('passwordLockScreen').style.display = 'flex';
+        document.getElementById('lockPasswordInput').focus();
         return;
     }
 
@@ -3784,7 +3912,7 @@ function initApp() {
 async function continueAppInit() {
     if (!globalSupabaseUrl && !_sessionCryptoKey) {
         sessionStorage.removeItem('sk_session_unlocked');
-        showPasswordLock();
+        document.getElementById('passwordLockScreen').style.display = 'flex';
         return;
     }
 
@@ -3793,17 +3921,18 @@ async function continueAppInit() {
     let currentYear = new Date().getFullYear();
     let selectYear = document.getElementById('budgetYear');
     selectYear.innerHTML = '';
-    for(let y = currentYear - 2; y <= currentYear + 2; y++) {
+    for (let y = currentYear - 2; y <= currentYear + 2; y++) {
         let opt = document.createElement('option');
-        opt.value = y; opt.innerText = y;
-        if(y === currentYear) opt.selected = true;
+        opt.value = y;
+        opt.innerText = y;
+        if (y === currentYear) opt.selected = true;
         selectYear.appendChild(opt);
     }
     document.getElementById('budgetMonth').value = new Date().getMonth() + 1;
 
     updateBookSelectDropdown();
     updateSyncStatusBadge();
-    
+
     if (!getCloudUrl() || !getSupabaseKey()) {
         setTimeout(() => openSetupModal(), 400);
     } else {
@@ -3815,6 +3944,7 @@ async function continueAppInit() {
             await pullAllBooksFromCloud();
             _lastSyncTime = new Date();
             updateSyncTimeBadge();
+            setTimeout(checkAndRunDailyAutoBackup, 3000);
             setTimeout(scheduleDailySummary, 5000);
         } else {
             loadTransactions();
@@ -3823,27 +3953,25 @@ async function continueAppInit() {
 
     setInterval(() => {
         let clock = document.getElementById('liveClock');
-        if(clock) clock.innerText = new Date().toLocaleTimeString('id-ID');
+        if (clock) clock.innerText = new Date().toLocaleTimeString('id-ID');
     }, 1000);
 
     startAutoSync();
-    addSyncButton();
     updateUIForOnlineStatus();
-    
-    // Online/Offline event listeners
+
     window.addEventListener('online', () => {
         updateSyncStatusBadge();
         updateUIForOnlineStatus();
         showToast('✅ Kembali online, sinkronisasi data...', 'success');
         forceFullSync();
     });
-    
+
     window.addEventListener('offline', () => {
         updateSyncStatusBadge();
         updateUIForOnlineStatus();
         showToast('📴 Offline - hanya bisa melihat data (mode baca)', 'warning');
     });
-    
+
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden && isOnline()) {
             forceFullSync();
