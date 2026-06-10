@@ -129,8 +129,8 @@
             color: #de350b;
         }
         .budget-mini-progress {
-            width: 140px;
-            height: 8px;
+            width: 200px;
+            height: 10px;
             background: #eee;
             border-radius: 4px;
             overflow: hidden;
@@ -838,6 +838,7 @@
             <div class="budget-mini-progress">
                 <div class="budget-mini-progress-fill" id="budgetProgressFill"></div>
             </div>
+            <span id="budgetProgressPct" style="font-size:.75rem; font-weight:700; color:#666; min-width:36px;">0%</span>
         </div>
         <div class="budget-mini-actions">
             <button class="btn-icon" onclick="openBudgetModal()">✏️ Atur</button>
@@ -1611,7 +1612,57 @@ async function handleSubmit(e) {
     closeModal('addModal');
     saveTransactions();
     showToast("Transaksi berhasil disimpan");
+
+    // ⚠️ Cek budget setelah simpan (hanya untuk pengeluaran)
+    if(type === 'expense') {
+        checkBudgetWarningAfterSave(date, category);
+    }
+
     await addCloudLog('TAMBAH', `Menambah item baru: "${description}" sebesar ${rp(amount)}`);
+}
+
+function checkBudgetWarningAfterSave(date, category) {
+    let d = new Date(date);
+    let m = d.getMonth() + 1;
+    let y = d.getFullYear();
+    let key = `${y}-${m}`;
+    let currentBudget = budgets[key] || {};
+
+    let totalBulan = 0, totalKat = 0;
+    let totalTarget = 0;
+    EXPENSE_CATEGORIES.forEach(c => totalTarget += (currentBudget[c] || 0));
+
+    txs.forEach(t => {
+        if(t.type !== 'expense') return;
+        let td = new Date(t.date);
+        if((td.getMonth() + 1) == m && td.getFullYear() == y) {
+            totalBulan += (Number(t.amount) || 0);
+            if(t.category === category) totalKat += (Number(t.amount) || 0);
+        }
+    });
+
+    // Warning per kategori
+    let katTarget = currentBudget[category] || 0;
+    if(katTarget > 0) {
+        let katPct = (totalKat / katTarget) * 100;
+        if(katPct >= 100) {
+            setTimeout(() => showToast(`🚨 Anggaran "${category}" HABIS! (${Math.round(katPct)}% terpakai)`, 'error'), 500);
+            return;
+        } else if(katPct >= 80) {
+            setTimeout(() => showToast(`⚠️ Anggaran "${category}" hampir habis (${Math.round(katPct)}%)`, 'warning'), 500);
+            return;
+        }
+    }
+
+    // Warning total bulanan
+    if(totalTarget > 0) {
+        let totalPct = (totalBulan / totalTarget) * 100;
+        if(totalPct >= 100) {
+            setTimeout(() => showToast(`🚨 Total anggaran bulanan HABIS! (${Math.round(totalPct)}% terpakai)`, 'error'), 500);
+        } else if(totalPct >= 80) {
+            setTimeout(() => showToast(`⚠️ Total anggaran bulanan hampir habis (${Math.round(totalPct)}%)`, 'warning'), 500);
+        }
+    }
 }
 
 function openActionMenu(id) {
@@ -2137,9 +2188,19 @@ function renderBudget() {
     let fill = document.getElementById('budgetProgressFill');
     fill.style.width = pct + '%';
     
-    if(pct >= 100 && totalTarget > 0) fill.className = "budget-mini-progress-fill danger";
-    else if(pct >= 80) fill.className = "budget-mini-progress-fill warning";
-    else fill.className = "budget-mini-progress-fill";
+    let pctEl = document.getElementById('budgetProgressPct');
+    pctEl.innerText = Math.round(pct) + '%';
+    
+    if(pct >= 100 && totalTarget > 0) {
+        fill.className = "budget-mini-progress-fill danger";
+        pctEl.style.color = '#de350b';
+    } else if(pct >= 80) {
+        fill.className = "budget-mini-progress-fill warning";
+        pctEl.style.color = '#cc7b00';
+    } else {
+        fill.className = "budget-mini-progress-fill";
+        pctEl.style.color = '#00875a';
+    }
 }
 
 // ==================== GENERATE LAPORAN & EXPORT PDF ====================
@@ -2205,7 +2266,20 @@ function generateMonthlyReport() {
         let diffStyle = diff >= 0 ? 'color:#00875a' : 'color:#de350b';
         
         if(tar > 0 || act > 0) {
-            chartLabels.push(cat.split(' ')[1] || cat);
+            // Gunakan label pendek yang informatif, bukan split kata
+            const shortLabel = {
+                'Makanan & Minuman': 'Makanan',
+                'Transportasi': 'Transport',
+                'Belanja & Pakaian': 'Belanja',
+                'Tagihan': 'Tagihan',
+                'Hiburan': 'Hiburan',
+                'Kesehatan': 'Kesehatan',
+                'Pendidikan': 'Pendidikan',
+                'Cicilan & Hutang': 'Cicilan',
+                'Investasi': 'Investasi',
+                'Lain-lain': 'Lain-lain'
+            };
+            chartLabels.push(shortLabel[cat] || cat);
             chartTargetData.push(tar);
             chartActualData.push(act);
         }
