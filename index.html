@@ -4307,37 +4307,65 @@ function restoreFromBackup() {
 // ==================== AUTOBACKUP HARIAN KE SUPABASE ====================
 
 async function checkAndRunDailyAutoBackup() {
-    if (!getCloudUrl() || !getSupabaseKey()) return; // Hanya jika Supabase terhubung
+    if (!getCloudUrl() || !getSupabaseKey()) return;
 
-    let lastKey = 'sk_last_cloud_backup_' + currentBookId;
-    let last = localStorage.getItem(lastKey);
+    // Cek apakah tabel backups tersedia — jika tidak, tampilkan peringatan sekali
+    const tableOk = await checkBackupsTableExists();
+    if (!tableOk) {
+        console.warn('[AutoBackup] Tabel backups belum ada di Supabase — autobackup dilewati.');
+        const warnKey = 'sk_backup_table_warn_shown';
+        if (!localStorage.getItem(warnKey)) {
+            localStorage.setItem(warnKey, '1');
+            showToast('⚠️ Tabel backups belum dibuat di Supabase. Autobackup tidak aktif.', 'warning');
+        }
+        return;
+    }
+    // Reset flag peringatan jika tabel sudah ada
+    localStorage.removeItem('sk_backup_table_warn_shown');
+
     let now = new Date();
+    let totalTx = 0;
+    let backedUpBooks = 0;
 
-    if (last) {
-        let lastDate = new Date(last);
-        // Cek apakah sudah backup hari ini (bukan 24 jam, tapi hari kalender yang sama)
-        let sameDay = lastDate.toDateString() === now.toDateString();
-        if (sameDay) {
-            console.log('[AutoBackup] Backup hari ini sudah dilakukan, skip.');
-            return;
+    // Backup semua buku, masing-masing cek tanggal terakhir backup-nya sendiri
+    for (const book of books) {
+        let lastKey = 'sk_last_cloud_backup_' + book.id;
+        let last = localStorage.getItem(lastKey);
+        if (last) {
+            let sameDay = new Date(last).toDateString() === now.toDateString();
+            if (sameDay) {
+                console.log('[AutoBackup] Buku "' + book.name + '" sudah dibackup hari ini, skip.');
+                continue;
+            }
+        }
+
+        // Ambil transaksi buku ini dari localStorage
+        const bookTxs = JSON.parse(localStorage.getItem('sk_txs_' + book.id) || '[]');
+        const result = await pushBackupToSupabaseForBook(book.id, bookTxs, 'AUTO');
+        if (result) {
+            localStorage.setItem(lastKey, now.toISOString());
+            totalTx += bookTxs.length;
+            backedUpBooks++;
+            console.log('[AutoBackup] Buku "' + book.name + '" berhasil dibackup: ' + bookTxs.length + ' transaksi');
+        } else {
+            console.warn('[AutoBackup] Buku "' + book.name + '" gagal dibackup.');
         }
     }
 
-    console.log('[AutoBackup] Menjalankan autobackup harian ke Supabase...');
-    let result = await pushBackupToSupabase('AUTO');
-    if (result) {
-        localStorage.setItem(lastKey, now.toISOString());
-        console.log('[AutoBackup] Autobackup harian berhasil: ' + txs.length + ' transaksi');
-        await addCloudLog('BACKUP', 'Autobackup harian berhasil: ' + txs.length + ' transaksi');
+    if (backedUpBooks > 0) {
+        await addCloudLog('BACKUP', 'Autobackup harian: ' + backedUpBooks + ' buku, ' + totalTx + ' total transaksi');
         renderBackupList();
-    } else {
-        console.warn('[AutoBackup] Autobackup harian gagal — akan dicoba saat berikutnya membuka aplikasi.');
     }
 }
 
 async function createCloudBackup() {
     if (!getCloudUrl() || !getSupabaseKey()) {
         showToast('Hubungkan Supabase terlebih dahulu!', 'error');
+        return;
+    }
+    const tableOk = await checkBackupsTableExists();
+    if (!tableOk) {
+        showToast('❌ Tabel backups belum dibuat di Supabase! Buat tabel backups terlebih dahulu.', 'error');
         return;
     }
     showToast('Menyimpan cadangan ke cloud...', 'info');
@@ -4347,25 +4375,39 @@ async function createCloudBackup() {
         localStorage.setItem(lastKey, new Date().toISOString());
         showToast('☁️ Cadangan cloud berhasil disimpan!', 'success');
         await addCloudLog('BACKUP', 'Backup manual cloud: ' + txs.length + ' transaksi');
-        renderCloudBackupList();
+        loadCloudBackupList();
     } else {
         showToast('Gagal menyimpan cadangan ke cloud!', 'error');
     }
 }
 
-async function pushBackupToSupabase(backupType) {
-    const payload = [{
-        book_id: currentBookId,
-        device_id: deviceId,
-        backup_type: backupType,
-        tx_count: txs.length,
-        data: JSON.stringify(txs),
-        created_at: new Date().toISOString()
-    }];
-
-    // Gunakan tabel 'backups' di Supabase
+// Cek apakah tabel backups sudah ada di Supabase
+async function checkBackupsTableExists() {
     const baseUrl = getCloudUrl();
     const apiKey = getSupabaseKey();
+    if (!baseUrl || !apiKey) return false;
+    try {
+        const res = await fetch(`${baseUrl}/rest/v1/backups?limit=1`, {
+            headers: { 'apikey': apiKey, 'Authorization': `Bearer ${apiKey}` }
+        });
+        return res.ok;
+    } catch(e) {
+        return false;
+    }
+}
+
+// Push backup untuk buku tertentu (dipakai autobackup semua buku)
+async function pushBackupToSupabaseForBook(bookId, bookTxs, backupType) {
+    const baseUrl = getCloudUrl();
+    const apiKey = getSupabaseKey();
+    const payload = [{
+        book_id: bookId,
+        device_id: deviceId,
+        backup_type: backupType,
+        tx_count: bookTxs.length,
+        data: JSON.stringify(bookTxs),
+        created_at: new Date().toISOString()
+    }];
     try {
         const res = await fetch(`${baseUrl}/rest/v1/backups`, {
             method: 'POST',
@@ -4377,16 +4419,17 @@ async function pushBackupToSupabase(backupType) {
             },
             body: JSON.stringify(payload)
         });
-        if (!res.ok) {
-            const err = await res.text();
-            console.error('[CloudBackup] Error:', err);
-            return null;
-        }
+        if (!res.ok) { console.error('[CloudBackup] Error:', await res.text()); return null; }
         return await res.json();
     } catch(e) {
         console.error('[CloudBackup] Exception:', e);
         return null;
     }
+}
+
+// Push backup buku aktif (dipakai tombol manual)
+async function pushBackupToSupabase(backupType) {
+    return await pushBackupToSupabaseForBook(currentBookId, txs, backupType);
 }
 
 async function loadCloudBackupList() {
