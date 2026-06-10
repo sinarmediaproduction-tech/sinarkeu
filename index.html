@@ -1327,7 +1327,7 @@
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
             <button class="manage-books-btn" onclick="openBookManager()">Kelola</button>
             <button class="manage-books-btn" onclick="openTelegramSettings()" style="background:#0088cc;" title="Setelan Notifikasi Telegram">Telegram</button>
-            <button class="manage-books-btn" onclick="openManual()" style="background:#6a5acd;" title="Panduan Penggunaan">Panduan</button>
+
         </div>
     </div>
 
@@ -1420,7 +1420,7 @@
         <div class="pagination-controls" id="paginationControls"></div>
     </div>
 
-    <div class="log-section">
+    <div class="log-section" id="auditLogSection" style="display:none;">
         <div class="log-section-header">
             <h2> Audit Log (Supabase Real-time)</h2>
             <div style="display: flex; gap: 10px;">
@@ -1431,6 +1431,8 @@
         <div id="logSummaryArea" class="log-container-box">Memuat log...</div>
     </div>
 
+    <button id="auditLogToggleBtn" onclick="toggleAuditLog()" title="Log Audit" style="position:fixed; bottom:24px; left:24px; z-index:500; padding:8px 14px; font-size:.72rem; font-weight:600; background:#4a5568; color:#fff; border:none; border-radius:8px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.2); transition:background 0.2s;">📋 Log Audit</button>
+
     <div class="footer">
         <div id="transactionCount">0 transaksi</div>
         <div id="liveClock">00:00:00</div>
@@ -1440,34 +1442,7 @@
 <div id="toastMessage" class="toast-message"><span id="toastIcon">✅</span><span id="toastText"></span></div>
 
 <!-- MODAL-MODAL -->
-<div id="manualModal" class="modal" style="z-index:1500;">
-  <div class="modal-content wide" style="max-width:800px; max-height:92vh;">
-    <div class="modal-header">
-      <h3>Panduan Lengkap Sinarkeu</h3>
-      <button class="modal-close" onclick="closeManual()">×</button>
-    </div>
-    <div class="manual-nav">
-      <button class="manual-nav-btn active" onclick="showManualSection('intro')">🏠 Pengenalan</button>
-      <button class="manual-nav-btn" onclick="showManualSection('supabase')">☁️ Setup Supabase</button>
-      <button class="manual-nav-btn" onclick="showManualSection('sql')">🛢️ SQL & Tabel</button>
-      <button class="manual-nav-btn" onclick="showManualSection('appsetup')">⚙️ Setup Aplikasi</button>
-      <button class="manual-nav-btn" onclick="showManualSection('transaksi')">💳 Transaksi</button>
-      <button class="manual-nav-btn" onclick="showManualSection('telegram')">📲 Telegram</button>
-      <button class="manual-nav-btn" onclick="showManualSection('faq')">❓ FAQ</button>
-    </div>
-    <div id="manual-intro" class="manual-section active">
-      <div class="manual-h2"> Selamat Datang di Sinarkeu</div>
-      <p class="manual-p">Sinarkeu adalah aplikasi pencatatan keuangan berbasis web yang berjalan sepenuhnya di browser Anda. Data disimpan secara aman di cloud menggunakan <strong>Supabase</strong> dan terenkripsi dengan password pribadi Anda.</p>
-      <div class="manual-info">💡 Sinarkeu berjalan 100% di browser — tidak perlu install apapun. Cukup buka file <code>index.html</code> di browser.</div>
-    </div>
-    <div id="manual-supabase" class="manual-section"><div class="manual-h2">☁️ Setup Supabase</div></div>
-    <div id="manual-sql" class="manual-section"><div class="manual-h2">🛢️ SQL & Tabel</div></div>
-    <div id="manual-appsetup" class="manual-section"><div class="manual-h2">⚙️ Setup Aplikasi</div></div>
-    <div id="manual-transaksi" class="manual-section"><div class="manual-h2">💳 Transaksi</div></div>
-    <div id="manual-telegram" class="manual-section"><div class="manual-h2">📲 Telegram</div></div>
-    <div id="manual-faq" class="manual-section"><div class="manual-h2">❓ FAQ</div></div>
-  </div>
-</div>
+
 
 <div id="addModal" class="modal">
     <div class="modal-content">
@@ -2645,6 +2620,15 @@ async function testAddLog() {
     showToast("Log pengujian terkirim!");
 }
 
+function toggleAuditLog() {
+    const section = document.getElementById('auditLogSection');
+    const btn = document.getElementById('auditLogToggleBtn');
+    const isHidden = section.style.display === 'none';
+    section.style.display = isHidden ? 'block' : 'none';
+    btn.style.background = isHidden ? '#1a1a1a' : '#4a5568';
+    if (isHidden) refreshLogsFromCloud();
+}
+
 // ==================== LOAD & SAVE TRANSACTIONS ====================
 function loadTransactions() {
     let stored = localStorage.getItem('sk_txs_' + currentBookId);
@@ -3122,10 +3106,25 @@ function openBookManager() {
     document.getElementById('connectionStatus').innerHTML = '';
 }
 
-function openTelegramSettings() {
-    loadTgConfigToForm();
+async function openTelegramSettings() {
     document.getElementById('tgTestStatus').innerHTML = '';
     openModal('telegramSettingsModal');
+    loadTgConfigToForm();
+    if (getCloudUrl() && getSupabaseKey()) {
+        const allRows = await callSupabaseAPI('settings', 'GET', null, '?key=eq.telegram_config&order=updated_at.desc&limit=1');
+        if (allRows && Array.isArray(allRows) && allRows.length > 0) {
+            try {
+                const parsed = JSON.parse(allRows[0].value);
+                if (parsed.token) localStorage.setItem('sk_tg_token', parsed.token);
+                else localStorage.removeItem('sk_tg_token');
+                if (parsed.edgeUrl) localStorage.setItem('sk_tg_edge_url', parsed.edgeUrl);
+                else localStorage.removeItem('sk_tg_edge_url');
+                if (parsed.chatId) localStorage.setItem('sk_tg_chatid', parsed.chatId);
+                else localStorage.removeItem('sk_tg_chatid');
+            } catch(e) {}
+        }
+        loadTgConfigToForm();
+    }
 }
 
 function renderBookList() {
