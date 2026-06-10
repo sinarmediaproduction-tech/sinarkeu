@@ -1121,7 +1121,7 @@
         <div class="form-group">
             <label style="display:flex; align-items:center; gap:8px;">
                 ☁️ Cadangan Cloud (Supabase)
-                <span id="cloudBackupStatus" style="font-size:.65rem; padding:2px 8px; border-radius:10px; background:#e3fcef; color:#006644;">Otomatis Mingguan</span>
+                <span id="cloudBackupStatus" style="font-size:.65rem; padding:2px 8px; border-radius:10px; background:#e3fcef; color:#006644;">Otomatis Harian</span>
             </label>
             <div id="cloudBackupListContainer" style="max-height:130px; overflow-y:auto; border:1px solid #ddd; border-radius:8px; padding:10px">
                 <div style="color:#888; font-size:.7rem; text-align:center;">Memuat cadangan cloud...</div>
@@ -1456,7 +1456,7 @@ function initApp() {
             updateTgStatusBadge();
             return pullFromCloudSilently();
         }).then(() => {
-            setTimeout(checkAndRunWeeklyAutoBackup, 3000);
+            setTimeout(checkAndRunDailyAutoBackup, 3000);
         });
     }
 
@@ -2716,9 +2716,9 @@ function restoreFromBackup() {
     showToast('Pilih snapshot yang ingin di-restore dari daftar di bawah.');
 }
 
-// ==================== AUTOBACKUP MINGGUAN KE SUPABASE ====================
+// ==================== AUTOBACKUP HARIAN KE SUPABASE ====================
 
-async function checkAndRunWeeklyAutoBackup() {
+async function checkAndRunDailyAutoBackup() {
     if (!getCloudUrl() || !getSupabaseKey()) return; // Hanya jika Supabase terhubung
 
     let lastKey = 'af_last_cloud_backup_' + currentBookId;
@@ -2727,16 +2727,23 @@ async function checkAndRunWeeklyAutoBackup() {
 
     if (last) {
         let lastDate = new Date(last);
-        let diffDays = (now - lastDate) / (1000 * 60 * 60 * 24);
-        if (diffDays < 7) return; // Belum 7 hari, skip
+        // Cek apakah sudah backup hari ini (bukan 24 jam, tapi hari kalender yang sama)
+        let sameDay = lastDate.toDateString() === now.toDateString();
+        if (sameDay) {
+            console.log('[AutoBackup] Backup hari ini sudah dilakukan, skip.');
+            return;
+        }
     }
 
-    console.log('[AutoBackup] Menjalankan autobackup mingguan ke Supabase...');
+    console.log('[AutoBackup] Menjalankan autobackup harian ke Supabase...');
     let result = await pushBackupToSupabase('AUTO');
     if (result) {
         localStorage.setItem(lastKey, now.toISOString());
-        showToast('☁️ Autobackup mingguan berhasil disimpan ke cloud', 'success');
-        await addCloudLog('BACKUP', 'Autobackup mingguan berhasil: ' + txs.length + ' transaksi');
+        console.log('[AutoBackup] Autobackup harian berhasil: ' + txs.length + ' transaksi');
+        await addCloudLog('BACKUP', 'Autobackup harian berhasil: ' + txs.length + ' transaksi');
+        renderBackupList();
+    } else {
+        console.warn('[AutoBackup] Autobackup harian gagal — akan dicoba saat berikutnya membuka aplikasi.');
     }
 }
 
