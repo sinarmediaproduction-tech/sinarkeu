@@ -1403,6 +1403,7 @@
         <div class="actions">
             <button class="btn btn-primary" onclick="openModal('addModal')">+ Transaksi</button>
             <button class="btn btn-secondary" onclick="openBackupManager()"> Backup</button>
+            <button id="auditLogToggleBtn" class="btn btn-secondary" onclick="toggleAuditLog()">📋 Log Audit</button>
         </div>
     </div>
 
@@ -1430,8 +1431,6 @@
         </div>
         <div id="logSummaryArea" class="log-container-box">Memuat log...</div>
     </div>
-
-    <button id="auditLogToggleBtn" onclick="toggleAuditLog()" title="Log Audit" style="position:fixed; bottom:24px; left:24px; z-index:500; padding:8px 14px; font-size:.72rem; font-weight:600; background:#4a5568; color:#fff; border:none; border-radius:8px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.2); transition:background 0.2s;">📋 Log Audit</button>
 
     <div class="footer">
         <div id="transactionCount">0 transaksi</div>
@@ -2625,7 +2624,8 @@ function toggleAuditLog() {
     const btn = document.getElementById('auditLogToggleBtn');
     const isHidden = section.style.display === 'none';
     section.style.display = isHidden ? 'block' : 'none';
-    btn.style.background = isHidden ? '#1a1a1a' : '#4a5568';
+    btn.style.background = isHidden ? '#1a1a1a' : '';
+    btn.style.color = isHidden ? '#fff' : '';
     if (isHidden) refreshLogsFromCloud();
 }
 
