@@ -1647,10 +1647,53 @@ ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
         </tbody>
       </table>
 
-      <div class="manual-h3">Menggunakan di Banyak Perangkat</div>
+      <div class="manual-h3">Menggunakan di Banyak Perangkat / Device Baru</div>
       <div class="manual-info">
-        📱 ArtaFlow bisa digunakan di banyak perangkat secara bersamaan. Cukup buka file <code>index.html</code> di perangkat lain, setup dengan <strong>URL, Key, dan Password yang sama</strong>. Data akan otomatis tersinkron.
+        🔑 <strong>Penting dipahami:</strong> Password ArtaFlow hanya tersimpan di <strong>localStorage browser device itu sendiri</strong> — tidak dikirim ke Supabase. Artinya setiap device baru dianggap sebagai "setup pertama kali".
       </div>
+
+      <div class="manual-step">
+        <div class="manual-step-num">1</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Buka aplikasi di device baru</div>
+          <div class="manual-step-desc">Buka file <code>index.html</code> di browser. Karena localStorage kosong, aplikasi akan langsung menampilkan <strong>form setup pertama kali</strong> — bukan layar login password.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">2</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Isi Supabase URL & Anon Key yang sama</div>
+          <div class="manual-step-desc">Masukkan URL dan Anon Key dari project Supabase yang sama dengan device lama. Ini yang menghubungkan ke data yang sudah ada.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">3</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Buat password untuk device ini</div>
+          <div class="manual-step-desc">Anda bebas menggunakan password yang sama dengan device lama, atau password berbeda — <strong>keduanya sama-sama valid</strong>. Password ini hanya mengenkripsi URL & Key di browser device ini saja, bukan mengunci akses ke Supabase.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">4</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Klik "Simpan & Mulai" — data langsung muncul</div>
+          <div class="manual-step-desc">Setelah koneksi berhasil, semua transaksi, buku kas, anggaran, dan konfigurasi Telegram otomatis ditarik dari Supabase. Data di device lama tidak terganggu.</div>
+        </div>
+      </div>
+
+      <div class="manual-warn">
+        ⚠️ <strong>Password lama TIDAK dibutuhkan</strong> di device baru. Yang dibutuhkan hanya <strong>Supabase URL + Anon Key</strong>. Simpan kedua nilai itu di tempat yang mudah diakses (password manager, note terenkripsi, dll).
+      </div>
+
+      <div class="manual-h3">Ringkasan: Apa yang tersimpan di mana?</div>
+      <table class="manual-table">
+        <thead><tr><th>Data</th><th>Disimpan di</th><th>Dampak jika hilang</th></tr></thead>
+        <tbody>
+          <tr><td>Transaksi, buku kas, anggaran, Telegram config</td><td>☁️ Supabase (cloud)</td><td>Tidak hilang — bisa ditarik ulang dari device mana saja</td></tr>
+          <tr><td>Password + kunci enkripsi (salt)</td><td>💻 localStorage browser</td><td>Hanya hilang di device itu — device lain tidak terpengaruh</td></tr>
+          <tr><td>Supabase URL & Anon Key (terenkripsi)</td><td>💻 localStorage browser</td><td>Perlu diisi ulang saat setup di device baru</td></tr>
+        </tbody>
+      </table>
 
       <div class="manual-h3">Anggaran Bulanan</div>
       <div class="manual-step">
@@ -1834,6 +1877,32 @@ ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
     <div id="manual-faq" class="manual-section">
       <div class="manual-h2">❓ Pertanyaan Umum (FAQ)</div>
 
+      <hr class="manual-divider">
+      <div class="manual-h3">📱 Device Baru & Multi-Perangkat</div>
+      <div class="manual-step" style="border-left-color:#00875a;">
+        <div class="manual-step-num" style="background:#00875a;">?</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Di device baru, apakah saya harus memasukkan password lama?</div>
+          <div class="manual-step-desc"><strong>Tidak.</strong> Di device baru, localStorage kosong sehingga aplikasi membuka form <em>Setup Pertama Kali</em>, bukan layar login. Anda cukup isi <strong>Supabase URL + Anon Key</strong> lalu buat password baru (bebas, boleh sama atau berbeda). Data dari Supabase langsung ditarik otomatis setelah terhubung.<br><br>
+          <strong>Yang WAJIB disimpan baik-baik:</strong> Supabase URL dan Anon Key — tanpa keduanya, Anda tidak bisa konek ke data di cloud.</div>
+        </div>
+      </div>
+      <div class="manual-step" style="border-left-color:#00875a;">
+        <div class="manual-step-num" style="background:#00875a;">?</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Saya ganti HP / browser — apa yang perlu disiapkan?</div>
+          <div class="manual-step-desc">Siapkan 2 hal: (1) <strong>File index.html</strong> — pindahkan via Google Drive, WhatsApp, email, dll. (2) <strong>Supabase URL & Anon Key</strong> — buka di Supabase dashboard → Settings → API. Password lama tidak diperlukan.</div>
+        </div>
+      </div>
+      <div class="manual-step" style="border-left-color:#00875a;">
+        <div class="manual-step-num" style="background:#00875a;">?</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Apakah bisa buka di banyak device sekaligus?</div>
+          <div class="manual-step-desc">Ya. Setiap device setup sendiri-sendiri dengan URL + Key yang sama. Setiap device bisa punya password berbeda — ini tidak masalah karena password hanya mengenkripsi URL & Key secara lokal, bukan mengunci akses ke Supabase. Data akan sinkron otomatis antar device.</div>
+        </div>
+      </div>
+
+      <hr class="manual-divider">
       <div class="manual-h3">🔐 Keamanan & Password</div>
       <div class="manual-step" style="border-left-color:#de350b;">
         <div class="manual-step-num" style="background:#de350b;">?</div>
