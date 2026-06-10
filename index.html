@@ -1315,14 +1315,14 @@
     <div class="header">
         <div>
             <h1>Sinarkeu</h1>
-            <p>Sistem Multi Buku Kas dengan Supabase Cloud Storage · v9</p>
+            <p>Sistem Multi Buku Kas dengan Supabase Cloud Storage · v10</p>
         </div>
         <div class="book-selector">
             <div id="syncStatusWrapper" class="sync-status-container offline">
                 <span id="syncStatusTag" class="sync-status-badge">📴 CLOUD OFF</span>
                 <span id="deviceIdDisplay" class="device-id-badge">------</span>
             </div>
-            <span id="autoSyncBadge" style="font-size:.65rem;color:#aaa;font-weight:600;">⟳ Auto-sync menunggu...</span>
+            <span id="syncTimeBadge" style="font-size:.65rem;color:#666;font-weight:600;">📅 Sinkronisasi: --:--:--</span>
             <label>BUKU:</label>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
             <button class="manage-books-btn" onclick="openBookManager()">Kelola</button>
@@ -1700,10 +1700,9 @@ const PAGE_SIZE = 10;
 let currentPage = 1;
 let _supabaseClient = null;
 let _realtimeChannel = null;
-let _autoSyncInterval = null;
-let _bookCheckInterval = null;
+let _lastSyncTime = null;
 
-// ==================== FUNGSI PROTEKSI TAMBAHAN ====================
+// ==================== PROTEKSI TAMBAHAN ====================
 let _isProcessingCriticalAction = false;
 
 async function withLock(action, actionName) {
@@ -1722,12 +1721,6 @@ async function withLock(action, actionName) {
     } finally {
         _isProcessingCriticalAction = false;
     }
-}
-
-async function syncBeforeCriticalAction() {
-    if (!getCloudUrl() || !getSupabaseKey()) return;
-    showToast('🔄 Sinkronisasi data terbaru sebelum melanjutkan...', 'info');
-    await forceFullSync();
 }
 
 // ==================== CRYPTO ENGINE ====================
@@ -1915,6 +1908,19 @@ function showToast(msg, type = 'success') {
     text.innerText = msg;
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function updateSyncTimeBadge() {
+    const el = document.getElementById('syncTimeBadge');
+    if (!el) return;
+    if (_lastSyncTime) {
+        const timeStr = _lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        el.innerText = `📅 Sinkronisasi: ${timeStr}`;
+        el.style.color = '#00875a';
+    } else {
+        el.innerText = `📅 Sinkronisasi: --:--:--`;
+        el.style.color = '#888';
+    }
 }
 
 function rp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
@@ -2365,38 +2371,12 @@ async function pullFromCloudSilently() {
             attachment: c.attachment
         }));
 
-        const cloudById = new Map(cloudMapped.map(c => [c.id, c]));
-        const currentLocal = [...txs];
-        const localOnlyTxs = currentLocal.filter(local => !cloudById.has(local.id));
-        
-        const newTxs = [...cloudMapped, ...localOnlyTxs];
-        newTxs.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        const oldCount = txs.length;
-        
-        if (oldCount !== newTxs.length) {
-            txs = newTxs;
-            localStorage.setItem('sk_txs_' + currentBookId, JSON.stringify(txs));
-            render();
-            
-            const addedCount = newTxs.length - oldCount;
-            if (addedCount > 0) {
-                showToast(`📥 ${addedCount} transaksi baru dari cloud`, 'info');
-            } else if (newTxs.length !== oldCount) {
-                showToast(`🔄 Transaksi diperbarui dari cloud`, 'info');
-            }
-        }
-
-        if (localOnlyTxs.length > 0) {
-            console.log(`[Sync] Mengirim ${localOnlyTxs.length} transaksi lokal ke cloud...`);
-            await pushToCloud();
-        }
+        txs = cloudMapped;
+        localStorage.setItem('sk_txs_' + currentBookId, JSON.stringify(txs));
+        render();
     }
-    
-    refreshLogsFromCloud();
 }
 
-// ==================== PULL ALL BOOKS ====================
 async function pullAllBooksFromCloud() {
     if (!getCloudUrl() || !getSupabaseKey()) return;
     
@@ -2404,8 +2384,6 @@ async function pullAllBooksFromCloud() {
     
     const bookIds = books.map(b => b.id);
     if (bookIds.length === 0) return;
-
-    let anyChange = false;
 
     for (const bookId of bookIds) {
         let cloudData = await callSupabaseAPI('transactions', 'GET', null, `?book_id=eq.${bookId}&order=date.desc`);
@@ -2421,37 +2399,16 @@ async function pullAllBooksFromCloud() {
             attachment: c.attachment
         }));
 
-        const localStored = JSON.parse(localStorage.getItem('sk_txs_' + bookId) || '[]');
-        const cloudById = new Map(cloudMapped.map(c => [c.id, c]));
-        const localOnly = localStored.filter(t => !cloudById.has(t.id));
-        const merged = [...cloudMapped, ...localOnly];
-        
-        if (merged.length !== localStored.length) {
-            anyChange = true;
-        }
-        
-        merged.sort((a, b) => new Date(b.date) - new Date(a.date));
-        localStorage.setItem('sk_txs_' + bookId, JSON.stringify(merged));
+        localStorage.setItem('sk_txs_' + bookId, JSON.stringify(cloudMapped));
 
         if (bookId === currentBookId) {
-            const oldCount = txs.length;
-            txs = merged;
-            if (oldCount !== txs.length) {
-                render();
-            }
-        }
-        
-        if (localOnly.length > 0) {
-            const savedBookId = currentBookId;
-            currentBookId = bookId;
-            await pushToCloud();
-            currentBookId = savedBookId;
+            txs = cloudMapped;
+            render();
         }
     }
     
-    if (anyChange && currentBookId) {
-        render();
-    }
+    _lastSyncTime = new Date();
+    updateSyncTimeBadge();
     
     console.log('[Sync] Selesai pull semua buku —', bookIds.length, 'buku diproses');
 }
@@ -2459,9 +2416,6 @@ async function pullAllBooksFromCloud() {
 // ==================== FORCE FULL SYNC ====================
 async function forceFullSync() {
     showToast('🔄 Memulai sinkronisasi penuh...', 'info');
-    
-    stopAutoSync();
-    stopRealtimeSync();
     
     try {
         await pullAllSettings();
@@ -2475,9 +2429,6 @@ async function forceFullSync() {
     } catch (e) {
         console.error('[Sync] Gagal sinkronisasi:', e);
         showToast('❌ Gagal sinkronisasi: ' + e.message, 'error');
-    } finally {
-        startAutoSync();
-        startRealtimeSync();
     }
 }
 
@@ -2493,25 +2444,6 @@ function addSyncButton() {
         syncBtn.title = 'Sinkronisasi manual semua data dari cloud';
         bookSelector.appendChild(syncBtn);
     }
-}
-
-function startBookCheck() {
-    if (_bookCheckInterval) clearInterval(_bookCheckInterval);
-    
-    _bookCheckInterval = setInterval(async () => {
-        if (!getCloudUrl() || !getSupabaseKey()) return;
-        if (document.hidden) return;
-        
-        const prevBooksJson = JSON.stringify(books);
-        await pullAllSettings();
-        
-        if (JSON.stringify(books) !== prevBooksJson) {
-            console.log('[Sync] Buku berubah, refresh UI...');
-            updateBookSelectDropdown();
-            render();
-            showToast('📚 Daftar buku diperbarui', 'info');
-        }
-    }, 5000);
 }
 
 // ==================== PUSH TO CLOUD ====================
@@ -2535,6 +2467,8 @@ async function pushToCloud() {
     let res = await callSupabaseAPI('transactions', 'POST', payload);
     if(res && Array.isArray(res)) {
         console.log(`Sinkronisasi ${res.length} transaksi ke Supabase Cloud berhasil.`);
+        _lastSyncTime = new Date();
+        updateSyncTimeBadge();
     } else if(res === null) {
         console.warn("pushToCloud: respons null — cek koneksi atau konfigurasi Supabase.");
     }
@@ -4005,156 +3939,50 @@ function generatePDFReport() {
 
 // ==================== AUTO SYNC ====================
 function startAutoSync() {
-    if (_autoSyncInterval) clearInterval(_autoSyncInterval);
-    const INTERVAL_MS = 15 * 1000;
-
-    _autoSyncInterval = setInterval(async () => {
+    if (_realtimeChannel) return;
+    
+    const INTERVAL_MS = 30000;
+    
+    const syncInterval = setInterval(async () => {
         if (!getCloudUrl() || !getSupabaseKey()) return;
-
-        const prevBooksCount = books.length;
+        
         await pullAllSettings();
+        await pullAllBooksFromCloud();
+        updateBookSelectDropdown();
+        budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
+        renderBudget();
         
-        if (books.length !== prevBooksCount) {
-            console.log('[Sync] Deteksi buku baru, menarik semua data...');
-            await pullAllBooksFromCloud();
-            updateBookSelectDropdown();
-            showToast(`📚 Buku baru ditemukan (${books.length} total buku)`, 'info');
-        } else {
-            await pullFromCloudSilently();
-        }
-        
-        updateAutoSyncBadge();
+        updateSyncTimeBadge();
     }, INTERVAL_MS);
-
-    console.log('[AutoSync] Dimulai, interval 15 detik.');
-    updateAutoSyncBadge();
+    
+    window._syncInterval = syncInterval;
+    
+    console.log('[AutoSync] Dimulai, interval 30 detik.');
 }
 
 function stopAutoSync() {
-    if (_autoSyncInterval) {
-        clearInterval(_autoSyncInterval);
-        _autoSyncInterval = null;
+    if (window._syncInterval) {
+        clearInterval(window._syncInterval);
+        window._syncInterval = null;
     }
-    if (_bookCheckInterval) {
-        clearInterval(_bookCheckInterval);
-        _bookCheckInterval = null;
+    if (_realtimeChannel) {
+        if (_supabaseClient) _supabaseClient.removeChannel(_realtimeChannel);
+        _realtimeChannel = null;
     }
     console.log('[AutoSync] Dihentikan.');
 }
 
-function updateAutoSyncBadge() {
-    const el = document.getElementById('autoSyncBadge');
+function updateSyncTimeBadge() {
+    const el = document.getElementById('syncTimeBadge');
     if (!el) return;
-    const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    el.innerText = `⟳ Sync otomatis aktif · ${now}`;
-    el.style.color = '#00875a';
-}
-
-// ==================== SUPABASE REALTIME ====================
-function initSupabaseClient() {
-    const url = getCloudUrl();
-    const key = getSupabaseKey();
-    if (!url || !key) return null;
-    if (_supabaseClient) return _supabaseClient;
-    _supabaseClient = supabase.createClient(url, key);
-    console.log('[Realtime] Supabase client dibuat.');
-    return _supabaseClient;
-}
-
-function startRealtimeSync() {
-    const client = initSupabaseClient();
-    if (!client) return;
-
-    if (_realtimeChannel) {
-        client.removeChannel(_realtimeChannel);
-        _realtimeChannel = null;
-    }
-
-    _realtimeChannel = client
-        .channel('sinarkeu-realtime')
-        .on('postgres_changes',
-            { event: '*', schema: 'public', table: 'transactions' },
-            (payload) => {
-                console.log('[Realtime] Perubahan transactions:', payload.eventType);
-                handleRealtimeTransaction(payload);
-            }
-        )
-        .on('postgres_changes',
-            { event: '*', schema: 'public', table: 'settings' },
-            (payload) => {
-                console.log('[Realtime] Perubahan settings:', payload.eventType, payload.new?.key);
-                handleRealtimeSettings(payload);
-            }
-        )
-        .subscribe((status) => {
-            console.log('[Realtime] Status:', status);
-            updateRealtimeBadge(status);
-        });
-}
-
-function stopRealtimeSync() {
-    if (_supabaseClient && _realtimeChannel) {
-        _supabaseClient.removeChannel(_realtimeChannel);
-        _realtimeChannel = null;
-        console.log('[Realtime] Channel dihentikan.');
-    }
-}
-
-async function handleRealtimeTransaction(payload) {
-    const rec = payload.new || payload.old;
-    if (rec && rec.book_id && rec.book_id !== currentBookId) return;
-    await pullFromCloudSilently();
-    showAutoSyncToast('⚡ Transaksi diperbarui secara real-time');
-}
-
-async function handleRealtimeSettings(payload) {
-    const rec = payload.new;
-    if (!rec) return;
-
-    if (rec.key === 'books') {
-        const prevBooksJson = JSON.stringify(books);
-        await pullAllSettings();
-        if (JSON.stringify(books) !== prevBooksJson) {
-            updateBookSelectDropdown();
-            updateTgStatusBadge();
-            showAutoSyncToast('⚡ Daftar buku diperbarui secara real-time');
-        }
-    } else if (rec.key === 'telegram_config') {
-        await pullAllSettings();
-        updateTgStatusBadge();
-        showAutoSyncToast('⚡ Setelan Telegram diperbarui secara real-time');
-    } else if (rec.key === 'budgets') {
-        await pullAllSettings();
-        budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
-        renderBudget();
-        showAutoSyncToast('⚡ Anggaran diperbarui secara real-time');
-    }
-}
-
-function updateRealtimeBadge(status) {
-    const el = document.getElementById('autoSyncBadge');
-    if (!el) return;
-    if (status === 'SUBSCRIBED') {
-        el.innerText = '⚡ Real-time aktif';
+    if (_lastSyncTime) {
+        const timeStr = _lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        el.innerText = `📅 Sinkronisasi: ${timeStr}`;
         el.style.color = '#00875a';
-    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        el.innerText = '⟳ Realtime error — fallback polling aktif';
-        el.style.color = '#cc7b00';
-        startAutoSync();
     } else {
-        el.innerText = '⟳ Menghubungkan real-time...';
-        el.style.color = '#aaa';
+        el.innerText = `📅 Sinkronisasi: --:--:--`;
+        el.style.color = '#888';
     }
-}
-
-let _autoSyncToastTimer = null;
-function showAutoSyncToast(msg) {
-    const el = document.getElementById('autoSyncBadge');
-    if (!el) return;
-    el.innerText = msg;
-    el.style.color = '#cc7b00';
-    if (_autoSyncToastTimer) clearTimeout(_autoSyncToastTimer);
-    _autoSyncToastTimer = setTimeout(updateAutoSyncBadge, 3000);
 }
 
 // ==================== SETUP AWAL ====================
@@ -4235,7 +4063,6 @@ async function doFirstTimeSetup() {
 
 // ==================== LOCK APP ====================
 function lockApp() {
-    stopRealtimeSync();
     stopAutoSync();
     sessionStorage.removeItem('sk_session_unlocked');
     _sessionCryptoKey = null;
@@ -4369,9 +4196,10 @@ async function continueAppInit() {
         budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
         updateTgStatusBadge();
         await pullAllBooksFromCloud();
+        _lastSyncTime = new Date();
+        updateSyncTimeBadge();
         setTimeout(checkAndRunDailyAutoBackup, 3000);
         setTimeout(scheduleDailySummary, 5000);
-        startRealtimeSync();
     }
 
     setInterval(() => {
@@ -4382,34 +4210,11 @@ async function continueAppInit() {
     startAutoSync();
     
     addSyncButton();
-    startBookCheck();
     
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden && getCloudUrl() && getSupabaseKey()) {
             console.log('[Sync] Tab menjadi aktif, melakukan sinkronisasi...');
             forceFullSync();
-        }
-    });
-}
-
-// ==================== MANUAL ====================
-function openManual(section) {
-    document.getElementById('manualModal').classList.add('show');
-    if (section) showManualSection(section);
-}
-
-function closeManual() {
-    document.getElementById('manualModal').classList.remove('show');
-}
-
-function showManualSection(id) {
-    document.querySelectorAll('.manual-section').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.manual-nav-btn').forEach(b => b.classList.remove('active'));
-    const sec = document.getElementById('manual-' + id);
-    if (sec) sec.classList.add('active');
-    document.querySelectorAll('.manual-nav-btn').forEach(b => {
-        if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + id + "'")) {
-            b.classList.add('active');
         }
     });
 }
