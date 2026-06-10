@@ -809,6 +809,7 @@
             <label>BUKU:</label>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
             <button class="manage-books-btn" onclick="openBookManager()">Kelola</button>
+            <button class="manage-books-btn" onclick="openTelegramSettings()" style="background:#0088cc;" title="Setelan Notifikasi Telegram">📲 Telegram</button>
         </div>
     </div>
 
@@ -967,36 +968,6 @@
             </div>
         </div>
 
-        <div style="border-top:2px dashed #1a1a1a; padding-top:16px; margin-top:4px;">
-            <div class="form-group">
-                <label style="display:flex; align-items:center; gap:8px;">
-                    📲 Notifikasi Telegram
-                    <span id="tgStatusBadge" style="font-size:.6rem; padding:2px 8px; border-radius:10px; background:#eee; color:#666;">Belum dikonfigurasi</span>
-                </label>
-
-                <label style="font-size:.7rem; font-weight:600; color:#666; text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px; display:block; margin-top:8px;">Bot Token</label>
-                <input type="password" id="tgBotTokenInput" class="form-control" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" style="margin-bottom:8px;">
-
-                <label style="font-size:.7rem; font-weight:600; color:#666; text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px; display:block;">Edge Function URL</label>
-                <input type="text" id="tgEdgeUrlInput" class="form-control" placeholder="https://xxx.supabase.co/functions/v1/send-telegram" style="margin-bottom:8px;">
-
-                <label style="font-size:.7rem; font-weight:600; color:#666; text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px; display:block;">Chat ID Penerima</label>
-                <input type="text" id="tgChatIdInput" class="form-control" placeholder="-100xxxxxxxxxx atau @username">
-
-                <div style="font-size:.65rem; color:#888; margin-top:8px; line-height:1.7; background:#f9f9f9; padding:8px 10px; border-radius:6px;">
-                    💡 <b>Bot Token</b> dari <b>@BotFather</b> · <b>Chat ID</b> dari <b>@userinfobot</b><br>
-                    Jika pakai Edge Function, Bot Token akan dikirim ke Supabase saat tes — disarankan set juga via <b>Supabase Secrets</b> untuk keamanan penuh.
-                </div>
-
-                <div style="display:flex; gap:8px; margin-top:10px;">
-                    <button class="btn btn-primary" style="flex:1" onclick="saveTelegramConfig()">💾 Simpan</button>
-                    <button class="btn btn-secondary" style="flex:1" onclick="testTelegramNotif()">📤 Tes Kirim</button>
-                    <button class="btn btn-danger" style="flex:1" onclick="clearTelegramConfig()">🗑️ Hapus</button>
-                </div>
-                <div id="tgTestStatus" style="font-size:.7rem; margin-top:8px;"></div>
-            </div>
-        </div>
-
         <div class="data-management-panel" style="border-color:#de350b; background:#fff5f5;">
             <div class="panel-title" style="color:#de350b;">🗃️ Arsipkan & Kosongkan Database</div>
             <div style="font-size:.7rem; color:#666; margin-bottom:12px; line-height:1.6;">
@@ -1006,6 +977,51 @@
             <button class="btn btn-danger" style="width:100%;" onclick="archiveAndClearData()">
                 🗃️ Arsipkan JSON & Kosongkan Database
             </button>
+        </div>
+    </div>
+</div>
+
+<div id="telegramSettingsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📲 Setelan Notifikasi Telegram</h3>
+            <button class="modal-close" onclick="closeModal('telegramSettingsModal')">×</button>
+        </div>
+
+        <div class="form-group">
+            <label style="display:flex; align-items:center; gap:8px;">
+                Status
+                <span id="tgStatusBadge" style="font-size:.6rem; padding:2px 8px; border-radius:10px; background:#eee; color:#666;">Belum dikonfigurasi</span>
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label>Bot Token</label>
+            <input type="password" id="tgBotTokenInput" class="form-control" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11">
+        </div>
+
+        <div class="form-group">
+            <label>Edge Function URL <span style="font-weight:400; color:#888;">(opsional, lebih aman)</span></label>
+            <input type="text" id="tgEdgeUrlInput" class="form-control" placeholder="https://xxx.supabase.co/functions/v1/send-telegram">
+        </div>
+
+        <div class="form-group">
+            <label>Chat ID Penerima</label>
+            <input type="text" id="tgChatIdInput" class="form-control" placeholder="-100xxxxxxxxxx atau @username">
+        </div>
+
+        <div style="font-size:.65rem; color:#888; line-height:1.7; background:#f9f9f9; padding:10px 12px; border-radius:8px; margin-bottom:16px;">
+            💡 <b>Bot Token</b> dari @BotFather &nbsp;·&nbsp; <b>Chat ID</b> dari @userinfobot<br>
+            Jika Edge Function URL diisi, notif dikirim via Supabase (token aman di server).<br>
+            Jika hanya Bot Token, notif dikirim langsung dari browser.
+        </div>
+
+        <div id="tgTestStatus" style="font-size:.7rem; margin-bottom:10px; min-height:18px;"></div>
+
+        <div class="modal-footer" style="display:flex; gap:8px;">
+            <button class="btn btn-secondary" onclick="testTelegramNotif()" style="flex:1">📤 Tes Kirim</button>
+            <button class="btn btn-danger" onclick="clearTelegramConfig()" style="flex:1">🗑️ Hapus</button>
+            <button class="btn btn-primary" onclick="saveTelegramConfig()" style="flex:1">💾 Simpan</button>
         </div>
     </div>
 </div>
@@ -2020,11 +2036,16 @@ function resetDateFilter() {
 // ==================== MANAJER BUKU KAS MULTI-TENANT ====================
 function openBookManager() {
     openModal('bookManagerModal');
-    loadTgConfigToForm();
     renderBookList();
     document.getElementById('supabaseUrlInput').value = getCloudUrl();
     document.getElementById('supabaseKeyInput').value = getSupabaseKey();
     document.getElementById('connectionStatus').innerHTML = '';
+}
+
+function openTelegramSettings() {
+    loadTgConfigToForm();
+    document.getElementById('tgTestStatus').innerHTML = '';
+    openModal('telegramSettingsModal');
 }
 
 function renderBookList() {
