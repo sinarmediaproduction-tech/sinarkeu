@@ -1176,7 +1176,7 @@
     <div class="header">
         <div>
             <h1>Sinarkeu</h1>
-            <p>Sistem Multi Buku Kas dengan Supabase Cloud · v12 (Full Sync)</p>
+            <p>Sistem Multi Buku Kas dengan Supabase Cloud · v13 (Full Sync + Telegram Auto)</p>
         </div>
         <div class="book-selector">
             <div id="syncStatusWrapper" class="sync-status-container offline">
@@ -1306,7 +1306,7 @@
 
 <div id="toastMessage" class="toast-message"><span id="toastIcon">✅</span><span id="toastText"></span></div>
 
-<!-- MODALS -->
+<!-- MODALS - Same as before, keeping all functionality -->
 <div id="addModal" class="modal">
     <div class="modal-content">
         <div class="modal-header"><h3>Transaksi Baru</h3><button class="modal-close" onclick="closeModal('addModal')">×</button></div>
@@ -1706,16 +1706,20 @@ function formatDateTime(dtStr) {
 function getTgConfig() {
     let token = localStorage.getItem('sk_tg_token') || '';
     let chatId = localStorage.getItem('sk_tg_chatid') || '';
-    return { token, chatId, active: !!(token && chatId) };
+    let edgeUrl = localStorage.getItem('sk_tg_edge_url') || '';
+    return { token, edgeUrl, chatId, active: !!(token || edgeUrl) };
 }
 
 function saveTelegramConfig() {
     let token = document.getElementById('tgBotTokenInput').value.trim();
     let chatId = document.getElementById('tgChatIdInput').value.trim();
+
     if (!chatId) { showToast('Chat ID penerima wajib diisi!', 'error'); return; }
     if (!token) { showToast('Bot Token wajib diisi!', 'error'); return; }
+
     localStorage.setItem('sk_tg_token', token);
     localStorage.setItem('sk_tg_chatid', chatId);
+    localStorage.removeItem('sk_tg_edge_url');
     updateTgStatusBadge();
     showToast('Konfigurasi Telegram disimpan ✅', 'success');
     pushSettingTelegram();
@@ -1724,8 +1728,10 @@ function saveTelegramConfig() {
 function clearTelegramConfig() {
     if (!confirm('Hapus konfigurasi Telegram?')) return;
     localStorage.removeItem('sk_tg_token');
+    localStorage.removeItem('sk_tg_edge_url');
     localStorage.removeItem('sk_tg_chatid');
     document.getElementById('tgBotTokenInput').value = '';
+    document.getElementById('tgEdgeUrlInput').value = '';
     document.getElementById('tgChatIdInput').value = '';
     updateTgStatusBadge();
     showToast('Konfigurasi Telegram dihapus', 'warning');
@@ -1750,8 +1756,10 @@ function updateTgStatusBadge() {
 function loadTgConfigToForm() {
     let cfg = getTgConfig();
     let tokenEl = document.getElementById('tgBotTokenInput');
+    let edgeEl = document.getElementById('tgEdgeUrlInput');
     let chatEl = document.getElementById('tgChatIdInput');
     if (tokenEl) tokenEl.value = cfg.token;
+    if (edgeEl) edgeEl.value = cfg.edgeUrl;
     if (chatEl) chatEl.value = cfg.chatId;
     updateTgStatusBadge();
 }
@@ -1760,51 +1768,88 @@ async function sendTelegramNotif(msg) {
     let cfg = getTgConfig();
     if (!cfg.active) return;
     try {
-        const res = await fetch(`https://api.telegram.org/bot${cfg.token}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: cfg.chatId, text: msg, parse_mode: 'HTML' })
-        });
-        const data = await res.json();
-        if (!data.ok) console.warn('[Telegram] Gagal kirim:', data.description);
-    } catch (e) {
+        if (cfg.edgeUrl) {
+            const body = { message: msg };
+            if (cfg.chatId) body.chat_id = cfg.chatId;
+            const res = await fetch(cfg.edgeUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getSupabaseKey()}`
+                },
+                body: JSON.stringify(body)
+            });
+            if (!res.ok) console.warn('[Telegram] Edge Function error:', await res.text());
+        } else if (cfg.token && cfg.chatId) {
+            const res = await fetch(`https://api.telegram.org/bot${cfg.token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: cfg.chatId, text: msg, parse_mode: 'HTML' })
+            });
+            const data = await res.json();
+            if (!data.ok) console.warn('[Telegram] Gagal kirim:', data.description);
+        }
+    } catch(e) {
         console.warn('[Telegram] Gagal kirim notifikasi:', e.message);
     }
 }
 
 async function testTelegramNotif() {
     let token = document.getElementById('tgBotTokenInput').value.trim();
+    let edgeUrl = document.getElementById('tgEdgeUrlInput').value.trim();
     let chatId = document.getElementById('tgChatIdInput').value.trim();
     let statusEl = document.getElementById('tgTestStatus');
 
     if (!chatId) { showToast('Chat ID penerima wajib diisi!', 'error'); return; }
-    if (!token) { showToast('Isi Bot Token!', 'error'); return; }
+    if (!token && !edgeUrl) { showToast('Isi Bot Token!', 'error'); return; }
 
-    localStorage.setItem('sk_tg_token', token);
+    if (token) localStorage.setItem('sk_tg_token', token);
+    else localStorage.removeItem('sk_tg_token');
+    if (edgeUrl) localStorage.setItem('sk_tg_edge_url', edgeUrl);
+    else localStorage.removeItem('sk_tg_edge_url');
     localStorage.setItem('sk_tg_chatid', chatId);
     updateTgStatusBadge();
 
     statusEl.innerHTML = '<span style="color:#cc7b00;">⏳ Mengirim pesan tes...</span>';
 
-    const testMsg = `🔔 <b>Sinarkeu — Tes Notifikasi</b>\n\nKonfigurasi berhasil! Notifikasi akan dikirim ke sini.`;
+    const testMsg = `🔔 <b>Sinarkeu — Tes Notifikasi</b>\n\nKonfigurasi berhasil! Notifikasi transaksi akan dikirim ke sini.\n\n<i>Chat ID: ${chatId}</i>`;
 
     try {
-        const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: chatId, text: testMsg, parse_mode: 'HTML' })
-        });
-        const data = await res.json();
-        if (data.ok) {
-            statusEl.innerHTML = '<span style="color:#006644;">✅ Berhasil! Cek Telegram kamu.</span>';
-            showToast('Tes Telegram berhasil! ✅', 'success');
+        let res, data;
+        if (edgeUrl) {
+            res = await fetch(edgeUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getSupabaseKey()}`
+                },
+                body: JSON.stringify({ message: testMsg, chat_id: chatId })
+            });
+            data = await res.json();
+            if (data.ok) {
+                statusEl.innerHTML = '<span style="color:#006644;">✅ Berhasil via Edge Function!</span>';
+                showToast('Tes Telegram berhasil! ✅', 'success');
+            } else {
+                statusEl.innerHTML = `<span style="color:#de350b;">❌ Gagal: ${escapeHtml(data.error || JSON.stringify(data))}</span>`;
+            }
         } else {
-            let errMsg = data.description || JSON.stringify(data);
-            if (errMsg.includes('chat not found')) errMsg = 'Chat ID tidak ditemukan. Pastikan bot sudah di-/start atau ditambah ke grup.';
-            if (errMsg.includes('Unauthorized')) errMsg = 'Bot Token tidak valid. Cek kembali dari @BotFather.';
-            statusEl.innerHTML = `<span style="color:#de350b;">❌ ${escapeHtml(errMsg)}</span>`;
+            res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chatId, text: testMsg, parse_mode: 'HTML' })
+            });
+            data = await res.json();
+            if (data.ok) {
+                statusEl.innerHTML = '<span style="color:#006644;">✅ Berhasil! Cek Telegram kamu.</span>';
+                showToast('Tes Telegram berhasil! ✅', 'success');
+            } else {
+                let errMsg = data.description || JSON.stringify(data);
+                if (errMsg.includes('chat not found')) errMsg = 'Chat ID tidak ditemukan. Pastikan bot sudah di-/start atau ditambah ke grup.';
+                if (errMsg.includes('Unauthorized')) errMsg = 'Bot Token tidak valid. Cek kembali dari @BotFather.';
+                statusEl.innerHTML = `<span style="color:#de350b;">❌ ${escapeHtml(errMsg)}</span>`;
+            }
         }
-    } catch (e) {
+    } catch(e) {
         statusEl.innerHTML = `<span style="color:#de350b;">❌ Error jaringan: ${escapeHtml(e.message)}</span>`;
     }
 }
@@ -1954,10 +1999,10 @@ async function pushSettingBudgets() {
 async function pushSettingTelegram() {
     if (!isOnline()) return;
     const cfg = getTgConfig();
-    await pushSetting('telegram_config', { token: cfg.token, chatId: cfg.chatId }, 'global');
+    await pushSetting('telegram_config', { token: cfg.token, chatId: cfg.chatId, edgeUrl: cfg.edgeUrl }, 'global');
 }
 
-// ==================== PULL SETTINGS ====================
+// ==================== PULL SETTINGS (DIPERBAIKI UNTUK TELEGRAM AUTO SYNC) ====================
 async function pullAllSettings() {
     if (!isOnline()) return;
 
@@ -1971,6 +2016,7 @@ async function pullAllSettings() {
             let parsed;
             try { parsed = JSON.parse(row.value); } catch { continue; }
 
+            // BUKU
             if (row.key === 'books' && Array.isArray(parsed) && parsed.length > 0) {
                 const existingIds = new Set(books.map(b => b.id));
                 let merged = [...books];
@@ -2002,16 +2048,34 @@ async function pullAllSettings() {
                 }
             }
 
+            // TELEGRAM - DIPERBAIKI UNTUK AUTO SYNC KE DEVICE BARU
             if (row.key === 'telegram_config') {
-                const oldToken = localStorage.getItem('sk_tg_token');
-                if (parsed.token) localStorage.setItem('sk_tg_token', parsed.token);
-                else localStorage.removeItem('sk_tg_token');
-                if (parsed.chatId) localStorage.setItem('sk_tg_chatid', parsed.chatId);
-                else localStorage.removeItem('sk_tg_chatid');
-
-                if (oldToken !== parsed.token) telegramUpdated = true;
+                console.log('[Sync] Menemukan telegram_config di cloud:', parsed);
+                
+                if (parsed.token) {
+                    localStorage.setItem('sk_tg_token', parsed.token);
+                    console.log('[Sync] Token Telegram tersimpan');
+                } else {
+                    localStorage.removeItem('sk_tg_token');
+                }
+                if (parsed.chatId) {
+                    localStorage.setItem('sk_tg_chatid', parsed.chatId);
+                    console.log('[Sync] Chat ID Telegram tersimpan:', parsed.chatId);
+                } else {
+                    localStorage.removeItem('sk_tg_chatid');
+                }
+                if (parsed.edgeUrl) {
+                    localStorage.setItem('sk_tg_edge_url', parsed.edgeUrl);
+                } else {
+                    localStorage.removeItem('sk_tg_edge_url');
+                }
+                
+                telegramUpdated = true;
+                updateTgStatusBadge();
+                console.log('[Sync] Status Telegram badge diupdate');
             }
 
+            // BUDGETS
             if (row.key === 'budgets') {
                 localStorage.setItem('sk_budgets_' + row.book_id, JSON.stringify(parsed));
                 if (row.book_id === currentBookId) budgets = parsed;
@@ -2023,9 +2087,11 @@ async function pullAllSettings() {
             showToast('📚 Daftar buku diperbarui dari cloud', 'info');
         }
         if (telegramUpdated) {
-            updateTgStatusBadge();
+            showToast('📱 Setelan Telegram diperbarui dari cloud', 'success');
         }
     }
+    
+    updateSettingsSyncStatus('pull');
 }
 
 // ==================== PULL TRANSACTIONS ====================
@@ -2741,6 +2807,8 @@ async function openTelegramSettings() {
                 else localStorage.removeItem('sk_tg_token');
                 if (parsed.chatId) localStorage.setItem('sk_tg_chatid', parsed.chatId);
                 else localStorage.removeItem('sk_tg_chatid');
+                if (parsed.edgeUrl) localStorage.setItem('sk_tg_edge_url', parsed.edgeUrl);
+                else localStorage.removeItem('sk_tg_edge_url');
             } catch (e) { }
         }
         loadTgConfigToForm();
@@ -3530,9 +3598,12 @@ function generateMonthlyReport() {
 
         html += `
             <tr>
-                <td>${escapeHtml(cat)}</                 <td style="${diffStyle}">${rp(diff)}</td>
-                 <td>${pct}</td>
-             </tr>
+                <td>${escapeHtml(cat)}</td>
+                <td>${rp(tar)}</td>
+                <td>${rp(act)}</td>
+                <td style="${diffStyle}">${rp(diff)}</td>
+                <td>${pct}</td>
+            </tr>
         `;
     });
 
@@ -3654,6 +3725,14 @@ function updateUIForOnlineStatus() {
     }
     
     updateSyncStatusBadge();
+}
+
+function updateSettingsSyncStatus(direction) {
+    const el = document.getElementById('settingsSyncStatus');
+    if (!el) return;
+    const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const label = direction === 'pull' ? 'Ditarik dari cloud' : 'Disimpan ke cloud';
+    el.innerText = `Terakhir ${label}: ${now}`;
 }
 
 // ==================== PASSWORD LOCK ====================
