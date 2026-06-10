@@ -1333,6 +1333,7 @@
                 <span id="syncStatusTag" class="sync-status-badge">📴 CLOUD OFF</span>
                 <span id="deviceIdDisplay" class="device-id-badge">------</span>
             </div>
+            <span id="autoSyncBadge" style="font-size:.65rem;color:#aaa;font-weight:600;">⟳ Auto-sync menunggu...</span>
             <label>BUKU:</label>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
             <button class="manage-books-btn" onclick="openBookManager()">Kelola</button>
@@ -3023,6 +3024,71 @@ async function continueAppInit() {
         let clock = document.getElementById('liveClock');
         if(clock) clock.innerText = new Date().toLocaleTimeString('id-ID');
     }, 1000);
+
+    // ── Auto-sync: pull settings (buku + telegram) & transaksi setiap 30 detik ──
+    startAutoSync();
+}
+
+let _autoSyncInterval = null;
+
+function startAutoSync() {
+    if (_autoSyncInterval) clearInterval(_autoSyncInterval);
+    const INTERVAL_MS = 30 * 1000; // 30 detik
+
+    _autoSyncInterval = setInterval(async () => {
+        if (!getCloudUrl() || !getSupabaseKey()) return;
+
+        // 1. Pull settings global (daftar buku + telegram)
+        const prevBooksJson = JSON.stringify(books);
+        await pullAllSettings();
+
+        // 2. Jika ada buku baru dari cloud, update dropdown
+        if (JSON.stringify(books) !== prevBooksJson) {
+            updateBookSelectDropdown();
+            updateTgStatusBadge();
+            showAutoSyncToast('🔄 Buku baru ditemukan dari cloud');
+        }
+
+        // 3. Pull transaksi buku aktif secara senyap
+        const prevCount = txs.length;
+        await pullFromCloudSilently();
+
+        if (txs.length !== prevCount) {
+            showAutoSyncToast('🔄 Transaksi diperbarui dari cloud');
+        }
+
+        updateAutoSyncBadge();
+    }, INTERVAL_MS);
+
+    console.log('[AutoSync] Dimulai, interval 30 detik.');
+    updateAutoSyncBadge();
+}
+
+function stopAutoSync() {
+    if (_autoSyncInterval) {
+        clearInterval(_autoSyncInterval);
+        _autoSyncInterval = null;
+    }
+    console.log('[AutoSync] Dihentikan.');
+}
+
+function updateAutoSyncBadge() {
+    const el = document.getElementById('autoSyncBadge');
+    if (!el) return;
+    const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    el.innerText = `⟳ Sync otomatis aktif · ${now}`;
+    el.style.color = '#00875a';
+}
+
+let _autoSyncToastTimer = null;
+function showAutoSyncToast(msg) {
+    // Gunakan toast yang sudah ada jika ada, atau buat mini notif di badge
+    const el = document.getElementById('autoSyncBadge');
+    if (!el) return;
+    el.innerText = msg;
+    el.style.color = '#cc7b00';
+    if (_autoSyncToastTimer) clearTimeout(_autoSyncToastTimer);
+    _autoSyncToastTimer = setTimeout(updateAutoSyncBadge, 3000);
 }
 
 function getCloudUrl() { return globalSupabaseUrl || ''; }
