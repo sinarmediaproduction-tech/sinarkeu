@@ -952,17 +952,6 @@
         <div id="bookListContainer"></div>
         <form onsubmit="addNewBook(event)" style="border-top:1px solid #eee; padding-top:16px; margin-bottom:16px"><input type="text" id="newBookName" class="form-control" placeholder="Nama buku baru..." required><button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px">Buat Buku Baru</button></form>
         <div class="data-management-panel"><div class="panel-title">Cadangan Data</div><div class="panel-actions-row"><button class="btn btn-secondary" onclick="exportToCSV()">📥 CSV</button><button class="btn btn-secondary" onclick="exportToJSON()">📦 JSON</button><button class="btn btn-secondary" onclick="triggerJsonImport()">📤 Impor</button></div><input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)"></div>
-
-        <div class="data-management-panel" style="border-color:#de350b; background:#fff5f5;">
-            <div class="panel-title" style="color:#de350b;">🗃️ Arsipkan & Kosongkan Database</div>
-            <div style="font-size:.7rem; color:#666; margin-bottom:12px; line-height:1.6;">
-                Export semua transaksi buku ini ke file JSON sebagai arsip, lalu <b>hapus permanen</b> seluruh data dari Supabase dan lokal. Gunakan saat storage hampir penuh.
-            </div>
-            <div id="archiveStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
-            <button class="btn btn-danger" style="width:100%;" onclick="archiveAndClearData()">
-                🗃️ Arsipkan JSON & Kosongkan Database
-            </button>
-        </div> 
         
         <div style="border-top:2px dashed #1a1a1a; padding-top:16px">
             <div class="form-group">
@@ -975,6 +964,17 @@
                 </div>
                 <div id="connectionStatus" style="margin-top:8px"></div>
             </div>
+        </div>
+
+        <div class="data-management-panel" style="border-color:#de350b; background:#fff5f5;">
+            <div class="panel-title" style="color:#de350b;">🗃️ Arsipkan & Kosongkan Database</div>
+            <div style="font-size:.7rem; color:#666; margin-bottom:12px; line-height:1.6;">
+                Export semua transaksi buku ini ke file JSON sebagai arsip, lalu <b>hapus permanen</b> seluruh data dari Supabase dan lokal. Gunakan saat storage hampir penuh.
+            </div>
+            <div id="archiveStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
+            <button class="btn btn-danger" style="width:100%;" onclick="archiveAndClearData()">
+                🗃️ Arsipkan JSON & Kosongkan Database
+            </button>
         </div>
     </div>
 </div>
