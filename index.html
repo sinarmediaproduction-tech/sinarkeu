@@ -4779,6 +4779,19 @@ function showManualSection(id) {
 }
 
 window.addEventListener('DOMContentLoaded', initApp);
+
+// ==================== PWA SERVICE WORKER ====================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => {
+                console.log('[SW] Terdaftar, scope:', reg.scope);
+                // Cek update SW setiap kali halaman dibuka
+                reg.update();
+            })
+            .catch(err => console.warn('[SW] Gagal daftar:', err));
+    });
+}
 </script>
 </body>
 </html>
