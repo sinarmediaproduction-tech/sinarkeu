@@ -847,9 +847,175 @@
         .setup-status.error   { background: #ffebe6; color: #bf2600; display: block; }
         .setup-status.warning { background: #fff3e0; color: #cc7b00; display: block; }
         .setup-status.success { background: #e3fcef; color: #006644; display: block; }
+
+        /* ===== PASSWORD LOCK SCREEN ===== */
+        #passwordLockScreen {
+            position: fixed;
+            inset: 0;
+            background: #f5f5f5;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .lock-card {
+            background: #fff;
+            border: 2px solid #1a1a1a;
+            border-radius: 20px;
+            padding: 36px 32px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+            text-align: center;
+        }
+        .lock-icon {
+            font-size: 2.8rem;
+            margin-bottom: 12px;
+            display: block;
+        }
+        .lock-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .lock-subtitle {
+            font-size: .75rem;
+            color: #888;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        .lock-input-wrap {
+            position: relative;
+            margin-bottom: 14px;
+        }
+        .lock-input {
+            width: 100%;
+            padding: 12px 40px 12px 16px;
+            font-size: .9rem;
+            font-family: inherit;
+            border: 1.5px solid #1a1a1a;
+            border-radius: 10px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            letter-spacing: 1px;
+        }
+        .lock-input:focus {
+            border-color: #00875a;
+            box-shadow: 0 0 0 3px rgba(0,135,90,0.15);
+        }
+        .lock-input.error-shake {
+            border-color: #de350b;
+            animation: shake 0.4s ease;
+        }
+        @keyframes shake {
+            0%,100%{ transform: translateX(0); }
+            20%    { transform: translateX(-8px); }
+            40%    { transform: translateX(8px); }
+            60%    { transform: translateX(-5px); }
+            80%    { transform: translateX(5px); }
+        }
+        .lock-eye-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #999;
+            padding: 0;
+            line-height: 1;
+        }
+        .lock-btn {
+            width: 100%;
+            padding: 12px;
+            font-size: .85rem;
+            font-weight: 700;
+            background: #1a1a1a;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            font-family: inherit;
+        }
+        .lock-btn:hover { background: #333; }
+        .lock-btn:active { transform: scale(0.98); }
+        .lock-btn:disabled { background: #999; cursor: not-allowed; }
+        .lock-status {
+            font-size: .72rem;
+            margin-top: 12px;
+            min-height: 18px;
+            color: #de350b;
+            font-weight: 500;
+        }
+        .lock-warning {
+            background: #fff3e0;
+            border: 1px solid #ffab00;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: .7rem;
+            color: #7a4f00;
+            margin-top: 16px;
+            text-align: left;
+            line-height: 1.6;
+        }
+        /* Konfirmasi password di setup awal */
+        .pwd-strength {
+            height: 4px;
+            border-radius: 2px;
+            background: #eee;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+        .pwd-strength-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s, background 0.3s;
+            width: 0%;
+        }
     </style>
 </head>
 <body>
+
+<!-- ===== PASSWORD LOCK SCREEN ===== -->
+<div id="passwordLockScreen">
+    <div class="lock-card">
+        <span class="lock-icon" id="lockIcon">🔒</span>
+        <div class="lock-title" id="lockTitle">ArtaFlow</div>
+        <div class="lock-subtitle" id="lockSubtitle">Masukkan password untuk membuka aplikasi</div>
+
+        <div class="lock-input-wrap">
+            <input type="password" id="lockPasswordInput" class="lock-input"
+                   placeholder="Password"
+                   onkeydown="if(event.key==='Enter') submitLockPassword()"
+                   oninput="clearLockError()">
+            <button class="lock-eye-btn" onclick="toggleLockEye()" id="lockEyeBtn" title="Tampilkan/sembunyikan">👁</button>
+        </div>
+
+        <!-- Hanya tampil saat setup awal: konfirmasi password -->
+        <div id="lockConfirmWrap" style="display:none;">
+            <div class="lock-input-wrap" style="margin-bottom:6px;">
+                <input type="password" id="lockConfirmInput" class="lock-input"
+                       placeholder="Konfirmasi Password"
+                       onkeydown="if(event.key==='Enter') submitLockPassword()">
+            </div>
+            <div class="pwd-strength"><div class="pwd-strength-fill" id="pwdStrengthFill"></div></div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;" id="pwdStrengthLabel"></div>
+        </div>
+
+        <div style="margin-top:14px;">
+            <button class="lock-btn" id="lockSubmitBtn" onclick="submitLockPassword()">🔓 Buka</button>
+        </div>
+        <div class="lock-status" id="lockStatus"></div>
+
+        <div class="lock-warning" id="lockWarning" style="display:none;">
+            ⚠️ <strong>Perhatian:</strong> Jika password lupa, tidak ada cara untuk memulihkan data. Simpan password Anda di tempat yang aman.
+        </div>
+    </div>
+</div>
 
 <div class="container">
     <div class="header">
@@ -866,6 +1032,7 @@
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
             <button class="manage-books-btn" onclick="openBookManager()">Kelola</button>
             <button class="manage-books-btn" onclick="openTelegramSettings()" style="background:#0088cc;" title="Setelan Notifikasi Telegram">📲 Telegram</button>
+            <button class="manage-books-btn" onclick="lockApp()" style="background:#666;" title="Kunci Aplikasi">🔒 Kunci</button>
         </div>
     </div>
 
@@ -1032,6 +1199,19 @@
             </div>
         </div>
 
+        <!-- Ganti Password -->
+        <div class="data-management-panel" style="border-color:#1a1a1a; background:#fafafa;">
+            <div class="panel-title">🔐 Ganti Password Keamanan</div>
+            <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
+                Ganti password yang digunakan untuk mengenkripsi koneksi Supabase Anda.
+            </div>
+            <input type="password" id="changePwdOld" class="form-control" placeholder="Password saat ini" style="margin-bottom:8px;">
+            <input type="password" id="changePwdNew" class="form-control" placeholder="Password baru (min. 6 karakter)" style="margin-bottom:8px;">
+            <input type="password" id="changePwdNew2" class="form-control" placeholder="Konfirmasi password baru" style="margin-bottom:10px;">
+            <div id="changePwdStatus" style="font-size:.7rem; min-height:16px; margin-bottom:8px;"></div>
+            <button class="btn btn-primary" style="width:100%;" onclick="changePassword()">🔐 Ganti Password</button>
+        </div>
+
         <!-- Sinkronisasi Setelan — otomatis, hanya tampilkan status -->
         <div class="data-management-panel" style="border-color:#0088cc; background:#f0f8ff;">
             <div class="panel-title" style="color:#0055aa; display:flex; align-items:center; gap:8px;">
@@ -1157,8 +1337,8 @@
     <div class="modal-content" style="max-width:460px;">
         <div style="text-align:center; margin-bottom:24px;">
             <div style="font-size:2.5rem; margin-bottom:8px;">☁️</div>
-            <div style="font-size:1rem; font-weight:700; margin-bottom:4px;">Hubungkan ke Supabase</div>
-            <div style="font-size:.75rem; color:#888;">Masukkan kredensial Supabase project Anda untuk memulai</div>
+            <div style="font-size:1rem; font-weight:700; margin-bottom:4px;">Setup ArtaFlow</div>
+            <div style="font-size:.75rem; color:#888;">Masukkan kredensial Supabase dan buat password keamanan</div>
         </div>
 
         <div class="form-group">
@@ -1174,10 +1354,29 @@
             </div>
         </div>
 
+        <div style="border-top:1px dashed #ddd; margin: 16px 0;"></div>
+
+        <div class="form-group">
+            <label>🔐 Buat Password Keamanan</label>
+            <div style="position:relative; margin-bottom:8px;">
+                <input type="password" id="setupPwdInput" class="form-control" placeholder="Buat password (min. 6 karakter)"
+                    oninput="evalSetupPwdStrength()">
+            </div>
+            <div class="pwd-strength"><div class="pwd-strength-fill" id="setupPwdStrengthFill"></div></div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;" id="setupPwdStrengthLabel"></div>
+        </div>
+        <div class="form-group">
+            <label>Konfirmasi Password</label>
+            <input type="password" id="setupPwdConfirm" class="form-control" placeholder="Ulangi password">
+        </div>
+        <div style="background:#fff3e0; border:1px solid #ffab00; border-radius:8px; padding:10px 12px; font-size:.7rem; color:#7a4f00; margin-bottom:16px; line-height:1.6;">
+            ⚠️ Password ini <strong>tidak bisa dipulihkan</strong>. Jika lupa, seluruh data akan terhapus. Simpan di tempat yang aman.
+        </div>
+
         <div id="setupStatusMsg" class="setup-status"></div>
 
         <button id="setupConnectBtn" class="btn btn-primary" style="width:100%; margin-bottom:16px;" onclick="doFirstTimeSetup()">
-            🔌 Hubungkan & Mulai
+            🔐 Simpan & Mulai
         </button>
     </div>
 </div>
@@ -1189,6 +1388,7 @@ let books = [];
 let currentBookId = 'b_default';
 let globalSupabaseUrl = ''; // Supabase URL global (1 untuk semua buku)
 let globalSupabaseKey = ''; // Supabase Anon Key global (1 untuk semua buku)
+let _sessionCryptoKey = null; // CryptoKey aktif selama tab terbuka (AES-GCM)
 let currentFilter = 'all';
 let filterStartDate = '';
 let filterEndDate = '';
@@ -1200,6 +1400,182 @@ let reportChart = null;
 const EXPENSE_CATEGORIES = ['Makanan & Minuman', 'Transportasi', 'Belanja & Pakaian', 'Tagihan', 'Hiburan', 'Kesehatan', 'Pendidikan', 'Cicilan & Hutang', 'Investasi', 'Lain-lain'];
 const PAGE_SIZE = 10;
 let currentPage = 1;
+
+
+// ==================== CRYPTO ENGINE (AES-GCM + PBKDF2) ====================
+
+const CRYPTO_SALT_KEY   = 'af_crypto_salt';
+const CRYPTO_CHECK_KEY  = 'af_crypto_check';
+const CRYPTO_URL_KEY    = 'af_enc_supabase_url';
+const CRYPTO_AKEY_KEY   = 'af_enc_supabase_key';
+const SENTINEL_PLAIN    = 'artaflow_ok';
+
+async function deriveKey(password, saltBuf) {
+    const enc = new TextEncoder();
+    const baseKey = await crypto.subtle.importKey(
+        'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+    );
+    return crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt: saltBuf, iterations: 300000, hash: 'SHA-256' },
+        baseKey,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+    );
+}
+
+async function encryptStr(cryptoKey, plaintext) {
+    const enc = new TextEncoder();
+    const iv  = crypto.getRandomValues(new Uint8Array(12));
+    const ct  = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, enc.encode(plaintext));
+    const combined = new Uint8Array(iv.byteLength + ct.byteLength);
+    combined.set(iv, 0);
+    combined.set(new Uint8Array(ct), iv.byteLength);
+    return btoa(String.fromCharCode(...combined));
+}
+
+async function decryptStr(cryptoKey, b64) {
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const iv    = bytes.slice(0, 12);
+    const ct    = bytes.slice(12);
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, ct);
+    return new TextDecoder().decode(plain);
+}
+
+function isPasswordConfigured() {
+    return !!localStorage.getItem(CRYPTO_CHECK_KEY);
+}
+
+async function saveEncryptedCredentials(cryptoKey, url, apiKey) {
+    const encUrl   = await encryptStr(cryptoKey, url);
+    const encAKey  = await encryptStr(cryptoKey, apiKey);
+    const encCheck = await encryptStr(cryptoKey, SENTINEL_PLAIN);
+    localStorage.setItem(CRYPTO_URL_KEY,   encUrl);
+    localStorage.setItem(CRYPTO_AKEY_KEY,  encAKey);
+    localStorage.setItem(CRYPTO_CHECK_KEY, encCheck);
+}
+
+async function unlockWithPassword(password) {
+    const saltB64 = localStorage.getItem(CRYPTO_SALT_KEY);
+    if (!saltB64) return false;
+    const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+    let key;
+    try {
+        key = await deriveKey(password, salt);
+        const plain = await decryptStr(key, localStorage.getItem(CRYPTO_CHECK_KEY));
+        if (plain !== SENTINEL_PLAIN) return false;
+    } catch { return false; }
+    try {
+        globalSupabaseUrl = await decryptStr(key, localStorage.getItem(CRYPTO_URL_KEY));
+        globalSupabaseKey = await decryptStr(key, localStorage.getItem(CRYPTO_AKEY_KEY));
+    } catch { return false; }
+    _sessionCryptoKey = key;
+    sessionStorage.setItem('af_session_unlocked', '1');
+    return true;
+}
+
+async function setupNewPassword(password, url, apiKey) {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    localStorage.setItem(CRYPTO_SALT_KEY, btoa(String.fromCharCode(...salt)));
+    const key = await deriveKey(password, salt);
+    await saveEncryptedCredentials(key, url, apiKey);
+    _sessionCryptoKey = key;
+    sessionStorage.setItem('af_session_unlocked', '1');
+}
+
+async function reEncryptCredentials(url, apiKey) {
+    if (!_sessionCryptoKey) return;
+    await saveEncryptedCredentials(_sessionCryptoKey, url, apiKey);
+}
+
+function wipeAllCryptoData() {
+    [CRYPTO_SALT_KEY, CRYPTO_CHECK_KEY, CRYPTO_URL_KEY, CRYPTO_AKEY_KEY,
+     'af_supabase_url_global','af_supabase_key_global'].forEach(k => localStorage.removeItem(k));
+    sessionStorage.removeItem('af_session_unlocked');
+    _sessionCryptoKey = null;
+    globalSupabaseUrl = '';
+    globalSupabaseKey = '';
+}
+
+// ==================== PASSWORD LOCK SCREEN UI ====================
+
+function showPasswordLock() {
+    const screen = document.getElementById('passwordLockScreen');
+    screen.style.display = 'flex';
+    document.getElementById('lockTitle').innerText    = 'ArtaFlow';
+    document.getElementById('lockSubtitle').innerText = 'Masukkan password untuk membuka aplikasi';
+    document.getElementById('lockSubmitBtn').innerText = '\uD83D\uDD13 Buka';
+    document.getElementById('lockIcon').innerText      = '\uD83D\uDD12';
+    document.getElementById('lockWarning').style.display = 'none';
+    setTimeout(() => document.getElementById('lockPasswordInput').focus(), 100);
+}
+
+function hideLockScreen() {
+    document.getElementById('passwordLockScreen').style.display = 'none';
+}
+
+function clearLockError() {
+    document.getElementById('lockStatus').innerText = '';
+    document.getElementById('lockPasswordInput').classList.remove('error-shake');
+}
+
+function toggleLockEye() {
+    const inp = document.getElementById('lockPasswordInput');
+    const btn = document.getElementById('lockEyeBtn');
+    if (inp.type === 'password') { inp.type = 'text'; btn.innerText = '\uD83D\uDE48'; }
+    else { inp.type = 'password'; btn.innerText = '\uD83D\uDC41'; }
+}
+
+async function submitLockPassword() {
+    const pwd    = document.getElementById('lockPasswordInput').value;
+    const status = document.getElementById('lockStatus');
+    const btn    = document.getElementById('lockSubmitBtn');
+    if (!pwd) { status.innerText = '\u274C Password tidak boleh kosong'; return; }
+    btn.disabled = true;
+    btn.innerText = '\u23F3 Memverifikasi...';
+    status.innerText = '';
+    const ok = await unlockWithPassword(pwd);
+    if (ok) {
+        hideLockScreen();
+        continueAppInit();
+    } else {
+        btn.disabled = false;
+        btn.innerText = '\uD83D\uDD13 Buka';
+        status.innerText = '\u274C Password salah';
+        const inp = document.getElementById('lockPasswordInput');
+        inp.classList.remove('error-shake');
+        void inp.offsetWidth;
+        inp.classList.add('error-shake');
+        inp.value = '';
+        inp.focus();
+    }
+}
+
+function evalSetupPwdStrength() {
+    const pwd  = document.getElementById('setupPwdInput') ? document.getElementById('setupPwdInput').value : '';
+    const fill = document.getElementById('setupPwdStrengthFill');
+    const lbl  = document.getElementById('setupPwdStrengthLabel');
+    if (!fill || !lbl) return;
+    let score = 0;
+    if (pwd.length >= 6)  score++;
+    if (pwd.length >= 10) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    const levels = [
+        { w:'0%',   bg:'#eee',     t:'' },
+        { w:'25%',  bg:'#de350b',  t:'Sangat lemah' },
+        { w:'50%',  bg:'#ff8b00',  t:'Lemah' },
+        { w:'70%',  bg:'#ffab00',  t:'Cukup' },
+        { w:'88%',  bg:'#00875a',  t:'Kuat' },
+        { w:'100%', bg:'#006644',  t:'Sangat kuat' },
+    ];
+    const l = levels[score] || levels[0];
+    fill.style.width = l.w;
+    fill.style.background = l.bg;
+    lbl.innerText = l.t;
+    lbl.style.color = l.bg;
+}
 
 // ==================== UTILITIES ====================
 function showToast(msg, type = 'success') {
@@ -1412,6 +1788,7 @@ function getCurrentBookName() {
 // ==================== NOTIFIKASI TELEGRAM ====================
 
 function initApp() {
+    // ── Fase 1: Inisialisasi device ID & buku (tidak butuh password) ──
     deviceId = localStorage.getItem('af_device_id');
     if(!deviceId) {
         deviceId = 'DEV-' + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -1430,22 +1807,45 @@ function initApp() {
     currentBookId = localStorage.getItem('af_current_book_id') || 'b_default';
     if(!books.find(b => b.id === currentBookId)) currentBookId = books[0].id;
 
-    // Migrasi: ambil URL & key dari format lama (per-buku) jika ada
-    if (!localStorage.getItem('af_supabase_url_global')) {
-        // Coba ambil dari buku mana saja yang sudah tersimpan
+    // ── Fase 2: Gating keamanan ──
+    // Kasus A: belum pernah setup sama sekali → buka modal setup awal (Supabase + password)
+    if (!isPasswordConfigured()) {
+        hideLockScreen();
+        // Migrasi data lama (plaintext) jika ada
         const legacyUrls = JSON.parse(localStorage.getItem('af_cloud_urls') || '{}');
         const legacyKeys = JSON.parse(localStorage.getItem('af_supabase_keys') || '{}');
-        const firstBookWithUrl = Object.keys(legacyUrls)[0];
-        if (firstBookWithUrl) {
-            globalSupabaseUrl = legacyUrls[firstBookWithUrl] || '';
-            globalSupabaseKey = legacyKeys[firstBookWithUrl] || '';
-            localStorage.setItem('af_supabase_url_global', globalSupabaseUrl);
-            localStorage.setItem('af_supabase_key_global', globalSupabaseKey);
+        const legacyUrl  = localStorage.getItem('af_supabase_url_global') || '';
+        const legacyKey  = localStorage.getItem('af_supabase_key_global') || '';
+        const firstKey   = Object.keys(legacyUrls)[0];
+        if (legacyUrl || firstKey) {
+            // Ada data lama plaintext → isi field setup, minta buat password
+            document.getElementById('setupUrlInput').value = legacyUrl || legacyUrls[firstKey] || '';
+            document.getElementById('setupKeyInput').value = legacyKey || legacyKeys[firstKey] || '';
         }
-    } else {
-        globalSupabaseUrl = localStorage.getItem('af_supabase_url_global') || '';
-        globalSupabaseKey = localStorage.getItem('af_supabase_key_global') || '';
+        setTimeout(() => openSetupModal(), 300);
+        return;
     }
+
+    // Kasus B: password sudah dikonfigurasi, tapi session tab baru (sessionStorage kosong)
+    if (!sessionStorage.getItem('af_session_unlocked')) {
+        showPasswordLock();
+        return; // continueAppInit() dipanggil setelah unlock berhasil
+    }
+
+    // Kasus C: sudah unlock di session ini (refresh manual tidak terjadi) — lanjut init
+    continueAppInit();
+}
+
+/** Dipanggil setelah password berhasil diverifikasi (atau sudah unlock di session ini) */
+async function continueAppInit() {
+    // Jika _sessionCryptoKey sudah ada, URL+Key sudah terisi dari unlockWithPassword.
+    // Jika masuk dari Kasus C (session valid tapi key hilang karena in-memory), re-lock.
+    if (!globalSupabaseUrl && !_sessionCryptoKey) {
+        sessionStorage.removeItem('af_session_unlocked');
+        showPasswordLock();
+        return;
+    }
+
     budgets = JSON.parse(localStorage.getItem('af_budgets_' + currentBookId) || '{}');
 
     let currentYear = new Date().getFullYear();
@@ -1462,12 +1862,10 @@ function initApp() {
     updateBookSelectDropdown();
     loadTransactions();
     updateCloudIndicator();
-    
-    // Jika belum ada koneksi Supabase → tampilkan setup awal
+
     if (!getCloudUrl() || !getSupabaseKey()) {
         setTimeout(() => openSetupModal(), 400);
     } else {
-        // Pertama pull setelan, lalu pull transaksi & autobackup
         pullAllSettings().then(() => {
             updateBookSelectDropdown();
             budgets = JSON.parse(localStorage.getItem('af_budgets_' + currentBookId) || '{}');
@@ -1486,6 +1884,71 @@ function initApp() {
 
 function getCloudUrl() { return globalSupabaseUrl || ''; }
 function getSupabaseKey() { return globalSupabaseKey || ''; }
+
+/** Kunci app: hapus session, tampilkan lock screen */
+function lockApp() {
+    sessionStorage.removeItem('af_session_unlocked');
+    _sessionCryptoKey = null;
+    globalSupabaseUrl = '';
+    globalSupabaseKey = '';
+    document.getElementById('lockPasswordInput').value = '';
+    clearLockError();
+    showPasswordLock();
+}
+
+/** Ganti password: verifikasi lama, derive baru, re-enkripsi */
+async function changePassword() {
+    const oldPwd  = document.getElementById('changePwdOld').value;
+    const newPwd  = document.getElementById('changePwdNew').value;
+    const newPwd2 = document.getElementById('changePwdNew2').value;
+    const status  = document.getElementById('changePwdStatus');
+
+    status.style.color = '#de350b';
+    if (!oldPwd || !newPwd || !newPwd2) { status.innerText = '❌ Semua field wajib diisi.'; return; }
+    if (newPwd.length < 6) { status.innerText = '❌ Password baru minimal 6 karakter.'; return; }
+    if (newPwd !== newPwd2) { status.innerText = '❌ Konfirmasi tidak cocok.'; return; }
+
+    status.style.color = '#cc7b00';
+    status.innerText = '⏳ Memverifikasi...';
+
+    // Verifikasi password lama
+    const saltB64 = localStorage.getItem(CRYPTO_SALT_KEY);
+    if (!saltB64) { status.style.color='#de350b'; status.innerText='❌ Data enkripsi tidak ditemukan.'; return; }
+    const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+
+    let oldKey;
+    try {
+        oldKey = await deriveKey(oldPwd, salt);
+        const plain = await decryptStr(oldKey, localStorage.getItem(CRYPTO_CHECK_KEY));
+        if (plain !== SENTINEL_PLAIN) throw new Error('wrong');
+    } catch {
+        status.style.color = '#de350b';
+        status.innerText = '❌ Password lama salah.';
+        return;
+    }
+
+    // Decrypt URL & Key dengan password lama
+    let url, apiKey;
+    try {
+        url    = await decryptStr(oldKey, localStorage.getItem(CRYPTO_URL_KEY));
+        apiKey = await decryptStr(oldKey, localStorage.getItem(CRYPTO_AKEY_KEY));
+    } catch {
+        status.style.color = '#de350b';
+        status.innerText = '❌ Gagal membaca data terenkripsi.';
+        return;
+    }
+
+    // Setup ulang dengan password baru
+    status.innerText = '⏳ Mengenkripsi ulang...';
+    await setupNewPassword(newPwd, url, apiKey);
+
+    status.style.color = '#00875a';
+    status.innerText = '✅ Password berhasil diganti!';
+    document.getElementById('changePwdOld').value  = '';
+    document.getElementById('changePwdNew').value  = '';
+    document.getElementById('changePwdNew2').value = '';
+    showToast('Password berhasil diganti 🔐', 'success');
+}
 
 function updateCloudIndicator() {
     let wrapper = document.getElementById('syncStatusWrapper');
@@ -1512,14 +1975,26 @@ function openSetupModal() {
 }
 
 async function doFirstTimeSetup() {
-    const url = document.getElementById('setupUrlInput').value.trim();
-    const key = document.getElementById('setupKeyInput').value.trim();
-    const st  = document.getElementById('setupStatusMsg');
-    const btn = document.getElementById('setupConnectBtn');
+    const url  = document.getElementById('setupUrlInput').value.trim();
+    const key  = document.getElementById('setupKeyInput').value.trim();
+    const pwd  = document.getElementById('setupPwdInput').value;
+    const pwd2 = document.getElementById('setupPwdConfirm').value;
+    const st   = document.getElementById('setupStatusMsg');
+    const btn  = document.getElementById('setupConnectBtn');
 
     if (!url || !key) {
         st.className = 'setup-status error';
-        st.innerText = '❌ URL dan Anon Key wajib diisi!';
+        st.innerText = '❌ Supabase URL dan Anon Key wajib diisi!';
+        return;
+    }
+    if (!pwd || pwd.length < 6) {
+        st.className = 'setup-status error';
+        st.innerText = '❌ Password minimal 6 karakter!';
+        return;
+    }
+    if (pwd !== pwd2) {
+        st.className = 'setup-status error';
+        st.innerText = '❌ Konfirmasi password tidak cocok!';
         return;
     }
 
@@ -1528,7 +2003,7 @@ async function doFirstTimeSetup() {
     st.className = 'setup-status warning';
     st.innerText = '⏳ Menghubungkan ke Supabase...';
 
-    // Simpan sementara untuk test
+    // Simpan sementara untuk test koneksi
     globalSupabaseUrl = url;
     globalSupabaseKey = key;
 
@@ -1538,30 +2013,32 @@ async function doFirstTimeSetup() {
         globalSupabaseUrl = '';
         globalSupabaseKey = '';
         btn.disabled = false;
-        btn.innerText = '🔌 Hubungkan & Mulai';
+        btn.innerText = '🔐 Simpan & Mulai';
         st.className = 'setup-status error';
         st.innerText = '❌ Koneksi gagal! Periksa kembali URL dan Anon Key Anda.';
         return;
     }
 
-    // Koneksi berhasil — simpan permanen ke global
-    localStorage.setItem('af_supabase_url_global', globalSupabaseUrl);
-    localStorage.setItem('af_supabase_key_global', globalSupabaseKey);
-    updateCloudIndicator();
+    // Koneksi berhasil — enkripsi & simpan dengan password
+    st.innerText = '⏳ Mengenkripsi kredensial...';
+    await setupNewPassword(pwd, url, key);
 
+    // Hapus data plaintext lama jika ada
+    localStorage.removeItem('af_supabase_url_global');
+    localStorage.removeItem('af_supabase_key_global');
+    localStorage.removeItem('af_cloud_urls');
+    localStorage.removeItem('af_supabase_keys');
+
+    updateCloudIndicator();
     st.className = 'setup-status success';
-    st.innerText = '✅ Berhasil terhubung!';
+    st.innerText = '✅ Berhasil! Kredensial terenkripsi dengan password Anda.';
     btn.innerText = '✅ Tersambung';
 
     setTimeout(async () => {
         closeModal('firstTimeSetupModal');
-        showToast('Supabase terhubung! Memuat data...', 'success');
-        await pullAllSettings();
-        updateBookSelectDropdown();
-        budgets = JSON.parse(localStorage.getItem('af_budgets_' + currentBookId) || '{}');
-        updateTgStatusBadge();
-        await pullFromCloudSilently();
-    }, 800);
+        showToast('Setup selesai! Data terenkripsi aman 🔐', 'success');
+        await continueAppInit();
+    }, 900);
 }
 
 function loadTransactions() {
@@ -1898,10 +2375,13 @@ async function testCloudConnection() {
     const testFetch = await callSupabaseAPI('transactions', 'GET', null, '?limit=1');
     
     if (testFetch !== null) {
-        localStorage.setItem('af_supabase_url_global', globalSupabaseUrl);
-        localStorage.setItem('af_supabase_key_global', globalSupabaseKey);
-        statusDiv.innerHTML = '<div class="connection-status success">Sukses terhubung ke Supabase Cloud! Berlaku untuk semua buku. Memulai unduh data...</div>';
-        showToast("Supabase terhubung untuk semua buku!", "success");
+        // Simpan terenkripsi (update dengan session key yang sudah aktif)
+        await reEncryptCredentials(globalSupabaseUrl, globalSupabaseKey);
+        // Hapus plaintext lama jika masih ada
+        localStorage.removeItem('af_supabase_url_global');
+        localStorage.removeItem('af_supabase_key_global');
+        statusDiv.innerHTML = '<div class="connection-status success">Sukses! Koneksi terenkripsi & berlaku untuk semua buku. Memulai unduh data...</div>';
+        showToast("Supabase terhubung & terenkripsi!", "success");
         updateCloudIndicator();
         await pullAllSettings();
         updateBookSelectDropdown();
