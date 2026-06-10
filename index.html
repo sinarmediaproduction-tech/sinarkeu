@@ -11,6 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <link rel="apple-touch-icon" href="icon-192.png">
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -3017,6 +3018,8 @@ async function continueAppInit() {
         }).then(() => {
             setTimeout(checkAndRunDailyAutoBackup, 3000);
             setTimeout(scheduleDailySummary, 5000);
+            // Mulai Supabase Realtime setelah semua data siap
+            startRealtimeSync();
         });
     }
 
@@ -3072,6 +3075,138 @@ function stopAutoSync() {
     console.log('[AutoSync] Dihentikan.');
 }
 
+// ==================== SUPABASE REALTIME ====================
+
+let _supabaseClient = null;
+let _realtimeChannel = null;
+
+/**
+ * Inisialisasi Supabase JS client (untuk Realtime).
+ * Dipanggil setelah URL & Key tersedia.
+ */
+function initSupabaseClient() {
+    const url = getCloudUrl();
+    const key = getSupabaseKey();
+    if (!url || !key) return null;
+    if (_supabaseClient) return _supabaseClient;
+    // supabase global tersedia dari CDN @supabase/supabase-js
+    _supabaseClient = supabase.createClient(url, key);
+    console.log('[Realtime] Supabase client dibuat.');
+    return _supabaseClient;
+}
+
+/**
+ * Mulai subscribe ke perubahan tabel transactions & settings via Realtime.
+ * Otomatis dipanggil setelah login/init berhasil.
+ */
+function startRealtimeSync() {
+    const client = initSupabaseClient();
+    if (!client) return;
+
+    // Hindari subscribe ganda
+    if (_realtimeChannel) {
+        client.removeChannel(_realtimeChannel);
+        _realtimeChannel = null;
+    }
+
+    _realtimeChannel = client
+        .channel('sinarkeu-realtime')
+        // Pantau tabel transactions — filter buku aktif
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'transactions' },
+            (payload) => {
+                console.log('[Realtime] Perubahan transactions:', payload.eventType);
+                handleRealtimeTransaction(payload);
+            }
+        )
+        // Pantau tabel settings (buku baru, telegram, budget)
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'settings' },
+            (payload) => {
+                console.log('[Realtime] Perubahan settings:', payload.eventType, payload.new?.key);
+                handleRealtimeSettings(payload);
+            }
+        )
+        .subscribe((status) => {
+            console.log('[Realtime] Status:', status);
+            updateRealtimeBadge(status);
+        });
+}
+
+function stopRealtimeSync() {
+    if (_supabaseClient && _realtimeChannel) {
+        _supabaseClient.removeChannel(_realtimeChannel);
+        _realtimeChannel = null;
+        console.log('[Realtime] Channel dihentikan.');
+    }
+}
+
+/** Handler perubahan tabel transactions */
+async function handleRealtimeTransaction(payload) {
+    const rec = payload.new || payload.old;
+    // Hanya proses kalau relevan dengan buku aktif
+    if (rec && rec.book_id && rec.book_id !== currentBookId) return;
+
+    // Pull ulang transaksi buku aktif secara senyap
+    await pullFromCloudSilently();
+    showAutoSyncToast('⚡ Transaksi diperbarui secara real-time');
+}
+
+/** Handler perubahan tabel settings */
+async function handleRealtimeSettings(payload) {
+    const rec = payload.new;
+    if (!rec) return;
+
+    if (rec.key === 'books') {
+        // Ada perubahan daftar buku
+        const prevBooksJson = JSON.stringify(books);
+        await pullAllSettings();
+        if (JSON.stringify(books) !== prevBooksJson) {
+            updateBookSelectDropdown();
+            updateTgStatusBadge();
+            showAutoSyncToast('⚡ Daftar buku diperbarui secara real-time');
+        }
+    } else if (rec.key === 'telegram_config') {
+        await pullAllSettings();
+        updateTgStatusBadge();
+        showAutoSyncToast('⚡ Setelan Telegram diperbarui secara real-time');
+    } else if (rec.key === 'budgets') {
+        await pullAllSettings();
+        budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
+        renderBudget();
+        showAutoSyncToast('⚡ Anggaran diperbarui secara real-time');
+    }
+}
+
+/** Update badge status realtime di header */
+function updateRealtimeBadge(status) {
+    const el = document.getElementById('autoSyncBadge');
+    if (!el) return;
+    if (status === 'SUBSCRIBED') {
+        el.innerText = '⚡ Real-time aktif';
+        el.style.color = '#00875a';
+        // Setelah realtime aktif, kurangi interval polling jadi 2 menit (fallback saja)
+        if (_autoSyncInterval) {
+            clearInterval(_autoSyncInterval);
+            _autoSyncInterval = setInterval(async () => {
+                if (!getCloudUrl() || !getSupabaseKey()) return;
+                await pullFromCloudSilently();
+            }, 120 * 1000); // fallback polling 2 menit
+        }
+    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        el.innerText = '⟳ Realtime error — fallback polling aktif';
+        el.style.color = '#cc7b00';
+        // Pastikan polling 30 detik tetap jalan sebagai fallback
+        startAutoSync();
+    } else {
+        el.innerText = '⟳ Menghubungkan real-time...';
+        el.style.color = '#aaa';
+    }
+}
+
+// ==================== END SUPABASE REALTIME ====================
+
+
 function updateAutoSyncBadge() {
     const el = document.getElementById('autoSyncBadge');
     if (!el) return;
@@ -3096,6 +3231,8 @@ function getSupabaseKey() { return globalSupabaseKey || ''; }
 
 /** Kunci app: hapus session, tampilkan lock screen */
 function lockApp() {
+    stopRealtimeSync();
+    stopAutoSync();
     sessionStorage.removeItem('sk_session_unlocked');
     _sessionCryptoKey = null;
     globalSupabaseUrl = '';
