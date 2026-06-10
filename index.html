@@ -1297,7 +1297,7 @@ async function testTelegramNotif() {
                 statusEl.innerHTML = '<span style="color:#006644;">✅ Berhasil via Edge Function!</span>';
                 showToast('Tes Telegram berhasil! ✅', 'success');
             } else {
-                statusEl.innerHTML = `<span style="color:#de350b;">❌ Gagal: ${data.error || JSON.stringify(data)}</span>`;
+                statusEl.innerHTML = `<span style="color:#de350b;">❌ Gagal: ${escapeHtml(data.error || JSON.stringify(data))}</span>`;
             }
         } else {
             res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -1316,11 +1316,11 @@ async function testTelegramNotif() {
                 if (errMsg.includes('chat not found')) errMsg = 'Chat ID tidak ditemukan. Pastikan bot sudah di-/start atau ditambah ke grup.';
                 if (errMsg.includes('Unauthorized')) errMsg = 'Bot Token tidak valid. Cek kembali dari @BotFather.';
                 if (errMsg.includes('bot was blocked')) errMsg = 'Bot diblokir oleh user. Buka chat bot lalu /start lagi.';
-                statusEl.innerHTML = `<span style="color:#de350b;">❌ ${errMsg}</span>`;
+                statusEl.innerHTML = `<span style="color:#de350b;">❌ ${escapeHtml(errMsg)}</span>`;
             }
         }
     } catch(e) {
-        statusEl.innerHTML = `<span style="color:#de350b;">❌ Error jaringan: ${e.message}</span>`;
+        statusEl.innerHTML = `<span style="color:#de350b;">❌ Error jaringan: ${escapeHtml(e.message)}</span>`;
     }
 }
 
@@ -1752,14 +1752,16 @@ async function addCloudLog(actionType, detailsText) {
 }
 
 // Ambil transaksi terbaru secara senyap dari cloud
+// Menggunakan strategi MERGE: data lokal yang belum ada di cloud tetap dipertahankan,
+// data cloud yang lebih baru akan menimpa data lokal berdasarkan id yang sama.
 async function pullFromCloudSilently() {
     if (!getCloudUrl() || !getSupabaseKey()) return;
     
     // Tarik transaksi berdasarkan book_id saat ini
     let cloudData = await callSupabaseAPI('transactions', 'GET', null, `?book_id=eq.${currentBookId}`);
     if (cloudData && Array.isArray(cloudData)) {
-        // Map kembali struktur PostgreSQL ke format lokal array javascript
-        txs = cloudData.map(c => ({
+        // Map struktur PostgreSQL ke format lokal
+        const cloudMapped = cloudData.map(c => ({
             id: c.id,
             type: c.type,
             amount: Number(c.amount),
@@ -1768,8 +1770,25 @@ async function pullFromCloudSilently() {
             date: c.date,
             attachment: c.attachment
         }));
+
+        // Buat map dari cloud berdasarkan id untuk lookup cepat
+        const cloudById = new Map(cloudMapped.map(c => [c.id, c]));
+
+        // Pertahankan transaksi lokal yang ID-nya belum ada di cloud
+        // (artinya belum sempat di-push, misal dibuat saat offline)
+        const localOnlyTxs = txs.filter(local => !cloudById.has(local.id));
+
+        // Gabungkan: semua data cloud + data lokal yang belum tersinkron
+        txs = [...cloudMapped, ...localOnlyTxs];
         txs.sort((a,b) => new Date(b.date) - new Date(a.date));
         localStorage.setItem('af_txs_' + currentBookId, JSON.stringify(txs));
+
+        // Jika ada data lokal yang belum di-cloud, push sekarang agar tersinkron
+        if (localOnlyTxs.length > 0) {
+            console.log(`[pullFromCloudSilently] Ditemukan ${localOnlyTxs.length} transaksi lokal belum tersinkron, mendorong ke cloud...`);
+            pushToCloud();
+        }
+
         render();
     }
     
@@ -1861,7 +1880,7 @@ function renderLogs(logArray) {
         else if(l.action === 'HAPUS') tagClass = 'tag-delete';
         
         let t = l.timestamp ? new Date(l.timestamp).toLocaleTimeString('id-ID') : '';
-        div.innerHTML = `<span class="log-tag ${tagClass}">${l.action}</span> [${t}] Device:${l.device_id || 'UNKNOWN'} - ${escapeHtml(l.details)}`;
+        div.innerHTML = `<span class="log-tag ${tagClass}">${escapeHtml(l.action)}</span> [${escapeHtml(t)}] Device:${escapeHtml(l.device_id || 'UNKNOWN')} - ${escapeHtml(l.details)}`;
         area.appendChild(div);
     });
 }
@@ -2485,7 +2504,7 @@ function renderBackupList() {
         let div = document.createElement('div');
         div.style = 'display:flex; justify-content:space-between; align-items:center; font-size:.7rem; padding:6px 0; border-bottom:1px solid #eee;';
         div.innerHTML = `
-            <span>📦 ${formatDateTime(b.timestamp)} (${b.count} Txs)</span>
+            <span>📦 ${escapeHtml(formatDateTime(b.timestamp))} (${escapeHtml(String(b.count))} Txs)</span>
             <div>
                 <button class="btn-mini" onclick="restoreFromIndex(${i})">Restore</button>
                 <button class="btn-mini btn-mini-danger" onclick="deleteBackupIndex(${i})">X</button>
@@ -2653,7 +2672,7 @@ function renderCloudBackupList(backups) {
         let div = document.createElement('div');
         div.style = 'display:flex; justify-content:space-between; align-items:center; font-size:.7rem; padding:7px 0; border-bottom:1px solid #eee;';
         div.innerHTML = `
-            <span>☁️ ${formatDateTime(b.created_at)} ${typeBadge} (${b.tx_count} Txs)</span>
+            <span>☁️ ${escapeHtml(formatDateTime(b.created_at))} ${typeBadge} (${escapeHtml(String(b.tx_count))} Txs)</span>
             <button class="btn-mini" onclick="restoreFromCloudBackup('${b.id}', ${i})">Restore</button>
         `;
         container.appendChild(div);
@@ -2710,8 +2729,8 @@ function renderBudgetFormFields() {
         let div = document.createElement('div');
         div.className = 'budget-cat-row';
         div.innerHTML = `
-            <span class="budget-cat-label">${cat}</span>
-            <input type="text" class="form-control budget-input-field" data-cat="${cat}" value="${val ? Number(val).toLocaleString('id-ID') : ''}" oninput="formatRupiah(this); updateBudgetSummary();" placeholder="Rp 0">
+            <span class="budget-cat-label">${escapeHtml(cat)}</span>
+            <input type="text" class="form-control budget-input-field" data-cat="${escapeHtml(cat)}" value="${val ? Number(val).toLocaleString('id-ID') : ''}" oninput="formatRupiah(this); updateBudgetSummary();" placeholder="Rp 0">
         `;
         container.appendChild(div);
     });
@@ -2878,7 +2897,7 @@ function generateMonthlyReport() {
         
         html += `
             <tr>
-                <td>${cat}</td>
+                <td>${escapeHtml(cat)}</td>
                 <td>${rp(tar)}</td>
                 <td>${rp(act)}</td>
                 <td style="${diffStyle}">${rp(diff)}</td>
