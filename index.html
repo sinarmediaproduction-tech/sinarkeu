@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ArtaFlow - Multi Buku Kas dengan Supabase Cloud</title>
+    <title>ArtaFlow v8 - Multi Buku Kas dengan Supabase Cloud</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a1a1a">
@@ -799,7 +799,7 @@
     <div class="header">
         <div>
             <h1>ArtaFlow</h1>
-            <p>Sistem Multi Buku Kas dengan Supabase Cloud Storage</p>
+            <p>Sistem Multi Buku Kas dengan Supabase Cloud Storage · v8</p>
         </div>
         <div class="book-selector">
             <div id="syncStatusWrapper" class="sync-status-container offline">
@@ -965,6 +965,19 @@
                     <button class="btn btn-primary" style="width:100%" onclick="testCloudConnection()">Hubungkan & Sinkronkan</button>
                 </div>
                 <div id="connectionStatus" style="margin-top:8px"></div>
+            </div>
+        </div>
+
+        <!-- Panel Sinkronisasi Setelan -->
+        <div class="data-management-panel" style="border-color:#0088cc; background:#f0f8ff;">
+            <div class="panel-title" style="color:#0055aa;">☁️ Sinkronisasi Setelan</div>
+            <div style="font-size:.7rem; color:#555; margin-bottom:12px; line-height:1.6;">
+                Sinkronkan daftar buku kas, anggaran bulanan, dan konfigurasi Telegram ke Supabase agar tidak hilang saat ganti browser atau hapus cache.
+            </div>
+            <div id="settingsSyncStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary" style="flex:1;" onclick="manualPullSettings()">⬇️ Pull dari Cloud</button>
+                <button class="btn btn-secondary" style="flex:1;" onclick="manualPushSettings()">⬆️ Push ke Cloud</button>
             </div>
         </div>
 
@@ -1170,6 +1183,7 @@ function saveTelegramConfig() {
     localStorage.setItem('af_tg_chatid', chatId);
     updateTgStatusBadge();
     showToast('Konfigurasi Telegram disimpan ✅', 'success');
+    pushSettingTelegram(); // push ke Supabase (async, non-blocking)
 }
 
 function clearTelegramConfig() {
@@ -1182,6 +1196,7 @@ function clearTelegramConfig() {
     document.getElementById('tgChatIdInput').value = '';
     updateTgStatusBadge();
     showToast('Konfigurasi Telegram dihapus', 'warning');
+    pushSettingTelegram(); // push config kosong ke Supabase
 }
 
 function updateTgStatusBadge() {
@@ -1352,8 +1367,13 @@ function initApp() {
     if (!getCloudUrl() || !getSupabaseKey()) {
         setTimeout(() => openSetupModal(), 400);
     } else {
-        pullFromCloudSilently().then(() => {
-            // Cek & jalankan autobackup mingguan setelah data siap
+        // Pertama pull setelan, lalu pull transaksi & autobackup
+        pullAllSettings().then(() => {
+            updateBookSelectDropdown();
+            budgets = JSON.parse(localStorage.getItem('af_budgets_' + currentBookId) || '{}');
+            updateTgStatusBadge();
+            return pullFromCloudSilently();
+        }).then(() => {
             setTimeout(checkAndRunWeeklyAutoBackup, 3000);
         });
     }
@@ -1436,6 +1456,10 @@ async function doFirstTimeSetup() {
     setTimeout(async () => {
         closeModal('firstTimeSetupModal');
         showToast('Supabase terhubung! Memuat data...', 'success');
+        await pullAllSettings();
+        updateBookSelectDropdown();
+        budgets = JSON.parse(localStorage.getItem('af_budgets_' + currentBookId) || '{}');
+        updateTgStatusBadge();
         await pullFromCloudSilently();
     }, 800);
 }
@@ -1501,6 +1525,180 @@ async function callSupabaseAPI(table, method, body = null, queryString = '') {
         return null;
     }
 }
+
+// ==================== SINKRONISASI SETELAN KE SUPABASE (settings table) ====================
+
+/**
+ * Push satu key setelan ke tabel `settings` di Supabase.
+ * @param {string} key      - Nama key, misal: 'books', 'budgets', 'telegram_config'
+ * @param {any}    value    - Nilai setelan (akan di-JSON.stringify)
+ * @param {string} bookId   - book_id untuk row; gunakan 'global' untuk setelan lintas buku
+ */
+async function pushSetting(key, value, bookId) {
+    if (!getCloudUrl() || !getSupabaseKey()) return;
+    const payload = [{
+        book_id: bookId || currentBookId,
+        key: key,
+        value: JSON.stringify(value),
+        updated_at: new Date().toISOString()
+    }];
+    const result = await callSupabaseAPI('settings', 'POST', payload);
+    if (result === null) {
+        console.warn(`[pushSetting] Gagal push key="${key}" book_id="${bookId || currentBookId}"`);
+    } else {
+        console.log(`[pushSetting] OK key="${key}" book_id="${bookId || currentBookId}"`);
+    }
+}
+
+/**
+ * Pull semua setelan dari tabel `settings` dan override localStorage.
+ * Dipanggil di initApp() setelah koneksi Supabase berhasil.
+ */
+async function pullAllSettings() {
+    if (!getCloudUrl() || !getSupabaseKey()) return;
+
+    // Ambil semua baris: milik buku-buku yang dikenal + 'global'
+    const knownBookIds = books.map(b => `"${b.id}"`).join(',');
+    const qs = `?or=(book_id.in.(${knownBookIds}),book_id.eq.global)&order=updated_at.desc`;
+    const rows = await callSupabaseAPI('settings', 'GET', null, qs);
+
+    if (!rows || !Array.isArray(rows)) {
+        console.warn('[pullAllSettings] Gagal atau tidak ada data dari tabel settings.');
+        return;
+    }
+
+    // Deduplicate: ambil baris paling baru per (book_id, key)
+    const seen = new Set();
+    const deduped = [];
+    for (const row of rows) {
+        const uniq = `${row.book_id}::${row.key}`;
+        if (!seen.has(uniq)) { seen.add(uniq); deduped.push(row); }
+    }
+
+    let booksUpdated = false;
+
+    for (const row of deduped) {
+        let parsed;
+        try { parsed = JSON.parse(row.value); } catch { continue; }
+
+        // --- Key: 'books' (daftar buku kas, book_id='global') ---
+        if (row.key === 'books' && row.book_id === 'global') {
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                // Merge: tambahkan buku dari cloud yang belum ada di lokal
+                const localIds = new Set(books.map(b => b.id));
+                let merged = [...books];
+                parsed.forEach(cb => {
+                    if (!localIds.has(cb.id)) merged.push(cb);
+                    else {
+                        // Update nama jika berbeda (cloud sebagai sumber kebenaran)
+                        const idx = merged.findIndex(b => b.id === cb.id);
+                        if (idx !== -1) merged[idx].name = cb.name;
+                    }
+                });
+                books = merged;
+                localStorage.setItem('af_books', JSON.stringify(books));
+                booksUpdated = true;
+            }
+        }
+
+        // --- Key: 'budgets' (anggaran per buku) ---
+        if (row.key === 'budgets') {
+            const lsKey = 'af_budgets_' + row.book_id;
+            localStorage.setItem(lsKey, JSON.stringify(parsed));
+            // Jika ini buku aktif, refresh variabel budgets di memori
+            if (row.book_id === currentBookId) {
+                budgets = parsed;
+            }
+        }
+
+        // --- Key: 'telegram_config' (global) ---
+        if (row.key === 'telegram_config' && row.book_id === 'global') {
+            if (parsed.token) localStorage.setItem('af_tg_token', parsed.token);
+            else localStorage.removeItem('af_tg_token');
+
+            if (parsed.edgeUrl) localStorage.setItem('af_tg_edge_url', parsed.edgeUrl);
+            else localStorage.removeItem('af_tg_edge_url');
+
+            if (parsed.chatId) localStorage.setItem('af_tg_chatid', parsed.chatId);
+            else localStorage.removeItem('af_tg_chatid');
+        }
+    }
+
+    if (booksUpdated) {
+        updateBookSelectDropdown();
+        // Pastikan currentBookId masih valid
+        if (!books.find(b => b.id === currentBookId)) {
+            currentBookId = books[0].id;
+            localStorage.setItem('af_current_book_id', currentBookId);
+        }
+    }
+
+    console.log(`[pullAllSettings] Selesai — ${deduped.length} baris diproses.`);
+    showToast('Setelan berhasil disinkronkan dari cloud ☁️', 'info');
+}
+
+// Push setelan books (global) ke Supabase
+async function pushSettingBooks() {
+    await pushSetting('books', books, 'global');
+}
+
+// Push setelan budgets buku aktif ke Supabase
+async function pushSettingBudgets() {
+    const bud = JSON.parse(localStorage.getItem('af_budgets_' + currentBookId) || '{}');
+    await pushSetting('budgets', bud, currentBookId);
+}
+
+// Push konfigurasi Telegram (global) ke Supabase
+async function pushSettingTelegram() {
+    const cfg = getTgConfig();
+    await pushSetting('telegram_config', { token: cfg.token, edgeUrl: cfg.edgeUrl, chatId: cfg.chatId }, 'global');
+}
+
+// Push setelan budgets semua buku ke Supabase (dipakai saat buku dihapus/ditambah)
+async function pushSettingAllBudgets() {
+    for (const book of books) {
+        const bud = JSON.parse(localStorage.getItem('af_budgets_' + book.id) || '{}');
+        await pushSetting('budgets', bud, book.id);
+    }
+}
+
+// Tombol manual: Pull setelan dari Supabase
+async function manualPullSettings() {
+    const st = document.getElementById('settingsSyncStatus');
+    if (!getCloudUrl() || !getSupabaseKey()) {
+        st.style.display = 'block'; st.style.background = '#ffebe6'; st.style.color = '#bf2600';
+        st.innerText = '❌ Supabase belum terhubung!'; return;
+    }
+    st.style.display = 'block'; st.style.background = '#fff3e0'; st.style.color = '#cc7b00';
+    st.innerText = '⏳ Menarik setelan dari cloud...';
+    await pullAllSettings();
+    updateBookSelectDropdown();
+    budgets = JSON.parse(localStorage.getItem('af_budgets_' + currentBookId) || '{}');
+    updateTgStatusBadge();
+    renderBudget();
+    st.style.background = '#e3fcef'; st.style.color = '#006644';
+    st.innerText = '✅ Setelan berhasil ditarik dari cloud!';
+    setTimeout(() => { st.style.display = 'none'; }, 3000);
+}
+
+// Tombol manual: Push semua setelan ke Supabase
+async function manualPushSettings() {
+    const st = document.getElementById('settingsSyncStatus');
+    if (!getCloudUrl() || !getSupabaseKey()) {
+        st.style.display = 'block'; st.style.background = '#ffebe6'; st.style.color = '#bf2600';
+        st.innerText = '❌ Supabase belum terhubung!'; return;
+    }
+    st.style.display = 'block'; st.style.background = '#fff3e0'; st.style.color = '#cc7b00';
+    st.innerText = '⏳ Mendorong semua setelan ke cloud...';
+    await pushSettingBooks();
+    await pushSettingAllBudgets();
+    await pushSettingTelegram();
+    st.style.background = '#e3fcef'; st.style.color = '#006644';
+    st.innerText = '✅ Semua setelan berhasil disimpan ke cloud!';
+    setTimeout(() => { st.style.display = 'none'; }, 3000);
+}
+
+// ==================== END SINKRONISASI SETELAN ====================
 
 // Push seluruh transaksi lokal saat ini ke cloud (Menggunakan Upsert relasional)
 async function pushToCloud() {
@@ -1609,6 +1807,10 @@ async function testCloudConnection() {
         statusDiv.innerHTML = '<div class="connection-status success">Sukses terhubung ke Supabase Cloud! Memulai unduh data...</div>';
         showToast("Supabase terhubung!", "success");
         updateCloudIndicator();
+        await pullAllSettings();
+        updateBookSelectDropdown();
+        budgets = JSON.parse(localStorage.getItem('af_budgets_' + currentBookId) || '{}');
+        updateTgStatusBadge();
         await pullFromCloudSilently();
     } else {
         // Kembalikan ke nilai kosong jika gagal terkoneksi
@@ -2084,6 +2286,7 @@ async function addNewBook(e) {
     updateBookSelectDropdown();
     showToast(`Buku "${name}" berhasil dibuat`);
     await addCloudLog('SISTEM', `Membuat entitas buku kas baru: "${name}"`);
+    await pushSettingBooks();
 }
 
 function switchBook(id) {
@@ -2158,6 +2361,7 @@ async function deleteBook(id) {
         renderBookList();
         updateBookSelectDropdown();
         showToast("Buku kas & data cloud dihapus", "warning");
+        await pushSettingBooks();
     }
 }
 
@@ -2541,6 +2745,7 @@ function saveBudget() {
     closeModal('budgetModal');
     renderBudget();
     showToast("Anggaran bulanan berhasil diperbarui");
+    pushSettingBudgets(); // push ke Supabase (async, non-blocking)
 }
 
 function renderBudget() {
