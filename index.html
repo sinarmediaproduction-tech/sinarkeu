@@ -973,11 +973,21 @@
                     📲 Notifikasi Telegram
                     <span id="tgStatusBadge" style="font-size:.6rem; padding:2px 8px; border-radius:10px; background:#eee; color:#666;">Belum dikonfigurasi</span>
                 </label>
+
+                <label style="font-size:.7rem; font-weight:600; color:#666; text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px; display:block; margin-top:8px;">Bot Token</label>
+                <input type="password" id="tgBotTokenInput" class="form-control" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" style="margin-bottom:8px;">
+
+                <label style="font-size:.7rem; font-weight:600; color:#666; text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px; display:block;">Edge Function URL</label>
                 <input type="text" id="tgEdgeUrlInput" class="form-control" placeholder="https://xxx.supabase.co/functions/v1/send-telegram" style="margin-bottom:8px;">
-                <input type="text" id="tgChatIdInput" class="form-control" placeholder="Chat ID (opsional, jika ingin override Secret)">
-                <div style="font-size:.65rem; color:#888; margin-top:6px; line-height:1.6;">
-                    Isi <b>Edge Function URL</b> dari Supabase. Bot Token disimpan aman di <b>Supabase Secrets</b>, tidak perlu diisi di sini. Chat ID bersifat opsional jika sudah diset di Secrets.
+
+                <label style="font-size:.7rem; font-weight:600; color:#666; text-transform:uppercase; letter-spacing:.3px; margin-bottom:4px; display:block;">Chat ID Penerima</label>
+                <input type="text" id="tgChatIdInput" class="form-control" placeholder="-100xxxxxxxxxx atau @username">
+
+                <div style="font-size:.65rem; color:#888; margin-top:8px; line-height:1.7; background:#f9f9f9; padding:8px 10px; border-radius:6px;">
+                    💡 <b>Bot Token</b> dari <b>@BotFather</b> · <b>Chat ID</b> dari <b>@userinfobot</b><br>
+                    Jika pakai Edge Function, Bot Token akan dikirim ke Supabase saat tes — disarankan set juga via <b>Supabase Secrets</b> untuk keamanan penuh.
                 </div>
+
                 <div style="display:flex; gap:8px; margin-top:10px;">
                     <button class="btn btn-primary" style="flex:1" onclick="saveTelegramConfig()">💾 Simpan</button>
                     <button class="btn btn-secondary" style="flex:1" onclick="testTelegramNotif()">📤 Tes Kirim</button>
@@ -1120,26 +1130,38 @@ function formatDateTime(dtStr) {
 // ==================== NOTIFIKASI TELEGRAM ====================
 
 function getTgConfig() {
+    let token = localStorage.getItem('af_tg_token') || '';
     let edgeUrl = localStorage.getItem('af_tg_edge_url') || '';
     let chatId = localStorage.getItem('af_tg_chatid') || '';
-    return { edgeUrl, chatId, active: !!edgeUrl };
+    // Aktif jika minimal ada token langsung ATAU edge function URL
+    return { token, edgeUrl, chatId, active: !!(token || edgeUrl) };
 }
 
 function saveTelegramConfig() {
+    let token = document.getElementById('tgBotTokenInput').value.trim();
     let edgeUrl = document.getElementById('tgEdgeUrlInput').value.trim();
     let chatId = document.getElementById('tgChatIdInput').value.trim();
-    if (!edgeUrl) { showToast('Edge Function URL wajib diisi!', 'error'); return; }
-    localStorage.setItem('af_tg_edge_url', edgeUrl);
-    if (chatId) localStorage.setItem('af_tg_chatid', chatId);
-    else localStorage.removeItem('af_tg_chatid');
+
+    if (!chatId) { showToast('Chat ID penerima wajib diisi!', 'error'); return; }
+    if (!token && !edgeUrl) { showToast('Isi Bot Token atau Edge Function URL!', 'error'); return; }
+
+    if (token) localStorage.setItem('af_tg_token', token);
+    else localStorage.removeItem('af_tg_token');
+
+    if (edgeUrl) localStorage.setItem('af_tg_edge_url', edgeUrl);
+    else localStorage.removeItem('af_tg_edge_url');
+
+    localStorage.setItem('af_tg_chatid', chatId);
     updateTgStatusBadge();
     showToast('Konfigurasi Telegram disimpan ✅', 'success');
 }
 
 function clearTelegramConfig() {
     if (!confirm('Hapus konfigurasi Telegram?')) return;
+    localStorage.removeItem('af_tg_token');
     localStorage.removeItem('af_tg_edge_url');
     localStorage.removeItem('af_tg_chatid');
+    document.getElementById('tgBotTokenInput').value = '';
     document.getElementById('tgEdgeUrlInput').value = '';
     document.getElementById('tgChatIdInput').value = '';
     updateTgStatusBadge();
@@ -1163,8 +1185,10 @@ function updateTgStatusBadge() {
 
 function loadTgConfigToForm() {
     let cfg = getTgConfig();
+    let tokenEl = document.getElementById('tgBotTokenInput');
     let edgeEl = document.getElementById('tgEdgeUrlInput');
     let chatEl = document.getElementById('tgChatIdInput');
+    if (tokenEl) tokenEl.value = cfg.token;
     if (edgeEl) edgeEl.value = cfg.edgeUrl;
     if (chatEl) chatEl.value = cfg.chatId;
     updateTgStatusBadge();
@@ -1174,45 +1198,76 @@ async function sendTelegramNotif(msg) {
     let cfg = getTgConfig();
     if (!cfg.active) return;
     try {
-        const body = { message: msg };
-        if (cfg.chatId) body.chat_id = cfg.chatId; // override chat_id jika diisi
-        await fetch(cfg.edgeUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${getSupabaseKey()}`
-            },
-            body: JSON.stringify(body)
-        });
+        // Prioritas: Edge Function (lebih aman) → fallback langsung ke Telegram API
+        if (cfg.edgeUrl) {
+            const body = { message: msg };
+            if (cfg.chatId) body.chat_id = cfg.chatId;
+            await fetch(cfg.edgeUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getSupabaseKey()}`
+                },
+                body: JSON.stringify(body)
+            });
+        } else if (cfg.token && cfg.chatId) {
+            // Mode langsung: Bot Token dari app ke Telegram API
+            await fetch(`https://api.telegram.org/bot${cfg.token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: cfg.chatId, text: msg, parse_mode: 'HTML' })
+            });
+        }
     } catch(e) {
         console.warn('[Telegram] Gagal kirim notifikasi:', e);
     }
 }
 
 async function testTelegramNotif() {
+    let token = document.getElementById('tgBotTokenInput').value.trim();
     let edgeUrl = document.getElementById('tgEdgeUrlInput').value.trim();
     let chatId = document.getElementById('tgChatIdInput').value.trim();
     let statusEl = document.getElementById('tgTestStatus');
-    if (!edgeUrl) { showToast('Isi Edge Function URL dulu!', 'error'); return; }
-    statusEl.innerHTML = '<span style="color:#cc7b00;">Mengirim tes...</span>';
-    try {
-        const body = { message: `🔔 <b>ArtaFlow - Tes Notifikasi</b>
 
-Edge Function aktif! Notifikasi transaksi akan dikirim ke sini.` };
-        if (chatId) body.chat_id = chatId;
-        let res = await fetch(edgeUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${getSupabaseKey()}`
-            },
-            body: JSON.stringify(body)
-        });
-        let data = await res.json();
-        if (data.ok) {
-            statusEl.innerHTML = '<span style="color:#006644;">✅ Berhasil dikirim via Edge Function!</span>';
+    if (!chatId) { showToast('Chat ID penerima wajib diisi!', 'error'); return; }
+    if (!token && !edgeUrl) { showToast('Isi Bot Token atau Edge Function URL!', 'error'); return; }
+
+    statusEl.innerHTML = '<span style="color:#cc7b00;">Mengirim tes...</span>';
+    const testMsg = `🔔 <b>ArtaFlow - Tes Notifikasi</b>
+
+Konfigurasi berhasil! Notifikasi transaksi akan dikirim ke sini.`;
+
+    try {
+        let res, data;
+        if (edgeUrl) {
+            // Via Edge Function
+            res = await fetch(edgeUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getSupabaseKey()}`
+                },
+                body: JSON.stringify({ message: testMsg, chat_id: chatId })
+            });
+            data = await res.json();
+            if (data.ok) {
+                statusEl.innerHTML = '<span style="color:#006644;">✅ Berhasil via Edge Function!</span>';
+            } else {
+                statusEl.innerHTML = `<span style="color:#de350b;">❌ Gagal: ${data.error || JSON.stringify(data)}</span>`;
+            }
         } else {
-            statusEl.innerHTML = `<span style="color:#de350b;">❌ Gagal: ${data.error || JSON.stringify(data)}</span>`;
+            // Langsung via Bot Token
+            res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chatId, text: testMsg, parse_mode: 'HTML' })
+            });
+            data = await res.json();
+            if (data.ok) {
+                statusEl.innerHTML = '<span style="color:#006644;">✅ Berhasil via Bot Token langsung!</span>';
+            } else {
+                statusEl.innerHTML = `<span style="color:#de350b;">❌ Gagal: ${data.description}</span>`;
+            }
         }
     } catch(e) {
         statusEl.innerHTML = `<span style="color:#de350b;">❌ Error: ${e.message}</span>`;
