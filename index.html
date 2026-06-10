@@ -967,6 +967,26 @@
             </div>
         </div>
 
+        <div style="border-top:2px dashed #1a1a1a; padding-top:16px; margin-top:4px;">
+            <div class="form-group">
+                <label style="display:flex; align-items:center; gap:8px;">
+                    📲 Notifikasi Telegram
+                    <span id="tgStatusBadge" style="font-size:.6rem; padding:2px 8px; border-radius:10px; background:#eee; color:#666;">Belum dikonfigurasi</span>
+                </label>
+                <input type="text" id="tgBotTokenInput" class="form-control" placeholder="Bot Token: 123456:ABC-DEF..." style="margin-bottom:8px;">
+                <input type="text" id="tgChatIdInput" class="form-control" placeholder="Chat ID: -100xxxxxxxxxx atau @username">
+                <div style="font-size:.65rem; color:#888; margin-top:6px; line-height:1.6;">
+                    Dapatkan Bot Token dari <b>@BotFather</b>, Chat ID dari <b>@userinfobot</b> atau <b>@getidsbot</b>.
+                </div>
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                    <button class="btn btn-primary" style="flex:1" onclick="saveTelegramConfig()">💾 Simpan</button>
+                    <button class="btn btn-secondary" style="flex:1" onclick="testTelegramNotif()">📤 Tes Kirim</button>
+                    <button class="btn btn-danger" style="flex:1" onclick="clearTelegramConfig()">🗑️ Hapus</button>
+                </div>
+                <div id="tgTestStatus" style="font-size:.7rem; margin-top:8px;"></div>
+            </div>
+        </div>
+
         <div class="data-management-panel" style="border-color:#de350b; background:#fff5f5;">
             <div class="panel-title" style="color:#de350b;">🗃️ Arsipkan & Kosongkan Database</div>
             <div style="font-size:.7rem; color:#666; margin-bottom:12px; line-height:1.6;">
@@ -1097,6 +1117,123 @@ function formatDateTime(dtStr) {
 }
 
 // ==================== CORES / LOCAL STORAGE ====================
+// ==================== NOTIFIKASI TELEGRAM ====================
+
+function getTgConfig() {
+    let token = localStorage.getItem('af_tg_token') || '';
+    let chatId = localStorage.getItem('af_tg_chatid') || '';
+    return { token, chatId, active: !!(token && chatId) };
+}
+
+function saveTelegramConfig() {
+    let token = document.getElementById('tgBotTokenInput').value.trim();
+    let chatId = document.getElementById('tgChatIdInput').value.trim();
+    if (!token || !chatId) { showToast('Token dan Chat ID wajib diisi!', 'error'); return; }
+    localStorage.setItem('af_tg_token', token);
+    localStorage.setItem('af_tg_chatid', chatId);
+    updateTgStatusBadge();
+    showToast('Konfigurasi Telegram disimpan ✅', 'success');
+}
+
+function clearTelegramConfig() {
+    if (!confirm('Hapus konfigurasi Telegram?')) return;
+    localStorage.removeItem('af_tg_token');
+    localStorage.removeItem('af_tg_chatid');
+    document.getElementById('tgBotTokenInput').value = '';
+    document.getElementById('tgChatIdInput').value = '';
+    updateTgStatusBadge();
+    showToast('Konfigurasi Telegram dihapus', 'warning');
+}
+
+function updateTgStatusBadge() {
+    let badge = document.getElementById('tgStatusBadge');
+    if (!badge) return;
+    let cfg = getTgConfig();
+    if (cfg.active) {
+        badge.style.background = '#e3fcef';
+        badge.style.color = '#006644';
+        badge.innerText = '✅ Aktif';
+    } else {
+        badge.style.background = '#eee';
+        badge.style.color = '#666';
+        badge.innerText = 'Belum dikonfigurasi';
+    }
+}
+
+function loadTgConfigToForm() {
+    let cfg = getTgConfig();
+    let tokenEl = document.getElementById('tgBotTokenInput');
+    let chatEl = document.getElementById('tgChatIdInput');
+    if (tokenEl) tokenEl.value = cfg.token;
+    if (chatEl) chatEl.value = cfg.chatId;
+    updateTgStatusBadge();
+}
+
+async function sendTelegramNotif(msg) {
+    let cfg = getTgConfig();
+    if (!cfg.active) return;
+    try {
+        await fetch(`https://api.telegram.org/bot${cfg.token}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: cfg.chatId,
+                text: msg,
+                parse_mode: 'HTML'
+            })
+        });
+    } catch(e) {
+        console.warn('[Telegram] Gagal kirim notifikasi:', e);
+    }
+}
+
+async function testTelegramNotif() {
+    let token = document.getElementById('tgBotTokenInput').value.trim();
+    let chatId = document.getElementById('tgChatIdInput').value.trim();
+    let statusEl = document.getElementById('tgTestStatus');
+    if (!token || !chatId) { showToast('Isi Token & Chat ID dulu!', 'error'); return; }
+    statusEl.innerHTML = '<span style="color:#cc7b00;">Mengirim tes...</span>';
+    try {
+        let res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: `🔔 <b>ArtaFlow - Tes Notifikasi</b>\n\nKonfigurasi Telegram berhasil! Notifikasi transaksi akan dikirim ke sini.`,
+                parse_mode: 'HTML'
+            })
+        });
+        let data = await res.json();
+        if (data.ok) {
+            statusEl.innerHTML = '<span style="color:#006644;">✅ Berhasil dikirim!</span>';
+        } else {
+            statusEl.innerHTML = `<span style="color:#de350b;">❌ Gagal: ${data.description}</span>`;
+        }
+    } catch(e) {
+        statusEl.innerHTML = '<span style="color:#de350b;">❌ Error koneksi</span>';
+    }
+}
+
+function buildTxNotifMessage(action, tx, bookName) {
+    let emoji = tx.type === 'income' ? '💰' : '💸';
+    let typeLabel = tx.type === 'income' ? 'PEMASUKAN' : 'PENGELUARAN';
+    let actionLabel = action === 'TAMBAH' ? '➕ Transaksi Baru' : action === 'UBAH' ? '✏️ Transaksi Diubah' : '🗑️ Transaksi Dihapus';
+
+    return `${emoji} <b>${actionLabel}</b>
+📒 Buku: <b>${bookName}</b>
+📂 Jenis: ${typeLabel}${tx.category && tx.category !== 'Pemasukan' ? ' · ' + tx.category : ''}
+📝 ${tx.description}
+💵 <b>${rp(tx.amount)}</b>
+🕐 ${formatDateTime(tx.date)}`;
+}
+
+function getCurrentBookName() {
+    let book = books.find(b => b.id === currentBookId);
+    return book ? book.name : currentBookId;
+}
+
+// ==================== NOTIFIKASI TELEGRAM ====================
+
 function initApp() {
     deviceId = localStorage.getItem('af_device_id');
     if(!deviceId) {
@@ -1638,6 +1775,7 @@ async function handleSubmit(e) {
     }
 
     await addCloudLog('TAMBAH', `Menambah item baru: "${description}" sebesar ${rp(amount)}`);
+    sendTelegramNotif(buildTxNotifMessage('TAMBAH', newTx, getCurrentBookName()));
 }
 
 function checkBudgetWarningAfterSave(date, category) {
@@ -1748,6 +1886,7 @@ async function handleEditSubmit(e) {
     saveTransactions();
     showToast("Perubahan data disimpan");
     await addCloudLog('UBAH', `Mengubah transaksi "${description}" menjadi senilai ${rp(amount)}`);
+    sendTelegramNotif(buildTxNotifMessage('UBAH', txs[idx], getCurrentBookName()));
 }
 
 async function confirmDelete(id) {
@@ -1764,6 +1903,7 @@ async function confirmDelete(id) {
         saveTransactions();
         showToast("Transaksi dihapus", "warning");
         await addCloudLog('HAPUS', `Menghapus transaksi "${t.description}" ber-ID: ${id}`);
+        sendTelegramNotif(buildTxNotifMessage('HAPUS', t, getCurrentBookName()));
     }
 }
 
@@ -1820,6 +1960,7 @@ function resetDateFilter() {
 // ==================== MANAJER BUKU KAS MULTI-TENANT ====================
 function openBookManager() {
     openModal('bookManagerModal');
+    loadTgConfigToForm();
     renderBookList();
     document.getElementById('supabaseUrlInput').value = getCloudUrl();
     document.getElementById('supabaseKeyInput').value = getSupabaseKey();
