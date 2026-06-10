@@ -721,6 +721,12 @@
             font-weight: 600;
         }
         
+        /* ===== TABLET (769px – 1024px): sembunyikan kolom No & Nota ===== */
+        @media(min-width:769px) and (max-width:1024px) {
+            table { min-width: unset; }
+            .col-no, .col-nota { display: none; }
+        }
+
         @media(max-width:768px) {
             body { padding: 16px; }
             .controls { flex-direction: column; align-items: stretch; }
@@ -737,6 +743,9 @@
             .stats-grid { gap: 12px; }
             .stat-card { padding: 12px; }
             .stat-value { font-size: 1rem; }
+            /* HP: sembunyikan No, Nota, dan Saldo */
+            table { min-width: unset; }
+            .col-no, .col-nota, .col-saldo { display: none; }
         }
         
         ::-webkit-scrollbar {
@@ -1291,7 +1300,7 @@
     <div class="table-container">
         <table>
             <thead>
-                <tr><th>No</th><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo</th><th>Nota</th><th>Aksi</th></tr>
+                <tr><th class="col-no">No</th><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th>Pemasukan</th><th>Pengeluaran</th><th class="col-saldo">Saldo</th><th class="col-nota">Nota</th><th>Aksi</th></tr>
             </thead>
             <tbody id="transactionTableBody"></tbody>
         </table>
@@ -3602,14 +3611,14 @@ function render() {
         const globalIndex = startIdx + index + 1;
 
         tr.innerHTML = `
-            <td class="text-center">${globalIndex}</td>
+            <td class="text-center col-no">${globalIndex}</td>
             <td>${formatDateTime(t.date)}</td>
             <td>${badge}${catText}</td>
             <td>${escapeHtml(t.description)}</td>
             <td class="text-right" style="color:#00875a; font-weight:500;">${incText}</td>
             <td class="text-right" style="color:#de350b; font-weight:500;">${expText}</td>
-            <td class="text-right" style="font-weight:600;">${rp(balanceMap[t.id] || 0)}</td>
-            <td class="text-center">${attCell}</td>
+            <td class="text-right col-saldo" style="font-weight:600;">${rp(balanceMap[t.id] || 0)}</td>
+            <td class="text-center col-nota">${attCell}</td>
             <td class="text-center"><button class="action-btn" onclick="openActionMenu('${t.id}')">⋮</button></td>
         `;
         body.appendChild(tr);
