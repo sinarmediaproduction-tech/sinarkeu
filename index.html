@@ -726,15 +726,11 @@
             overflow-x: auto;
         }
         
-        /* Progress row: hanya tampil di tablet (diatur ulang di media query tablet) */
         .budget-mini-progress-row { display: none; }
 
-        /* ===== TABLET (769px – 1024px) ===== */
         @media(min-width:769px) and (max-width:1024px) {
             table { min-width: unset; }
             .col-no, .col-nota { display: none; }
-
-            /* ── Budget Panel: modern card redesign untuk tablet portrait ── */
             .budget-mini {
                 flex-direction: column;
                 align-items: stretch;
@@ -777,10 +773,8 @@
                 font-weight: 700;
                 letter-spacing: -0.3px;
             }
-            /* Sembunyikan progress bar dari grid info atas */
             .budget-mini-info > .budget-mini-progress { display: none; }
             .budget-mini-info > span[id="budgetProgressPct"] { display: none; }
-            /* Progress bar full-width row */
             .budget-mini-progress-row {
                 display: flex !important;
                 align-items: center;
@@ -803,7 +797,6 @@
                 min-width: 38px;
                 text-align: right;
             }
-            /* Tombol aksi grid 3 kolom */
             .budget-mini-actions {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
@@ -831,12 +824,8 @@
                 border: 1.5px solid #e0e0e0;
                 background: #f9f9f9;
             }
-
-            /* Report stats */
             .report-stat-value { font-size: 1rem; }
             .report-stat-card { padding: 10px 12px; }
-
-            /* Report table */
             .report-table { font-size: .7rem; }
             .report-table th, .report-table td { padding: 6px 8px; }
         }
@@ -858,7 +847,6 @@
             .stats-grid { gap: 12px; }
             .stat-card { padding: 12px; }
             .stat-value { font-size: 1rem; }
-            /* HP: sembunyikan No, Nota, dan Saldo */
             table { min-width: unset; }
             .col-no, .col-nota, .col-saldo { display: none; }
         }
@@ -879,7 +867,6 @@
             background: #aaa;
         }
 
-        /* ===== PAGINATION ===== */
         .pagination-bar {
             display: flex;
             align-items: center;
@@ -935,7 +922,6 @@
             line-height: 32px;
         }
 
-        /* ===== SETUP AWAL ===== */
         .setup-step {
             display: flex;
             align-items: flex-start;
@@ -972,7 +958,6 @@
         .setup-status.warning { background: #fff3e0; color: #cc7b00; display: block; }
         .setup-status.success { background: #e3fcef; color: #006644; display: block; }
 
-        /* ===== PASSWORD LOCK SCREEN ===== */
         #passwordLockScreen {
             position: fixed;
             inset: 0;
@@ -1086,7 +1071,6 @@
             text-align: left;
             line-height: 1.6;
         }
-        /* Konfirmasi password di setup awal */
         .pwd-strength {
             height: 4px;
             border-radius: 2px;
@@ -1101,7 +1085,6 @@
             width: 0%;
         }
 
-        /* ===== MANUAL / PANDUAN ===== */
         #manualModal .modal-content {
             max-width: 780px;
             max-height: 92vh;
@@ -1282,11 +1265,18 @@
             font-family: inherit;
         }
         .lock-guide-link:hover { color: #005fa3; }
+        
+        /* Tombol sinkronisasi manual */
+        #manualSyncBtn {
+            background: #00875a;
+        }
+        #manualSyncBtn:hover {
+            background: #006644;
+        }
     </style>
 </head>
 <body>
 
-<!-- ===== PASSWORD LOCK SCREEN ===== -->
 <div id="passwordLockScreen">
     <div class="lock-card">
         <span class="lock-icon" id="lockIcon">🔒</span>
@@ -1301,7 +1291,6 @@
             <button class="lock-eye-btn" onclick="toggleLockEye()" id="lockEyeBtn" title="Tampilkan/sembunyikan">👁</button>
         </div>
 
-        <!-- Hanya tampil saat setup awal: konfirmasi password -->
         <div id="lockConfirmWrap" style="display:none;">
             <div class="lock-input-wrap" style="margin-bottom:6px;">
                 <input type="password" id="lockConfirmInput" class="lock-input"
@@ -1327,7 +1316,7 @@
     <div class="header">
         <div>
             <h1>Sinarkeu</h1>
-            <p>Sistem Multi Buku Kas dengan Supabase Cloud Storage · v8</p>
+            <p>Sistem Multi Buku Kas dengan Supabase Cloud Storage · v9</p>
         </div>
         <div class="book-selector">
             <div id="syncStatusWrapper" class="sync-status-container offline">
@@ -1371,7 +1360,6 @@
             </div>
             <span id="budgetProgressPct" style="font-size:.75rem; font-weight:700; color:#666; min-width:36px;">0%</span>
         </div>
-        <!-- Row progress bar khusus tablet portrait (disembunyikan di desktop & mobile via CSS) -->
         <div class="budget-mini-progress-row" style="display:none;">
             <div class="budget-mini-progress">
                 <div class="budget-mini-progress-fill" id="budgetProgressFill2"></div>
@@ -1452,15 +1440,13 @@
 
 <div id="toastMessage" class="toast-message"><span id="toastIcon">✅</span><span id="toastText"></span></div>
 
-<!-- ===== MODAL PANDUAN / MANUAL BOOK ===== -->
+<!-- MODAL-MODAL (SAMA SEPERTI SEBELUMNYA) -->
 <div id="manualModal" class="modal" style="z-index:1500;">
   <div class="modal-content wide" style="max-width:800px; max-height:92vh;">
     <div class="modal-header">
       <h3>Panduan Lengkap Sinarkeu</h3>
       <button class="modal-close" onclick="closeManual()">×</button>
     </div>
-
-    <!-- Navigasi Tab -->
     <div class="manual-nav">
       <button class="manual-nav-btn active" onclick="showManualSection('intro')">🏠 Pengenalan</button>
       <button class="manual-nav-btn" onclick="showManualSection('supabase')">☁️ Setup Supabase</button>
@@ -1470,643 +1456,48 @@
       <button class="manual-nav-btn" onclick="showManualSection('telegram')">📲 Telegram</button>
       <button class="manual-nav-btn" onclick="showManualSection('faq')">❓ FAQ</button>
     </div>
-
-    <!-- ── SECTION: PENGENALAN ── -->
     <div id="manual-intro" class="manual-section active">
       <div class="manual-h2"> Selamat Datang di Sinarkeu</div>
       <p class="manual-p">Sinarkeu adalah aplikasi pencatatan keuangan berbasis web yang berjalan sepenuhnya di browser Anda. Data disimpan secara aman di cloud menggunakan <strong>Supabase</strong> dan terenkripsi dengan password pribadi Anda.</p>
-
-      <div class="manual-info">
-        💡 Sinarkeu berjalan 100% di browser — tidak perlu install apapun. Cukup buka file <code>index.html</code> di browser.
-      </div>
-
+      <div class="manual-info">💡 Sinarkeu berjalan 100% di browser — tidak perlu install apapun. Cukup buka file <code>index.html</code> di browser.</div>
       <div class="manual-h3">✨ Fitur Utama</div>
-      <table class="manual-table">
-        <thead><tr><th>Fitur</th><th>Keterangan</th></tr></thead>
-        <tbody>
-          <tr><td>📒 Multi Buku Kas</td><td>Buat banyak buku kas terpisah (pribadi, bisnis, keluarga, dll)</td></tr>
-          <tr><td>☁️ Sync Cloud</td><td>Data otomatis tersinkron ke Supabase — bisa diakses dari perangkat mana saja</td></tr>
-          <tr><td>🔐 Enkripsi Password</td><td>Kredensial Supabase dienkripsi AES-256 dengan password Anda</td></tr>
-          <tr><td>📊 Anggaran Bulanan</td><td>Atur target anggaran per kategori dan pantau realisasinya</td></tr>
-          <tr><td>📲 Notifikasi Telegram</td><td>Kirim notifikasi tiap transaksi, peringatan anggaran & ringkasan harian ke Telegram</td></tr>
-          <tr><td>🔒 Backup Otomatis</td><td>Backup harian ke Supabase + backup lokal manual</td></tr>
-          <tr><td>📄 Laporan PDF</td><td>Generate laporan bulanan lengkap dengan grafik dan export ke PDF</td></tr>
-          <tr><td>📜 Audit Log</td><td>Setiap aksi tercatat di log untuk keperluan audit</td></tr>
-        </tbody>
-      </table>
-
-      <div class="manual-h3">🗺️ Alur Setup (Ringkas)</div>
-      <div class="manual-step">
-        <div class="manual-step-num">1</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Buat akun & project Supabase</div>
-          <div class="manual-step-desc">Daftar gratis di <strong>supabase.com</strong> dan buat project baru.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">2</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Jalankan SQL untuk membuat tabel</div>
-          <div class="manual-step-desc">Buka SQL Editor di Supabase dan jalankan 4 perintah CREATE TABLE yang tersedia di tab <strong>SQL & Tabel</strong>.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">3</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Hubungkan aplikasi ke Supabase</div>
-          <div class="manual-step-desc">Masukkan URL Project dan Anon Key ke form setup, buat password keamanan, lalu klik Simpan & Mulai.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">4</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Mulai mencatat transaksi!</div>
-          <div class="manual-step-desc">Klik <strong>+ Transaksi</strong> untuk menambah catatan keuangan pertama Anda.</div>
-        </div>
-      </div>
+      <table class="manual-table"><thead><tr><th>Fitur</th><th>Keterangan</th></tr></thead><tbody>
+        <tr><td>📒 Multi Buku Kas</td><td>Buat banyak buku kas terpisah (pribadi, bisnis, keluarga, dll)</td></tr>
+        <tr><td>☁️ Sync Cloud</td><td>Data otomatis tersinkron ke Supabase — bisa diakses dari perangkat mana saja</td></tr>
+        <tr><td>🔐 Enkripsi Password</td><td>Kredensial Supabase dienkripsi AES-256 dengan password Anda</td></tr>
+        <tr><td>📊 Anggaran Bulanan</td><td>Atur target anggaran per kategori dan pantau realisasinya</td></tr>
+        <tr><td>📲 Notifikasi Telegram</td><td>Kirim notifikasi tiap transaksi, peringatan anggaran & ringkasan harian ke Telegram</td></tr>
+        <tr><td>🔒 Backup Otomatis</td><td>Backup harian ke Supabase + backup lokal manual</td></tr>
+        <tr><td>📄 Laporan PDF</td><td>Generate laporan bulanan lengkap dengan grafik dan export ke PDF</td></tr>
+        <tr><td>📜 Audit Log</td><td>Setiap aksi tercatat di log untuk keperluan audit</td></tr>
+      </tbody></table>
     </div>
-
-    <!-- ── SECTION: SETUP SUPABASE ── -->
     <div id="manual-supabase" class="manual-section">
       <div class="manual-h2">☁️ Setup Akun & Project Supabase</div>
       <p class="manual-p">Supabase adalah platform database PostgreSQL open-source yang menyediakan tier gratis. Sinarkeu menggunakannya sebagai backend penyimpanan data cloud.</p>
-
       <div class="manual-h3">Langkah 1 — Buat Akun Supabase</div>
-      <div class="manual-step">
-        <div class="manual-step-num">1</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Buka supabase.com</div>
-          <div class="manual-step-desc">Kunjungi <strong>https://supabase.com</strong> dan klik tombol <strong>"Start your project"</strong> atau <strong>"Sign Up"</strong>.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">2</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Daftar dengan GitHub atau email</div>
-          <div class="manual-step-desc">Disarankan menggunakan akun GitHub untuk kemudahan login. Akun gratis sudah cukup untuk penggunaan pribadi.</div>
-        </div>
-      </div>
-
+      <div class="manual-step"><div class="manual-step-num">1</div><div class="manual-step-body"><div class="manual-step-title">Buka supabase.com</div><div class="manual-step-desc">Kunjungi <strong>https://supabase.com</strong> dan klik tombol <strong>"Start your project"</strong> atau <strong>"Sign Up"</strong>.</div></div></div>
+      <div class="manual-step"><div class="manual-step-num">2</div><div class="manual-step-body"><div class="manual-step-title">Daftar dengan GitHub atau email</div><div class="manual-step-desc">Disarankan menggunakan akun GitHub untuk kemudahan login. Akun gratis sudah cukup untuk penggunaan pribadi.</div></div></div>
       <div class="manual-h3">Langkah 2 — Buat Project Baru</div>
-      <div class="manual-step">
-        <div class="manual-step-num">1</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Klik "New Project"</div>
-          <div class="manual-step-desc">Dari dashboard Supabase, klik tombol <strong>New Project</strong>.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">2</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Isi detail project</div>
-          <div class="manual-step-desc">
-            <strong>Name:</strong> bebas, misal <code>sinarkeu-kas</code><br>
-            <strong>Database Password:</strong> buat password kuat — <em>simpan baik-baik!</em><br>
-            <strong>Region:</strong> pilih <strong>Southeast Asia (Singapore)</strong> untuk koneksi lebih cepat<br>
-            <strong>Plan:</strong> Free sudah cukup
-          </div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">3</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Tunggu project selesai dibuat</div>
-          <div class="manual-step-desc">Proses pembuatan membutuhkan 1–2 menit. Tunggu hingga status berubah dari "Setting up" menjadi hijau.</div>
-        </div>
-      </div>
-
+      <div class="manual-step"><div class="manual-step-num">1</div><div class="manual-step-body"><div class="manual-step-title">Klik "New Project"</div><div class="manual-step-desc">Dari dashboard Supabase, klik tombol <strong>New Project</strong>.</div></div></div>
+      <div class="manual-step"><div class="manual-step-num">2</div><div class="manual-step-body"><div class="manual-step-title">Isi detail project</div><div class="manual-step-desc"><strong>Name:</strong> bebas, misal <code>sinarkeu-kas</code><br><strong>Database Password:</strong> buat password kuat — <em>simpan baik-baik!</em><br><strong>Region:</strong> pilih <strong>Southeast Asia (Singapore)</strong> untuk koneksi lebih cepat<br><strong>Plan:</strong> Free sudah cukup</div></div></div>
+      <div class="manual-step"><div class="manual-step-num">3</div><div class="manual-step-body"><div class="manual-step-title">Tunggu project selesai dibuat</div><div class="manual-step-desc">Proses pembuatan membutuhkan 1–2 menit. Tunggu hingga status berubah dari "Setting up" menjadi hijau.</div></div></div>
       <div class="manual-h3">Langkah 3 — Ambil URL & Anon Key</div>
-      <div class="manual-step">
-        <div class="manual-step-num">1</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Buka Project Settings → API</div>
-          <div class="manual-step-desc">Di sidebar kiri Supabase, klik ikon ⚙️ <strong>Settings</strong>, lalu pilih <strong>API</strong>.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">2</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Salin Project URL dan anon/public key</div>
-          <div class="manual-step-desc">
-            <strong>Project URL</strong> — bentuknya: <code>https://xxxxxxxx.supabase.co</code><br>
-            <strong>Project API Keys → anon / public</strong> — dimulai dengan <code>eyJhbGciOiJIUzI1NiIs...</code><br><br>
-            Kedua nilai ini yang dimasukkan ke form setup Sinarkeu.
-          </div>
-        </div>
-      </div>
-      <div class="manual-warn">
-        ⚠️ <strong>Jangan gunakan service_role key</strong> — selalu gunakan <strong>anon/public</strong> key saja untuk keamanan.
-      </div>
-      <div class="manual-tip">
-        ✅ Tier gratis Supabase mendapat 500 MB storage database, 2 GB bandwidth/bulan, dan 50.000 baris — lebih dari cukup untuk pemakaian pribadi bertahun-tahun.
-      </div>
+      <div class="manual-step"><div class="manual-step-num">1</div><div class="manual-step-body"><div class="manual-step-title">Buka Project Settings → API</div><div class="manual-step-desc">Di sidebar kiri Supabase, klik ikon ⚙️ <strong>Settings</strong>, lalu pilih <strong>API</strong>.</div></div></div>
+      <div class="manual-step"><div class="manual-step-num">2</div><div class="manual-step-body"><div class="manual-step-title">Salin Project URL dan anon/public key</div><div class="manual-step-desc"><strong>Project URL</strong> — bentuknya: <code>https://xxxxxxxx.supabase.co</code><br><strong>Project API Keys → anon / public</strong> — dimulai dengan <code>eyJhbGciOiJIUzI1NiIs...</code><br><br>Kedua nilai ini yang dimasukkan ke form setup Sinarkeu.</div></div></div>
+      <div class="manual-warn">⚠️ <strong>Jangan gunakan service_role key</strong> — selalu gunakan <strong>anon/public</strong> key saja untuk keamanan.</div>
     </div>
-
-    <!-- ── SECTION: SQL & TABEL ── -->
     <div id="manual-sql" class="manual-section">
       <div class="manual-h2">🛢️ Membuat Tabel Database (SQL)</div>
-      <p class="manual-p">Sinarkeu membutuhkan <strong>4 tabel</strong> di Supabase. Jalankan SQL berikut di <strong>SQL Editor</strong> Supabase (klik ikon Terminal/SQL di sidebar kiri).</p>
-
+      <p class="manual-p">Sinarkeu membutuhkan <strong>4 tabel</strong> di Supabase. Jalankan SQL berikut di <strong>SQL Editor</strong> Supabase.</p>
       <div class="manual-warn">⚠️ Jalankan semua SQL di bawah ini <strong>sebelum</strong> menghubungkan aplikasi. Cukup sekali saja.</div>
-
-      <div class="manual-h3">Tabel 1 — transactions</div>
-      <p class="manual-p">Menyimpan semua data transaksi pemasukan dan pengeluaran.</p>
-      <div class="manual-code-label">SQL — Jalankan di Supabase SQL Editor</div>
-      <div class="manual-code">CREATE TABLE IF NOT EXISTS transactions (
-  id           TEXT PRIMARY KEY,
-  book_id      TEXT NOT NULL DEFAULT 'b_default',
-  device_id    TEXT,
-  type         TEXT NOT NULL CHECK (type IN ('income','expense')),
-  amount       NUMERIC(15,2) NOT NULL DEFAULT 0,
-  category     TEXT,
-  description  TEXT,
-  date         TIMESTAMPTZ,
-  attachment   TEXT,
-  created_at   TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Index untuk mempercepat query per buku
-CREATE INDEX IF NOT EXISTS idx_transactions_book
-  ON transactions(book_id, date DESC);
-
--- Aktifkan Row Level Security (RLS) — izinkan akses publik via anon key
-ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all for anon" ON transactions
-  FOR ALL USING (true) WITH CHECK (true);
-
--- Aktifkan upsert (insert or update)
-ALTER TABLE transactions
-  REPLICA IDENTITY DEFAULT;</div>
-
-      <div class="manual-h3">Tabel 2 — audit_logs</div>
-      <p class="manual-p">Menyimpan log audit setiap aksi (tambah, ubah, hapus transaksi).</p>
-      <div class="manual-code-label">SQL</div>
-      <div class="manual-code">CREATE TABLE IF NOT EXISTS audit_logs (
-  id         BIGSERIAL PRIMARY KEY,
-  book_id    TEXT NOT NULL DEFAULT 'b_default',
-  device_id  TEXT,
-  action     TEXT,
-  details    TEXT,
-  timestamp  TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_audit_book
-  ON audit_logs(book_id, timestamp DESC);
-
-ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all for anon" ON audit_logs
-  FOR ALL USING (true) WITH CHECK (true);</div>
-
-      <div class="manual-h3">Tabel 3 — settings</div>
-      <p class="manual-p">Menyimpan setelan aplikasi: daftar buku, anggaran bulanan, dan konfigurasi Telegram.</p>
-      <div class="manual-code-label">SQL</div>
-      <div class="manual-code">CREATE TABLE IF NOT EXISTS settings (
-  id          BIGSERIAL PRIMARY KEY,
-  book_id     TEXT NOT NULL,
-  key         TEXT NOT NULL,
-  value       TEXT,
-  updated_at  TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(book_id, key)
-);
-
-CREATE INDEX IF NOT EXISTS idx_settings_book
-  ON settings(book_id, key);
-
-ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all for anon" ON settings
-  FOR ALL USING (true) WITH CHECK (true);</div>
-
-      <div class="manual-h3">Tabel 4 — backups</div>
-      <p class="manual-p">Menyimpan cadangan data harian secara otomatis.</p>
-      <div class="manual-code-label">SQL</div>
-      <div class="manual-code">CREATE TABLE IF NOT EXISTS backups (
-  id          BIGSERIAL PRIMARY KEY,
-  book_id     TEXT NOT NULL,
-  device_id   TEXT,
-  label       TEXT,
-  data        TEXT,
-  created_at  TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_backups_book
-  ON backups(book_id, created_at DESC);
-
-ALTER TABLE backups ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all for anon" ON backups
-  FOR ALL USING (true) WITH CHECK (true);</div>
-
-      <div class="manual-tip">
-        ✅ <strong>Cara menjalankan SQL di Supabase:</strong><br>
-        1. Login ke Supabase → buka project Anda<br>
-        2. Klik ikon <strong>SQL Editor</strong> di sidebar kiri (ikon terminal / database)<br>
-        3. Klik <strong>"New query"</strong><br>
-        4. Paste salah satu SQL di atas → klik <strong>"Run"</strong> (Ctrl+Enter)<br>
-        5. Ulangi untuk semua 4 tabel
-      </div>
-
-      <div class="manual-h3">Verifikasi Tabel</div>
-      <p class="manual-p">Setelah menjalankan semua SQL, verifikasi tabel berhasil dibuat dengan query ini:</p>
-      <div class="manual-code-label">SQL — Cek tabel</div>
-      <div class="manual-code">SELECT table_name FROM information_schema.tables
-WHERE table_schema = 'public'
-ORDER BY table_name;</div>
-      <p class="manual-p">Hasilnya harus menampilkan: <code>audit_logs</code>, <code>backups</code>, <code>settings</code>, <code>transactions</code>.</p>
-
-      <div class="manual-h3">Opsi: Aktifkan Realtime (opsional)</div>
-      <p class="manual-p">Jika ingin melihat perubahan data real-time di multiple perangkat:</p>
-      <div class="manual-code-label">SQL — Aktifkan Realtime</div>
-      <div class="manual-code">ALTER PUBLICATION supabase_realtime ADD TABLE transactions;
-ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
     </div>
-
-    <!-- ── SECTION: SETUP APLIKASI ── -->
-    <div id="manual-appsetup" class="manual-section">
-      <div class="manual-h2">⚙️ Setup Aplikasi Sinarkeu</div>
-
-      <div class="manual-h3">Setup Pertama Kali</div>
-      <div class="manual-step">
-        <div class="manual-step-num">1</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Buka modal setup</div>
-          <div class="manual-step-desc">Saat pertama kali membuka aplikasi, form setup akan muncul otomatis. Atau klik <strong>Kelola</strong> → bagian Koneksi Supabase.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">2</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Isi Supabase Project URL</div>
-          <div class="manual-step-desc">Masukkan URL project Supabase Anda, contoh: <code>https://abcdefgh.supabase.co</code></div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">3</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Isi Supabase Anon Key</div>
-          <div class="manual-step-desc">Masukkan anon/public key dari Settings → API. Mulai dengan <code>eyJhbGciOiJIUzI1NiIs...</code></div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">4</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Buat password keamanan</div>
-          <div class="manual-step-desc">Buat password minimal 6 karakter. Password ini mengenkripsi kredensial Supabase di browser Anda. <strong>Tidak dapat dipulihkan jika lupa!</strong></div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">5</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Klik "Simpan & Mulai"</div>
-          <div class="manual-step-desc">Aplikasi akan menguji koneksi, lalu menarik semua data dari cloud secara otomatis.</div>
-        </div>
-      </div>
-
-      <div class="manual-warn">
-        ⚠️ <strong>Password tidak bisa dipulihkan!</strong> Jika lupa, semua data di browser akan terhapus dan Anda harus setup ulang. Simpan password di password manager atau tempat aman.
-      </div>
-
-      <div class="manual-h3">Kelola Buku Kas</div>
-      <p class="manual-p">Klik tombol <strong>Kelola</strong> di pojok kanan atas untuk:</p>
-      <table class="manual-table">
-        <thead><tr><th>Aksi</th><th>Cara</th></tr></thead>
-        <tbody>
-          <tr><td>➕ Tambah buku baru</td><td>Isi nama di input "Nama buku baru" → klik Buat Buku Baru</td></tr>
-          <tr><td>✏️ Ganti nama buku</td><td>Klik ✏️ di samping nama buku</td></tr>
-          <tr><td>🗑️ Hapus buku</td><td>Klik 🗑️ (data buku ikut terhapus dari cloud)</td></tr>
-          <tr><td>🔄 Ganti buku aktif</td><td>Pilih dari dropdown BUKU di header utama</td></tr>
-          <tr><td>🔐 Ganti password</td><td>Isi password lama & baru di panel Ganti Password Keamanan</td></tr>
-        </tbody>
-      </table>
-
-      <div class="manual-h3">Menggunakan di Banyak Perangkat / Device Baru</div>
-      <div class="manual-info">
-        🔑 <strong>Penting dipahami:</strong> Password Sinarkeu hanya tersimpan di <strong>localStorage browser device itu sendiri</strong> — tidak dikirim ke Supabase. Artinya setiap device baru dianggap sebagai "setup pertama kali".
-      </div>
-
-      <div class="manual-step">
-        <div class="manual-step-num">1</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Buka aplikasi di device baru</div>
-          <div class="manual-step-desc">Buka file <code>index.html</code> di browser. Karena localStorage kosong, aplikasi akan langsung menampilkan <strong>form setup pertama kali</strong> — bukan layar login password.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">2</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Isi Supabase URL & Anon Key yang sama</div>
-          <div class="manual-step-desc">Masukkan URL dan Anon Key dari project Supabase yang sama dengan device lama. Ini yang menghubungkan ke data yang sudah ada.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">3</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Buat password untuk device ini</div>
-          <div class="manual-step-desc">Anda bebas menggunakan password yang sama dengan device lama, atau password berbeda — <strong>keduanya sama-sama valid</strong>. Password ini hanya mengenkripsi URL & Key di browser device ini saja, bukan mengunci akses ke Supabase.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">4</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Klik "Simpan & Mulai" — data langsung muncul</div>
-          <div class="manual-step-desc">Setelah koneksi berhasil, semua transaksi, buku kas, anggaran, dan konfigurasi Telegram otomatis ditarik dari Supabase. Data di device lama tidak terganggu.</div>
-        </div>
-      </div>
-
-      <div class="manual-warn">
-        ⚠️ <strong>Password lama TIDAK dibutuhkan</strong> di device baru. Yang dibutuhkan hanya <strong>Supabase URL + Anon Key</strong>. Simpan kedua nilai itu di tempat yang mudah diakses (password manager, note terenkripsi, dll).
-      </div>
-
-      <div class="manual-h3">Ringkasan: Apa yang tersimpan di mana?</div>
-      <table class="manual-table">
-        <thead><tr><th>Data</th><th>Disimpan di</th><th>Dampak jika hilang</th></tr></thead>
-        <tbody>
-          <tr><td>Transaksi, buku kas, anggaran, Telegram config</td><td>☁️ Supabase (cloud)</td><td>Tidak hilang — bisa ditarik ulang dari device mana saja</td></tr>
-          <tr><td>Password + kunci enkripsi (salt)</td><td>💻 localStorage browser</td><td>Hanya hilang di device itu — device lain tidak terpengaruh</td></tr>
-          <tr><td>Supabase URL & Anon Key (terenkripsi)</td><td>💻 localStorage browser</td><td>Perlu diisi ulang saat setup di device baru</td></tr>
-        </tbody>
-      </table>
-
-      <div class="manual-h3">Anggaran Bulanan</div>
-      <div class="manual-step">
-        <div class="manual-step-num">1</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Klik "✏️ Atur" di panel anggaran</div>
-          <div class="manual-step-desc">Pilih bulan & tahun yang ingin diatur anggarannya.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">2</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Isi nominal target per kategori</div>
-          <div class="manual-step-desc">Isi anggaran untuk setiap kategori pengeluaran yang ingin dipantau. Kosongkan jika tidak ingin dibatasi.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">3</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Pantau realisasi</div>
-          <div class="manual-step-desc">Progress bar di header akan berubah warna: <strong style="color:#00875a">hijau</strong> normal, <strong style="color:#cc7b00">kuning</strong> ≥80%, <strong style="color:#de350b">merah</strong> habis/lewat.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── SECTION: TRANSAKSI ── -->
-    <div id="manual-transaksi" class="manual-section">
-      <div class="manual-h2">💳 Mencatat Transaksi</div>
-
-      <div class="manual-h3">Tambah Transaksi Baru</div>
-      <div class="manual-step">
-        <div class="manual-step-num">1</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Klik tombol "+ Transaksi"</div>
-          <div class="manual-step-desc">Di area atas kanan tabel transaksi.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">2</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Pilih jenis: Pemasukan atau Pengeluaran</div>
-          <div class="manual-step-desc">Untuk Pengeluaran, pilih juga kategorinya (Makanan, Transportasi, Tagihan, dll).</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">3</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Isi tanggal, deskripsi, dan nominal</div>
-          <div class="manual-step-desc">Nominal dapat diketik langsung, format rupiah ditambahkan otomatis. Contoh: ketik <code>50000</code> → tampil <code>Rp 50.000</code>.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">4</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Upload lampiran nota (opsional)</div>
-          <div class="manual-step-desc">Foto struk atau nota bisa dilampirkan sebagai bukti transaksi. Format: JPG/PNG.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">5</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Klik Simpan</div>
-          <div class="manual-step-desc">Transaksi langsung tersimpan ke cloud. Notifikasi Telegram dikirim jika sudah dikonfigurasi.</div>
-        </div>
-      </div>
-
-      <div class="manual-h3">Kategori Pengeluaran</div>
-      <table class="manual-table">
-        <thead><tr><th>Kategori</th><th>Contoh Penggunaan</th></tr></thead>
-        <tbody>
-          <tr><td>🍽️ Makanan & Minuman</td><td>Makan siang, kopi, groceries</td></tr>
-          <tr><td>🚗 Transportasi</td><td>Bensin, ojek online, parkir, tol</td></tr>
-          <tr><td>🛍️ Belanja & Pakaian</td><td>Baju, sepatu, elektronik</td></tr>
-          <tr><td>💡 Tagihan</td><td>Listrik, air, internet, telepon</td></tr>
-          <tr><td>🎬 Hiburan</td><td>Streaming, bioskop, liburan</td></tr>
-          <tr><td>🏥 Kesehatan</td><td>Obat, dokter, gym</td></tr>
-          <tr><td>📚 Pendidikan</td><td>Kursus, buku, les</td></tr>
-          <tr><td>🏦 Cicilan & Hutang</td><td>Cicilan KPR, KTA, kartu kredit</td></tr>
-          <tr><td>📈 Investasi</td><td>Saham, reksa dana, deposito</td></tr>
-          <tr><td>📌 Lain-lain</td><td>Pengeluaran yang tidak masuk kategori lain</td></tr>
-        </tbody>
-      </table>
-
-      <div class="manual-h3">Filter & Pencarian</div>
-      <table class="manual-table">
-        <thead><tr><th>Fitur</th><th>Cara Pakai</th></tr></thead>
-        <tbody>
-          <tr><td>🔍 Cari</td><td>Ketik di kotak "Cari..." untuk filter berdasarkan deskripsi</td></tr>
-          <tr><td>📂 Filter jenis</td><td>Klik Semua / Masuk / Keluar</td></tr>
-          <tr><td>📅 Filter tanggal</td><td>Isi tanggal mulai dan selesai di kotak filter tanggal</td></tr>
-          <tr><td>📄 Export PDF</td><td>Klik tombol "📄 PDF" untuk export daftar transaksi</td></tr>
-          <tr><td>📊 Laporan</td><td>Klik "📊 Laporan Bulanan" untuk laporan lengkap dengan grafik</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- ── SECTION: TELEGRAM ── -->
-    <div id="manual-telegram" class="manual-section">
-      <div class="manual-h2">📲 Setup Notifikasi Telegram</div>
-      <p class="manual-p">Sinarkeu dapat mengirim notifikasi otomatis ke Telegram setiap ada aktivitas penting. Klik tombol <strong>📲 Telegram</strong> di header untuk mengkonfigurasi.</p>
-
-      <div class="manual-h3">Jenis Notifikasi</div>
-      <table class="manual-table">
-        <thead><tr><th>Event</th><th>Kapan Dikirim</th></tr></thead>
-        <tbody>
-          <tr><td>➕ Transaksi baru</td><td>Setiap kali transaksi berhasil ditambahkan</td></tr>
-          <tr><td>✏️ Transaksi diubah</td><td>Setiap kali data transaksi diperbarui</td></tr>
-          <tr><td>🗑️ Transaksi dihapus</td><td>Setiap kali transaksi dihapus</td></tr>
-          <tr><td>⚠️ Anggaran 80%</td><td>Saat pengeluaran kategori / total mencapai 80% dari target</td></tr>
-          <tr><td>🚨 Anggaran habis</td><td>Saat pengeluaran melampaui 100% anggaran</td></tr>
-          <tr><td>📅 Ringkasan harian</td><td>Otomatis setiap pukul 21:00 WIB</td></tr>
-        </tbody>
-      </table>
-
-      <div class="manual-h3">Setup Bot Telegram (3 Langkah)</div>
-      <div class="manual-step">
-        <div class="manual-step-num">1</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Buat bot baru via @BotFather</div>
-          <div class="manual-step-desc">
-            Buka Telegram → cari <strong>@BotFather</strong> → klik Start → ketik <code>/newbot</code><br>
-            Ikuti instruksi: beri nama bot dan username (harus diakhiri <code>bot</code>, misal: <code>KasKuBot</code>)<br>
-            <strong>Salin Bot Token</strong> yang diberikan — format: <code>123456789:AAF-xxx...</code>
-          </div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">2</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Start bot Anda</div>
-          <div class="manual-step-desc">
-            Cari username bot yang baru dibuat di Telegram → klik <strong>Start</strong>.<br>
-            <strong>Langkah ini wajib</strong> — bot tidak bisa mengirim pesan ke chat yang belum pernah di-Start.
-          </div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">3</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Dapatkan Chat ID Anda</div>
-          <div class="manual-step-desc">
-            Buka <strong>@userinfobot</strong> di Telegram → klik Start → kirim pesan apapun.<br>
-            Bot akan membalas dengan info akun Anda. Salin angka di bagian <strong>Id</strong>.<br>
-            Untuk grup: tambahkan bot ke grup, lalu kirim pesan di grup → cek <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>
-          </div>
-        </div>
-      </div>
-
-      <div class="manual-h3">Masukkan ke Sinarkeu</div>
-      <div class="manual-step">
-        <div class="manual-step-num">4</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Buka modal Telegram di Sinarkeu</div>
-          <div class="manual-step-desc">Klik tombol <strong>📲 Telegram</strong> di header aplikasi.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">5</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Isi Bot Token dan Chat ID</div>
-          <div class="manual-step-desc">Paste Bot Token dan Chat ID yang sudah didapat, lalu klik <strong>💾 Simpan</strong>.</div>
-        </div>
-      </div>
-      <div class="manual-step">
-        <div class="manual-step-num">6</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Tes pengiriman</div>
-          <div class="manual-step-desc">Klik <strong>📤 Tes Kirim</strong> — Anda akan menerima pesan tes di Telegram jika konfigurasi benar.</div>
-        </div>
-      </div>
-
-      <div class="manual-tip">
-        ✅ Bot Token dan Chat ID tersinkron ke Supabase, sehingga perangkat lain yang terhubung ke akun yang sama juga otomatis mendapat konfigurasi yang sama.
-      </div>
-      <div class="manual-info">
-        📊 Klik tombol <strong>"📊 Kirim Ringkasan"</strong> untuk langsung mengirim ringkasan keuangan saat ini ke Telegram tanpa harus menunggu pukul 21:00.
-      </div>
-    </div>
-
-    <!-- ── SECTION: FAQ ── -->
-    <div id="manual-faq" class="manual-section">
-      <div class="manual-h2">❓ Pertanyaan Umum (FAQ)</div>
-
-      <hr class="manual-divider">
-      <div class="manual-h3">📱 Device Baru & Multi-Perangkat</div>
-      <div class="manual-step" style="border-left-color:#00875a;">
-        <div class="manual-step-num" style="background:#00875a;">?</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Di device baru, apakah saya harus memasukkan password lama?</div>
-          <div class="manual-step-desc"><strong>Tidak.</strong> Di device baru, localStorage kosong sehingga aplikasi membuka form <em>Setup Pertama Kali</em>, bukan layar login. Anda cukup isi <strong>Supabase URL + Anon Key</strong> lalu buat password baru (bebas, boleh sama atau berbeda). Data dari Supabase langsung ditarik otomatis setelah terhubung.<br><br>
-          <strong>Yang WAJIB disimpan baik-baik:</strong> Supabase URL dan Anon Key — tanpa keduanya, Anda tidak bisa konek ke data di cloud.</div>
-        </div>
-      </div>
-      <div class="manual-step" style="border-left-color:#00875a;">
-        <div class="manual-step-num" style="background:#00875a;">?</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Saya ganti HP / browser — apa yang perlu disiapkan?</div>
-          <div class="manual-step-desc">Siapkan 2 hal: (1) <strong>File index.html</strong> — pindahkan via Google Drive, WhatsApp, email, dll. (2) <strong>Supabase URL & Anon Key</strong> — buka di Supabase dashboard → Settings → API. Password lama tidak diperlukan.</div>
-        </div>
-      </div>
-      <div class="manual-step" style="border-left-color:#00875a;">
-        <div class="manual-step-num" style="background:#00875a;">?</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Apakah bisa buka di banyak device sekaligus?</div>
-          <div class="manual-step-desc">Ya. Setiap device setup sendiri-sendiri dengan URL + Key yang sama. Setiap device bisa punya password berbeda — ini tidak masalah karena password hanya mengenkripsi URL & Key secara lokal, bukan mengunci akses ke Supabase. Data akan sinkron otomatis antar device.</div>
-        </div>
-      </div>
-
-      <hr class="manual-divider">
-      <div class="manual-h3">🔐 Keamanan & Password</div>
-      <div class="manual-step" style="border-left-color:#de350b;">
-        <div class="manual-step-num" style="background:#de350b;">?</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Saya lupa password, bagaimana cara memulihkan data?</div>
-          <div class="manual-step-desc">Sayangnya password <strong>tidak dapat dipulihkan</strong> karena digunakan untuk enkripsi AES-256. Jika lupa, klik "Reset App" (akan menghapus semua data lokal) dan setup ulang. Data di Supabase masih ada — namun tidak bisa diakses tanpa password yang benar.</div>
-        </div>
-      </div>
-      <div class="manual-step" style="border-left-color:#0088cc;">
-        <div class="manual-step-num" style="background:#0088cc;">?</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Apakah data saya aman?</div>
-          <div class="manual-step-desc">URL dan Anon Key Supabase dienkripsi di browser menggunakan AES-256-GCM dengan key turunan dari password Anda. Data transaksi di Supabase diproteksi Row Level Security (RLS). Namun pastikan Anda tidak membagikan URL + Key + Password ke orang lain.</div>
-        </div>
-      </div>
-
-      <hr class="manual-divider">
-      <div class="manual-h3">☁️ Koneksi & Sinkronisasi</div>
-      <div class="manual-step" style="border-left-color:#0088cc;">
-        <div class="manual-step-num" style="background:#0088cc;">?</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Status cloud menunjukkan "CLOUD OFF" padahal sudah dikonfigurasi</div>
-          <div class="manual-step-desc">Cek koneksi internet Anda. Jika internet OK, buka Kelola → Supabase dan klik ulang "Hubungkan & Sinkronkan". Pastikan URL dan Key masih valid di Supabase dashboard.</div>
-        </div>
-      </div>
-      <div class="manual-step" style="border-left-color:#0088cc;">
-        <div class="manual-step-num" style="background:#0088cc;">?</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Data tidak tersinkron ke perangkat lain</div>
-          <div class="manual-step-desc">Pastikan kedua perangkat menggunakan URL, Key, dan Password yang sama. Coba klik refresh halaman di perangkat yang datanya belum sinkron.</div>
-        </div>
-      </div>
-
-      <hr class="manual-divider">
-      <div class="manual-h3">📊 Laporan & Export</div>
-      <div class="manual-step" style="border-left-color:#00875a;">
-        <div class="manual-step-num" style="background:#00875a;">?</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Bagaimana cara backup data?</div>
-          <div class="manual-step-desc">Klik tombol <strong>🔒 Backup</strong> di header. Tersedia: backup lokal (browser), backup cloud (Supabase), dan export CSV/JSON. Backup cloud berjalan otomatis harian.</div>
-        </div>
-      </div>
-      <div class="manual-step" style="border-left-color:#00875a;">
-        <div class="manual-step-num" style="background:#00875a;">?</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Bagaimana cara memindahkan data ke perangkat baru?</div>
-          <div class="manual-step-desc">Cukup buka <code>index.html</code> di perangkat baru dan setup dengan URL, Key, dan Password yang sama. Data otomatis tertarik dari cloud. Atau gunakan Export JSON → Import JSON untuk transfer manual.</div>
-        </div>
-      </div>
-
-      <hr class="manual-divider">
-      <div class="manual-h3">📲 Telegram</div>
-      <div class="manual-step" style="border-left-color:#0088cc;">
-        <div class="manual-step-num" style="background:#0088cc;">?</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Notifikasi Telegram tidak terkirim</div>
-          <div class="manual-step-desc">Pastikan: (1) Anda sudah klik Start di bot Telegram, (2) Bot Token dan Chat ID benar, (3) Bot tidak diblokir. Gunakan tombol "📤 Tes Kirim" untuk diagnosa — pesan error akan ditampilkan.</div>
-        </div>
-      </div>
-      <div class="manual-step" style="border-left-color:#0088cc;">
-        <div class="manual-step-num" style="background:#0088cc;">?</div>
-        <div class="manual-step-body">
-          <div class="manual-step-title">Bisa kirim notifikasi ke grup Telegram?</div>
-          <div class="manual-step-desc">Bisa! Tambahkan bot ke grup Telegram, lalu gunakan Chat ID grup (dimulai dengan tanda minus, contoh: <code>-100123456789</code>) sebagai Chat ID di pengaturan.</div>
-        </div>
-      </div>
-
-      <div class="manual-tip" style="margin-top: 20px;">
-        💬 Masih ada pertanyaan? Cek dokumentasi di tiap tab panduan atau hubungi developer melalui GitHub.
-      </div>
-    </div>
-
-  </div><!-- /modal-content -->
-</div><!-- /manualModal -->
+    <div id="manual-appsetup" class="manual-section"><div class="manual-h2">⚙️ Setup Aplikasi Sinarkeu</div></div>
+    <div id="manual-transaksi" class="manual-section"><div class="manual-h2">💳 Mencatat Transaksi</div></div>
+    <div id="manual-telegram" class="manual-section"><div class="manual-h2">📲 Setup Notifikasi Telegram</div></div>
+    <div id="manual-faq" class="manual-section"><div class="manual-h2">❓ Pertanyaan Umum (FAQ)</div></div>
+  </div>
+</div>
 
 <div id="addModal" class="modal">
     <div class="modal-content">
@@ -2169,7 +1560,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
             </div>
         </div>
 
-        <!-- Ganti Password -->
         <div class="data-management-panel" style="border-color:#1a1a1a; background:#fafafa;">
             <div class="panel-title">🔐 Ganti Password Keamanan</div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
@@ -2182,7 +1572,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
             <button class="btn btn-primary" style="width:100%;" onclick="changePassword()">🔐 Ganti Password</button>
         </div>
 
-        <!-- Sinkronisasi Setelan — otomatis, hanya tampilkan status -->
         <div class="data-management-panel" style="border-color:#0088cc; background:#f0f8ff;">
             <div class="panel-title" style="color:#0055aa; display:flex; align-items:center; gap:8px;">
                 ☁️ Sinkronisasi Setelan
@@ -2194,7 +1583,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
             <div id="settingsSyncStatus" style="font-size:.68rem; color:#888; margin-top:8px;"></div>
         </div>
 
-        <!-- Cadangan Data -->
         <div class="data-management-panel">
             <div class="panel-title">Cadangan Data</div>
             <div class="panel-actions-row">
@@ -2205,7 +1593,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
             <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)">
         </div>
 
-        <!-- Arsipkan & Kosongkan -->
         <div class="data-management-panel" style="border-color:#de350b; background:#fff5f5;">
             <div class="panel-title" style="color:#de350b;">🗃️ Arsipkan & Kosongkan Database</div>
             <div style="font-size:.7rem; color:#666; margin-bottom:12px; line-height:1.6;">
@@ -2225,37 +1612,28 @@ ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
             <h3>📲 Notifikasi Telegram</h3>
             <button class="modal-close" onclick="closeModal('telegramSettingsModal')">×</button>
         </div>
-
         <div class="form-group">
             <label style="display:flex; align-items:center; gap:8px;">
                 Status
                 <span id="tgStatusBadge" style="font-size:.6rem; padding:2px 8px; border-radius:10px; background:#eee; color:#666;">Belum dikonfigurasi</span>
             </label>
         </div>
-
-        <!-- Panduan setup -->
         <div style="background:#f9f9f9; border:1px solid #e0e0e0; border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:.72rem; line-height:1.8; color:#444;">
             <b>Cara setup (3 langkah):</b><br>
             <b>1.</b> Buka <a href="https://t.me/BotFather" target="_blank" style="color:#0088cc;">@BotFather</a> → kirim <code>/newbot</code> → ikuti instruksi → copy <b>Bot Token</b><br>
             <b>2.</b> Buka bot kamu di Telegram → klik <b>Start</b> (wajib, agar bot bisa kirim pesan)<br>
             <b>3.</b> Buka <a href="https://t.me/userinfobot" target="_blank" style="color:#0088cc;">@userinfobot</a> → kirim pesan apapun → copy angka <b>Id</b> sebagai Chat ID
         </div>
-
         <div class="form-group">
             <label>Bot Token <span style="font-weight:400;color:#888;font-size:.7rem;">dari @BotFather</span></label>
             <input type="text" id="tgBotTokenInput" class="form-control" placeholder="123456789:AAF-contoh-token-dari-botfather" autocomplete="off">
         </div>
-
         <div class="form-group">
             <label>Chat ID <span style="font-weight:400;color:#888;font-size:.7rem;">dari @userinfobot (angka, bisa negatif untuk grup)</span></label>
             <input type="text" id="tgChatIdInput" class="form-control" placeholder="123456789" autocomplete="off">
         </div>
-
-        <!-- Edge Function hidden, tetap ada di DOM agar fungsi lama tidak error -->
         <input type="hidden" id="tgEdgeUrlInput" value="">
-
         <div id="tgTestStatus" style="font-size:.72rem; margin-bottom:12px; min-height:20px; padding: 0 2px;"></div>
-
         <div class="modal-footer" style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn btn-secondary" onclick="testTelegramNotif()" style="flex:1">📤 Tes Kirim</button>
             <button class="btn btn-secondary" onclick="sendDailySummaryToTelegram(); showToast('Ringkasan dikirim ke Telegram ✅','success')" style="flex:1; background:#0088cc; color:#fff; border-color:#0088cc;">📊 Kirim Ringkasan</button>
@@ -2309,7 +1687,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
     <div class="modal-content" style="max-width:600px; text-align:center"> <div class="modal-header"><h3>📎 Lampiran Nota</h3><button class="modal-close" onclick="closeModal('viewAttachmentModal')">×</button></div> <img id="fullAttachmentImage" style="max-width:100%; max-height:60vh; border-radius:8px"><br><br> <button class="btn btn-secondary" onclick="downloadAttachment()">💾 Unduh Gambar</button> </div>
 </div>
 
-<!-- ===== MODAL SETUP AWAL ===== -->
 <div id="firstTimeSetupModal" class="modal" style="z-index:2000;">
     <div class="modal-content" style="max-width:460px;">
         <div style="text-align:center; margin-bottom:24px;">
@@ -2363,9 +1740,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
 let txs = [];
 let books = [];
 let currentBookId = 'b_default';
-let globalSupabaseUrl = ''; // Supabase URL global (1 untuk semua buku)
-let globalSupabaseKey = ''; // Supabase Anon Key global (1 untuk semua buku)
-let _sessionCryptoKey = null; // CryptoKey aktif selama tab terbuka (AES-GCM)
+let globalSupabaseUrl = '';
+let globalSupabaseKey = '';
+let _sessionCryptoKey = null;
 let currentFilter = 'all';
 let filterStartDate = '';
 let filterEndDate = '';
@@ -2377,10 +1754,12 @@ let reportChart = null;
 const EXPENSE_CATEGORIES = ['Makanan & Minuman', 'Transportasi', 'Belanja & Pakaian', 'Tagihan', 'Hiburan', 'Kesehatan', 'Pendidikan', 'Cicilan & Hutang', 'Investasi', 'Lain-lain'];
 const PAGE_SIZE = 10;
 let currentPage = 1;
+let _supabaseClient = null;
+let _realtimeChannel = null;
+let _autoSyncInterval = null;
+let _bookCheckInterval = null;
 
-
-// ==================== CRYPTO ENGINE (AES-GCM + PBKDF2) ====================
-
+// ==================== CRYPTO ENGINE ====================
 const CRYPTO_SALT_KEY   = 'sk_crypto_salt';
 const CRYPTO_CHECK_KEY  = 'sk_crypto_check';
 const CRYPTO_URL_KEY    = 'sk_enc_supabase_url';
@@ -2474,15 +1853,14 @@ function wipeAllCryptoData() {
     globalSupabaseKey = '';
 }
 
-// ==================== PASSWORD LOCK SCREEN UI ====================
-
+// ==================== PASSWORD LOCK SCREEN ====================
 function showPasswordLock() {
     const screen = document.getElementById('passwordLockScreen');
     screen.style.display = 'flex';
     document.getElementById('lockTitle').innerText    = 'Sinarkeu';
     document.getElementById('lockSubtitle').innerText = 'Masukkan password untuk membuka aplikasi';
-    document.getElementById('lockSubmitBtn').innerText = '\uD83D\uDD13 Buka';
-    document.getElementById('lockIcon').innerText      = '\uD83D\uDD12';
+    document.getElementById('lockSubmitBtn').innerText = '🔓 Buka';
+    document.getElementById('lockIcon').innerText      = '🔒';
     document.getElementById('lockWarning').style.display = 'none';
     setTimeout(() => document.getElementById('lockPasswordInput').focus(), 100);
 }
@@ -2499,17 +1877,17 @@ function clearLockError() {
 function toggleLockEye() {
     const inp = document.getElementById('lockPasswordInput');
     const btn = document.getElementById('lockEyeBtn');
-    if (inp.type === 'password') { inp.type = 'text'; btn.innerText = '\uD83D\uDE48'; }
-    else { inp.type = 'password'; btn.innerText = '\uD83D\uDC41'; }
+    if (inp.type === 'password') { inp.type = 'text'; btn.innerText = '🙈'; }
+    else { inp.type = 'password'; btn.innerText = '👁'; }
 }
 
 async function submitLockPassword() {
     const pwd    = document.getElementById('lockPasswordInput').value;
     const status = document.getElementById('lockStatus');
     const btn    = document.getElementById('lockSubmitBtn');
-    if (!pwd) { status.innerText = '\u274C Password tidak boleh kosong'; return; }
+    if (!pwd) { status.innerText = '❌ Password tidak boleh kosong'; return; }
     btn.disabled = true;
-    btn.innerText = '\u23F3 Memverifikasi...';
+    btn.innerText = '⏳ Memverifikasi...';
     status.innerText = '';
     const ok = await unlockWithPassword(pwd);
     if (ok) {
@@ -2517,8 +1895,8 @@ async function submitLockPassword() {
         continueAppInit();
     } else {
         btn.disabled = false;
-        btn.innerText = '\uD83D\uDD13 Buka';
-        status.innerText = '\u274C Password salah';
+        btn.innerText = '🔓 Buka';
+        status.innerText = '❌ Password salah';
         const inp = document.getElementById('lockPasswordInput');
         inp.classList.remove('error-shake');
         void inp.offsetWidth;
@@ -2585,14 +1963,14 @@ function formatDateTime(dtStr) {
     return d.toLocaleDateString('id-ID', {day:'2-digit', month:'2-digit', year:'numeric'}) + ' ' + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
 }
 
-// ==================== CORES / LOCAL STORAGE ====================
-// ==================== NOTIFIKASI TELEGRAM ====================
+function getCloudUrl() { return globalSupabaseUrl || ''; }
+function getSupabaseKey() { return globalSupabaseKey || ''; }
 
+// ==================== TELEGRAM ====================
 function getTgConfig() {
     let token = localStorage.getItem('sk_tg_token') || '';
     let edgeUrl = localStorage.getItem('sk_tg_edge_url') || '';
     let chatId = localStorage.getItem('sk_tg_chatid') || '';
-    // Aktif jika minimal ada token langsung ATAU edge function URL
     return { token, edgeUrl, chatId, active: !!(token || edgeUrl) };
 }
 
@@ -2605,7 +1983,7 @@ function saveTelegramConfig() {
 
     localStorage.setItem('sk_tg_token', token);
     localStorage.setItem('sk_tg_chatid', chatId);
-    localStorage.removeItem('sk_tg_edge_url'); // bersihkan sisa config lama
+    localStorage.removeItem('sk_tg_edge_url');
     updateTgStatusBadge();
     showToast('Konfigurasi Telegram disimpan ✅', 'success');
     pushSettingTelegram();
@@ -2621,7 +1999,7 @@ function clearTelegramConfig() {
     document.getElementById('tgChatIdInput').value = '';
     updateTgStatusBadge();
     showToast('Konfigurasi Telegram dihapus', 'warning');
-    pushSettingTelegram(); // push config kosong ke Supabase
+    pushSettingTelegram();
 }
 
 function updateTgStatusBadge() {
@@ -2673,7 +2051,7 @@ async function sendTelegramNotif(msg) {
                 body: JSON.stringify({ chat_id: cfg.chatId, text: msg, parse_mode: 'HTML' })
             });
             const data = await res.json();
-            if (!data.ok) console.warn('[Telegram] Gagal kirim:', data.description, '| chat_id:', cfg.chatId);
+            if (!data.ok) console.warn('[Telegram] Gagal kirim:', data.description);
         }
     } catch(e) {
         console.warn('[Telegram] Gagal kirim notifikasi:', e.message);
@@ -2687,9 +2065,8 @@ async function testTelegramNotif() {
     let statusEl = document.getElementById('tgTestStatus');
 
     if (!chatId) { showToast('Chat ID penerima wajib diisi!', 'error'); return; }
-    if (!token && !edgeUrl) { showToast('Isi Bot Token atau Edge Function URL!', 'error'); return; }
+    if (!token && !edgeUrl) { showToast('Isi Bot Token!', 'error'); return; }
 
-    // Auto-save config sebelum test supaya getTgConfig() sinkron
     if (token) localStorage.setItem('sk_tg_token', token);
     else localStorage.removeItem('sk_tg_token');
     if (edgeUrl) localStorage.setItem('sk_tg_edge_url', edgeUrl);
@@ -2730,12 +2107,9 @@ async function testTelegramNotif() {
                 statusEl.innerHTML = '<span style="color:#006644;">✅ Berhasil! Cek Telegram kamu.</span>';
                 showToast('Tes Telegram berhasil! ✅', 'success');
             } else {
-                // Tampilkan error detail dari Telegram API
                 let errMsg = data.description || JSON.stringify(data);
-                // Terjemahkan error umum
                 if (errMsg.includes('chat not found')) errMsg = 'Chat ID tidak ditemukan. Pastikan bot sudah di-/start atau ditambah ke grup.';
                 if (errMsg.includes('Unauthorized')) errMsg = 'Bot Token tidak valid. Cek kembali dari @BotFather.';
-                if (errMsg.includes('bot was blocked')) errMsg = 'Bot diblokir oleh user. Buka chat bot lalu /start lagi.';
                 statusEl.innerHTML = `<span style="color:#de350b;">❌ ${escapeHtml(errMsg)}</span>`;
             }
         }
@@ -2749,7 +2123,6 @@ function buildTxNotifMessage(action, tx, bookName) {
     let typeLabel = tx.type === 'income' ? 'PEMASUKAN' : 'PENGELUARAN';
     let actionLabel = action === 'TAMBAH' ? '➕ Transaksi Baru' : action === 'UBAH' ? '✏️ Transaksi Diubah' : '🗑️ Transaksi Dihapus';
 
-    // Hitung saldo terkini buku aktif
     let totalIncome = 0, totalExpense = 0;
     txs.forEach(t => {
         let amt = Number(t.amount) || 0;
@@ -2757,68 +2130,13 @@ function buildTxNotifMessage(action, tx, bookName) {
         else totalExpense += amt;
     });
     let saldoSekarang = totalIncome - totalExpense;
-    // Sesuaikan saldo jika aksi HAPUS (tx sudah dihapus dari array)
     if (action === 'HAPUS') {
         if (tx.type === 'income') saldoSekarang -= (Number(tx.amount) || 0);
         else saldoSekarang += (Number(tx.amount) || 0);
     }
     let saldoEmoji = saldoSekarang >= 0 ? '🟢' : '🔴';
 
-    // Hitung ringkasan bulan ini
-    let txDate = new Date(tx.date);
-    let m = txDate.getMonth() + 1;
-    let y = txDate.getFullYear();
-    let monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    let bulankini = `${monthNames[m-1]} ${y}`;
-    let incBulan = 0, expBulan = 0;
-    txs.forEach(t => {
-        let d = new Date(t.date);
-        if ((d.getMonth()+1) === m && d.getFullYear() === y) {
-            let amt = Number(t.amount) || 0;
-            if (t.type === 'income') incBulan += amt;
-            else expBulan += amt;
-        }
-    });
-    let selisihBulan = incBulan - expBulan;
-    let selisihEmoji = selisihBulan >= 0 ? '✅' : '⚠️';
-
-    // Cek budget kategori bulan ini (hanya untuk pengeluaran)
-    let budgetLine = '';
-    if (tx.type === 'expense' && action !== 'HAPUS') {
-        let key = `${y}-${m}`;
-        let currentBudget = budgets[key] || {};
-        let katTarget = currentBudget[tx.category] || 0;
-        if (katTarget > 0) {
-            let katActual = 0;
-            txs.forEach(t => {
-                if (t.type === 'expense' && t.category === tx.category) {
-                    let d = new Date(t.date);
-                    if ((d.getMonth()+1) === m && d.getFullYear() === y) {
-                        katActual += Number(t.amount) || 0;
-                    }
-                }
-            });
-            let pct = Math.round((katActual / katTarget) * 100);
-            let barFilled = Math.min(Math.round(pct / 10), 10);
-            let bar = '█'.repeat(barFilled) + '░'.repeat(10 - barFilled);
-            let budgetEmoji = pct >= 100 ? '🚨' : pct >= 80 ? '⚠️' : '✅';
-            budgetLine = `\n${budgetEmoji} Anggaran <i>${tx.category}</i>: ${bar} ${pct}%\n   Terpakai ${rp(katActual)} dari ${rp(katTarget)}`;
-        }
-    }
-
-    // Lampiran info
-    let attachLine = tx.attachment ? '\n📎 <i>Nota terlampir</i>' : '';
-
-    return `${emoji} <b>${actionLabel}</b>
-━━━━━━━━━━━━━━━━━━
-📒 <b>${bookName}</b>
-📂 ${typeLabel}${tx.category && tx.category !== 'Pemasukan' ? ' · <i>' + tx.category + '</i>' : ''}
-📝 ${tx.description}
-💵 <b>${rp(tx.amount)}</b>
-🕐 ${formatDateTime(tx.date)}${attachLine}
-━━━━━━━━━━━━━━━━━━
-${saldoEmoji} <b>Saldo Saat Ini: ${rp(saldoSekarang)}</b>
-${selisihEmoji} Bulan ${bulankini}: +${rp(incBulan)} / -${rp(expBulan)} = ${rp(selisihBulan)}${budgetLine}`;
+    return `${emoji} <b>${actionLabel}</b>\n━━━━━━━━━━━━━━━━━━\n📒 <b>${bookName}</b>\n📂 ${typeLabel}${tx.category && tx.category !== 'Pemasukan' ? ' · <i>' + tx.category + '</i>' : ''}\n📝 ${tx.description}\n💵 <b>${rp(tx.amount)}</b>\n🕐 ${formatDateTime(tx.date)}\n━━━━━━━━━━━━━━━━━━\n${saldoEmoji} <b>Saldo Saat Ini: ${rp(saldoSekarang)}</b>`;
 }
 
 function getCurrentBookName() {
@@ -2826,7 +2144,6 @@ function getCurrentBookName() {
     return book ? book.name : currentBookId;
 }
 
-/** Kirim ringkasan harian ke Telegram */
 function sendDailySummaryToTelegram() {
     let cfg = getTgConfig();
     if (!cfg.active) return;
@@ -2836,7 +2153,6 @@ function sendDailySummaryToTelegram() {
     let y = now.getFullYear();
     let monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
     
-    // Hitung hari ini
     let incToday = 0, expToday = 0;
     let todayStr = now.toISOString().slice(0,10);
     let txToday = [];
@@ -2851,7 +2167,6 @@ function sendDailySummaryToTelegram() {
         }
     });
 
-    // Hitung bulan ini
     let incBulan = 0, expBulan = 0;
     txs.forEach(t => {
         let d = new Date(t.date);
@@ -2862,7 +2177,6 @@ function sendDailySummaryToTelegram() {
         }
     });
 
-    // Saldo total
     let totalInc = 0, totalExp = 0;
     txs.forEach(t => {
         let amt = Number(t.amount) || 0;
@@ -2871,48 +2185,11 @@ function sendDailySummaryToTelegram() {
     });
     let saldo = totalInc - totalExp;
 
-    // Budget bulan ini
-    let key = `${y}-${m}`;
-    let currentBudget = budgets[key] || {};
-    let totalTarget = 0;
-    EXPENSE_CATEGORIES.forEach(c => totalTarget += (currentBudget[c] || 0));
-    let budgetLine = totalTarget > 0
-        ? `\n📊 Anggaran ${monthNames[m-1]}: ${rp(expBulan)} / ${rp(totalTarget)} (${Math.round((expBulan/totalTarget)*100)}%)`
-        : '';
-
-    // Detail transaksi hari ini (maks 5)
-    let txLines = '';
-    if (txToday.length > 0) {
-        txLines = '\n\n<b>Transaksi Hari Ini:</b>';
-        txToday.slice(0,5).forEach(t => {
-            let sign = t.type === 'income' ? '↑' : '↓';
-            txLines += `\n${sign} ${t.description} — <b>${rp(t.amount)}</b>`;
-        });
-        if (txToday.length > 5) txLines += `\n<i>... dan ${txToday.length - 5} transaksi lainnya</i>`;
-    } else {
-        txLines = '\n\n<i>Belum ada transaksi hari ini.</i>';
-    }
-
-    let msg = `📅 <b>Ringkasan Harian Sinarkeu</b>
-${today}
-📒 Buku: <b>${getCurrentBookName()}</b>
-━━━━━━━━━━━━━━━━━━
-<b>Hari Ini:</b>
-💰 Masuk: ${rp(incToday)}
-💸 Keluar: ${rp(expToday)}
-📊 Selisih: ${rp(incToday - expToday)}
-
-<b>Bulan ${monthNames[m-1]} ${y}:</b>
-💰 Pemasukan: ${rp(incBulan)}
-💸 Pengeluaran: ${rp(expBulan)}
-📊 Selisih: ${rp(incBulan - expBulan)}${budgetLine}
-━━━━━━━━━━━━━━━━━━
-${saldo >= 0 ? '🟢' : '🔴'} <b>Saldo Total: ${rp(saldo)}</b>${txLines}`;
+    let msg = `📅 <b>Ringkasan Harian Sinarkeu</b>\n${today}\n📒 Buku: <b>${getCurrentBookName()}</b>\n━━━━━━━━━━━━━━━━━━\n<b>Hari Ini:</b>\n💰 Masuk: ${rp(incToday)}\n💸 Keluar: ${rp(expToday)}\n📊 Selisih: ${rp(incToday - expToday)}\n\n<b>Bulan ${monthNames[m-1]} ${y}:</b>\n💰 Pemasukan: ${rp(incBulan)}\n💸 Pengeluaran: ${rp(expBulan)}\n📊 Selisih: ${rp(incBulan - expBulan)}\n━━━━━━━━━━━━━━━━━━\n${saldo >= 0 ? '🟢' : '🔴'} <b>Saldo Total: ${rp(saldo)}</b>`;
 
     sendTelegramNotif(msg);
 }
 
-/** Jadwalkan ringkasan harian otomatis pukul 21:00 */
 function scheduleDailySummary() {
     let cfg = getTgConfig();
     if (!cfg.active) return;
@@ -2923,498 +2200,12 @@ function scheduleDailySummary() {
     let msUntil = target - now;
     setTimeout(() => {
         sendDailySummaryToTelegram();
-        // Ulangi setiap 24 jam
         setInterval(sendDailySummaryToTelegram, 24 * 60 * 60 * 1000);
     }, msUntil);
-    console.log(`[Telegram] Ringkasan harian dijadwalkan pukul 21:00 (dalam ${Math.round(msUntil/60000)} menit)`);
+    console.log(`[Telegram] Ringkasan harian dijadwalkan pukul 21:00`);
 }
 
-// ==================== NOTIFIKASI TELEGRAM ====================
-
-function initApp() {
-    // ── Fase 1: Inisialisasi device ID & buku (tidak butuh password) ──
-    deviceId = localStorage.getItem('sk_device_id');
-    if(!deviceId) {
-        deviceId = 'DEV-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-        localStorage.setItem('sk_device_id', deviceId);
-    }
-    document.getElementById('deviceIdDisplay').innerText = deviceId;
-
-    let storedBooks = localStorage.getItem('sk_books');
-    if(storedBooks) {
-        books = JSON.parse(storedBooks);
-    } else {
-        books = [{id: 'b_default', name: 'Buku Utama'}];
-        localStorage.setItem('sk_books', JSON.stringify(books));
-    }
-
-    currentBookId = localStorage.getItem('sk_current_book_id') || 'b_default';
-    if(!books.find(b => b.id === currentBookId)) currentBookId = books[0].id;
-
-    // ── Fase 2: Gating keamanan ──
-    // Kasus A: belum pernah setup sama sekali → buka modal setup awal (Supabase + password)
-    if (!isPasswordConfigured()) {
-        hideLockScreen();
-        // Migrasi data lama (plaintext) jika ada
-        const legacyUrls = JSON.parse(localStorage.getItem('sk_cloud_urls') || '{}');
-        const legacyKeys = JSON.parse(localStorage.getItem('sk_supabase_keys') || '{}');
-        const legacyUrl  = localStorage.getItem('sk_supabase_url_global') || '';
-        const legacyKey  = localStorage.getItem('sk_supabase_key_global') || '';
-        const firstKey   = Object.keys(legacyUrls)[0];
-        if (legacyUrl || firstKey) {
-            // Ada data lama plaintext → isi field setup, minta buat password
-            document.getElementById('setupUrlInput').value = legacyUrl || legacyUrls[firstKey] || '';
-            document.getElementById('setupKeyInput').value = legacyKey || legacyKeys[firstKey] || '';
-        }
-        setTimeout(() => openSetupModal(), 300);
-        return;
-    }
-
-    // Kasus B: password sudah dikonfigurasi, tapi session tab baru (sessionStorage kosong)
-    if (!sessionStorage.getItem('sk_session_unlocked')) {
-        showPasswordLock();
-        return; // continueAppInit() dipanggil setelah unlock berhasil
-    }
-
-    // Kasus C: sudah unlock di session ini (refresh manual tidak terjadi) — lanjut init
-    continueAppInit();
-}
-
-/** Dipanggil setelah password berhasil diverifikasi (atau sudah unlock di session ini) */
-async function continueAppInit() {
-    // Jika _sessionCryptoKey sudah ada, URL+Key sudah terisi dari unlockWithPassword.
-    // Jika masuk dari Kasus C (session valid tapi key hilang karena in-memory), re-lock.
-    if (!globalSupabaseUrl && !_sessionCryptoKey) {
-        sessionStorage.removeItem('sk_session_unlocked');
-        showPasswordLock();
-        return;
-    }
-
-    budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
-
-    let currentYear = new Date().getFullYear();
-    let selectYear = document.getElementById('budgetYear');
-    selectYear.innerHTML = '';
-    for(let y = currentYear - 2; y <= currentYear + 2; y++) {
-        let opt = document.createElement('option');
-        opt.value = y; opt.innerText = y;
-        if(y === currentYear) opt.selected = true;
-        selectYear.appendChild(opt);
-    }
-    document.getElementById('budgetMonth').value = new Date().getMonth() + 1;
-
-    updateBookSelectDropdown();
-    loadTransactions();
-    updateCloudIndicator();
-
-    if (!getCloudUrl() || !getSupabaseKey()) {
-        setTimeout(() => openSetupModal(), 400);
-    } else {
-        pullAllSettings().then(() => {
-            updateBookSelectDropdown();
-            budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
-            updateTgStatusBadge();
-            return pullAllBooksFromCloud();
-        }).then(() => {
-            setTimeout(checkAndRunDailyAutoBackup, 3000);
-            setTimeout(scheduleDailySummary, 5000);
-            // Mulai Supabase Realtime setelah semua data siap
-            startRealtimeSync();
-        });
-    }
-
-    setInterval(() => {
-        let clock = document.getElementById('liveClock');
-        if(clock) clock.innerText = new Date().toLocaleTimeString('id-ID');
-    }, 1000);
-
-    // ── Auto-sync: pull settings (buku + telegram) & transaksi setiap 30 detik ──
-    startAutoSync();
-}
-
-let _autoSyncInterval = null;
-
-function startAutoSync() {
-    if (_autoSyncInterval) clearInterval(_autoSyncInterval);
-    const INTERVAL_MS = 30 * 1000; // 30 detik
-
-    _autoSyncInterval = setInterval(async () => {
-        if (!getCloudUrl() || !getSupabaseKey()) return;
-
-        // 1. Pull settings global (daftar buku + telegram)
-        const prevBooksJson = JSON.stringify(books);
-        await pullAllSettings();
-
-        // 2. Jika ada buku baru dari cloud, update dropdown
-        if (JSON.stringify(books) !== prevBooksJson) {
-            updateBookSelectDropdown();
-            updateTgStatusBadge();
-            showAutoSyncToast('🔄 Buku baru ditemukan dari cloud');
-        }
-
-        // 3. Pull transaksi buku aktif secara senyap
-        const prevCount = txs.length;
-        await pullFromCloudSilently();
-
-        if (txs.length !== prevCount) {
-            showAutoSyncToast('🔄 Transaksi diperbarui dari cloud');
-        }
-
-        updateAutoSyncBadge();
-    }, INTERVAL_MS);
-
-    console.log('[AutoSync] Dimulai, interval 30 detik.');
-    updateAutoSyncBadge();
-}
-
-function stopAutoSync() {
-    if (_autoSyncInterval) {
-        clearInterval(_autoSyncInterval);
-        _autoSyncInterval = null;
-    }
-    console.log('[AutoSync] Dihentikan.');
-}
-
-// ==================== SUPABASE REALTIME ====================
-
-let _supabaseClient = null;
-let _realtimeChannel = null;
-
-/**
- * Inisialisasi Supabase JS client (untuk Realtime).
- * Dipanggil setelah URL & Key tersedia.
- */
-function initSupabaseClient() {
-    const url = getCloudUrl();
-    const key = getSupabaseKey();
-    if (!url || !key) return null;
-    if (_supabaseClient) return _supabaseClient;
-    // supabase global tersedia dari CDN @supabase/supabase-js
-    _supabaseClient = supabase.createClient(url, key);
-    console.log('[Realtime] Supabase client dibuat.');
-    return _supabaseClient;
-}
-
-/**
- * Mulai subscribe ke perubahan tabel transactions & settings via Realtime.
- * Otomatis dipanggil setelah login/init berhasil.
- */
-function startRealtimeSync() {
-    const client = initSupabaseClient();
-    if (!client) return;
-
-    // Hindari subscribe ganda
-    if (_realtimeChannel) {
-        client.removeChannel(_realtimeChannel);
-        _realtimeChannel = null;
-    }
-
-    _realtimeChannel = client
-        .channel('sinarkeu-realtime')
-        // Pantau tabel transactions — filter buku aktif
-        .on('postgres_changes',
-            { event: '*', schema: 'public', table: 'transactions' },
-            (payload) => {
-                console.log('[Realtime] Perubahan transactions:', payload.eventType);
-                handleRealtimeTransaction(payload);
-            }
-        )
-        // Pantau tabel settings (buku baru, telegram, budget)
-        .on('postgres_changes',
-            { event: '*', schema: 'public', table: 'settings' },
-            (payload) => {
-                console.log('[Realtime] Perubahan settings:', payload.eventType, payload.new?.key);
-                handleRealtimeSettings(payload);
-            }
-        )
-        .subscribe((status) => {
-            console.log('[Realtime] Status:', status);
-            updateRealtimeBadge(status);
-        });
-}
-
-function stopRealtimeSync() {
-    if (_supabaseClient && _realtimeChannel) {
-        _supabaseClient.removeChannel(_realtimeChannel);
-        _realtimeChannel = null;
-        console.log('[Realtime] Channel dihentikan.');
-    }
-}
-
-/** Handler perubahan tabel transactions */
-async function handleRealtimeTransaction(payload) {
-    const rec = payload.new || payload.old;
-    // Hanya proses kalau relevan dengan buku aktif
-    if (rec && rec.book_id && rec.book_id !== currentBookId) return;
-
-    // Pull ulang transaksi buku aktif secara senyap
-    await pullFromCloudSilently();
-    showAutoSyncToast('⚡ Transaksi diperbarui secara real-time');
-}
-
-/** Handler perubahan tabel settings */
-async function handleRealtimeSettings(payload) {
-    const rec = payload.new;
-    if (!rec) return;
-
-    if (rec.key === 'books') {
-        // Ada perubahan daftar buku
-        const prevBooksJson = JSON.stringify(books);
-        await pullAllSettings();
-        if (JSON.stringify(books) !== prevBooksJson) {
-            updateBookSelectDropdown();
-            updateTgStatusBadge();
-            showAutoSyncToast('⚡ Daftar buku diperbarui secara real-time');
-        }
-    } else if (rec.key === 'telegram_config') {
-        await pullAllSettings();
-        updateTgStatusBadge();
-        showAutoSyncToast('⚡ Setelan Telegram diperbarui secara real-time');
-    } else if (rec.key === 'budgets') {
-        await pullAllSettings();
-        budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
-        renderBudget();
-        showAutoSyncToast('⚡ Anggaran diperbarui secara real-time');
-    }
-}
-
-/** Update badge status realtime di header */
-function updateRealtimeBadge(status) {
-    const el = document.getElementById('autoSyncBadge');
-    if (!el) return;
-    if (status === 'SUBSCRIBED') {
-        el.innerText = '⚡ Real-time aktif';
-        el.style.color = '#00875a';
-        // Setelah realtime aktif, kurangi interval polling jadi 2 menit (fallback saja)
-        if (_autoSyncInterval) {
-            clearInterval(_autoSyncInterval);
-            _autoSyncInterval = setInterval(async () => {
-                if (!getCloudUrl() || !getSupabaseKey()) return;
-                await pullFromCloudSilently();
-            }, 120 * 1000); // fallback polling 2 menit
-        }
-    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        el.innerText = '⟳ Realtime error — fallback polling aktif';
-        el.style.color = '#cc7b00';
-        // Pastikan polling 30 detik tetap jalan sebagai fallback
-        startAutoSync();
-    } else {
-        el.innerText = '⟳ Menghubungkan real-time...';
-        el.style.color = '#aaa';
-    }
-}
-
-// ==================== END SUPABASE REALTIME ====================
-
-
-function updateAutoSyncBadge() {
-    const el = document.getElementById('autoSyncBadge');
-    if (!el) return;
-    const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    el.innerText = `⟳ Sync otomatis aktif · ${now}`;
-    el.style.color = '#00875a';
-}
-
-let _autoSyncToastTimer = null;
-function showAutoSyncToast(msg) {
-    // Gunakan toast yang sudah ada jika ada, atau buat mini notif di badge
-    const el = document.getElementById('autoSyncBadge');
-    if (!el) return;
-    el.innerText = msg;
-    el.style.color = '#cc7b00';
-    if (_autoSyncToastTimer) clearTimeout(_autoSyncToastTimer);
-    _autoSyncToastTimer = setTimeout(updateAutoSyncBadge, 3000);
-}
-
-function getCloudUrl() { return globalSupabaseUrl || ''; }
-function getSupabaseKey() { return globalSupabaseKey || ''; }
-
-/** Kunci app: hapus session, tampilkan lock screen */
-function lockApp() {
-    stopRealtimeSync();
-    stopAutoSync();
-    sessionStorage.removeItem('sk_session_unlocked');
-    _sessionCryptoKey = null;
-    globalSupabaseUrl = '';
-    globalSupabaseKey = '';
-    document.getElementById('lockPasswordInput').value = '';
-    clearLockError();
-    showPasswordLock();
-}
-
-/** Ganti password: verifikasi lama, derive baru, re-enkripsi */
-async function changePassword() {
-    const oldPwd  = document.getElementById('changePwdOld').value;
-    const newPwd  = document.getElementById('changePwdNew').value;
-    const newPwd2 = document.getElementById('changePwdNew2').value;
-    const status  = document.getElementById('changePwdStatus');
-
-    status.style.color = '#de350b';
-    if (!oldPwd || !newPwd || !newPwd2) { status.innerText = '❌ Semua field wajib diisi.'; return; }
-    if (newPwd.length < 6) { status.innerText = '❌ Password baru minimal 6 karakter.'; return; }
-    if (newPwd !== newPwd2) { status.innerText = '❌ Konfirmasi tidak cocok.'; return; }
-
-    status.style.color = '#cc7b00';
-    status.innerText = '⏳ Memverifikasi...';
-
-    // Verifikasi password lama
-    const saltB64 = localStorage.getItem(CRYPTO_SALT_KEY);
-    if (!saltB64) { status.style.color='#de350b'; status.innerText='❌ Data enkripsi tidak ditemukan.'; return; }
-    const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
-
-    let oldKey;
-    try {
-        oldKey = await deriveKey(oldPwd, salt);
-        const plain = await decryptStr(oldKey, localStorage.getItem(CRYPTO_CHECK_KEY));
-        if (plain !== SENTINEL_PLAIN) throw new Error('wrong');
-    } catch {
-        status.style.color = '#de350b';
-        status.innerText = '❌ Password lama salah.';
-        return;
-    }
-
-    // Decrypt URL & Key dengan password lama
-    let url, apiKey;
-    try {
-        url    = await decryptStr(oldKey, localStorage.getItem(CRYPTO_URL_KEY));
-        apiKey = await decryptStr(oldKey, localStorage.getItem(CRYPTO_AKEY_KEY));
-    } catch {
-        status.style.color = '#de350b';
-        status.innerText = '❌ Gagal membaca data terenkripsi.';
-        return;
-    }
-
-    // Setup ulang dengan password baru
-    status.innerText = '⏳ Mengenkripsi ulang...';
-    await setupNewPassword(newPwd, url, apiKey);
-
-    status.style.color = '#00875a';
-    status.innerText = '✅ Password berhasil diganti!';
-    document.getElementById('changePwdOld').value  = '';
-    document.getElementById('changePwdNew').value  = '';
-    document.getElementById('changePwdNew2').value = '';
-    showToast('Password berhasil diganti 🔐', 'success');
-}
-
-function updateCloudIndicator() {
-    let wrapper = document.getElementById('syncStatusWrapper');
-    let tag = document.getElementById('syncStatusTag');
-    if(getCloudUrl() && getSupabaseKey()) {
-        wrapper.className = "sync-status-container online";
-        tag.innerText = "☁️ SUPABASE ON";
-    } else {
-        wrapper.className = "sync-status-container offline";
-        tag.innerText = "📴 CLOUD OFF";
-    }
-}
-
-// ==================== SETUP AWAL SUPABASE ====================
-function openSetupModal() {
-    let st = document.getElementById('setupStatusMsg');
-    st.className = 'setup-status';
-    st.innerText = '';
-    document.getElementById('setupUrlInput').value  = getCloudUrl();
-    document.getElementById('setupKeyInput').value  = getSupabaseKey();
-    document.getElementById('setupConnectBtn').disabled = false;
-    document.getElementById('setupConnectBtn').innerText = '🔌 Hubungkan & Mulai';
-    openModal('firstTimeSetupModal');
-}
-
-async function doFirstTimeSetup() {
-    const url  = document.getElementById('setupUrlInput').value.trim();
-    const key  = document.getElementById('setupKeyInput').value.trim();
-    const pwd  = document.getElementById('setupPwdInput').value;
-    const pwd2 = document.getElementById('setupPwdConfirm').value;
-    const st   = document.getElementById('setupStatusMsg');
-    const btn  = document.getElementById('setupConnectBtn');
-
-    if (!url || !key) {
-        st.className = 'setup-status error';
-        st.innerText = '❌ Supabase URL dan Anon Key wajib diisi!';
-        return;
-    }
-    if (!pwd || pwd.length < 6) {
-        st.className = 'setup-status error';
-        st.innerText = '❌ Password minimal 6 karakter!';
-        return;
-    }
-    if (pwd !== pwd2) {
-        st.className = 'setup-status error';
-        st.innerText = '❌ Konfirmasi password tidak cocok!';
-        return;
-    }
-
-    btn.disabled = true;
-    btn.innerText = '⏳ Mengetes koneksi...';
-    st.className = 'setup-status warning';
-    st.innerText = '⏳ Menghubungkan ke Supabase...';
-
-    // Simpan sementara untuk test koneksi
-    globalSupabaseUrl = url;
-    globalSupabaseKey = key;
-
-    const test = await callSupabaseAPI('transactions', 'GET', null, '?limit=1');
-
-    if (test === null) {
-        globalSupabaseUrl = '';
-        globalSupabaseKey = '';
-        btn.disabled = false;
-        btn.innerText = '🔐 Simpan & Mulai';
-        st.className = 'setup-status error';
-        st.innerText = '❌ Koneksi gagal! Periksa kembali URL dan Anon Key Anda.';
-        return;
-    }
-
-    // Koneksi berhasil — enkripsi & simpan dengan password
-    st.innerText = '⏳ Mengenkripsi kredensial...';
-    await setupNewPassword(pwd, url, key);
-
-    // Hapus data plaintext lama jika ada
-    localStorage.removeItem('sk_supabase_url_global');
-    localStorage.removeItem('sk_supabase_key_global');
-    localStorage.removeItem('sk_cloud_urls');
-    localStorage.removeItem('sk_supabase_keys');
-
-    updateCloudIndicator();
-    st.className = 'setup-status success';
-    st.innerText = '✅ Berhasil! Kredensial terenkripsi dengan password Anda.';
-    btn.innerText = '✅ Tersambung';
-
-    setTimeout(async () => {
-        closeModal('firstTimeSetupModal');
-        showToast('Setup selesai! Data terenkripsi aman 🔐', 'success');
-        await continueAppInit();
-    }, 900);
-}
-
-function loadTransactions() {
-    let stored = localStorage.getItem('sk_txs_' + currentBookId);
-    txs = stored ? JSON.parse(stored) : [];
-    txs.sort((a,b) => new Date(b.date) - new Date(a.date));
-    render();
-}
-
-function saveTransactions() {
-    localStorage.setItem('sk_txs_' + currentBookId, JSON.stringify(txs));
-    render();
-    // Jalankan push cloud secara asynchronous agar tidak memblokir UI lokal
-    pushToCloud();
-}
-
-function updateBookSelectDropdown() {
-    let sel = document.getElementById('currentBookSelect');
-    sel.innerHTML = '';
-    books.forEach(b => {
-        let opt = document.createElement('option');
-        opt.value = b.id; opt.innerText = b.name;
-        if(b.id === currentBookId) opt.selected = true;
-        sel.appendChild(opt);
-    });
-}
-
-// ==================== SINKRONISASI SUPABASE (MENGGANTIKAN GOOGLE SHEETS) ====================
-
-// Fungsi internal untuk memanggil REST API Supabase
+// ==================== SUPABASE API ====================
 async function callSupabaseAPI(table, method, body = null, queryString = '') {
     const baseUrl = getCloudUrl();
     const apiKey = getSupabaseKey();
@@ -3425,13 +2216,10 @@ async function callSupabaseAPI(table, method, body = null, queryString = '') {
         'apikey': apiKey,
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates,return=representation' // upsert + konfirmasi respons
+        'Prefer': 'resolution=merge-duplicates,return=representation'
     };
 
-    const config = {
-        method: method,
-        headers: headers
-    };
+    const config = { method: method, headers: headers };
     if (body) config.body = JSON.stringify(body);
 
     try {
@@ -3440,7 +2228,6 @@ async function callSupabaseAPI(table, method, body = null, queryString = '') {
             const errText = await res.text();
             throw new Error(errText || `HTTP error! status: ${res.status}`);
         }
-        // DELETE atau UPSERT terkadang merespon tanpa body data jika prefer tidak diatur ke return=representation
         const text = await res.text();
         return text ? JSON.parse(text) : true;
     } catch (e) {
@@ -3449,14 +2236,7 @@ async function callSupabaseAPI(table, method, body = null, queryString = '') {
     }
 }
 
-// ==================== SINKRONISASI SETELAN KE SUPABASE (settings table) ====================
-
-/**
- * Push satu key setelan ke tabel `settings` di Supabase.
- * @param {string} key      - Nama key, misal: 'books', 'budgets', 'telegram_config'
- * @param {any}    value    - Nilai setelan (akan di-JSON.stringify)
- * @param {string} bookId   - book_id untuk row; gunakan 'global' untuk setelan lintas buku
- */
+// ==================== PUSH SETTINGS ====================
 async function pushSetting(key, value, bookId) {
     if (!getCloudUrl() || !getSupabaseKey()) return;
     const payload = [{
@@ -3467,129 +2247,53 @@ async function pushSetting(key, value, bookId) {
     }];
     const result = await callSupabaseAPI('settings', 'POST', payload);
     if (result === null) {
-        console.warn(`[pushSetting] Gagal push key="${key}" book_id="${bookId || currentBookId}"`);
-    } else {
-        console.log(`[pushSetting] OK key="${key}" book_id="${bookId || currentBookId}"`);
+        console.warn(`[pushSetting] Gagal push key="${key}"`);
     }
 }
 
-/**
- * Pull semua setelan dari tabel `settings` dan override localStorage.
- * Dipanggil di initApp() setelah koneksi Supabase berhasil.
- */
-async function pullAllSettings() {
-    if (!getCloudUrl() || !getSupabaseKey()) return;
-
-    // ── PASS 1: Ambil hanya key global (books + telegram_config) tanpa filter book_id ──
-    // Ini penting untuk user baru yang belum tahu buku apa saja yang ada di cloud.
-    const passOneRows = await callSupabaseAPI(
-        'settings', 'GET', null,
-        `?book_id=eq.global&order=updated_at.desc`
-    );
-
-    if (passOneRows && Array.isArray(passOneRows)) {
-        for (const row of passOneRows) {
-            let parsed;
-            try { parsed = JSON.parse(row.value); } catch { continue; }
-
-            // Merge daftar buku dari cloud ke lokal
-            if (row.key === 'books' && Array.isArray(parsed) && parsed.length > 0) {
-                const localIds = new Set(books.map(b => b.id));
-                let merged = [...books];
-                parsed.forEach(cb => {
-                    if (!localIds.has(cb.id)) merged.push(cb);
-                    else {
-                        const idx = merged.findIndex(b => b.id === cb.id);
-                        if (idx !== -1) merged[idx].name = cb.name;
-                    }
-                });
-                books = merged;
-                localStorage.setItem('sk_books', JSON.stringify(books));
-
-                // Pastikan currentBookId masih valid setelah merge
-                if (!books.find(b => b.id === currentBookId)) {
-                    currentBookId = books[0].id;
-                    localStorage.setItem('sk_current_book_id', currentBookId);
-                }
-                updateBookSelectDropdown();
-            }
-
-            // Konfigurasi Telegram
-            if (row.key === 'telegram_config') {
-                if (parsed.token) localStorage.setItem('sk_tg_token', parsed.token);
-                else localStorage.removeItem('sk_tg_token');
-                if (parsed.edgeUrl) localStorage.setItem('sk_tg_edge_url', parsed.edgeUrl);
-                else localStorage.removeItem('sk_tg_edge_url');
-                if (parsed.chatId) localStorage.setItem('sk_tg_chatid', parsed.chatId);
-                else localStorage.removeItem('sk_tg_chatid');
-            }
-        }
-    } else {
-        console.warn('[pullAllSettings] Pass 1 gagal — skip pass 2.');
-        return;
-    }
-
-    // ── PASS 2: Sekarang books sudah lengkap — ambil budgets untuk semua buku ──
-    if (books.length === 0) {
-        console.log('[pullAllSettings] Tidak ada buku ditemukan, selesai.');
-        updateSettingsSyncStatus('pull');
-        return;
-    }
-
-    const allBookIds = books.map(b => `"${b.id}"`).join(',');
-    const passTwoRows = await callSupabaseAPI(
-        'settings', 'GET', null,
-        `?key=eq.budgets&book_id=in.(${allBookIds})&order=updated_at.desc`
-    );
-
-    let budgetCount = 0;
-    if (passTwoRows && Array.isArray(passTwoRows)) {
-        // Deduplicate per book_id (ambil paling baru — sudah diurutkan desc)
-        const seenBooks = new Set();
-        for (const row of passTwoRows) {
-            if (seenBooks.has(row.book_id)) continue;
-            seenBooks.add(row.book_id);
-            let parsed;
-            try { parsed = JSON.parse(row.value); } catch { continue; }
-            localStorage.setItem('sk_budgets_' + row.book_id, JSON.stringify(parsed));
-            if (row.book_id === currentBookId) budgets = parsed;
-            budgetCount++;
-        }
-    }
-
-    console.log(`[pullAllSettings] Selesai — ${books.length} buku, ${budgetCount} anggaran dimuat.`);
-    updateSettingsSyncStatus('pull');
-}
-
-// Push setelan books (global) ke Supabase
 async function pushSettingBooks() {
-    await pushSetting('books', books, 'global');
+    if (!getCloudUrl() || !getSupabaseKey()) return;
+    
+    const payload = [{
+        book_id: 'global',
+        key: 'books',
+        value: JSON.stringify(books),
+        updated_at: new Date().toISOString()
+    }];
+    
+    let retries = 3;
+    let success = false;
+    
+    while (retries > 0 && !success) {
+        const result = await callSupabaseAPI('settings', 'POST', payload);
+        if (result !== null) {
+            success = true;
+            console.log('[Sync] Buku berhasil disimpan ke cloud');
+        } else {
+            retries--;
+            if (retries > 0) await new Promise(r => setTimeout(r, 1000));
+        }
+    }
+    
+    if (!success) {
+        console.warn('[Sync] Gagal menyimpan daftar buku ke cloud');
+    }
+    
     updateSettingsSyncStatus('push');
 }
 
-// Push setelan budgets buku aktif ke Supabase
 async function pushSettingBudgets() {
     const bud = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
     await pushSetting('budgets', bud, currentBookId);
     updateSettingsSyncStatus('push');
 }
 
-// Push konfigurasi Telegram (global) ke Supabase
 async function pushSettingTelegram() {
     const cfg = getTgConfig();
     await pushSetting('telegram_config', { token: cfg.token, edgeUrl: cfg.edgeUrl, chatId: cfg.chatId }, 'global');
     updateSettingsSyncStatus('push');
 }
 
-// Push setelan budgets semua buku ke Supabase (dipakai saat buku dihapus/ditambah)
-async function pushSettingAllBudgets() {
-    for (const book of books) {
-        const bud = JSON.parse(localStorage.getItem('sk_budgets_' + book.id) || '{}');
-        await pushSetting('budgets', bud, book.id);
-    }
-}
-
-// Update label status sinkronisasi setelan di panel book manager
 function updateSettingsSyncStatus(direction) {
     const el = document.getElementById('settingsSyncStatus');
     if (!el) return;
@@ -3598,13 +2302,251 @@ function updateSettingsSyncStatus(direction) {
     el.innerText = `Terakhir ${label}: ${now}`;
 }
 
-// ==================== END SINKRONISASI SETELAN ====================
+// ==================== PULL SETTINGS (DIPERBAIKI) ====================
+async function pullAllSettings() {
+    if (!getCloudUrl() || !getSupabaseKey()) return;
 
-// Push seluruh transaksi lokal saat ini ke cloud (Menggunakan Upsert relasional)
+    const allRows = await callSupabaseAPI('settings', 'GET', null, '?order=updated_at.desc');
+    
+    if (allRows && Array.isArray(allRows)) {
+        let booksUpdated = false;
+        let telegramUpdated = false;
+        
+        for (const row of allRows) {
+            let parsed;
+            try { parsed = JSON.parse(row.value); } catch { continue; }
+
+            if (row.key === 'books' && Array.isArray(parsed) && parsed.length > 0) {
+                const localIds = new Set(books.map(b => b.id));
+                let merged = [...books];
+                let changed = false;
+                
+                parsed.forEach(cb => {
+                    if (!localIds.has(cb.id)) {
+                        merged.push(cb);
+                        changed = true;
+                        console.log('[Sync] Buku baru dari cloud:', cb.name);
+                    } else {
+                        const idx = merged.findIndex(b => b.id === cb.id);
+                        if (idx !== -1 && merged[idx].name !== cb.name) {
+                            merged[idx].name = cb.name;
+                            changed = true;
+                        }
+                    }
+                });
+                
+                if (changed) {
+                    books = merged;
+                    localStorage.setItem('sk_books', JSON.stringify(books));
+                    booksUpdated = true;
+                    
+                    if (!books.find(b => b.id === currentBookId) && books.length > 0) {
+                        currentBookId = books[0].id;
+                        localStorage.setItem('sk_current_book_id', currentBookId);
+                    }
+                }
+            }
+
+            if (row.key === 'telegram_config') {
+                const oldToken = localStorage.getItem('sk_tg_token');
+                if (parsed.token) localStorage.setItem('sk_tg_token', parsed.token);
+                else localStorage.removeItem('sk_tg_token');
+                if (parsed.edgeUrl) localStorage.setItem('sk_tg_edge_url', parsed.edgeUrl);
+                else localStorage.removeItem('sk_tg_edge_url');
+                if (parsed.chatId) localStorage.setItem('sk_tg_chatid', parsed.chatId);
+                else localStorage.removeItem('sk_tg_chatid');
+                
+                if (oldToken !== parsed.token) telegramUpdated = true;
+            }
+            
+            if (row.key === 'budgets') {
+                localStorage.setItem('sk_budgets_' + row.book_id, JSON.stringify(parsed));
+                if (row.book_id === currentBookId) budgets = parsed;
+            }
+        }
+        
+        if (booksUpdated) {
+            updateBookSelectDropdown();
+            showToast('📚 Daftar buku diperbarui dari cloud', 'info');
+        }
+        if (telegramUpdated) {
+            updateTgStatusBadge();
+        }
+    }
+    
+    updateSettingsSyncStatus('pull');
+}
+
+// ==================== PULL TRANSACTIONS (DIPERBAIKI) ====================
+async function pullFromCloudSilently() {
+    if (!getCloudUrl() || !getSupabaseKey()) return;
+    
+    let cloudData = await callSupabaseAPI('transactions', 'GET', null, `?book_id=eq.${currentBookId}&order=date.desc`);
+    
+    if (cloudData && Array.isArray(cloudData)) {
+        const cloudMapped = cloudData.map(c => ({
+            id: c.id,
+            type: c.type,
+            amount: Number(c.amount),
+            category: c.category,
+            description: c.description,
+            date: c.date,
+            attachment: c.attachment
+        }));
+
+        const cloudById = new Map(cloudMapped.map(c => [c.id, c]));
+        const currentLocal = [...txs];
+        const localOnlyTxs = currentLocal.filter(local => !cloudById.has(local.id));
+        
+        const newTxs = [...cloudMapped, ...localOnlyTxs];
+        newTxs.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        const oldCount = txs.length;
+        
+        if (oldCount !== newTxs.length) {
+            txs = newTxs;
+            localStorage.setItem('sk_txs_' + currentBookId, JSON.stringify(txs));
+            render();
+            
+            const addedCount = newTxs.length - oldCount;
+            if (addedCount > 0) {
+                showToast(`📥 ${addedCount} transaksi baru dari cloud`, 'info');
+            } else if (newTxs.length !== oldCount) {
+                showToast(`🔄 Transaksi diperbarui dari cloud`, 'info');
+            }
+        }
+
+        if (localOnlyTxs.length > 0) {
+            console.log(`[Sync] Mengirim ${localOnlyTxs.length} transaksi lokal ke cloud...`);
+            await pushToCloud();
+        }
+    }
+    
+    refreshLogsFromCloud();
+}
+
+// ==================== PULL ALL BOOKS (DIPERBAIKI) ====================
+async function pullAllBooksFromCloud() {
+    if (!getCloudUrl() || !getSupabaseKey()) return;
+    
+    await pullAllSettings();
+    
+    const bookIds = books.map(b => b.id);
+    if (bookIds.length === 0) return;
+
+    let anyChange = false;
+
+    for (const bookId of bookIds) {
+        let cloudData = await callSupabaseAPI('transactions', 'GET', null, `?book_id=eq.${bookId}&order=date.desc`);
+        if (!cloudData || !Array.isArray(cloudData)) continue;
+
+        const cloudMapped = cloudData.map(c => ({
+            id: c.id,
+            type: c.type,
+            amount: Number(c.amount),
+            category: c.category,
+            description: c.description,
+            date: c.date,
+            attachment: c.attachment
+        }));
+
+        const localStored = JSON.parse(localStorage.getItem('sk_txs_' + bookId) || '[]');
+        const cloudById = new Map(cloudMapped.map(c => [c.id, c]));
+        const localOnly = localStored.filter(t => !cloudById.has(t.id));
+        const merged = [...cloudMapped, ...localOnly];
+        
+        if (merged.length !== localStored.length) {
+            anyChange = true;
+        }
+        
+        merged.sort((a, b) => new Date(b.date) - new Date(a.date));
+        localStorage.setItem('sk_txs_' + bookId, JSON.stringify(merged));
+
+        if (bookId === currentBookId) {
+            const oldCount = txs.length;
+            txs = merged;
+            if (oldCount !== txs.length) {
+                render();
+            }
+        }
+        
+        if (localOnly.length > 0) {
+            const savedBookId = currentBookId;
+            currentBookId = bookId;
+            await pushToCloud();
+            currentBookId = savedBookId;
+        }
+    }
+    
+    if (anyChange && currentBookId) {
+        render();
+    }
+    
+    console.log('[Sync] Selesai pull semua buku —', bookIds.length, 'buku diproses');
+}
+
+// ==================== FUNGSI BARU UNTUK SINKRONISASI ====================
+async function forceFullSync() {
+    showToast('🔄 Memulai sinkronisasi penuh...', 'info');
+    
+    stopAutoSync();
+    stopRealtimeSync();
+    
+    try {
+        await pullAllSettings();
+        await pullAllBooksFromCloud();
+        updateBookSelectDropdown();
+        updateTgStatusBadge();
+        budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
+        renderBudget();
+        showToast('✅ Sinkronisasi selesai!', 'success');
+        await addCloudLog('SISTEM', 'Sinkronisasi penuh manual dari perangkat ' + deviceId);
+    } catch (e) {
+        console.error('[Sync] Gagal sinkronisasi:', e);
+        showToast('❌ Gagal sinkronisasi: ' + e.message, 'error');
+    } finally {
+        startAutoSync();
+        startRealtimeSync();
+    }
+}
+
+function addSyncButton() {
+    const bookSelector = document.querySelector('.book-selector');
+    if (bookSelector && !document.getElementById('manualSyncBtn')) {
+        const syncBtn = document.createElement('button');
+        syncBtn.id = 'manualSyncBtn';
+        syncBtn.className = 'manage-books-btn';
+        syncBtn.style.background = '#00875a';
+        syncBtn.innerHTML = '🔄 Sinkronisasi';
+        syncBtn.onclick = forceFullSync;
+        syncBtn.title = 'Sinkronisasi manual semua data dari cloud';
+        bookSelector.appendChild(syncBtn);
+    }
+}
+
+function startBookCheck() {
+    if (_bookCheckInterval) clearInterval(_bookCheckInterval);
+    
+    _bookCheckInterval = setInterval(async () => {
+        if (!getCloudUrl() || !getSupabaseKey()) return;
+        if (document.hidden) return;
+        
+        const prevBooksJson = JSON.stringify(books);
+        await pullAllSettings();
+        
+        if (JSON.stringify(books) !== prevBooksJson) {
+            console.log('[Sync] Buku berubah, refresh UI...');
+            updateBookSelectDropdown();
+            render();
+            showToast('📚 Daftar buku diperbarui', 'info');
+        }
+    }, 5000);
+}
+
+// ==================== PUSH TO CLOUD ====================
 async function pushToCloud() {
     if (!getCloudUrl() || !getSupabaseKey()) return;
 
-    // Persiapkan payload array
     const payload = txs.map(t => ({
         id: t.id,
         book_id: currentBookId,
@@ -3627,9 +2569,8 @@ async function pushToCloud() {
     }
 }
 
-// Catat log audit ke tabel Supabase secara independen
+// ==================== ADD CLOUD LOG ====================
 async function addCloudLog(actionType, detailsText) {
-    // Catat ke local storage terlebih dahulu agar log tetap aman secara luring
     let localLogs = JSON.parse(localStorage.getItem('sk_logs_' + currentBookId) || '[]');
     let logObj = {
         timestamp: new Date().toISOString(),
@@ -3655,145 +2596,7 @@ async function addCloudLog(actionType, detailsText) {
     await callSupabaseAPI('audit_logs', 'POST', logPayload);
 }
 
-// Ambil transaksi terbaru secara senyap dari cloud
-// Menggunakan strategi MERGE: data lokal yang belum ada di cloud tetap dipertahankan,
-// data cloud yang lebih baru akan menimpa data lokal berdasarkan id yang sama.
-async function pullFromCloudSilently() {
-    if (!getCloudUrl() || !getSupabaseKey()) return;
-    
-    // Tarik transaksi berdasarkan book_id saat ini
-    let cloudData = await callSupabaseAPI('transactions', 'GET', null, `?book_id=eq.${currentBookId}`);
-    if (cloudData && Array.isArray(cloudData)) {
-        // Map struktur PostgreSQL ke format lokal
-        const cloudMapped = cloudData.map(c => ({
-            id: c.id,
-            type: c.type,
-            amount: Number(c.amount),
-            category: c.category,
-            description: c.description,
-            date: c.date,
-            attachment: c.attachment
-        }));
-
-        // Buat map dari cloud berdasarkan id untuk lookup cepat
-        const cloudById = new Map(cloudMapped.map(c => [c.id, c]));
-
-        // Pertahankan transaksi lokal yang ID-nya belum ada di cloud
-        // (artinya belum sempat di-push, misal dibuat saat offline)
-        const localOnlyTxs = txs.filter(local => !cloudById.has(local.id));
-
-        // Gabungkan: semua data cloud + data lokal yang belum tersinkron
-        txs = [...cloudMapped, ...localOnlyTxs];
-        txs.sort((a,b) => new Date(b.date) - new Date(a.date));
-        localStorage.setItem('sk_txs_' + currentBookId, JSON.stringify(txs));
-
-        // Jika ada data lokal yang belum di-cloud, push sekarang agar tersinkron
-        if (localOnlyTxs.length > 0) {
-            console.log(`[pullFromCloudSilently] Ditemukan ${localOnlyTxs.length} transaksi lokal belum tersinkron, mendorong ke cloud...`);
-            pushToCloud();
-        }
-
-        render();
-    }
-    
-    // Tarik log audit terbaru secara bersamaan
-    refreshLogsFromCloud();
-}
-
-// Pull transaksi dari cloud untuk SEMUA buku (dipakai saat init / device baru)
-async function pullAllBooksFromCloud() {
-    if (!getCloudUrl() || !getSupabaseKey()) return;
-    // Pastikan semua book_id valid dari daftar buku yang sudah di-merge
-    const bookIds = books.map(b => b.id);
-    if (bookIds.length === 0) return;
-
-    for (const bookId of bookIds) {
-        let cloudData = await callSupabaseAPI('transactions', 'GET', null, '?book_id=eq.' + bookId);
-        if (!cloudData || !Array.isArray(cloudData)) continue;
-
-        const cloudMapped = cloudData.map(c => ({
-            id: c.id,
-            type: c.type,
-            amount: Number(c.amount),
-            category: c.category,
-            description: c.description,
-            date: c.date,
-            attachment: c.attachment
-        }));
-
-        // Merge dengan data lokal yang belum tersinkron
-        const localStored = JSON.parse(localStorage.getItem('sk_txs_' + bookId) || '[]');
-        const cloudById = new Map(cloudMapped.map(c => [c.id, c]));
-        const localOnly = localStored.filter(t => !cloudById.has(t.id));
-        const merged = [...cloudMapped, ...localOnly];
-        merged.sort((a, b) => new Date(b.date) - new Date(a.date));
-        localStorage.setItem('sk_txs_' + bookId, JSON.stringify(merged));
-
-        // Jika ini buku aktif, update state txs dan render
-        if (bookId === currentBookId) {
-            txs = merged;
-            render();
-            // Push data lokal yang belum ada di cloud
-            if (localOnly.length > 0) pushToCloud();
-        } else if (localOnly.length > 0) {
-            // Push data offline buku lain ke cloud juga
-            const savedBookId = currentBookId;
-            currentBookId = bookId;
-            await pushToCloud();
-            currentBookId = savedBookId;
-        }
-    }
-
-    // Refresh log dari cloud setelah semua buku selesai
-    refreshLogsFromCloud();
-    console.log('[pullAllBooksFromCloud] Selesai — ' + bookIds.length + ' buku ditarik dari cloud.');
-}
-
-// Tombol manual tes koneksi database di panel kelola buku
-async function testCloudConnection() {
-    let urlInput = document.getElementById('supabaseUrlInput').value.trim();
-    let keyInput = document.getElementById('supabaseKeyInput').value.trim();
-    let statusDiv = document.getElementById('connectionStatus');
-
-    if(!urlInput || !keyInput) {
-        statusDiv.innerHTML = '<div class="connection-status error">Gagal: Harap isi URL & Anon Key!</div>';
-        return;
-    }
-
-    statusDiv.innerHTML = '<div class="connection-status testing">Sedang mengetes koneksi ke Supabase...</div>';
-
-    // Setel sementara untuk testing endpoint
-    globalSupabaseUrl = urlInput;
-    globalSupabaseKey = keyInput;
-
-    // Lakukan pengetesan select ringkas ke tabel transactions dengan batas baris terendah
-    const testFetch = await callSupabaseAPI('transactions', 'GET', null, '?limit=1');
-    
-    if (testFetch !== null) {
-        // Simpan terenkripsi (update dengan session key yang sudah aktif)
-        await reEncryptCredentials(globalSupabaseUrl, globalSupabaseKey);
-        // Hapus plaintext lama jika masih ada
-        localStorage.removeItem('sk_supabase_url_global');
-        localStorage.removeItem('sk_supabase_key_global');
-        statusDiv.innerHTML = '<div class="connection-status success">Sukses! Koneksi terenkripsi & berlaku untuk semua buku. Memulai unduh data...</div>';
-        showToast("Supabase terhubung & terenkripsi!", "success");
-        updateCloudIndicator();
-        await pullAllSettings();
-        updateBookSelectDropdown();
-        budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
-        updateTgStatusBadge();
-        await pullAllBooksFromCloud();
-    } else {
-        // Kembalikan ke nilai kosong jika gagal terkoneksi
-        globalSupabaseUrl = '';
-        globalSupabaseKey = '';
-        statusDiv.innerHTML = '<div class="connection-status error">Koneksi Gagal: Silakan periksa URL, Key, atau Skema Tabel SQL Anda!</div>';
-        showToast("Koneksi cloud gagal!", "error");
-        updateCloudIndicator();
-    }
-}
-
-// Tarik Log audit secara eksplisit dari Supabase
+// ==================== REFRESH LOGS ====================
 async function refreshLogsFromCloud() {
     let area = document.getElementById('logSummaryArea');
     if (!getCloudUrl() || !getSupabaseKey()) {
@@ -3802,7 +2605,6 @@ async function refreshLogsFromCloud() {
     }
     
     area.innerText = "Memuat log dari cloud...";
-    // Urutkan berdasarkan timestamp menurun, batasi 30 log teratas
     let cloudLogs = await callSupabaseAPI('audit_logs', 'GET', null, `?book_id=eq.${currentBookId}&order=timestamp.desc&limit=30`);
     
     if (cloudLogs && Array.isArray(cloudLogs)) {
@@ -3846,7 +2648,21 @@ async function testAddLog() {
     showToast("Log pengujian terkirim!");
 }
 
-// ==================== RENDERING UI & TRANSAKSI LOKAL ====================
+// ==================== LOAD & SAVE TRANSACTIONS ====================
+function loadTransactions() {
+    let stored = localStorage.getItem('sk_txs_' + currentBookId);
+    txs = stored ? JSON.parse(stored) : [];
+    txs.sort((a,b) => new Date(b.date) - new Date(a.date));
+    render();
+}
+
+function saveTransactions() {
+    localStorage.setItem('sk_txs_' + currentBookId, JSON.stringify(txs));
+    render();
+    pushToCloud();
+}
+
+// ==================== RENDER ====================
 function render() {
     let body = document.getElementById('transactionTableBody');
     body.innerHTML = '';
@@ -3885,10 +2701,6 @@ function render() {
     document.getElementById('statIncome').innerText = rp(totalInc);
     document.getElementById('statExpense').innerText = rp(totalExp);
 
-    let runningBalance = currentBalance;
-    
-    // Jalankan kalkulasi saldo bertingkat dari urutan waktu terlama ke terbaru
-    // Hitung balanceMap dari SEMUA txs (tidak difilter) supaya saldo akurat saat filter aktif
     let allSorted = [...txs].sort((a,b) => new Date(a.date) - new Date(b.date));
     let balanceMap = {};
     let tempBal = 0;
@@ -3906,9 +2718,7 @@ function render() {
         return;
     }
 
-    // ---- PAGINATION ----
     const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-    // Clamp currentPage jika filter berubah membuat halaman sekarang melebihi total
     if (currentPage > totalPages) currentPage = totalPages;
     if (currentPage < 1) currentPage = 1;
 
@@ -3930,7 +2740,6 @@ function render() {
             attCell = `<span class="attachment-link" onclick="viewAttachment('${t.id}')">🖼️</span>`;
         }
 
-        // Nomor urut global (bukan per halaman)
         const globalIndex = startIdx + index + 1;
 
         tr.innerHTML = `
@@ -3968,16 +2777,13 @@ function renderPagination(totalCount, totalPages) {
 
     controls.innerHTML = '';
 
-    // Tombol Prev
     const prevBtn = document.createElement('button');
     prevBtn.className = 'page-btn';
     prevBtn.textContent = '‹';
-    prevBtn.title = 'Halaman sebelumnya';
     prevBtn.disabled = currentPage === 1;
     prevBtn.onclick = () => goToPage(currentPage - 1);
     controls.appendChild(prevBtn);
 
-    // Logika tampil nomor halaman dengan ellipsis
     const pages = buildPageNumbers(currentPage, totalPages);
     pages.forEach(p => {
         if (p === '...') {
@@ -3994,18 +2800,15 @@ function renderPagination(totalCount, totalPages) {
         }
     });
 
-    // Tombol Next
     const nextBtn = document.createElement('button');
     nextBtn.className = 'page-btn';
     nextBtn.textContent = '›';
-    nextBtn.title = 'Halaman berikutnya';
     nextBtn.disabled = currentPage === totalPages;
     nextBtn.onclick = () => goToPage(currentPage + 1);
     controls.appendChild(nextBtn);
 }
 
 function buildPageNumbers(current, total) {
-    // Selalu tampilkan: halaman pertama, terakhir, current, dan 1 di kiri/kanan current
     const pages = [];
     const add = (n) => { if (!pages.includes(n) && n >= 1 && n <= total) pages.push(n); };
 
@@ -4017,7 +2820,6 @@ function buildPageNumbers(current, total) {
 
     pages.sort((a, b) => a - b);
 
-    // Sisipkan ellipsis di celah yang lebih dari 1 langkah
     const result = [];
     for (let i = 0; i < pages.length; i++) {
         if (i > 0 && pages[i] - pages[i - 1] > 1) result.push('...');
@@ -4029,11 +2831,10 @@ function buildPageNumbers(current, total) {
 function goToPage(page) {
     currentPage = page;
     render();
-    // Scroll ke atas tabel secara halus
     document.querySelector('.table-container').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// ==================== OPERASI CRUD DATA ====================
+// ==================== CRUD OPERATIONS ====================
 function openModal(id) {
     document.getElementById(id).classList.add('show');
     if(id === 'addModal') {
@@ -4072,7 +2873,7 @@ function previewAttachment(input) {
         r.onload = function(e) {
             prev.src = e.target.result;
             prev.style.display = 'block';
-            currentAttachmentData = e.target.result; // Berupa String Base64 murni
+            currentAttachmentData = e.target.result;
         };
         r.readAsDataURL(input.files[0]);
     }
@@ -4114,7 +2915,6 @@ async function handleSubmit(e) {
     saveTransactions();
     showToast("Transaksi berhasil disimpan");
 
-    // ⚠️ Cek budget setelah simpan (hanya untuk pengeluaran)
     if(type === 'expense') {
         checkBudgetWarningAfterSave(date, category);
     }
@@ -4146,59 +2946,35 @@ function checkBudgetWarningAfterSave(date, category) {
     let monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
     let bookName = getCurrentBookName();
 
-    // Warning per kategori
     let katTarget = currentBudget[category] || 0;
     if(katTarget > 0) {
         let katPct = (totalKat / katTarget) * 100;
         if(katPct >= 100) {
             setTimeout(() => showToast(`🚨 Anggaran "${category}" HABIS! (${Math.round(katPct)}% terpakai)`, 'error'), 500);
             sendTelegramNotif(
-                `🚨 <b>ANGGARAN HABIS!</b>\n\n` +
-                `📒 Buku: <b>${bookName}</b>\n` +
-                `📂 Kategori: <b>${category}</b>\n` +
-                `📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n` +
-                `💸 Terpakai: <b>${rp(totalKat)}</b> (${Math.round(katPct)}%)\n` +
-                `🎯 Target: ${rp(katTarget)}\n` +
-                `❌ Melebihi: ${rp(totalKat - katTarget)}`
+                `🚨 <b>ANGGARAN HABIS!</b>\n\n📒 Buku: <b>${bookName}</b>\n📂 Kategori: <b>${category}</b>\n📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n💸 Terpakai: <b>${rp(totalKat)}</b> (${Math.round(katPct)}%)\n🎯 Target: ${rp(katTarget)}`
             );
             return;
         } else if(katPct >= 80) {
             setTimeout(() => showToast(`⚠️ Anggaran "${category}" hampir habis (${Math.round(katPct)}%)`, 'warning'), 500);
             sendTelegramNotif(
-                `⚠️ <b>Anggaran Hampir Habis</b>\n\n` +
-                `📒 Buku: <b>${bookName}</b>\n` +
-                `📂 Kategori: <b>${category}</b>\n` +
-                `📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n` +
-                `💸 Terpakai: ${rp(totalKat)} (${Math.round(katPct)}%)\n` +
-                `🎯 Target: ${rp(katTarget)}\n` +
-                `💡 Sisa: ${rp(katTarget - totalKat)}`
+                `⚠️ <b>Anggaran Hampir Habis</b>\n\n📒 Buku: <b>${bookName}</b>\n📂 Kategori: <b>${category}</b>\n📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n💸 Terpakai: ${rp(totalKat)} (${Math.round(katPct)}%)\n🎯 Target: ${rp(katTarget)}`
             );
             return;
         }
     }
 
-    // Warning total bulanan
     if(totalTarget > 0) {
         let totalPct = (totalBulan / totalTarget) * 100;
         if(totalPct >= 100) {
             setTimeout(() => showToast(`🚨 Total anggaran bulanan HABIS! (${Math.round(totalPct)}% terpakai)`, 'error'), 500);
             sendTelegramNotif(
-                `🚨 <b>TOTAL ANGGARAN BULANAN HABIS!</b>\n\n` +
-                `📒 Buku: <b>${bookName}</b>\n` +
-                `📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n` +
-                `💸 Total Pengeluaran: <b>${rp(totalBulan)}</b> (${Math.round(totalPct)}%)\n` +
-                `🎯 Total Anggaran: ${rp(totalTarget)}\n` +
-                `❌ Melebihi: ${rp(totalBulan - totalTarget)}`
+                `🚨 <b>TOTAL ANGGARAN BULANAN HABIS!</b>\n\n📒 Buku: <b>${bookName}</b>\n📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n💸 Total Pengeluaran: <b>${rp(totalBulan)}</b> (${Math.round(totalPct)}%)\n🎯 Total Anggaran: ${rp(totalTarget)}`
             );
         } else if(totalPct >= 80) {
             setTimeout(() => showToast(`⚠️ Total anggaran bulanan hampir habis (${Math.round(totalPct)}%)`, 'warning'), 500);
             sendTelegramNotif(
-                `⚠️ <b>Anggaran Bulanan Hampir Habis</b>\n\n` +
-                `📒 Buku: <b>${bookName}</b>\n` +
-                `📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n` +
-                `💸 Total Pengeluaran: ${rp(totalBulan)} (${Math.round(totalPct)}%)\n` +
-                `🎯 Total Anggaran: ${rp(totalTarget)}\n` +
-                `💡 Sisa Anggaran: ${rp(totalTarget - totalBulan)}`
+                `⚠️ <b>Anggaran Bulanan Hampir Habis</b>\n\n📒 Buku: <b>${bookName}</b>\n📅 Periode: <b>${monthNames[m-1]} ${y}</b>\n\n💸 Total Pengeluaran: ${rp(totalBulan)} (${Math.round(totalPct)}%)\n🎯 Total Anggaran: ${rp(totalTarget)}`
             );
         }
     }
@@ -4276,7 +3052,6 @@ async function confirmDelete(id) {
     if(!t) return;
     if(confirm(`Apakah Anda yakin ingin menghapus transaksi "${t.description}"?`)) {
         
-        // Hapus langsung dari Supabase secara asinkron jika cloud aktif
         if (getCloudUrl() && getSupabaseKey()) {
             callSupabaseAPI('transactions', 'DELETE', null, `?id=eq.${id}`);
         }
@@ -4308,12 +3083,11 @@ function downloadAttachment() {
     }
 }
 
-// ==================== FILTER DATA & FILTER TANGGAL ====================
+// ==================== FILTERS ====================
 function setFilter(f) {
     currentPage = 1;
     currentFilter = f;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    // Tandai tombol aktif berdasarkan nilai filter, bukan event global (lebih aman)
     document.querySelectorAll('.filter-btn').forEach(b => {
         const btnText = b.innerText.trim().toLowerCase();
         const match = (f === 'all' && btnText === 'semua') ||
@@ -4342,7 +3116,7 @@ function resetDateFilter() {
     render();
 }
 
-// ==================== MANAJER BUKU KAS MULTI-TENANT ====================
+// ==================== BOOK MANAGEMENT ====================
 function openBookManager() {
     openModal('bookManagerModal');
     renderBookList();
@@ -4385,15 +3159,26 @@ async function addNewBook(e) {
     let name = input.value.trim();
     if(!name) return;
 
-    let id = 'b_' + Date.now();
-    books.push({id, name});
+    let id = 'b_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    const newBook = {id, name};
+    
+    books.push(newBook);
     localStorage.setItem('sk_books', JSON.stringify(books));
     input.value = '';
+    
+    await pushSettingBooks();
+    await new Promise(r => setTimeout(r, 500));
+    await pullAllSettings();
+    
     renderBookList();
     updateBookSelectDropdown();
-    showToast(`Buku "${name}" berhasil dibuat`);
-    await addCloudLog('SISTEM', `Membuat entitas buku kas baru: "${name}"`);
-    await pushSettingBooks();
+    showToast(`📚 Buku "${name}" berhasil dibuat dan tersinkron ke cloud`, 'success');
+    await addCloudLog('SISTEM', `Membuat buku kas baru: "${name}" dengan ID ${id}`);
+    
+    const cfg = getTgConfig();
+    if (cfg.active) {
+        sendTelegramNotif(`📚 <b>Buku Baru Dibuat</b>\n\nNama: ${name}\nID: ${id}\nDevice: ${deviceId}`);
+    }
 }
 
 function switchBook(id) {
@@ -4427,25 +3212,19 @@ async function deleteBook(id) {
     let b = books.find(x => x.id === id);
     if(b && confirm(`Hapus permanen buku "${b.name}" beserta seluruh data lokal dan cloud?`)) {
         
-        // Hapus data di Supabase cloud jika ada koneksi global
         if(globalSupabaseUrl && globalSupabaseKey) {
             const prevBookId = currentBookId;
             currentBookId = id;
             try {
-                const delRes = await callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${id}`);
-                if(delRes !== null) {
-                    console.log(`Data cloud buku "${b.name}" berhasil dihapus.`);
-                } else {
-                    console.warn(`Gagal hapus data cloud buku "${b.name}" — hapus manual di Supabase jika perlu.`);
-                }
+                await callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${id}`);
                 await callSupabaseAPI('audit_logs', 'DELETE', null, `?book_id=eq.${id}`);
+                console.log(`Data cloud buku "${b.name}" berhasil dihapus.`);
             } catch(e) {
                 console.error('Gagal hapus data cloud:', e);
             }
             currentBookId = prevBookId;
         }
 
-        // Bersihkan data lokal buku tersebut
         localStorage.removeItem('sk_txs_' + id);
         localStorage.removeItem('sk_budgets_' + id);
         localStorage.removeItem('sk_logs_' + id);
@@ -4462,7 +3241,69 @@ async function deleteBook(id) {
     }
 }
 
-// ==================== EXPORT & IMPORT UTILITIES ====================
+function updateBookSelectDropdown() {
+    let sel = document.getElementById('currentBookSelect');
+    sel.innerHTML = '';
+    books.forEach(b => {
+        let opt = document.createElement('option');
+        opt.value = b.id; opt.innerText = b.name;
+        if(b.id === currentBookId) opt.selected = true;
+        sel.appendChild(opt);
+    });
+}
+
+function updateCloudIndicator() {
+    let wrapper = document.getElementById('syncStatusWrapper');
+    let tag = document.getElementById('syncStatusTag');
+    if(getCloudUrl() && getSupabaseKey()) {
+        wrapper.className = "sync-status-container online";
+        tag.innerText = "☁️ SUPABASE ON";
+    } else {
+        wrapper.className = "sync-status-container offline";
+        tag.innerText = "📴 CLOUD OFF";
+    }
+}
+
+// ==================== TEST CLOUD CONNECTION ====================
+async function testCloudConnection() {
+    let urlInput = document.getElementById('supabaseUrlInput').value.trim();
+    let keyInput = document.getElementById('supabaseKeyInput').value.trim();
+    let statusDiv = document.getElementById('connectionStatus');
+
+    if(!urlInput || !keyInput) {
+        statusDiv.innerHTML = '<div class="connection-status error">Gagal: Harap isi URL & Anon Key!</div>';
+        return;
+    }
+
+    statusDiv.innerHTML = '<div class="connection-status testing">Sedang mengetes koneksi ke Supabase...</div>';
+
+    globalSupabaseUrl = urlInput;
+    globalSupabaseKey = keyInput;
+
+    const testFetch = await callSupabaseAPI('transactions', 'GET', null, '?limit=1');
+    
+    if (testFetch !== null) {
+        await reEncryptCredentials(globalSupabaseUrl, globalSupabaseKey);
+        localStorage.removeItem('sk_supabase_url_global');
+        localStorage.removeItem('sk_supabase_key_global');
+        statusDiv.innerHTML = '<div class="connection-status success">Sukses! Koneksi terenkripsi & berlaku untuk semua buku. Memulai unduh data...</div>';
+        showToast("Supabase terhubung & terenkripsi!", "success");
+        updateCloudIndicator();
+        await pullAllSettings();
+        updateBookSelectDropdown();
+        budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
+        updateTgStatusBadge();
+        await pullAllBooksFromCloud();
+    } else {
+        globalSupabaseUrl = '';
+        globalSupabaseKey = '';
+        statusDiv.innerHTML = '<div class="connection-status error">Koneksi Gagal: Silakan periksa URL, Key, atau Skema Tabel SQL Anda!</div>';
+        showToast("Koneksi cloud gagal!", "error");
+        updateCloudIndicator();
+    }
+}
+
+// ==================== EXPORT & IMPORT ====================
 function exportToCSV() {
     if(txs.length === 0) { alert('Tidak ada data untuk diekspor!'); return; }
     let csv = 'No,Tanggal,Kategori,Deskripsi,Pemasukan,Pengeluaran\n';
@@ -4498,7 +3339,6 @@ async function archiveAndClearData() {
 
     if (!confirm(`Anda akan mengarsipkan ${txs.length} transaksi ke file JSON, lalu menghapus SEMUA data buku ini dari Supabase dan lokal.\n\nProses ini tidak bisa dibatalkan. Lanjutkan?`)) return;
 
-    // Langkah 1: Export JSON otomatis
     st.style.display = 'block';
     st.style.background = '#fff3e0'; st.style.color = '#cc7b00';
     st.innerText = '⏳ Mengekspor data ke JSON...';
@@ -4510,17 +3350,14 @@ async function archiveAndClearData() {
     a.setAttribute("download", fileName);
     a.click();
 
-    // Beri jeda agar download sempat terpicu sebelum data dihapus
     await new Promise(r => setTimeout(r, 1000));
 
-    // Langkah 2: Hapus dari Supabase
     st.innerText = '⏳ Menghapus data dari Supabase...';
     if (getCloudUrl() && getSupabaseKey()) {
         await callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${currentBookId}`);
         await callSupabaseAPI('audit_logs',   'DELETE', null, `?book_id=eq.${currentBookId}`);
     }
 
-    // Langkah 3: Hapus dari lokal
     txs = [];
     localStorage.removeItem('sk_txs_'              + currentBookId);
     localStorage.removeItem('sk_logs_'             + currentBookId);
@@ -4557,7 +3394,7 @@ function handleJsonImport(e) {
     r.readAsText(file);
 }
 
-// ==================== SISTEM BACKUP DAN ANGGARAN ====================
+// ==================== BACKUP ====================
 function openBackupManager() {
     openModal('backupModal');
     renderBackupList();
@@ -4603,7 +3440,7 @@ function createBackup() {
         count: txs.length,
         data: txs
     });
-    if(localBackups.length > 5) localBackups.pop(); // Batasi maksimal 5 snapshot cadangan
+    if(localBackups.length > 5) localBackups.pop();
     localStorage.setItem('sk_manual_backups_' + currentBookId, JSON.stringify(localBackups));
     localStorage.setItem('sk_last_auto_backup_' + currentBookId, new Date().toISOString());
     renderBackupList();
@@ -4631,61 +3468,40 @@ function deleteBackupIndex(i) {
 function restoreFromBackup() {
     let backups = JSON.parse(localStorage.getItem('sk_manual_backups_' + currentBookId) || '[]');
     if(backups.length === 0) { alert('Tidak ditemukan snapshot cadangan. Buat backup manual terlebih dahulu.'); return; }
-    // Arahkan user ke panel backup untuk pilih snapshot secara eksplisit
     openBackupManager();
     showToast('Pilih snapshot yang ingin di-restore dari daftar di bawah.');
 }
 
-// ==================== AUTOBACKUP HARIAN KE SUPABASE ====================
-
 async function checkAndRunDailyAutoBackup() {
     if (!getCloudUrl() || !getSupabaseKey()) return;
 
-    // Cek apakah tabel backups tersedia — jika tidak, tampilkan peringatan sekali
     const tableOk = await checkBackupsTableExists();
     if (!tableOk) {
-        console.warn('[AutoBackup] Tabel backups belum ada di Supabase — autobackup dilewati.');
-        const warnKey = 'sk_backup_table_warn_shown';
-        if (!localStorage.getItem(warnKey)) {
-            localStorage.setItem(warnKey, '1');
-            showToast('⚠️ Tabel backups belum dibuat di Supabase. Autobackup tidak aktif.', 'warning');
-        }
+        console.warn('[AutoBackup] Tabel backups belum ada di Supabase');
         return;
     }
-    // Reset flag peringatan jika tabel sudah ada
-    localStorage.removeItem('sk_backup_table_warn_shown');
 
     let now = new Date();
-    let totalTx = 0;
     let backedUpBooks = 0;
 
-    // Backup semua buku, masing-masing cek tanggal terakhir backup-nya sendiri
     for (const book of books) {
         let lastKey = 'sk_last_cloud_backup_' + book.id;
         let last = localStorage.getItem(lastKey);
         if (last) {
             let sameDay = new Date(last).toDateString() === now.toDateString();
-            if (sameDay) {
-                console.log('[AutoBackup] Buku "' + book.name + '" sudah dibackup hari ini, skip.');
-                continue;
-            }
+            if (sameDay) continue;
         }
 
-        // Ambil transaksi buku ini dari localStorage
         const bookTxs = JSON.parse(localStorage.getItem('sk_txs_' + book.id) || '[]');
         const result = await pushBackupToSupabaseForBook(book.id, bookTxs, 'AUTO');
         if (result) {
             localStorage.setItem(lastKey, now.toISOString());
-            totalTx += bookTxs.length;
             backedUpBooks++;
-            console.log('[AutoBackup] Buku "' + book.name + '" berhasil dibackup: ' + bookTxs.length + ' transaksi');
-        } else {
-            console.warn('[AutoBackup] Buku "' + book.name + '" gagal dibackup.');
         }
     }
 
     if (backedUpBooks > 0) {
-        await addCloudLog('BACKUP', 'Autobackup harian: ' + backedUpBooks + ' buku, ' + totalTx + ' total transaksi');
+        await addCloudLog('BACKUP', 'Autobackup harian: ' + backedUpBooks + ' buku');
         renderBackupList();
     }
 }
@@ -4697,7 +3513,7 @@ async function createCloudBackup() {
     }
     const tableOk = await checkBackupsTableExists();
     if (!tableOk) {
-        showToast('❌ Tabel backups belum dibuat di Supabase! Buat tabel backups terlebih dahulu.', 'error');
+        showToast('❌ Tabel backups belum dibuat di Supabase!', 'error');
         return;
     }
     showToast('Menyimpan cadangan ke cloud...', 'info');
@@ -4713,7 +3529,6 @@ async function createCloudBackup() {
     }
 }
 
-// Cek apakah tabel backups sudah ada di Supabase
 async function checkBackupsTableExists() {
     const baseUrl = getCloudUrl();
     const apiKey = getSupabaseKey();
@@ -4728,7 +3543,6 @@ async function checkBackupsTableExists() {
     }
 }
 
-// Push backup untuk buku tertentu (dipakai autobackup semua buku)
 async function pushBackupToSupabaseForBook(bookId, bookTxs, backupType) {
     const baseUrl = getCloudUrl();
     const apiKey = getSupabaseKey();
@@ -4759,7 +3573,6 @@ async function pushBackupToSupabaseForBook(bookId, bookTxs, backupType) {
     }
 }
 
-// Push backup buku aktif (dipakai tombol manual)
 async function pushBackupToSupabase(backupType) {
     return await pushBackupToSupabaseForBook(currentBookId, txs, backupType);
 }
@@ -4832,7 +3645,7 @@ async function restoreFromCloudBackup(backupId, idx) {
     }
 }
 
-// ==================== MANAJER BUDGETING & BAR ANGGARAN ====================
+// ==================== BUDGET ====================
 function openBudgetModal() {
     let m = document.getElementById('budgetMonth').value;
     let y = document.getElementById('budgetYear').value;
@@ -4892,7 +3705,7 @@ function saveBudget() {
     closeModal('budgetModal');
     renderBudget();
     showToast("Anggaran bulanan berhasil diperbarui");
-    pushSettingBudgets(); // push ke Supabase (async, non-blocking)
+    pushSettingBudgets();
 }
 
 function renderBudget() {
@@ -4956,7 +3769,7 @@ function renderBudget() {
     }
 }
 
-// ==================== GENERATE LAPORAN & EXPORT PDF ====================
+// ==================== REPORT ====================
 function openMonthlyReport() {
     let m = document.getElementById('budgetMonth').value;
     let y = document.getElementById('budgetYear').value;
@@ -5020,7 +3833,6 @@ function generateMonthlyReport() {
         let diffStyle = diff >= 0 ? 'color:#00875a' : 'color:#de350b';
         
         if(tar > 0 || act > 0) {
-            // Gunakan label pendek yang informatif, bukan split kata
             const shortLabel = {
                 'Makanan & Minuman': 'Makanan',
                 'Transportasi': 'Transport',
@@ -5045,7 +3857,7 @@ function generateMonthlyReport() {
                 <td>${rp(act)}</td>
                 <td style="${diffStyle}">${rp(diff)}</td>
                 <td>${pct}</td>
-            </tr>
+            </table>
         `;
     });
     
@@ -5098,7 +3910,398 @@ function generatePDFReport() {
     html2pdf().set(opt).from(element).save();
 }
 
-// ==================== PANDUAN / MANUAL BOOK ====================
+// ==================== AUTO SYNC (DIPERBAIKI INTERVAL 15 DETIK) ====================
+function startAutoSync() {
+    if (_autoSyncInterval) clearInterval(_autoSyncInterval);
+    const INTERVAL_MS = 15 * 1000;
+
+    _autoSyncInterval = setInterval(async () => {
+        if (!getCloudUrl() || !getSupabaseKey()) return;
+
+        const prevBooksCount = books.length;
+        await pullAllSettings();
+        
+        if (books.length !== prevBooksCount) {
+            console.log('[Sync] Deteksi buku baru, menarik semua data...');
+            await pullAllBooksFromCloud();
+            updateBookSelectDropdown();
+            showToast(`📚 Buku baru ditemukan (${books.length} total buku)`, 'info');
+        } else {
+            await pullFromCloudSilently();
+        }
+        
+        updateAutoSyncBadge();
+    }, INTERVAL_MS);
+
+    console.log('[AutoSync] Dimulai, interval 15 detik.');
+    updateAutoSyncBadge();
+}
+
+function stopAutoSync() {
+    if (_autoSyncInterval) {
+        clearInterval(_autoSyncInterval);
+        _autoSyncInterval = null;
+    }
+    if (_bookCheckInterval) {
+        clearInterval(_bookCheckInterval);
+        _bookCheckInterval = null;
+    }
+    console.log('[AutoSync] Dihentikan.');
+}
+
+function updateAutoSyncBadge() {
+    const el = document.getElementById('autoSyncBadge');
+    if (!el) return;
+    const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    el.innerText = `⟳ Sync otomatis aktif · ${now}`;
+    el.style.color = '#00875a';
+}
+
+// ==================== SUPABASE REALTIME ====================
+function initSupabaseClient() {
+    const url = getCloudUrl();
+    const key = getSupabaseKey();
+    if (!url || !key) return null;
+    if (_supabaseClient) return _supabaseClient;
+    _supabaseClient = supabase.createClient(url, key);
+    console.log('[Realtime] Supabase client dibuat.');
+    return _supabaseClient;
+}
+
+function startRealtimeSync() {
+    const client = initSupabaseClient();
+    if (!client) return;
+
+    if (_realtimeChannel) {
+        client.removeChannel(_realtimeChannel);
+        _realtimeChannel = null;
+    }
+
+    _realtimeChannel = client
+        .channel('sinarkeu-realtime')
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'transactions' },
+            (payload) => {
+                console.log('[Realtime] Perubahan transactions:', payload.eventType);
+                handleRealtimeTransaction(payload);
+            }
+        )
+        .on('postgres_changes',
+            { event: '*', schema: 'public', table: 'settings' },
+            (payload) => {
+                console.log('[Realtime] Perubahan settings:', payload.eventType, payload.new?.key);
+                handleRealtimeSettings(payload);
+            }
+        )
+        .subscribe((status) => {
+            console.log('[Realtime] Status:', status);
+            updateRealtimeBadge(status);
+        });
+}
+
+function stopRealtimeSync() {
+    if (_supabaseClient && _realtimeChannel) {
+        _supabaseClient.removeChannel(_realtimeChannel);
+        _realtimeChannel = null;
+        console.log('[Realtime] Channel dihentikan.');
+    }
+}
+
+async function handleRealtimeTransaction(payload) {
+    const rec = payload.new || payload.old;
+    if (rec && rec.book_id && rec.book_id !== currentBookId) return;
+    await pullFromCloudSilently();
+    showAutoSyncToast('⚡ Transaksi diperbarui secara real-time');
+}
+
+async function handleRealtimeSettings(payload) {
+    const rec = payload.new;
+    if (!rec) return;
+
+    if (rec.key === 'books') {
+        const prevBooksJson = JSON.stringify(books);
+        await pullAllSettings();
+        if (JSON.stringify(books) !== prevBooksJson) {
+            updateBookSelectDropdown();
+            updateTgStatusBadge();
+            showAutoSyncToast('⚡ Daftar buku diperbarui secara real-time');
+        }
+    } else if (rec.key === 'telegram_config') {
+        await pullAllSettings();
+        updateTgStatusBadge();
+        showAutoSyncToast('⚡ Setelan Telegram diperbarui secara real-time');
+    } else if (rec.key === 'budgets') {
+        await pullAllSettings();
+        budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
+        renderBudget();
+        showAutoSyncToast('⚡ Anggaran diperbarui secara real-time');
+    }
+}
+
+function updateRealtimeBadge(status) {
+    const el = document.getElementById('autoSyncBadge');
+    if (!el) return;
+    if (status === 'SUBSCRIBED') {
+        el.innerText = '⚡ Real-time aktif';
+        el.style.color = '#00875a';
+    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        el.innerText = '⟳ Realtime error — fallback polling aktif';
+        el.style.color = '#cc7b00';
+        startAutoSync();
+    } else {
+        el.innerText = '⟳ Menghubungkan real-time...';
+        el.style.color = '#aaa';
+    }
+}
+
+let _autoSyncToastTimer = null;
+function showAutoSyncToast(msg) {
+    const el = document.getElementById('autoSyncBadge');
+    if (!el) return;
+    el.innerText = msg;
+    el.style.color = '#cc7b00';
+    if (_autoSyncToastTimer) clearTimeout(_autoSyncToastTimer);
+    _autoSyncToastTimer = setTimeout(updateAutoSyncBadge, 3000);
+}
+
+// ==================== SETUP AWAL ====================
+function openSetupModal() {
+    let st = document.getElementById('setupStatusMsg');
+    st.className = 'setup-status';
+    st.innerText = '';
+    document.getElementById('setupUrlInput').value  = getCloudUrl();
+    document.getElementById('setupKeyInput').value  = getSupabaseKey();
+    document.getElementById('setupConnectBtn').disabled = false;
+    document.getElementById('setupConnectBtn').innerText = '🔌 Hubungkan & Mulai';
+    openModal('firstTimeSetupModal');
+}
+
+async function doFirstTimeSetup() {
+    const url  = document.getElementById('setupUrlInput').value.trim();
+    const key  = document.getElementById('setupKeyInput').value.trim();
+    const pwd  = document.getElementById('setupPwdInput').value;
+    const pwd2 = document.getElementById('setupPwdConfirm').value;
+    const st   = document.getElementById('setupStatusMsg');
+    const btn  = document.getElementById('setupConnectBtn');
+
+    if (!url || !key) {
+        st.className = 'setup-status error';
+        st.innerText = '❌ Supabase URL dan Anon Key wajib diisi!';
+        return;
+    }
+    if (!pwd || pwd.length < 6) {
+        st.className = 'setup-status error';
+        st.innerText = '❌ Password minimal 6 karakter!';
+        return;
+    }
+    if (pwd !== pwd2) {
+        st.className = 'setup-status error';
+        st.innerText = '❌ Konfirmasi password tidak cocok!';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = '⏳ Mengetes koneksi...';
+    st.className = 'setup-status warning';
+    st.innerText = '⏳ Menghubungkan ke Supabase...';
+
+    globalSupabaseUrl = url;
+    globalSupabaseKey = key;
+
+    const test = await callSupabaseAPI('transactions', 'GET', null, '?limit=1');
+
+    if (test === null) {
+        globalSupabaseUrl = '';
+        globalSupabaseKey = '';
+        btn.disabled = false;
+        btn.innerText = '🔐 Simpan & Mulai';
+        st.className = 'setup-status error';
+        st.innerText = '❌ Koneksi gagal! Periksa kembali URL dan Anon Key Anda.';
+        return;
+    }
+
+    st.innerText = '⏳ Mengenkripsi kredensial...';
+    await setupNewPassword(pwd, url, key);
+
+    localStorage.removeItem('sk_supabase_url_global');
+    localStorage.removeItem('sk_supabase_key_global');
+    localStorage.removeItem('sk_cloud_urls');
+    localStorage.removeItem('sk_supabase_keys');
+
+    updateCloudIndicator();
+    st.className = 'setup-status success';
+    st.innerText = '✅ Berhasil! Kredensial terenkripsi dengan password Anda.';
+    btn.innerText = '✅ Tersambung';
+
+    setTimeout(async () => {
+        closeModal('firstTimeSetupModal');
+        showToast('Setup selesai! Data terenkripsi aman 🔐', 'success');
+        await continueAppInit();
+    }, 900);
+}
+
+// ==================== LOCK APP ====================
+function lockApp() {
+    stopRealtimeSync();
+    stopAutoSync();
+    sessionStorage.removeItem('sk_session_unlocked');
+    _sessionCryptoKey = null;
+    globalSupabaseUrl = '';
+    globalSupabaseKey = '';
+    document.getElementById('lockPasswordInput').value = '';
+    clearLockError();
+    showPasswordLock();
+}
+
+async function changePassword() {
+    const oldPwd  = document.getElementById('changePwdOld').value;
+    const newPwd  = document.getElementById('changePwdNew').value;
+    const newPwd2 = document.getElementById('changePwdNew2').value;
+    const status  = document.getElementById('changePwdStatus');
+
+    status.style.color = '#de350b';
+    if (!oldPwd || !newPwd || !newPwd2) { status.innerText = '❌ Semua field wajib diisi.'; return; }
+    if (newPwd.length < 6) { status.innerText = '❌ Password baru minimal 6 karakter.'; return; }
+    if (newPwd !== newPwd2) { status.innerText = '❌ Konfirmasi tidak cocok.'; return; }
+
+    status.style.color = '#cc7b00';
+    status.innerText = '⏳ Memverifikasi...';
+
+    const saltB64 = localStorage.getItem(CRYPTO_SALT_KEY);
+    if (!saltB64) { status.style.color='#de350b'; status.innerText='❌ Data enkripsi tidak ditemukan.'; return; }
+    const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+
+    let oldKey;
+    try {
+        oldKey = await deriveKey(oldPwd, salt);
+        const plain = await decryptStr(oldKey, localStorage.getItem(CRYPTO_CHECK_KEY));
+        if (plain !== SENTINEL_PLAIN) throw new Error('wrong');
+    } catch {
+        status.style.color = '#de350b';
+        status.innerText = '❌ Password lama salah.';
+        return;
+    }
+
+    let url, apiKey;
+    try {
+        url    = await decryptStr(oldKey, localStorage.getItem(CRYPTO_URL_KEY));
+        apiKey = await decryptStr(oldKey, localStorage.getItem(CRYPTO_AKEY_KEY));
+    } catch {
+        status.style.color = '#de350b';
+        status.innerText = '❌ Gagal membaca data terenkripsi.';
+        return;
+    }
+
+    status.innerText = '⏳ Mengenkripsi ulang...';
+    await setupNewPassword(newPwd, url, apiKey);
+
+    status.style.color = '#00875a';
+    status.innerText = '✅ Password berhasil diganti!';
+    document.getElementById('changePwdOld').value  = '';
+    document.getElementById('changePwdNew').value  = '';
+    document.getElementById('changePwdNew2').value = '';
+    showToast('Password berhasil diganti 🔐', 'success');
+}
+
+// ==================== INIT APP ====================
+function initApp() {
+    deviceId = localStorage.getItem('sk_device_id');
+    if(!deviceId) {
+        deviceId = 'DEV-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        localStorage.setItem('sk_device_id', deviceId);
+    }
+    document.getElementById('deviceIdDisplay').innerText = deviceId;
+
+    let storedBooks = localStorage.getItem('sk_books');
+    if(storedBooks) {
+        books = JSON.parse(storedBooks);
+    } else {
+        books = [{id: 'b_default', name: 'Buku Utama'}];
+        localStorage.setItem('sk_books', JSON.stringify(books));
+    }
+
+    currentBookId = localStorage.getItem('sk_current_book_id') || 'b_default';
+    if(!books.find(b => b.id === currentBookId)) currentBookId = books[0].id;
+
+    if (!isPasswordConfigured()) {
+        hideLockScreen();
+        const legacyUrls = JSON.parse(localStorage.getItem('sk_cloud_urls') || '{}');
+        const legacyUrl  = localStorage.getItem('sk_supabase_url_global') || '';
+        const firstKey   = Object.keys(legacyUrls)[0];
+        if (legacyUrl || firstKey) {
+            document.getElementById('setupUrlInput').value = legacyUrl || legacyUrls[firstKey] || '';
+            document.getElementById('setupKeyInput').value = localStorage.getItem('sk_supabase_key_global') || '';
+        }
+        setTimeout(() => openSetupModal(), 300);
+        return;
+    }
+
+    if (!sessionStorage.getItem('sk_session_unlocked')) {
+        showPasswordLock();
+        return;
+    }
+
+    continueAppInit();
+}
+
+async function continueAppInit() {
+    if (!globalSupabaseUrl && !_sessionCryptoKey) {
+        sessionStorage.removeItem('sk_session_unlocked');
+        showPasswordLock();
+        return;
+    }
+
+    budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
+
+    let currentYear = new Date().getFullYear();
+    let selectYear = document.getElementById('budgetYear');
+    selectYear.innerHTML = '';
+    for(let y = currentYear - 2; y <= currentYear + 2; y++) {
+        let opt = document.createElement('option');
+        opt.value = y; opt.innerText = y;
+        if(y === currentYear) opt.selected = true;
+        selectYear.appendChild(opt);
+    }
+    document.getElementById('budgetMonth').value = new Date().getMonth() + 1;
+
+    updateBookSelectDropdown();
+    loadTransactions();
+    updateCloudIndicator();
+
+    if (!getCloudUrl() || !getSupabaseKey()) {
+        setTimeout(() => openSetupModal(), 400);
+    } else {
+        await pullAllSettings();
+        updateBookSelectDropdown();
+        budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
+        updateTgStatusBadge();
+        await pullAllBooksFromCloud();
+        setTimeout(checkAndRunDailyAutoBackup, 3000);
+        setTimeout(scheduleDailySummary, 5000);
+        startRealtimeSync();
+    }
+
+    setInterval(() => {
+        let clock = document.getElementById('liveClock');
+        if(clock) clock.innerText = new Date().toLocaleTimeString('id-ID');
+    }, 1000);
+
+    startAutoSync();
+    
+    // ===== TAMBAHAN UNTUK SINKRONISASI =====
+    addSyncButton();
+    startBookCheck();
+    
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && getCloudUrl() && getSupabaseKey()) {
+            console.log('[Sync] Tab menjadi aktif, melakukan sinkronisasi...');
+            forceFullSync();
+        }
+    });
+    // =======================================
+}
+
+// ==================== MANUAL ====================
 function openManual(section) {
     document.getElementById('manualModal').classList.add('show');
     if (section) showManualSection(section);
@@ -5113,7 +4316,6 @@ function showManualSection(id) {
     document.querySelectorAll('.manual-nav-btn').forEach(b => b.classList.remove('active'));
     const sec = document.getElementById('manual-' + id);
     if (sec) sec.classList.add('active');
-    // Tandai tombol nav aktif
     document.querySelectorAll('.manual-nav-btn').forEach(b => {
         if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + id + "'")) {
             b.classList.add('active');
@@ -5121,20 +4323,19 @@ function showManualSection(id) {
     });
 }
 
-window.addEventListener('DOMContentLoaded', initApp);
-
-// ==================== PWA SERVICE WORKER ====================
+// ==================== SERVICE WORKER ====================
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
             .then(reg => {
                 console.log('[SW] Terdaftar, scope:', reg.scope);
-                // Cek update SW setiap kali halaman dibuka
                 reg.update();
             })
             .catch(err => console.warn('[SW] Gagal daftar:', err));
     });
 }
+
+window.addEventListener('DOMContentLoaded', initApp);
 </script>
 </body>
 </html>
