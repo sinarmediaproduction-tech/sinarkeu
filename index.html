@@ -1183,7 +1183,7 @@
                 <span id="syncStatusTag" class="sync-status-badge">📴 CLOUD OFF</span>
                 <span id="deviceIdDisplay" class="device-id-badge">------</span>
             </div>
-            <span id="syncTimeBadge" style="font-size:.65rem;color:#666;font-weight:600;">📅 Sinkronisasi: --:--:--</span>
+            <span id="syncTimeBadge" style="font-size:.65rem;color:#666;font-weight:600;">🕐 --:--:--</span>
             <label>BUKU:</label>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
             <button class="manage-books-btn" id="kelolaBukuBtn" onclick="openBookManager()">Kelola</button>
@@ -1444,7 +1444,7 @@
         <div id="tgTestStatus" style="font-size:.72rem; margin-bottom:12px; min-height:20px; padding: 0 2px;"></div>
         <div class="modal-footer" style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn btn-secondary" onclick="testTelegramNotif()" style="flex:1">📤 Tes Kirim</button>
-            <button class="btn btn-secondary" onclick="sendDailySummaryToTelegram(); showToast('Ringkasan dikirim ke Telegram ✅','success')" style="flex:1; background:#0088cc; color:#fff; border-color:#0088cc;">📊 Kirim Ringkasan</button>
+            <button class="btn btn-secondary" onclick="sendDailySummaryToTelegram()" style="flex:1; background:#0088cc; color:#fff; border-color:#0088cc;">📊 Kirim Ringkasan</button>
             <button class="btn btn-danger" onclick="clearTelegramConfig()" style="flex:1">🗑️ Hapus</button>
             <button class="btn btn-primary" onclick="saveTelegramConfig()" style="flex:1">💾 Simpan</button>
         </div>
@@ -1677,10 +1677,10 @@ function updateSyncTimeBadge() {
     if (!el) return;
     if (_lastSyncTime) {
         const timeStr = _lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        el.innerText = `📅 Sinkronisasi: ${timeStr}`;
+        el.innerText = `🕐 ${timeStr}`;
         el.style.color = '#00875a';
     } else {
-        el.innerText = `📅 Sinkronisasi: --:--:--`;
+        el.innerText = `🕐 --:--:--`;
         el.style.color = '#888';
     }
 }
@@ -2084,10 +2084,8 @@ async function pullAllSettings() {
 
         if (booksUpdated) {
             updateBookSelectDropdown();
-            showToast('📚 Daftar buku diperbarui dari cloud', 'info');
         }
         if (telegramUpdated) {
-            showToast('📱 Setelan Telegram diperbarui dari cloud', 'success');
         }
     }
     
@@ -2159,8 +2157,6 @@ async function pullAllBooksFromCloud() {
 async function forceFullSync() {
     if (!requireOnline('sinkronisasi')) return;
 
-    showToast('🔄 Memulai sinkronisasi penuh...', 'info');
-
     try {
         await pullAllSettings();
         await pullAllBooksFromCloud();
@@ -2168,7 +2164,6 @@ async function forceFullSync() {
         updateTgStatusBadge();
         budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
         renderBudget();
-        showToast('✅ Sinkronisasi selesai!', 'success');
         await addCloudLog('SISTEM', 'Sinkronisasi penuh manual dari perangkat ' + deviceId);
     } catch (e) {
         console.error('[Sync] Gagal sinkronisasi:', e);
@@ -4041,14 +4036,12 @@ async function continueAppInit() {
     window.addEventListener('online', () => {
         updateSyncStatusBadge();
         updateUIForOnlineStatus();
-        showToast('✅ Kembali online, sinkronisasi data...', 'success');
         forceFullSync();
     });
 
     window.addEventListener('offline', () => {
         updateSyncStatusBadge();
         updateUIForOnlineStatus();
-        showToast('📴 Offline - hanya bisa melihat data (mode baca)', 'warning');
     });
 
     document.addEventListener('visibilitychange', () => {
