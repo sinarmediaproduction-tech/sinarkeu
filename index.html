@@ -3125,8 +3125,9 @@ async function archiveAndClearData() {
     setTimeout(() => { st.style.display = 'none'; }, 5000);
 }
 
-function triggerJsonImport() { document.getElementById('jsonFileInput').click(); }
+function triggerJsonImport() { if (!requireOnline('mengimpor data')) return; document.getElementById('jsonFileInput').click(); }
 function handleJsonImport(e) {
+    if (!requireOnline('mengimpor data')) return;
     let file = e.target.files[0];
     if (!file) return;
     let r = new FileReader();
@@ -3223,6 +3224,7 @@ function createBackup() {
 }
 
 function restoreFromIndex(i) {
+    if (!requireOnline('memulihkan data dari snapshot')) return;
     let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + currentBookId) || '[]');
     if (localBackups[i] && confirm("Pulihkan data dari snapshot cadangan ini? Data saat ini akan diganti.")) {
         txs = localBackups[i].data;
