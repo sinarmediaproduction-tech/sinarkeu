@@ -1196,7 +1196,6 @@
         <div class="lock-warning" id="lockWarning" style="display:none;">
             ⚠️ <strong>Perhatian:</strong> Jika password lupa, tidak ada cara untuk memulihkan data. Simpan password Anda di tempat yang aman.
         </div>
-        <button class="lock-guide-link" onclick="openManual()">📖 Panduan Setup & Penggunaan</button>
     </div>
 </div>
 
@@ -1249,9 +1248,9 @@
             <span id="budgetProgressPct" style="font-size:.75rem; font-weight:700; color:#666; min-width:36px;">0%</span>
         </div>
         <div class="budget-mini-actions">
-            <button class="btn-icon" onclick="openBudgetModal()">✏️ Atur</button>
-            <button class="btn-icon" onclick="openMonthlyReport()">📊 Laporan Bulanan</button>
-            <button class="btn-icon" onclick="generatePDFReport()">📄 PDF</button>
+            <button class="btn-icon" onclick="openBudgetModal()">Atur</button>
+            <button class="btn-icon" onclick="openMonthlyReport()">Laporan Bulanan</button>
+            <button class="btn-icon" onclick="generatePDFReport()"> PDF</button>
         </div>
     </div>
 
@@ -1285,7 +1284,7 @@
         </div>
         <div class="actions">
             <button class="btn btn-primary" onclick="openModal('addModal')">+ Transaksi</button>
-            <button class="btn btn-secondary" onclick="openBackupManager()">🔒 Backup</button>
+            <button class="btn btn-secondary" onclick="openBackupManager()"> Backup</button>
         </div>
     </div>
 
@@ -1305,7 +1304,7 @@
 
     <div class="log-section">
         <div class="log-section-header">
-            <h2> Audit Log (Supabase Real-time)</h2>
+            <h2>📜 Audit Log (Supabase Real-time)</h2>
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-secondary" style="padding: 4px 10px;" onclick="refreshLogsFromCloud()">🔄 Refresh</button>
                 <button class="btn btn-secondary" style="padding: 4px 10px; background:#00875a; color:#fff;" onclick="testAddLog()">🔍 Test Log</button>
@@ -1343,11 +1342,11 @@
 
     <!-- ── SECTION: PENGENALAN ── -->
     <div id="manual-intro" class="manual-section active">
-      <div class="manual-h2"> Selamat Datang di Sinarkeu</div>
+      <div class="manual-h2">🏠 Selamat Datang di Sinarkeu v8</div>
       <p class="manual-p">Sinarkeu adalah aplikasi pencatatan keuangan berbasis web yang berjalan sepenuhnya di browser Anda. Data disimpan secara aman di cloud menggunakan <strong>Supabase</strong> dan terenkripsi dengan password pribadi Anda.</p>
 
       <div class="manual-info">
-         Sinarkeu berjalan 100% di browser — tidak perlu install apapun. Cukup buka file <code>index.html</code> di browser.
+        💡 Sinarkeu berjalan 100% di browser — tidak perlu install apapun. Cukup buka file <code>index.html</code> di browser.
       </div>
 
       <div class="manual-h3">✨ Fitur Utama</div>
@@ -1937,7 +1936,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
       </div>
 
       <hr class="manual-divider">
-      <div class="manual-h3"> Laporan & Export</div>
+      <div class="manual-h3">📊 Laporan & Export</div>
       <div class="manual-step" style="border-left-color:#00875a;">
         <div class="manual-step-num" style="background:#00875a;">?</div>
         <div class="manual-step-body">
