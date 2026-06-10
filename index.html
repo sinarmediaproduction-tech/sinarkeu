@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ArtaFlow v8 - Multi Buku Kas dengan Supabase Cloud</title>
+    <title>Sinarkeu v8 - Multi Buku Kas dengan Supabase Cloud</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a1a1a">
@@ -1166,7 +1166,7 @@
 <div id="passwordLockScreen">
     <div class="lock-card">
         <span class="lock-icon" id="lockIcon">🔒</span>
-        <div class="lock-title" id="lockTitle">ArtaFlow</div>
+        <div class="lock-title" id="lockTitle">Sinarkeu</div>
         <div class="lock-subtitle" id="lockSubtitle">Masukkan password untuk membuka aplikasi</div>
 
         <div class="lock-input-wrap">
@@ -1203,7 +1203,7 @@
 <div class="container">
     <div class="header">
         <div>
-            <h1>ArtaFlow</h1>
+            <h1>Sinarkeu</h1>
             <p>Sistem Multi Buku Kas dengan Supabase Cloud Storage · v8</p>
         </div>
         <div class="book-selector">
@@ -1326,7 +1326,7 @@
 <div id="manualModal" class="modal" style="z-index:1500;">
   <div class="modal-content wide" style="max-width:800px; max-height:92vh;">
     <div class="modal-header">
-      <h3>📖 Panduan Lengkap ArtaFlow</h3>
+      <h3>📖 Panduan Lengkap Sinarkeu</h3>
       <button class="modal-close" onclick="closeManual()">×</button>
     </div>
 
@@ -1343,11 +1343,11 @@
 
     <!-- ── SECTION: PENGENALAN ── -->
     <div id="manual-intro" class="manual-section active">
-      <div class="manual-h2">🏠 Selamat Datang di ArtaFlow v8</div>
-      <p class="manual-p">ArtaFlow adalah aplikasi pencatatan keuangan berbasis web yang berjalan sepenuhnya di browser Anda. Data disimpan secara aman di cloud menggunakan <strong>Supabase</strong> dan terenkripsi dengan password pribadi Anda.</p>
+      <div class="manual-h2">🏠 Selamat Datang di Sinarkeu v8</div>
+      <p class="manual-p">Sinarkeu adalah aplikasi pencatatan keuangan berbasis web yang berjalan sepenuhnya di browser Anda. Data disimpan secara aman di cloud menggunakan <strong>Supabase</strong> dan terenkripsi dengan password pribadi Anda.</p>
 
       <div class="manual-info">
-        💡 ArtaFlow berjalan 100% di browser — tidak perlu install apapun. Cukup buka file <code>index.html</code> di browser.
+        💡 Sinarkeu berjalan 100% di browser — tidak perlu install apapun. Cukup buka file <code>index.html</code> di browser.
       </div>
 
       <div class="manual-h3">✨ Fitur Utama</div>
@@ -1399,7 +1399,7 @@
     <!-- ── SECTION: SETUP SUPABASE ── -->
     <div id="manual-supabase" class="manual-section">
       <div class="manual-h2">☁️ Setup Akun & Project Supabase</div>
-      <p class="manual-p">Supabase adalah platform database PostgreSQL open-source yang menyediakan tier gratis. ArtaFlow menggunakannya sebagai backend penyimpanan data cloud.</p>
+      <p class="manual-p">Supabase adalah platform database PostgreSQL open-source yang menyediakan tier gratis. Sinarkeu menggunakannya sebagai backend penyimpanan data cloud.</p>
 
       <div class="manual-h3">Langkah 1 — Buat Akun Supabase</div>
       <div class="manual-step">
@@ -1430,7 +1430,7 @@
         <div class="manual-step-body">
           <div class="manual-step-title">Isi detail project</div>
           <div class="manual-step-desc">
-            <strong>Name:</strong> bebas, misal <code>artaflow-kas</code><br>
+            <strong>Name:</strong> bebas, misal <code>sinarkeu-kas</code><br>
             <strong>Database Password:</strong> buat password kuat — <em>simpan baik-baik!</em><br>
             <strong>Region:</strong> pilih <strong>Southeast Asia (Singapore)</strong> untuk koneksi lebih cepat<br>
             <strong>Plan:</strong> Free sudah cukup
@@ -1460,7 +1460,7 @@
           <div class="manual-step-desc">
             <strong>Project URL</strong> — bentuknya: <code>https://xxxxxxxx.supabase.co</code><br>
             <strong>Project API Keys → anon / public</strong> — dimulai dengan <code>eyJhbGciOiJIUzI1NiIs...</code><br><br>
-            Kedua nilai ini yang dimasukkan ke form setup ArtaFlow.
+            Kedua nilai ini yang dimasukkan ke form setup Sinarkeu.
           </div>
         </div>
       </div>
@@ -1475,7 +1475,7 @@
     <!-- ── SECTION: SQL & TABEL ── -->
     <div id="manual-sql" class="manual-section">
       <div class="manual-h2">🛢️ Membuat Tabel Database (SQL)</div>
-      <p class="manual-p">ArtaFlow membutuhkan <strong>4 tabel</strong> di Supabase. Jalankan SQL berikut di <strong>SQL Editor</strong> Supabase (klik ikon Terminal/SQL di sidebar kiri).</p>
+      <p class="manual-p">Sinarkeu membutuhkan <strong>4 tabel</strong> di Supabase. Jalankan SQL berikut di <strong>SQL Editor</strong> Supabase (klik ikon Terminal/SQL di sidebar kiri).</p>
 
       <div class="manual-warn">⚠️ Jalankan semua SQL di bawah ini <strong>sebelum</strong> menghubungkan aplikasi. Cukup sekali saja.</div>
 
@@ -1591,7 +1591,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
 
     <!-- ── SECTION: SETUP APLIKASI ── -->
     <div id="manual-appsetup" class="manual-section">
-      <div class="manual-h2">⚙️ Setup Aplikasi ArtaFlow</div>
+      <div class="manual-h2">⚙️ Setup Aplikasi Sinarkeu</div>
 
       <div class="manual-h3">Setup Pertama Kali</div>
       <div class="manual-step">
@@ -1649,7 +1649,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
 
       <div class="manual-h3">Menggunakan di Banyak Perangkat / Device Baru</div>
       <div class="manual-info">
-        🔑 <strong>Penting dipahami:</strong> Password ArtaFlow hanya tersimpan di <strong>localStorage browser device itu sendiri</strong> — tidak dikirim ke Supabase. Artinya setiap device baru dianggap sebagai "setup pertama kali".
+        🔑 <strong>Penting dipahami:</strong> Password Sinarkeu hanya tersimpan di <strong>localStorage browser device itu sendiri</strong> — tidak dikirim ke Supabase. Artinya setiap device baru dianggap sebagai "setup pertama kali".
       </div>
 
       <div class="manual-step">
@@ -1793,7 +1793,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
     <!-- ── SECTION: TELEGRAM ── -->
     <div id="manual-telegram" class="manual-section">
       <div class="manual-h2">📲 Setup Notifikasi Telegram</div>
-      <p class="manual-p">ArtaFlow dapat mengirim notifikasi otomatis ke Telegram setiap ada aktivitas penting. Klik tombol <strong>📲 Telegram</strong> di header untuk mengkonfigurasi.</p>
+      <p class="manual-p">Sinarkeu dapat mengirim notifikasi otomatis ke Telegram setiap ada aktivitas penting. Klik tombol <strong>📲 Telegram</strong> di header untuk mengkonfigurasi.</p>
 
       <div class="manual-h3">Jenis Notifikasi</div>
       <table class="manual-table">
@@ -1842,11 +1842,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
         </div>
       </div>
 
-      <div class="manual-h3">Masukkan ke ArtaFlow</div>
+      <div class="manual-h3">Masukkan ke Sinarkeu</div>
       <div class="manual-step">
         <div class="manual-step-num">4</div>
         <div class="manual-step-body">
-          <div class="manual-step-title">Buka modal Telegram di ArtaFlow</div>
+          <div class="manual-step-title">Buka modal Telegram di Sinarkeu</div>
           <div class="manual-step-desc">Klik tombol <strong>📲 Telegram</strong> di header aplikasi.</div>
         </div>
       </div>
@@ -2184,7 +2184,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
     <div class="modal-content" style="max-width:460px;">
         <div style="text-align:center; margin-bottom:24px;">
             <div style="font-size:2.5rem; margin-bottom:8px;">☁️</div>
-            <div style="font-size:1rem; font-weight:700; margin-bottom:4px;">Setup ArtaFlow</div>
+            <div style="font-size:1rem; font-weight:700; margin-bottom:4px;">Setup Sinarkeu</div>
             <div style="font-size:.75rem; color:#888;">Masukkan kredensial Supabase dan buat password keamanan</div>
         </div>
 
@@ -2251,11 +2251,11 @@ let currentPage = 1;
 
 // ==================== CRYPTO ENGINE (AES-GCM + PBKDF2) ====================
 
-const CRYPTO_SALT_KEY   = 'af_crypto_salt';
-const CRYPTO_CHECK_KEY  = 'af_crypto_check';
-const CRYPTO_URL_KEY    = 'af_enc_supabase_url';
-const CRYPTO_AKEY_KEY   = 'af_enc_supabase_key';
-const SENTINEL_PLAIN    = 'artaflow_ok';
+const CRYPTO_SALT_KEY   = 'sk_crypto_salt';
+const CRYPTO_CHECK_KEY  = 'sk_crypto_check';
+const CRYPTO_URL_KEY    = 'sk_enc_supabase_url';
+const CRYPTO_AKEY_KEY   = 'sk_enc_supabase_key';
+const SENTINEL_PLAIN    = 'sinarkeu_ok';
 
 async function deriveKey(password, saltBuf) {
     const enc = new TextEncoder();
@@ -2317,7 +2317,7 @@ async function unlockWithPassword(password) {
         globalSupabaseKey = await decryptStr(key, localStorage.getItem(CRYPTO_AKEY_KEY));
     } catch { return false; }
     _sessionCryptoKey = key;
-    sessionStorage.setItem('af_session_unlocked', '1');
+    sessionStorage.setItem('sk_session_unlocked', '1');
     return true;
 }
 
@@ -2327,7 +2327,7 @@ async function setupNewPassword(password, url, apiKey) {
     const key = await deriveKey(password, salt);
     await saveEncryptedCredentials(key, url, apiKey);
     _sessionCryptoKey = key;
-    sessionStorage.setItem('af_session_unlocked', '1');
+    sessionStorage.setItem('sk_session_unlocked', '1');
 }
 
 async function reEncryptCredentials(url, apiKey) {
@@ -2337,8 +2337,8 @@ async function reEncryptCredentials(url, apiKey) {
 
 function wipeAllCryptoData() {
     [CRYPTO_SALT_KEY, CRYPTO_CHECK_KEY, CRYPTO_URL_KEY, CRYPTO_AKEY_KEY,
-     'af_supabase_url_global','af_supabase_key_global'].forEach(k => localStorage.removeItem(k));
-    sessionStorage.removeItem('af_session_unlocked');
+     'sk_supabase_url_global','sk_supabase_key_global'].forEach(k => localStorage.removeItem(k));
+    sessionStorage.removeItem('sk_session_unlocked');
     _sessionCryptoKey = null;
     globalSupabaseUrl = '';
     globalSupabaseKey = '';
@@ -2349,7 +2349,7 @@ function wipeAllCryptoData() {
 function showPasswordLock() {
     const screen = document.getElementById('passwordLockScreen');
     screen.style.display = 'flex';
-    document.getElementById('lockTitle').innerText    = 'ArtaFlow';
+    document.getElementById('lockTitle').innerText    = 'Sinarkeu';
     document.getElementById('lockSubtitle').innerText = 'Masukkan password untuk membuka aplikasi';
     document.getElementById('lockSubmitBtn').innerText = '\uD83D\uDD13 Buka';
     document.getElementById('lockIcon').innerText      = '\uD83D\uDD12';
@@ -2459,9 +2459,9 @@ function formatDateTime(dtStr) {
 // ==================== NOTIFIKASI TELEGRAM ====================
 
 function getTgConfig() {
-    let token = localStorage.getItem('af_tg_token') || '';
-    let edgeUrl = localStorage.getItem('af_tg_edge_url') || '';
-    let chatId = localStorage.getItem('af_tg_chatid') || '';
+    let token = localStorage.getItem('sk_tg_token') || '';
+    let edgeUrl = localStorage.getItem('sk_tg_edge_url') || '';
+    let chatId = localStorage.getItem('sk_tg_chatid') || '';
     // Aktif jika minimal ada token langsung ATAU edge function URL
     return { token, edgeUrl, chatId, active: !!(token || edgeUrl) };
 }
@@ -2473,9 +2473,9 @@ function saveTelegramConfig() {
     if (!chatId) { showToast('Chat ID penerima wajib diisi!', 'error'); return; }
     if (!token) { showToast('Bot Token wajib diisi!', 'error'); return; }
 
-    localStorage.setItem('af_tg_token', token);
-    localStorage.setItem('af_tg_chatid', chatId);
-    localStorage.removeItem('af_tg_edge_url'); // bersihkan sisa config lama
+    localStorage.setItem('sk_tg_token', token);
+    localStorage.setItem('sk_tg_chatid', chatId);
+    localStorage.removeItem('sk_tg_edge_url'); // bersihkan sisa config lama
     updateTgStatusBadge();
     showToast('Konfigurasi Telegram disimpan ✅', 'success');
     pushSettingTelegram();
@@ -2483,9 +2483,9 @@ function saveTelegramConfig() {
 
 function clearTelegramConfig() {
     if (!confirm('Hapus konfigurasi Telegram?')) return;
-    localStorage.removeItem('af_tg_token');
-    localStorage.removeItem('af_tg_edge_url');
-    localStorage.removeItem('af_tg_chatid');
+    localStorage.removeItem('sk_tg_token');
+    localStorage.removeItem('sk_tg_edge_url');
+    localStorage.removeItem('sk_tg_chatid');
     document.getElementById('tgBotTokenInput').value = '';
     document.getElementById('tgEdgeUrlInput').value = '';
     document.getElementById('tgChatIdInput').value = '';
@@ -2560,16 +2560,16 @@ async function testTelegramNotif() {
     if (!token && !edgeUrl) { showToast('Isi Bot Token atau Edge Function URL!', 'error'); return; }
 
     // Auto-save config sebelum test supaya getTgConfig() sinkron
-    if (token) localStorage.setItem('af_tg_token', token);
-    else localStorage.removeItem('af_tg_token');
-    if (edgeUrl) localStorage.setItem('af_tg_edge_url', edgeUrl);
-    else localStorage.removeItem('af_tg_edge_url');
-    localStorage.setItem('af_tg_chatid', chatId);
+    if (token) localStorage.setItem('sk_tg_token', token);
+    else localStorage.removeItem('sk_tg_token');
+    if (edgeUrl) localStorage.setItem('sk_tg_edge_url', edgeUrl);
+    else localStorage.removeItem('sk_tg_edge_url');
+    localStorage.setItem('sk_tg_chatid', chatId);
     updateTgStatusBadge();
 
     statusEl.innerHTML = '<span style="color:#cc7b00;">⏳ Mengirim pesan tes...</span>';
 
-    const testMsg = `🔔 <b>ArtaFlow — Tes Notifikasi</b>\n\nKonfigurasi berhasil! Notifikasi transaksi akan dikirim ke sini.\n\n<i>Chat ID: ${chatId}</i>`;
+    const testMsg = `🔔 <b>Sinarkeu — Tes Notifikasi</b>\n\nKonfigurasi berhasil! Notifikasi transaksi akan dikirim ke sini.\n\n<i>Chat ID: ${chatId}</i>`;
 
     try {
         let res, data;
@@ -2763,7 +2763,7 @@ function sendDailySummaryToTelegram() {
         txLines = '\n\n<i>Belum ada transaksi hari ini.</i>';
     }
 
-    let msg = `📅 <b>Ringkasan Harian ArtaFlow</b>
+    let msg = `📅 <b>Ringkasan Harian Sinarkeu</b>
 ${today}
 📒 Buku: <b>${getCurrentBookName()}</b>
 ━━━━━━━━━━━━━━━━━━
@@ -2803,22 +2803,22 @@ function scheduleDailySummary() {
 
 function initApp() {
     // ── Fase 1: Inisialisasi device ID & buku (tidak butuh password) ──
-    deviceId = localStorage.getItem('af_device_id');
+    deviceId = localStorage.getItem('sk_device_id');
     if(!deviceId) {
         deviceId = 'DEV-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-        localStorage.setItem('af_device_id', deviceId);
+        localStorage.setItem('sk_device_id', deviceId);
     }
     document.getElementById('deviceIdDisplay').innerText = deviceId;
 
-    let storedBooks = localStorage.getItem('af_books');
+    let storedBooks = localStorage.getItem('sk_books');
     if(storedBooks) {
         books = JSON.parse(storedBooks);
     } else {
         books = [{id: 'b_default', name: 'Buku Utama'}];
-        localStorage.setItem('af_books', JSON.stringify(books));
+        localStorage.setItem('sk_books', JSON.stringify(books));
     }
 
-    currentBookId = localStorage.getItem('af_current_book_id') || 'b_default';
+    currentBookId = localStorage.getItem('sk_current_book_id') || 'b_default';
     if(!books.find(b => b.id === currentBookId)) currentBookId = books[0].id;
 
     // ── Fase 2: Gating keamanan ──
@@ -2826,10 +2826,10 @@ function initApp() {
     if (!isPasswordConfigured()) {
         hideLockScreen();
         // Migrasi data lama (plaintext) jika ada
-        const legacyUrls = JSON.parse(localStorage.getItem('af_cloud_urls') || '{}');
-        const legacyKeys = JSON.parse(localStorage.getItem('af_supabase_keys') || '{}');
-        const legacyUrl  = localStorage.getItem('af_supabase_url_global') || '';
-        const legacyKey  = localStorage.getItem('af_supabase_key_global') || '';
+        const legacyUrls = JSON.parse(localStorage.getItem('sk_cloud_urls') || '{}');
+        const legacyKeys = JSON.parse(localStorage.getItem('sk_supabase_keys') || '{}');
+        const legacyUrl  = localStorage.getItem('sk_supabase_url_global') || '';
+        const legacyKey  = localStorage.getItem('sk_supabase_key_global') || '';
         const firstKey   = Object.keys(legacyUrls)[0];
         if (legacyUrl || firstKey) {
             // Ada data lama plaintext → isi field setup, minta buat password
@@ -2841,7 +2841,7 @@ function initApp() {
     }
 
     // Kasus B: password sudah dikonfigurasi, tapi session tab baru (sessionStorage kosong)
-    if (!sessionStorage.getItem('af_session_unlocked')) {
+    if (!sessionStorage.getItem('sk_session_unlocked')) {
         showPasswordLock();
         return; // continueAppInit() dipanggil setelah unlock berhasil
     }
@@ -2855,12 +2855,12 @@ async function continueAppInit() {
     // Jika _sessionCryptoKey sudah ada, URL+Key sudah terisi dari unlockWithPassword.
     // Jika masuk dari Kasus C (session valid tapi key hilang karena in-memory), re-lock.
     if (!globalSupabaseUrl && !_sessionCryptoKey) {
-        sessionStorage.removeItem('af_session_unlocked');
+        sessionStorage.removeItem('sk_session_unlocked');
         showPasswordLock();
         return;
     }
 
-    budgets = JSON.parse(localStorage.getItem('af_budgets_' + currentBookId) || '{}');
+    budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
 
     let currentYear = new Date().getFullYear();
     let selectYear = document.getElementById('budgetYear');
@@ -2882,7 +2882,7 @@ async function continueAppInit() {
     } else {
         pullAllSettings().then(() => {
             updateBookSelectDropdown();
-            budgets = JSON.parse(localStorage.getItem('af_budgets_' + currentBookId) || '{}');
+            budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
             updateTgStatusBadge();
             return pullFromCloudSilently();
         }).then(() => {
@@ -2902,7 +2902,7 @@ function getSupabaseKey() { return globalSupabaseKey || ''; }
 
 /** Kunci app: hapus session, tampilkan lock screen */
 function lockApp() {
-    sessionStorage.removeItem('af_session_unlocked');
+    sessionStorage.removeItem('sk_session_unlocked');
     _sessionCryptoKey = null;
     globalSupabaseUrl = '';
     globalSupabaseKey = '';
@@ -3039,10 +3039,10 @@ async function doFirstTimeSetup() {
     await setupNewPassword(pwd, url, key);
 
     // Hapus data plaintext lama jika ada
-    localStorage.removeItem('af_supabase_url_global');
-    localStorage.removeItem('af_supabase_key_global');
-    localStorage.removeItem('af_cloud_urls');
-    localStorage.removeItem('af_supabase_keys');
+    localStorage.removeItem('sk_supabase_url_global');
+    localStorage.removeItem('sk_supabase_key_global');
+    localStorage.removeItem('sk_cloud_urls');
+    localStorage.removeItem('sk_supabase_keys');
 
     updateCloudIndicator();
     st.className = 'setup-status success';
@@ -3057,14 +3057,14 @@ async function doFirstTimeSetup() {
 }
 
 function loadTransactions() {
-    let stored = localStorage.getItem('af_txs_' + currentBookId);
+    let stored = localStorage.getItem('sk_txs_' + currentBookId);
     txs = stored ? JSON.parse(stored) : [];
     txs.sort((a,b) => new Date(b.date) - new Date(a.date));
     render();
 }
 
 function saveTransactions() {
-    localStorage.setItem('af_txs_' + currentBookId, JSON.stringify(txs));
+    localStorage.setItem('sk_txs_' + currentBookId, JSON.stringify(txs));
     render();
     // Jalankan push cloud secara asynchronous agar tidak memblokir UI lokal
     pushToCloud();
@@ -3173,24 +3173,24 @@ async function pullAllSettings() {
                     }
                 });
                 books = merged;
-                localStorage.setItem('af_books', JSON.stringify(books));
+                localStorage.setItem('sk_books', JSON.stringify(books));
 
                 // Pastikan currentBookId masih valid setelah merge
                 if (!books.find(b => b.id === currentBookId)) {
                     currentBookId = books[0].id;
-                    localStorage.setItem('af_current_book_id', currentBookId);
+                    localStorage.setItem('sk_current_book_id', currentBookId);
                 }
                 updateBookSelectDropdown();
             }
 
             // Konfigurasi Telegram
             if (row.key === 'telegram_config') {
-                if (parsed.token) localStorage.setItem('af_tg_token', parsed.token);
-                else localStorage.removeItem('af_tg_token');
-                if (parsed.edgeUrl) localStorage.setItem('af_tg_edge_url', parsed.edgeUrl);
-                else localStorage.removeItem('af_tg_edge_url');
-                if (parsed.chatId) localStorage.setItem('af_tg_chatid', parsed.chatId);
-                else localStorage.removeItem('af_tg_chatid');
+                if (parsed.token) localStorage.setItem('sk_tg_token', parsed.token);
+                else localStorage.removeItem('sk_tg_token');
+                if (parsed.edgeUrl) localStorage.setItem('sk_tg_edge_url', parsed.edgeUrl);
+                else localStorage.removeItem('sk_tg_edge_url');
+                if (parsed.chatId) localStorage.setItem('sk_tg_chatid', parsed.chatId);
+                else localStorage.removeItem('sk_tg_chatid');
             }
         }
     } else {
@@ -3220,7 +3220,7 @@ async function pullAllSettings() {
             seenBooks.add(row.book_id);
             let parsed;
             try { parsed = JSON.parse(row.value); } catch { continue; }
-            localStorage.setItem('af_budgets_' + row.book_id, JSON.stringify(parsed));
+            localStorage.setItem('sk_budgets_' + row.book_id, JSON.stringify(parsed));
             if (row.book_id === currentBookId) budgets = parsed;
             budgetCount++;
         }
@@ -3238,7 +3238,7 @@ async function pushSettingBooks() {
 
 // Push setelan budgets buku aktif ke Supabase
 async function pushSettingBudgets() {
-    const bud = JSON.parse(localStorage.getItem('af_budgets_' + currentBookId) || '{}');
+    const bud = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
     await pushSetting('budgets', bud, currentBookId);
     updateSettingsSyncStatus('push');
 }
@@ -3253,7 +3253,7 @@ async function pushSettingTelegram() {
 // Push setelan budgets semua buku ke Supabase (dipakai saat buku dihapus/ditambah)
 async function pushSettingAllBudgets() {
     for (const book of books) {
-        const bud = JSON.parse(localStorage.getItem('af_budgets_' + book.id) || '{}');
+        const bud = JSON.parse(localStorage.getItem('sk_budgets_' + book.id) || '{}');
         await pushSetting('budgets', bud, book.id);
     }
 }
@@ -3299,7 +3299,7 @@ async function pushToCloud() {
 // Catat log audit ke tabel Supabase secara independen
 async function addCloudLog(actionType, detailsText) {
     // Catat ke local storage terlebih dahulu agar log tetap aman secara luring
-    let localLogs = JSON.parse(localStorage.getItem('af_logs_' + currentBookId) || '[]');
+    let localLogs = JSON.parse(localStorage.getItem('sk_logs_' + currentBookId) || '[]');
     let logObj = {
         timestamp: new Date().toISOString(),
         device_id: deviceId,
@@ -3308,7 +3308,7 @@ async function addCloudLog(actionType, detailsText) {
     };
     localLogs.unshift(logObj);
     if(localLogs.length > 50) localLogs.pop();
-    localStorage.setItem('af_logs_' + currentBookId, JSON.stringify(localLogs));
+    localStorage.setItem('sk_logs_' + currentBookId, JSON.stringify(localLogs));
     renderLogs(localLogs);
 
     if (!getCloudUrl() || !getSupabaseKey()) return;
@@ -3354,7 +3354,7 @@ async function pullFromCloudSilently() {
         // Gabungkan: semua data cloud + data lokal yang belum tersinkron
         txs = [...cloudMapped, ...localOnlyTxs];
         txs.sort((a,b) => new Date(b.date) - new Date(a.date));
-        localStorage.setItem('af_txs_' + currentBookId, JSON.stringify(txs));
+        localStorage.setItem('sk_txs_' + currentBookId, JSON.stringify(txs));
 
         // Jika ada data lokal yang belum di-cloud, push sekarang agar tersinkron
         if (localOnlyTxs.length > 0) {
@@ -3393,14 +3393,14 @@ async function testCloudConnection() {
         // Simpan terenkripsi (update dengan session key yang sudah aktif)
         await reEncryptCredentials(globalSupabaseUrl, globalSupabaseKey);
         // Hapus plaintext lama jika masih ada
-        localStorage.removeItem('af_supabase_url_global');
-        localStorage.removeItem('af_supabase_key_global');
+        localStorage.removeItem('sk_supabase_url_global');
+        localStorage.removeItem('sk_supabase_key_global');
         statusDiv.innerHTML = '<div class="connection-status success">Sukses! Koneksi terenkripsi & berlaku untuk semua buku. Memulai unduh data...</div>';
         showToast("Supabase terhubung & terenkripsi!", "success");
         updateCloudIndicator();
         await pullAllSettings();
         updateBookSelectDropdown();
-        budgets = JSON.parse(localStorage.getItem('af_budgets_' + currentBookId) || '{}');
+        budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
         updateTgStatusBadge();
         await pullFromCloudSilently();
     } else {
@@ -3434,7 +3434,7 @@ async function refreshLogsFromCloud() {
 }
 
 function refreshLogsLocal() {
-    let localLogs = JSON.parse(localStorage.getItem('af_logs_' + currentBookId) || '[]');
+    let localLogs = JSON.parse(localStorage.getItem('sk_logs_' + currentBookId) || '[]');
     renderLogs(localLogs);
 }
 
@@ -4007,7 +4007,7 @@ async function addNewBook(e) {
 
     let id = 'b_' + Date.now();
     books.push({id, name});
-    localStorage.setItem('af_books', JSON.stringify(books));
+    localStorage.setItem('sk_books', JSON.stringify(books));
     input.value = '';
     renderBookList();
     updateBookSelectDropdown();
@@ -4019,8 +4019,8 @@ async function addNewBook(e) {
 function switchBook(id) {
     if(!books.find(b => b.id === id)) return;
     currentBookId = id;
-    localStorage.setItem('af_current_book_id', currentBookId);
-    budgets = JSON.parse(localStorage.getItem('af_budgets_' + currentBookId) || '{}');
+    localStorage.setItem('sk_current_book_id', currentBookId);
+    budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
     
     updateBookSelectDropdown();
     loadTransactions();
@@ -4066,14 +4066,14 @@ async function deleteBook(id) {
         }
 
         // Bersihkan data lokal buku tersebut
-        localStorage.removeItem('af_txs_' + id);
-        localStorage.removeItem('af_budgets_' + id);
-        localStorage.removeItem('af_logs_' + id);
-        localStorage.removeItem('af_manual_backups_' + id);
-        localStorage.removeItem('af_last_auto_backup_' + id);
+        localStorage.removeItem('sk_txs_' + id);
+        localStorage.removeItem('sk_budgets_' + id);
+        localStorage.removeItem('sk_logs_' + id);
+        localStorage.removeItem('sk_manual_backups_' + id);
+        localStorage.removeItem('sk_last_auto_backup_' + id);
 
         books = books.filter(x => x.id !== id);
-        localStorage.setItem('af_books', JSON.stringify(books));
+        localStorage.setItem('sk_books', JSON.stringify(books));
         
         renderBookList();
         updateBookSelectDropdown();
@@ -4095,7 +4095,7 @@ function exportToCSV() {
     let blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
     let a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `ArtaFlow-Export-${currentBookId}.csv`;
+    a.download = `Sinarkeu-Export-${currentBookId}.csv`;
     a.click();
 }
 
@@ -4104,7 +4104,7 @@ function exportToJSON() {
     let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(txs, null, 2));
     let dlAnchorElem = document.createElement('a');
     dlAnchorElem.setAttribute("href", dataStr);
-    dlAnchorElem.setAttribute("download", `ArtaFlow-Backup-${currentBookId}.json`);
+    dlAnchorElem.setAttribute("download", `Sinarkeu-Backup-${currentBookId}.json`);
     dlAnchorElem.click();
 }
 
@@ -4123,7 +4123,7 @@ async function archiveAndClearData() {
     st.style.background = '#fff3e0'; st.style.color = '#cc7b00';
     st.innerText = '⏳ Mengekspor data ke JSON...';
 
-    const fileName = `ArtaFlow-Arsip-${currentBookId}-${new Date().toISOString().slice(0,10)}.json`;
+    const fileName = `Sinarkeu-Arsip-${currentBookId}-${new Date().toISOString().slice(0,10)}.json`;
     const dataStr  = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(txs, null, 2));
     const a = document.createElement('a');
     a.setAttribute("href", dataStr);
@@ -4142,11 +4142,11 @@ async function archiveAndClearData() {
 
     // Langkah 3: Hapus dari lokal
     txs = [];
-    localStorage.removeItem('af_txs_'              + currentBookId);
-    localStorage.removeItem('af_logs_'             + currentBookId);
-    localStorage.removeItem('af_manual_backups_'   + currentBookId);
-    localStorage.removeItem('af_last_auto_backup_' + currentBookId);
-    localStorage.removeItem('af_budgets_'          + currentBookId);
+    localStorage.removeItem('sk_txs_'              + currentBookId);
+    localStorage.removeItem('sk_logs_'             + currentBookId);
+    localStorage.removeItem('sk_manual_backups_'   + currentBookId);
+    localStorage.removeItem('sk_last_auto_backup_' + currentBookId);
+    localStorage.removeItem('sk_budgets_'          + currentBookId);
     budgets = {};
 
     render();
@@ -4188,13 +4188,13 @@ function renderBackupList() {
     let info = document.getElementById('lastBackupInfo');
     let container = document.getElementById('backupListContainer');
     
-    let lastLocal = localStorage.getItem('af_last_auto_backup_' + currentBookId);
-    let lastCloud = localStorage.getItem('af_last_cloud_backup_' + currentBookId);
+    let lastLocal = localStorage.getItem('sk_last_auto_backup_' + currentBookId);
+    let lastCloud = localStorage.getItem('sk_last_cloud_backup_' + currentBookId);
     let infoText = 'Lokal: ' + (lastLocal ? formatDateTime(lastLocal) : 'Belum ada');
     infoText += ' | Cloud: ' + (lastCloud ? formatDateTime(lastCloud) : 'Belum ada');
     info.innerText = infoText;
     
-    let localBackups = JSON.parse(localStorage.getItem('af_manual_backups_' + currentBookId) || '[]');
+    let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + currentBookId) || '[]');
     container.innerHTML = '';
     
     if(localBackups.length === 0) {
@@ -4217,21 +4217,21 @@ function renderBackupList() {
 }
 
 function createBackup() {
-    let localBackups = JSON.parse(localStorage.getItem('af_manual_backups_' + currentBookId) || '[]');
+    let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + currentBookId) || '[]');
     localBackups.unshift({
         timestamp: new Date().toISOString(),
         count: txs.length,
         data: txs
     });
     if(localBackups.length > 5) localBackups.pop(); // Batasi maksimal 5 snapshot cadangan
-    localStorage.setItem('af_manual_backups_' + currentBookId, JSON.stringify(localBackups));
-    localStorage.setItem('af_last_auto_backup_' + currentBookId, new Date().toISOString());
+    localStorage.setItem('sk_manual_backups_' + currentBookId, JSON.stringify(localBackups));
+    localStorage.setItem('sk_last_auto_backup_' + currentBookId, new Date().toISOString());
     renderBackupList();
     showToast("Snapshot cadangan berhasil dibuat");
 }
 
 function restoreFromIndex(i) {
-    let localBackups = JSON.parse(localStorage.getItem('af_manual_backups_' + currentBookId) || '[]');
+    let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + currentBookId) || '[]');
     if(localBackups[i] && confirm("Pulihkan data dari snapshot cadangan ini? Data saat ini akan diganti.")) {
         txs = localBackups[i].data;
         saveTransactions();
@@ -4241,15 +4241,15 @@ function restoreFromIndex(i) {
 }
 
 function deleteBackupIndex(i) {
-    let localBackups = JSON.parse(localStorage.getItem('af_manual_backups_' + currentBookId) || '[]');
+    let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + currentBookId) || '[]');
     localBackups.splice(i, 1);
-    localStorage.setItem('af_manual_backups_' + currentBookId, JSON.stringify(localBackups));
+    localStorage.setItem('sk_manual_backups_' + currentBookId, JSON.stringify(localBackups));
     renderBackupList();
     showToast("Snapshot cadangan dihapus", "warning");
 }
 
 function restoreFromBackup() {
-    let backups = JSON.parse(localStorage.getItem('af_manual_backups_' + currentBookId) || '[]');
+    let backups = JSON.parse(localStorage.getItem('sk_manual_backups_' + currentBookId) || '[]');
     if(backups.length === 0) { alert('Tidak ditemukan snapshot cadangan. Buat backup manual terlebih dahulu.'); return; }
     // Arahkan user ke panel backup untuk pilih snapshot secara eksplisit
     openBackupManager();
@@ -4261,7 +4261,7 @@ function restoreFromBackup() {
 async function checkAndRunDailyAutoBackup() {
     if (!getCloudUrl() || !getSupabaseKey()) return; // Hanya jika Supabase terhubung
 
-    let lastKey = 'af_last_cloud_backup_' + currentBookId;
+    let lastKey = 'sk_last_cloud_backup_' + currentBookId;
     let last = localStorage.getItem(lastKey);
     let now = new Date();
 
@@ -4295,7 +4295,7 @@ async function createCloudBackup() {
     showToast('Menyimpan cadangan ke cloud...', 'info');
     let result = await pushBackupToSupabase('MANUAL');
     if (result) {
-        let lastKey = 'af_last_cloud_backup_' + currentBookId;
+        let lastKey = 'sk_last_cloud_backup_' + currentBookId;
         localStorage.setItem(lastKey, new Date().toISOString());
         showToast('☁️ Cadangan cloud berhasil disimpan!', 'success');
         await addCloudLog('BACKUP', 'Backup manual cloud: ' + txs.length + ' transaksi');
@@ -4465,7 +4465,7 @@ function saveBudget() {
         budgets[key][cat] = unRp(input.value);
     });
     
-    localStorage.setItem('af_budgets_' + currentBookId, JSON.stringify(budgets));
+    localStorage.setItem('sk_budgets_' + currentBookId, JSON.stringify(budgets));
     closeModal('budgetModal');
     renderBudget();
     showToast("Anggaran bulanan berhasil diperbarui");
@@ -4656,7 +4656,7 @@ function generatePDFReport() {
     let element = document.querySelector('.table-container');
     let opt = {
         margin: 10,
-        filename: 'ArtaFlow-Daftar-Transaksi-' + currentBookId + '.pdf',
+        filename: 'Sinarkeu-Daftar-Transaksi-' + currentBookId + '.pdf',
         image: { type: 'jpeg', quality: 0.95 },
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
