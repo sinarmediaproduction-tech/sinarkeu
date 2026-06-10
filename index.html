@@ -1557,83 +1557,84 @@ async function pushSetting(key, value, bookId) {
 async function pullAllSettings() {
     if (!getCloudUrl() || !getSupabaseKey()) return;
 
-    // Ambil semua baris: milik buku-buku yang dikenal + 'global'
-    const knownBookIds = books.map(b => `"${b.id}"`).join(',');
-    const qs = `?or=(book_id.in.(${knownBookIds}),book_id.eq.global)&order=updated_at.desc`;
-    const rows = await callSupabaseAPI('settings', 'GET', null, qs);
+    // ── PASS 1: Ambil hanya key global (books + telegram_config) tanpa filter book_id ──
+    // Ini penting untuk user baru yang belum tahu buku apa saja yang ada di cloud.
+    const passOneRows = await callSupabaseAPI(
+        'settings', 'GET', null,
+        `?book_id=eq.global&order=updated_at.desc`
+    );
 
-    if (!rows || !Array.isArray(rows)) {
-        console.warn('[pullAllSettings] Gagal atau tidak ada data dari tabel settings.');
-        return;
-    }
+    if (passOneRows && Array.isArray(passOneRows)) {
+        for (const row of passOneRows) {
+            let parsed;
+            try { parsed = JSON.parse(row.value); } catch { continue; }
 
-    // Deduplicate: ambil baris paling baru per (book_id, key)
-    const seen = new Set();
-    const deduped = [];
-    for (const row of rows) {
-        const uniq = `${row.book_id}::${row.key}`;
-        if (!seen.has(uniq)) { seen.add(uniq); deduped.push(row); }
-    }
-
-    let booksUpdated = false;
-
-    for (const row of deduped) {
-        let parsed;
-        try { parsed = JSON.parse(row.value); } catch { continue; }
-
-        // --- Key: 'books' (daftar buku kas, book_id='global') ---
-        if (row.key === 'books' && row.book_id === 'global') {
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                // Merge: tambahkan buku dari cloud yang belum ada di lokal
+            // Merge daftar buku dari cloud ke lokal
+            if (row.key === 'books' && Array.isArray(parsed) && parsed.length > 0) {
                 const localIds = new Set(books.map(b => b.id));
                 let merged = [...books];
                 parsed.forEach(cb => {
                     if (!localIds.has(cb.id)) merged.push(cb);
                     else {
-                        // Update nama jika berbeda (cloud sebagai sumber kebenaran)
                         const idx = merged.findIndex(b => b.id === cb.id);
                         if (idx !== -1) merged[idx].name = cb.name;
                     }
                 });
                 books = merged;
                 localStorage.setItem('af_books', JSON.stringify(books));
-                booksUpdated = true;
+
+                // Pastikan currentBookId masih valid setelah merge
+                if (!books.find(b => b.id === currentBookId)) {
+                    currentBookId = books[0].id;
+                    localStorage.setItem('af_current_book_id', currentBookId);
+                }
+                updateBookSelectDropdown();
+            }
+
+            // Konfigurasi Telegram
+            if (row.key === 'telegram_config') {
+                if (parsed.token) localStorage.setItem('af_tg_token', parsed.token);
+                else localStorage.removeItem('af_tg_token');
+                if (parsed.edgeUrl) localStorage.setItem('af_tg_edge_url', parsed.edgeUrl);
+                else localStorage.removeItem('af_tg_edge_url');
+                if (parsed.chatId) localStorage.setItem('af_tg_chatid', parsed.chatId);
+                else localStorage.removeItem('af_tg_chatid');
             }
         }
+    } else {
+        console.warn('[pullAllSettings] Pass 1 gagal — skip pass 2.');
+        return;
+    }
 
-        // --- Key: 'budgets' (anggaran per buku) ---
-        if (row.key === 'budgets') {
-            const lsKey = 'af_budgets_' + row.book_id;
-            localStorage.setItem(lsKey, JSON.stringify(parsed));
-            // Jika ini buku aktif, refresh variabel budgets di memori
-            if (row.book_id === currentBookId) {
-                budgets = parsed;
-            }
-        }
+    // ── PASS 2: Sekarang books sudah lengkap — ambil budgets untuk semua buku ──
+    if (books.length === 0) {
+        console.log('[pullAllSettings] Tidak ada buku ditemukan, selesai.');
+        showToast('Setelan berhasil disinkronkan dari cloud ☁️', 'info');
+        return;
+    }
 
-        // --- Key: 'telegram_config' (global) ---
-        if (row.key === 'telegram_config' && row.book_id === 'global') {
-            if (parsed.token) localStorage.setItem('af_tg_token', parsed.token);
-            else localStorage.removeItem('af_tg_token');
+    const allBookIds = books.map(b => `"${b.id}"`).join(',');
+    const passTwoRows = await callSupabaseAPI(
+        'settings', 'GET', null,
+        `?key=eq.budgets&book_id=in.(${allBookIds})&order=updated_at.desc`
+    );
 
-            if (parsed.edgeUrl) localStorage.setItem('af_tg_edge_url', parsed.edgeUrl);
-            else localStorage.removeItem('af_tg_edge_url');
-
-            if (parsed.chatId) localStorage.setItem('af_tg_chatid', parsed.chatId);
-            else localStorage.removeItem('af_tg_chatid');
+    let budgetCount = 0;
+    if (passTwoRows && Array.isArray(passTwoRows)) {
+        // Deduplicate per book_id (ambil paling baru — sudah diurutkan desc)
+        const seenBooks = new Set();
+        for (const row of passTwoRows) {
+            if (seenBooks.has(row.book_id)) continue;
+            seenBooks.add(row.book_id);
+            let parsed;
+            try { parsed = JSON.parse(row.value); } catch { continue; }
+            localStorage.setItem('af_budgets_' + row.book_id, JSON.stringify(parsed));
+            if (row.book_id === currentBookId) budgets = parsed;
+            budgetCount++;
         }
     }
 
-    if (booksUpdated) {
-        updateBookSelectDropdown();
-        // Pastikan currentBookId masih valid
-        if (!books.find(b => b.id === currentBookId)) {
-            currentBookId = books[0].id;
-            localStorage.setItem('af_current_book_id', currentBookId);
-        }
-    }
-
-    console.log(`[pullAllSettings] Selesai — ${deduped.length} baris diproses.`);
+    console.log(`[pullAllSettings] Selesai — ${books.length} buku, ${budgetCount} anggaran dimuat.`);
     showToast('Setelan berhasil disinkronkan dari cloud ☁️', 'info');
 }
 
