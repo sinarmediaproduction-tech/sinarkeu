@@ -1026,14 +1026,8 @@
             <input type="text" id="tgChatIdInput" class="form-control" placeholder="123456789" autocomplete="off">
         </div>
 
-        <!-- Edge Function — lipat di detail tag agar tidak membingungkan -->
-        <details style="margin-bottom:14px;">
-            <summary style="font-size:.72rem; color:#888; cursor:pointer;">⚙️ Opsi lanjutan: Edge Function URL (opsional)</summary>
-            <div style="margin-top:10px;">
-                <input type="text" id="tgEdgeUrlInput" class="form-control" placeholder="https://xxx.supabase.co/functions/v1/send-telegram" style="font-size:.75rem;">
-                <div style="font-size:.65rem; color:#aaa; margin-top:6px; line-height:1.5;">Jika diisi, notif dikirim via Supabase Edge Function (Bot Token aman di server). Kosongkan untuk mode langsung.</div>
-            </div>
-        </details>
+        <!-- Edge Function hidden, tetap ada di DOM agar fungsi lama tidak error -->
+        <input type="hidden" id="tgEdgeUrlInput" value="">
 
         <div id="tgTestStatus" style="font-size:.72rem; margin-bottom:12px; min-height:20px; padding: 0 2px;"></div>
 
@@ -1174,22 +1168,17 @@ function getTgConfig() {
 
 function saveTelegramConfig() {
     let token = document.getElementById('tgBotTokenInput').value.trim();
-    let edgeUrl = document.getElementById('tgEdgeUrlInput').value.trim();
     let chatId = document.getElementById('tgChatIdInput').value.trim();
 
     if (!chatId) { showToast('Chat ID penerima wajib diisi!', 'error'); return; }
-    if (!token && !edgeUrl) { showToast('Isi Bot Token atau Edge Function URL!', 'error'); return; }
+    if (!token) { showToast('Bot Token wajib diisi!', 'error'); return; }
 
-    if (token) localStorage.setItem('af_tg_token', token);
-    else localStorage.removeItem('af_tg_token');
-
-    if (edgeUrl) localStorage.setItem('af_tg_edge_url', edgeUrl);
-    else localStorage.removeItem('af_tg_edge_url');
-
+    localStorage.setItem('af_tg_token', token);
     localStorage.setItem('af_tg_chatid', chatId);
+    localStorage.removeItem('af_tg_edge_url'); // bersihkan sisa config lama
     updateTgStatusBadge();
     showToast('Konfigurasi Telegram disimpan ✅', 'success');
-    pushSettingTelegram(); // push ke Supabase (async, non-blocking)
+    pushSettingTelegram();
 }
 
 function clearTelegramConfig() {
