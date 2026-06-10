@@ -2016,23 +2016,32 @@ async function pullAllSettings() {
             let parsed;
             try { parsed = JSON.parse(row.value); } catch { continue; }
 
-            // BUKU
+            // BUKU — cloud adalah sumber kebenaran
             if (row.key === 'books' && Array.isArray(parsed) && parsed.length > 0) {
-                const existingIds = new Set(books.map(b => b.id));
-                let merged = [...books];
+                const cloudIds = new Set(parsed.map(b => b.id));
+                const localIds = new Set(books.map(b => b.id));
                 let changed = false;
 
-                parsed.forEach(cb => {
-                    if (!existingIds.has(cb.id)) {
-                        merged.push(cb);
-                        changed = true;
+                // Mulai dari daftar cloud (hapus otomatis buku yang sudah dihapus di device lain)
+                let merged = parsed.map(cb => {
+                    const localBook = books.find(b => b.id === cb.id);
+                    if (!localBook) {
                         console.log('[Sync] Buku baru dari cloud:', cb.name);
-                    } else {
-                        const idx = merged.findIndex(b => b.id === cb.id);
-                        if (idx !== -1 && merged[idx].name !== cb.name) {
-                            merged[idx].name = cb.name;
-                            changed = true;
-                        }
+                        changed = true;
+                    } else if (localBook.name !== cb.name) {
+                        changed = true;
+                    }
+                    return cb;
+                });
+
+                // Cek apakah ada buku lokal yang tidak ada di cloud (sudah dihapus)
+                books.forEach(lb => {
+                    if (!cloudIds.has(lb.id)) {
+                        console.log('[Sync] Buku dihapus dari cloud, hapus lokal:', lb.name);
+                        localStorage.removeItem('sk_txs_' + lb.id);
+                        localStorage.removeItem('sk_budgets_' + lb.id);
+                        localStorage.removeItem('sk_logs_' + lb.id);
+                        changed = true;
                     }
                 });
 
@@ -2120,8 +2129,6 @@ async function pullFromCloudSilently() {
 
 async function pullAllBooksFromCloud() {
     if (!isOnline()) return;
-
-    await pullAllSettings();
 
     const bookIds = books.map(b => b.id);
     if (bookIds.length === 0) return;
@@ -3664,7 +3671,6 @@ function startAutoSync() {
             updateBookSelectDropdown();
             budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
             renderBudget();
-            updateSyncTimeBadge();
         }
     }, 30000);
 
