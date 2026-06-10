@@ -951,7 +951,18 @@
         <div class="modal-header"><h3>Kelola Buku Kas</h3><button class="modal-close" onclick="closeModal('bookManagerModal')">×</button></div>
         <div id="bookListContainer"></div>
         <form onsubmit="addNewBook(event)" style="border-top:1px solid #eee; padding-top:16px; margin-bottom:16px"><input type="text" id="newBookName" class="form-control" placeholder="Nama buku baru..." required><button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px">Buat Buku Baru</button></form>
-        <div class="data-management-panel"><div class="panel-title">Cadangan Data</div><div class="panel-actions-row"><button class="btn btn-secondary" onclick="exportToCSV()">📥 CSV</button><button class="btn btn-secondary" onclick="exportToJSON()">📦 JSON</button><button class="btn btn-secondary" onclick="triggerJsonImport()">📤 Impor</button></div><input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)"></div> 
+        <div class="data-management-panel"><div class="panel-title">Cadangan Data</div><div class="panel-actions-row"><button class="btn btn-secondary" onclick="exportToCSV()">📥 CSV</button><button class="btn btn-secondary" onclick="exportToJSON()">📦 JSON</button><button class="btn btn-secondary" onclick="triggerJsonImport()">📤 Impor</button></div><input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)"></div>
+
+        <div class="data-management-panel" style="border-color:#de350b; background:#fff5f5;">
+            <div class="panel-title" style="color:#de350b;">🗃️ Arsipkan & Kosongkan Database</div>
+            <div style="font-size:.7rem; color:#666; margin-bottom:12px; line-height:1.6;">
+                Export semua transaksi buku ini ke file JSON sebagai arsip, lalu <b>hapus permanen</b> seluruh data dari Supabase dan lokal. Gunakan saat storage hampir penuh.
+            </div>
+            <div id="archiveStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
+            <button class="btn btn-danger" style="width:100%;" onclick="archiveAndClearData()">
+                🗃️ Arsipkan JSON & Kosongkan Database
+            </button>
+        </div> 
         
         <div style="border-top:2px dashed #1a1a1a; padding-top:16px">
             <div class="form-group">
@@ -1882,6 +1893,55 @@ function exportToJSON() {
     dlAnchorElem.setAttribute("href", dataStr);
     dlAnchorElem.setAttribute("download", `ArtaFlow-Backup-${currentBookId}.json`);
     dlAnchorElem.click();
+}
+
+async function archiveAndClearData() {
+    if (txs.length === 0) {
+        alert('Tidak ada data transaksi untuk diarsipkan!');
+        return;
+    }
+
+    const st = document.getElementById('archiveStatus');
+
+    if (!confirm(`Anda akan mengarsipkan ${txs.length} transaksi ke file JSON, lalu menghapus SEMUA data buku ini dari Supabase dan lokal.\n\nProses ini tidak bisa dibatalkan. Lanjutkan?`)) return;
+
+    // Langkah 1: Export JSON otomatis
+    st.style.display = 'block';
+    st.style.background = '#fff3e0'; st.style.color = '#cc7b00';
+    st.innerText = '⏳ Mengekspor data ke JSON...';
+
+    const fileName = `ArtaFlow-Arsip-${currentBookId}-${new Date().toISOString().slice(0,10)}.json`;
+    const dataStr  = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(txs, null, 2));
+    const a = document.createElement('a');
+    a.setAttribute("href", dataStr);
+    a.setAttribute("download", fileName);
+    a.click();
+
+    // Beri jeda agar download sempat terpicu sebelum data dihapus
+    await new Promise(r => setTimeout(r, 1000));
+
+    // Langkah 2: Hapus dari Supabase
+    st.innerText = '⏳ Menghapus data dari Supabase...';
+    if (getCloudUrl() && getSupabaseKey()) {
+        await callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${currentBookId}`);
+        await callSupabaseAPI('audit_logs',   'DELETE', null, `?book_id=eq.${currentBookId}`);
+    }
+
+    // Langkah 3: Hapus dari lokal
+    txs = [];
+    localStorage.removeItem('af_txs_'              + currentBookId);
+    localStorage.removeItem('af_logs_'             + currentBookId);
+    localStorage.removeItem('af_manual_backups_'   + currentBookId);
+    localStorage.removeItem('af_last_auto_backup_' + currentBookId);
+    localStorage.removeItem('af_budgets_'          + currentBookId);
+    budgets = {};
+
+    render();
+
+    st.style.background = '#e3fcef'; st.style.color = '#006644';
+    st.innerText = `✅ Selesai! ${fileName} tersimpan & database telah dikosongkan.`;
+    showToast('Database berhasil dikosongkan', 'success');
+    setTimeout(() => { st.style.display = 'none'; }, 5000);
 }
 
 function triggerJsonImport() { document.getElementById('jsonFileInput').click(); }
