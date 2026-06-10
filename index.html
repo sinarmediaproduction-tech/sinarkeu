@@ -754,6 +754,81 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #aaa;
         }
+
+        /* ===== LOGIN & ROLE STYLES ===== */
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: .65rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            border: 1.5px solid transparent;
+            transition: all 0.2s;
+        }
+        .role-badge.admin {
+            background: #1a1a1a;
+            color: #fff;
+            border-color: #1a1a1a;
+        }
+        .role-badge.viewer {
+            background: #f0f0f0;
+            color: #666;
+            border-color: #ddd;
+        }
+        .role-badge:hover {
+            opacity: 0.85;
+        }
+
+        /* Overlay login modal */
+        #loginModal .modal-content {
+            max-width: 360px;
+            text-align: center;
+        }
+        .login-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+        .login-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .login-sub {
+            font-size: .75rem;
+            color: #888;
+            margin-bottom: 20px;
+        }
+        .login-error {
+            background: #ffebe6;
+            color: #bf2600;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: .75rem;
+            margin-bottom: 12px;
+            display: none;
+        }
+        .login-error.show { display: block; }
+
+        /* Elemen yang disembunyikan dari viewer */
+        .admin-only {
+            /* ditampilkan/disembunyikan via JS */
+        }
+
+        /* Change password panel */
+        .change-pw-panel {
+            background: #fff3e0;
+            border: 1.5px solid #cc7b00;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-top: 16px;
+        }
+        .change-pw-panel .panel-title {
+            color: #cc7b00;
+        }
     </style>
 </head>
 <body>
@@ -765,13 +840,16 @@
             <p>Sistem Multi Buku Kas dengan Supabase Cloud Storage</p>
         </div>
         <div class="book-selector">
+            <button id="roleBadgeBtn" class="role-badge viewer" onclick="handleRoleBadgeClick()" title="Klik untuk login/logout Admin">
+                👁️ VIEWER
+            </button>
             <div id="syncStatusWrapper" class="sync-status-container offline">
                 <span id="syncStatusTag" class="sync-status-badge">📴 CLOUD OFF</span>
                 <span id="deviceIdDisplay" class="device-id-badge">------</span>
             </div>
             <label>BUKU:</label>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
-            <button class="manage-books-btn" onclick="openBookManager()">Kelola</button>
+            <button class="manage-books-btn admin-only" onclick="requireAdmin(openBookManager)">Kelola</button>
         </div>
     </div>
 
@@ -803,7 +881,7 @@
             </div>
         </div>
         <div class="budget-mini-actions">
-            <button class="btn-icon" onclick="openBudgetModal()">✏️ Atur</button>
+            <button class="btn-icon admin-only" onclick="requireAdmin(openBudgetModal)">✏️ Atur</button>
             <button class="btn-icon" onclick="openMonthlyReport()">📊 Laporan Bulanan</button>
             <button class="btn-icon" onclick="generatePDFReport()">📄 PDF</button>
         </div>
@@ -838,8 +916,8 @@
             </div>
         </div>
         <div class="actions">
-            <button class="btn btn-primary" onclick="openModal('addModal')">+ Transaksi</button>
-            <button class="btn btn-secondary" onclick="openBackupManager()">🔒 Backup</button>
+            <button class="btn btn-primary admin-only" onclick="requireAdmin(() => openModal('addModal'))">+ Transaksi</button>
+            <button class="btn btn-secondary admin-only" onclick="requireAdmin(openBackupManager)">🔒 Backup</button>
         </div>
     </div>
 
@@ -928,6 +1006,25 @@
                 <div id="connectionStatus" style="margin-top:8px"></div>
             </div>
         </div>
+
+        <!-- Panel ganti password admin -->
+        <div class="change-pw-panel">
+            <div class="panel-title">🔑 Ganti Password Admin</div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label>Password Lama</label>
+                <input type="password" id="oldPasswordInput" class="form-control" placeholder="Password saat ini">
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label>Password Baru</label>
+                <input type="password" id="newPasswordInput" class="form-control" placeholder="Password baru (min. 4 karakter)">
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label>Konfirmasi Password Baru</label>
+                <input type="password" id="confirmPasswordInput" class="form-control" placeholder="Ulangi password baru">
+            </div>
+            <div id="changePwStatus" style="font-size:.7rem; margin-bottom:10px; display:none;"></div>
+            <button class="btn btn-primary" style="width:100%;" onclick="changeAdminPassword()">Simpan Password Baru</button>
+        </div>
     </div>
 </div>
 
@@ -953,6 +1050,38 @@
     <div class="modal-content" style="max-width:600px; text-align:center"> <div class="modal-header"><h3>📎 Lampiran Nota</h3><button class="modal-close" onclick="closeModal('viewAttachmentModal')">×</button></div> <img id="fullAttachmentImage" style="max-width:100%; max-height:60vh; border-radius:8px"><br><br> <button class="btn btn-secondary" onclick="downloadAttachment()">💾 Unduh Gambar</button> </div>
 </div>
 
+<!-- ===== MODAL LOGIN ADMIN ===== -->
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <div class="login-icon">🔐</div>
+        <div class="login-title">Login Admin</div>
+        <div class="login-sub">Masukkan password untuk mengakses fitur administrasi</div>
+        <div id="loginError" class="login-error">Password salah. Coba lagi.</div>
+        <div class="form-group" style="text-align:left">
+            <label>Password Admin</label>
+            <input type="password" id="loginPasswordInput" class="form-control" placeholder="Masukkan password..." onkeydown="if(event.key==='Enter') submitLogin()">
+        </div>
+        <div style="display:flex; gap:10px; margin-top:8px;">
+            <button class="btn btn-secondary" style="flex:1" onclick="closeModal('loginModal')">Batal</button>
+            <button class="btn btn-primary" style="flex:1" onclick="submitLogin()">🔓 Masuk</button>
+        </div>
+        <div style="margin-top:14px; font-size:.65rem; color:#aaa;">Password default: <b>admin123</b></div>
+    </div>
+</div>
+
+<!-- ===== MODAL KONFIRMASI LOGOUT ===== -->
+<div id="logoutConfirmModal" class="modal">
+    <div class="modal-content" style="max-width:340px; text-align:center;">
+        <div style="font-size:2rem; margin-bottom:10px;">🔒</div>
+        <div class="login-title" style="margin-bottom:6px;">Keluar dari Mode Admin?</div>
+        <div style="font-size:.75rem; color:#888; margin-bottom:20px;">Anda akan kembali ke mode Viewer (hanya bisa melihat).</div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-secondary" style="flex:1" onclick="closeModal('logoutConfirmModal')">Batal</button>
+            <button class="btn btn-danger" style="flex:1" onclick="doLogout()">Ya, Keluar</button>
+        </div>
+    </div>
+</div>
+
 <script>
 // ==================== GLOBAL VARIABLES ====================
 let txs = [];
@@ -969,6 +1098,132 @@ let currentAttachmentData = null;
 let budgets = {};
 let reportChart = null;
 const EXPENSE_CATEGORIES = ['Makanan & Minuman', 'Transportasi', 'Belanja & Pakaian', 'Tagihan', 'Hiburan', 'Kesehatan', 'Pendidikan', 'Cicilan & Hutang', 'Investasi', 'Lain-lain'];
+
+// ==================== AUTH / ROLE ====================
+const DEFAULT_ADMIN_PASSWORD = 'admin123';
+let currentRole = 'viewer'; // 'viewer' | 'admin'
+let pendingAdminAction = null; // fungsi yang antri setelah login berhasil
+
+function getAdminPassword() {
+    return localStorage.getItem('af_admin_password') || DEFAULT_ADMIN_PASSWORD;
+}
+
+function isAdmin() {
+    return currentRole === 'admin';
+}
+
+// Dipanggil saat klik badge role di header
+function handleRoleBadgeClick() {
+    if (isAdmin()) {
+        openModal('logoutConfirmModal');
+    } else {
+        document.getElementById('loginPasswordInput').value = '';
+        document.getElementById('loginError').classList.remove('show');
+        openModal('loginModal');
+        setTimeout(() => document.getElementById('loginPasswordInput').focus(), 100);
+    }
+}
+
+// Wrapper: jika sudah admin langsung jalankan fn, kalau belum tampilkan login dulu
+function requireAdmin(fn) {
+    if (isAdmin()) {
+        fn();
+    } else {
+        pendingAdminAction = fn;
+        document.getElementById('loginPasswordInput').value = '';
+        document.getElementById('loginError').classList.remove('show');
+        openModal('loginModal');
+        setTimeout(() => document.getElementById('loginPasswordInput').focus(), 100);
+    }
+}
+
+function submitLogin() {
+    let input = document.getElementById('loginPasswordInput').value;
+    if (input === getAdminPassword()) {
+        currentRole = 'admin';
+        closeModal('loginModal');
+        applyRoleUI();
+        showToast('Login Admin berhasil! Selamat datang.', 'success');
+        if (pendingAdminAction) {
+            let fn = pendingAdminAction;
+            pendingAdminAction = null;
+            setTimeout(fn, 200);
+        }
+    } else {
+        document.getElementById('loginError').classList.add('show');
+        document.getElementById('loginPasswordInput').value = '';
+        document.getElementById('loginPasswordInput').focus();
+    }
+}
+
+function doLogout() {
+    currentRole = 'viewer';
+    closeModal('logoutConfirmModal');
+    applyRoleUI();
+    showToast('Anda telah keluar dari mode Admin.', 'info');
+}
+
+// Tampilkan / sembunyikan elemen admin-only sesuai role
+function applyRoleUI() {
+    let badge = document.getElementById('roleBadgeBtn');
+    let adminEls = document.querySelectorAll('.admin-only');
+
+    if (isAdmin()) {
+        badge.className = 'role-badge admin';
+        badge.innerHTML = '🔑 ADMIN';
+        adminEls.forEach(el => el.style.display = '');
+    } else {
+        badge.className = 'role-badge viewer';
+        badge.innerHTML = '👁️ VIEWER';
+        adminEls.forEach(el => el.style.display = 'none');
+    }
+}
+
+function changeAdminPassword() {
+    let oldPw = document.getElementById('oldPasswordInput').value;
+    let newPw = document.getElementById('newPasswordInput').value;
+    let confirmPw = document.getElementById('confirmPasswordInput').value;
+    let statusEl = document.getElementById('changePwStatus');
+
+    statusEl.style.display = 'block';
+
+    if (oldPw !== getAdminPassword()) {
+        statusEl.style.background = '#ffebe6';
+        statusEl.style.color = '#bf2600';
+        statusEl.style.padding = '6px 10px';
+        statusEl.style.borderRadius = '6px';
+        statusEl.innerText = '❌ Password lama salah!';
+        return;
+    }
+    if (newPw.length < 4) {
+        statusEl.style.background = '#ffebe6';
+        statusEl.style.color = '#bf2600';
+        statusEl.style.padding = '6px 10px';
+        statusEl.style.borderRadius = '6px';
+        statusEl.innerText = '❌ Password baru minimal 4 karakter!';
+        return;
+    }
+    if (newPw !== confirmPw) {
+        statusEl.style.background = '#ffebe6';
+        statusEl.style.color = '#bf2600';
+        statusEl.style.padding = '6px 10px';
+        statusEl.style.borderRadius = '6px';
+        statusEl.innerText = '❌ Konfirmasi password tidak cocok!';
+        return;
+    }
+
+    localStorage.setItem('af_admin_password', newPw);
+    document.getElementById('oldPasswordInput').value = '';
+    document.getElementById('newPasswordInput').value = '';
+    document.getElementById('confirmPasswordInput').value = '';
+    statusEl.style.background = '#e3fcef';
+    statusEl.style.color = '#006644';
+    statusEl.style.padding = '6px 10px';
+    statusEl.style.borderRadius = '6px';
+    statusEl.innerText = '✅ Password berhasil diubah!';
+    showToast('Password Admin berhasil diperbarui', 'success');
+    setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+}
 
 // ==================== UTILITIES ====================
 function showToast(msg, type = 'success') {
@@ -1039,6 +1294,7 @@ function initApp() {
     updateBookSelectDropdown();
     loadTransactions();
     updateCloudIndicator();
+    applyRoleUI(); // Terapkan tampilan sesuai role (default: viewer)
     
     // Otomatis tarik data log dan data transaksi jika cloud tersambung
     if (getCloudUrl() && getSupabaseKey()) {
@@ -1384,15 +1640,15 @@ function render() {
             <td class="text-right" style="color:#de350b; font-weight:500;">${expText}</td>
             <td class="text-right" style="font-weight:600;">${rp(balanceMap[t.id] || 0)}</td>
             <td class="text-center">${attCell}</td>
-            <td class="text-center"><button class="action-btn" onclick="openActionMenu('${t.id}')">⋮</button></td>
+            <td class="text-center"><button class="action-btn admin-only" onclick="requireAdmin(() => openActionMenu('${t.id}'))">⋮</button></td>
         `;
         body.appendChild(tr);
     });
 
     renderBudget();
+    applyRoleUI(); // Terapkan ulang setelah render tabel
 }
 
-// ==================== OPERASI CRUD DATA ====================
 function openModal(id) {
     document.getElementById(id).classList.add('show');
     if(id === 'addModal') {
