@@ -755,6 +755,62 @@
             background: #aaa;
         }
 
+        /* ===== PAGINATION ===== */
+        .pagination-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 4px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .pagination-info {
+            font-size: .72rem;
+            color: #666;
+            font-weight: 500;
+        }
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .page-btn {
+            min-width: 32px;
+            height: 32px;
+            padding: 0 8px;
+            font-size: .75rem;
+            font-weight: 600;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 7px;
+            background: #fff;
+            color: #1a1a1a;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .page-btn:hover:not(:disabled) {
+            border-color: #1a1a1a;
+            background: #f5f5f5;
+        }
+        .page-btn.active {
+            background: #1a1a1a;
+            color: #fff;
+            border-color: #1a1a1a;
+        }
+        .page-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+        .page-ellipsis {
+            font-size: .75rem;
+            color: #999;
+            padding: 0 4px;
+            line-height: 32px;
+        }
+
         /* ===== SETUP AWAL ===== */
         .setup-step {
             display: flex;
@@ -865,7 +921,7 @@
 
     <div class="controls">
         <div class="filters">
-            <input type="text" id="searchInput" class="search-input" placeholder="Cari..." oninput="render()">
+            <input type="text" id="searchInput" class="search-input" placeholder="Cari..." oninput="currentPage=1; render();">
             <button class="filter-btn active" onclick="setFilter('all')">Semua</button>
             <button class="filter-btn" onclick="setFilter('income')">Masuk</button>
             <button class="filter-btn" onclick="setFilter('expense')">Keluar</button>
@@ -889,6 +945,11 @@
             </thead>
             <tbody id="transactionTableBody"></tbody>
         </table>
+    </div>
+
+    <div class="pagination-bar" id="paginationBar">
+        <div class="pagination-info" id="paginationInfo"></div>
+        <div class="pagination-controls" id="paginationControls"></div>
     </div>
 
     <div class="log-section">
@@ -1133,6 +1194,8 @@ let currentAttachmentData = null;
 let budgets = {};
 let reportChart = null;
 const EXPENSE_CATEGORIES = ['Makanan & Minuman', 'Transportasi', 'Belanja & Pakaian', 'Tagihan', 'Hiburan', 'Kesehatan', 'Pendidikan', 'Cicilan & Hutang', 'Investasi', 'Lain-lain'];
+const PAGE_SIZE = 10;
+let currentPage = 1;
 
 // ==================== UTILITIES ====================
 function showToast(msg, type = 'success') {
@@ -1945,11 +2008,21 @@ function render() {
 
     if(filtered.length === 0) {
         body.innerHTML = '<tr><td colspan="9" class="text-center" style="color:#888; padding:30px;">Tidak ada transaksi ditemukan</td></tr>';
+        document.getElementById('paginationBar').style.display = 'none';
         renderBudget();
         return;
     }
 
-    filtered.forEach((t, index) => {
+    // ---- PAGINATION ----
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+    // Clamp currentPage jika filter berubah membuat halaman sekarang melebihi total
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const startIdx = (currentPage - 1) * PAGE_SIZE;
+    const paginated = filtered.slice(startIdx, startIdx + PAGE_SIZE);
+
+    paginated.forEach((t, index) => {
         let tr = document.createElement('tr');
         
         let amt = Number(t.amount) || 0;
@@ -1964,8 +2037,11 @@ function render() {
             attCell = `<span class="attachment-link" onclick="viewAttachment('${t.id}')">🖼️</span>`;
         }
 
+        // Nomor urut global (bukan per halaman)
+        const globalIndex = startIdx + index + 1;
+
         tr.innerHTML = `
-            <td class="text-center">${index + 1}</td>
+            <td class="text-center">${globalIndex}</td>
             <td>${formatDateTime(t.date)}</td>
             <td>${badge}${catText}</td>
             <td>${escapeHtml(t.description)}</td>
@@ -1978,7 +2054,90 @@ function render() {
         body.appendChild(tr);
     });
 
+    renderPagination(filtered.length, totalPages);
     renderBudget();
+}
+
+function renderPagination(totalCount, totalPages) {
+    const bar = document.getElementById('paginationBar');
+    const info = document.getElementById('paginationInfo');
+    const controls = document.getElementById('paginationControls');
+
+    if (totalPages <= 1) {
+        bar.style.display = 'none';
+        return;
+    }
+
+    bar.style.display = 'flex';
+    const startItem = (currentPage - 1) * PAGE_SIZE + 1;
+    const endItem = Math.min(currentPage * PAGE_SIZE, totalCount);
+    info.textContent = `Menampilkan ${startItem}–${endItem} dari ${totalCount} transaksi`;
+
+    controls.innerHTML = '';
+
+    // Tombol Prev
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'page-btn';
+    prevBtn.textContent = '‹';
+    prevBtn.title = 'Halaman sebelumnya';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => goToPage(currentPage - 1);
+    controls.appendChild(prevBtn);
+
+    // Logika tampil nomor halaman dengan ellipsis
+    const pages = buildPageNumbers(currentPage, totalPages);
+    pages.forEach(p => {
+        if (p === '...') {
+            const el = document.createElement('span');
+            el.className = 'page-ellipsis';
+            el.textContent = '…';
+            controls.appendChild(el);
+        } else {
+            const btn = document.createElement('button');
+            btn.className = 'page-btn' + (p === currentPage ? ' active' : '');
+            btn.textContent = p;
+            btn.onclick = () => goToPage(p);
+            controls.appendChild(btn);
+        }
+    });
+
+    // Tombol Next
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'page-btn';
+    nextBtn.textContent = '›';
+    nextBtn.title = 'Halaman berikutnya';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => goToPage(currentPage + 1);
+    controls.appendChild(nextBtn);
+}
+
+function buildPageNumbers(current, total) {
+    // Selalu tampilkan: halaman pertama, terakhir, current, dan 1 di kiri/kanan current
+    const pages = [];
+    const add = (n) => { if (!pages.includes(n) && n >= 1 && n <= total) pages.push(n); };
+
+    add(1);
+    add(current - 1);
+    add(current);
+    add(current + 1);
+    add(total);
+
+    pages.sort((a, b) => a - b);
+
+    // Sisipkan ellipsis di celah yang lebih dari 1 langkah
+    const result = [];
+    for (let i = 0; i < pages.length; i++) {
+        if (i > 0 && pages[i] - pages[i - 1] > 1) result.push('...');
+        result.push(pages[i]);
+    }
+    return result;
+}
+
+function goToPage(page) {
+    currentPage = page;
+    render();
+    // Scroll ke atas tabel secara halus
+    document.querySelector('.table-container').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // ==================== OPERASI CRUD DATA ====================
@@ -2221,6 +2380,7 @@ function downloadAttachment() {
 
 // ==================== FILTER DATA & FILTER TANGGAL ====================
 function setFilter(f) {
+    currentPage = 1;
     currentFilter = f;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     // Tandai tombol aktif berdasarkan nilai filter, bukan event global (lebih aman)
@@ -2235,6 +2395,7 @@ function setFilter(f) {
 }
 
 function applyDateFilter() {
+    currentPage = 1;
     filterStartDate = document.getElementById('dateFilterStart').value;
     filterEndDate = document.getElementById('dateFilterEnd').value;
     let btn = document.querySelector('.date-clear-btn');
@@ -2243,6 +2404,7 @@ function applyDateFilter() {
 }
 
 function resetDateFilter() {
+    currentPage = 1;
     document.getElementById('dateFilterStart').value = '';
     document.getElementById('dateFilterEnd').value = '';
     filterStartDate = ''; filterEndDate = '';
