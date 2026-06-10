@@ -976,6 +976,188 @@
             transition: width 0.3s, background 0.3s;
             width: 0%;
         }
+
+        /* ===== MANUAL / PANDUAN ===== */
+        #manualModal .modal-content {
+            max-width: 780px;
+            max-height: 92vh;
+        }
+        .manual-nav {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .manual-nav-btn {
+            padding: 6px 14px;
+            font-size: .72rem;
+            font-weight: 600;
+            border: 1.5px solid #ddd;
+            border-radius: 20px;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #555;
+        }
+        .manual-nav-btn:hover { border-color: #1a1a1a; color: #1a1a1a; }
+        .manual-nav-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+        .manual-section { display: none; }
+        .manual-section.active { display: block; }
+        .manual-h2 {
+            font-size: .95rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 1.5px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .manual-h3 {
+            font-size: .82rem;
+            font-weight: 700;
+            margin: 18px 0 8px;
+            color: #1a1a1a;
+        }
+        .manual-p {
+            font-size: .78rem;
+            color: #444;
+            line-height: 1.75;
+            margin-bottom: 10px;
+        }
+        .manual-step {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            background: #fafafa;
+            border-radius: 10px;
+            border-left: 3px solid #1a1a1a;
+        }
+        .manual-step-num {
+            min-width: 26px;
+            height: 26px;
+            background: #1a1a1a;
+            color: #fff;
+            border-radius: 50%;
+            font-size: .7rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1px;
+        }
+        .manual-step-body { flex: 1; }
+        .manual-step-title {
+            font-size: .78rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        .manual-step-desc {
+            font-size: .74rem;
+            color: #555;
+            line-height: 1.65;
+        }
+        .manual-code {
+            background: #1a1a1a;
+            color: #a8ff78;
+            padding: 14px 16px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: .7rem;
+            line-height: 1.8;
+            margin: 10px 0;
+            overflow-x: auto;
+            white-space: pre;
+        }
+        .manual-code-label {
+            font-size: .65rem;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .manual-tip {
+            background: #e3fcef;
+            border: 1px solid #b7e4cc;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: .74rem;
+            color: #006644;
+            line-height: 1.65;
+            margin: 10px 0;
+        }
+        .manual-warn {
+            background: #fff3e0;
+            border: 1px solid #ffab00;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: .74rem;
+            color: #7a4f00;
+            line-height: 1.65;
+            margin: 10px 0;
+        }
+        .manual-info {
+            background: #f0f8ff;
+            border: 1px solid #b3d4f5;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: .74rem;
+            color: #0055aa;
+            line-height: 1.65;
+            margin: 10px 0;
+        }
+        .manual-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .74rem;
+            margin: 10px 0;
+        }
+        .manual-table th {
+            background: #f5f5f5;
+            padding: 8px 10px;
+            text-align: left;
+            font-weight: 700;
+            border: 1px solid #ddd;
+            font-size: .7rem;
+            color: #333;
+        }
+        .manual-table td {
+            padding: 8px 10px;
+            border: 1px solid #eee;
+            color: #444;
+            vertical-align: top;
+            line-height: 1.5;
+        }
+        .manual-table tr:nth-child(even) td { background: #fafafa; }
+        .manual-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: .65rem;
+            font-weight: 700;
+        }
+        .badge-new { background: #e3fcef; color: #006644; }
+        .badge-req { background: #ffebe6; color: #bf2600; }
+        .badge-opt { background: #f0f0f0; color: #555; }
+        .manual-divider { border: none; border-top: 1px dashed #ddd; margin: 18px 0; }
+        .lock-guide-link {
+            display: inline-block;
+            margin-top: 14px;
+            font-size: .72rem;
+            color: #0088cc;
+            cursor: pointer;
+            text-decoration: underline;
+            background: none;
+            border: none;
+            font-family: inherit;
+        }
+        .lock-guide-link:hover { color: #005fa3; }
     </style>
 </head>
 <body>
@@ -1014,6 +1196,7 @@
         <div class="lock-warning" id="lockWarning" style="display:none;">
             ⚠️ <strong>Perhatian:</strong> Jika password lupa, tidak ada cara untuk memulihkan data. Simpan password Anda di tempat yang aman.
         </div>
+        <button class="lock-guide-link" onclick="openManual()">📖 Panduan Setup & Penggunaan</button>
     </div>
 </div>
 
@@ -1033,6 +1216,7 @@
             <button class="manage-books-btn" onclick="openBookManager()">Kelola</button>
             <button class="manage-books-btn" onclick="openTelegramSettings()" style="background:#0088cc;" title="Setelan Notifikasi Telegram">📲 Telegram</button>
             <button class="manage-books-btn" onclick="lockApp()" style="background:#666;" title="Kunci Aplikasi">🔒 Kunci</button>
+            <button class="manage-books-btn" onclick="openManual()" style="background:#6a5acd;" title="Panduan Penggunaan">📖 Panduan</button>
         </div>
     </div>
 
@@ -1137,6 +1321,593 @@
 </div>
 
 <div id="toastMessage" class="toast-message"><span id="toastIcon">✅</span><span id="toastText"></span></div>
+
+<!-- ===== MODAL PANDUAN / MANUAL BOOK ===== -->
+<div id="manualModal" class="modal" style="z-index:1500;">
+  <div class="modal-content wide" style="max-width:800px; max-height:92vh;">
+    <div class="modal-header">
+      <h3>📖 Panduan Lengkap ArtaFlow</h3>
+      <button class="modal-close" onclick="closeManual()">×</button>
+    </div>
+
+    <!-- Navigasi Tab -->
+    <div class="manual-nav">
+      <button class="manual-nav-btn active" onclick="showManualSection('intro')">🏠 Pengenalan</button>
+      <button class="manual-nav-btn" onclick="showManualSection('supabase')">☁️ Setup Supabase</button>
+      <button class="manual-nav-btn" onclick="showManualSection('sql')">🛢️ SQL & Tabel</button>
+      <button class="manual-nav-btn" onclick="showManualSection('appsetup')">⚙️ Setup Aplikasi</button>
+      <button class="manual-nav-btn" onclick="showManualSection('transaksi')">💳 Transaksi</button>
+      <button class="manual-nav-btn" onclick="showManualSection('telegram')">📲 Telegram</button>
+      <button class="manual-nav-btn" onclick="showManualSection('faq')">❓ FAQ</button>
+    </div>
+
+    <!-- ── SECTION: PENGENALAN ── -->
+    <div id="manual-intro" class="manual-section active">
+      <div class="manual-h2">🏠 Selamat Datang di ArtaFlow v8</div>
+      <p class="manual-p">ArtaFlow adalah aplikasi pencatatan keuangan berbasis web yang berjalan sepenuhnya di browser Anda. Data disimpan secara aman di cloud menggunakan <strong>Supabase</strong> dan terenkripsi dengan password pribadi Anda.</p>
+
+      <div class="manual-info">
+        💡 ArtaFlow berjalan 100% di browser — tidak perlu install apapun. Cukup buka file <code>index.html</code> di browser.
+      </div>
+
+      <div class="manual-h3">✨ Fitur Utama</div>
+      <table class="manual-table">
+        <thead><tr><th>Fitur</th><th>Keterangan</th></tr></thead>
+        <tbody>
+          <tr><td>📒 Multi Buku Kas</td><td>Buat banyak buku kas terpisah (pribadi, bisnis, keluarga, dll)</td></tr>
+          <tr><td>☁️ Sync Cloud</td><td>Data otomatis tersinkron ke Supabase — bisa diakses dari perangkat mana saja</td></tr>
+          <tr><td>🔐 Enkripsi Password</td><td>Kredensial Supabase dienkripsi AES-256 dengan password Anda</td></tr>
+          <tr><td>📊 Anggaran Bulanan</td><td>Atur target anggaran per kategori dan pantau realisasinya</td></tr>
+          <tr><td>📲 Notifikasi Telegram</td><td>Kirim notifikasi tiap transaksi, peringatan anggaran & ringkasan harian ke Telegram</td></tr>
+          <tr><td>🔒 Backup Otomatis</td><td>Backup harian ke Supabase + backup lokal manual</td></tr>
+          <tr><td>📄 Laporan PDF</td><td>Generate laporan bulanan lengkap dengan grafik dan export ke PDF</td></tr>
+          <tr><td>📜 Audit Log</td><td>Setiap aksi tercatat di log untuk keperluan audit</td></tr>
+        </tbody>
+      </table>
+
+      <div class="manual-h3">🗺️ Alur Setup (Ringkas)</div>
+      <div class="manual-step">
+        <div class="manual-step-num">1</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Buat akun & project Supabase</div>
+          <div class="manual-step-desc">Daftar gratis di <strong>supabase.com</strong> dan buat project baru.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">2</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Jalankan SQL untuk membuat tabel</div>
+          <div class="manual-step-desc">Buka SQL Editor di Supabase dan jalankan 4 perintah CREATE TABLE yang tersedia di tab <strong>SQL & Tabel</strong>.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">3</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Hubungkan aplikasi ke Supabase</div>
+          <div class="manual-step-desc">Masukkan URL Project dan Anon Key ke form setup, buat password keamanan, lalu klik Simpan & Mulai.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">4</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Mulai mencatat transaksi!</div>
+          <div class="manual-step-desc">Klik <strong>+ Transaksi</strong> untuk menambah catatan keuangan pertama Anda.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION: SETUP SUPABASE ── -->
+    <div id="manual-supabase" class="manual-section">
+      <div class="manual-h2">☁️ Setup Akun & Project Supabase</div>
+      <p class="manual-p">Supabase adalah platform database PostgreSQL open-source yang menyediakan tier gratis. ArtaFlow menggunakannya sebagai backend penyimpanan data cloud.</p>
+
+      <div class="manual-h3">Langkah 1 — Buat Akun Supabase</div>
+      <div class="manual-step">
+        <div class="manual-step-num">1</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Buka supabase.com</div>
+          <div class="manual-step-desc">Kunjungi <strong>https://supabase.com</strong> dan klik tombol <strong>"Start your project"</strong> atau <strong>"Sign Up"</strong>.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">2</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Daftar dengan GitHub atau email</div>
+          <div class="manual-step-desc">Disarankan menggunakan akun GitHub untuk kemudahan login. Akun gratis sudah cukup untuk penggunaan pribadi.</div>
+        </div>
+      </div>
+
+      <div class="manual-h3">Langkah 2 — Buat Project Baru</div>
+      <div class="manual-step">
+        <div class="manual-step-num">1</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Klik "New Project"</div>
+          <div class="manual-step-desc">Dari dashboard Supabase, klik tombol <strong>New Project</strong>.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">2</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Isi detail project</div>
+          <div class="manual-step-desc">
+            <strong>Name:</strong> bebas, misal <code>artaflow-kas</code><br>
+            <strong>Database Password:</strong> buat password kuat — <em>simpan baik-baik!</em><br>
+            <strong>Region:</strong> pilih <strong>Southeast Asia (Singapore)</strong> untuk koneksi lebih cepat<br>
+            <strong>Plan:</strong> Free sudah cukup
+          </div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">3</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Tunggu project selesai dibuat</div>
+          <div class="manual-step-desc">Proses pembuatan membutuhkan 1–2 menit. Tunggu hingga status berubah dari "Setting up" menjadi hijau.</div>
+        </div>
+      </div>
+
+      <div class="manual-h3">Langkah 3 — Ambil URL & Anon Key</div>
+      <div class="manual-step">
+        <div class="manual-step-num">1</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Buka Project Settings → API</div>
+          <div class="manual-step-desc">Di sidebar kiri Supabase, klik ikon ⚙️ <strong>Settings</strong>, lalu pilih <strong>API</strong>.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">2</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Salin Project URL dan anon/public key</div>
+          <div class="manual-step-desc">
+            <strong>Project URL</strong> — bentuknya: <code>https://xxxxxxxx.supabase.co</code><br>
+            <strong>Project API Keys → anon / public</strong> — dimulai dengan <code>eyJhbGciOiJIUzI1NiIs...</code><br><br>
+            Kedua nilai ini yang dimasukkan ke form setup ArtaFlow.
+          </div>
+        </div>
+      </div>
+      <div class="manual-warn">
+        ⚠️ <strong>Jangan gunakan service_role key</strong> — selalu gunakan <strong>anon/public</strong> key saja untuk keamanan.
+      </div>
+      <div class="manual-tip">
+        ✅ Tier gratis Supabase mendapat 500 MB storage database, 2 GB bandwidth/bulan, dan 50.000 baris — lebih dari cukup untuk pemakaian pribadi bertahun-tahun.
+      </div>
+    </div>
+
+    <!-- ── SECTION: SQL & TABEL ── -->
+    <div id="manual-sql" class="manual-section">
+      <div class="manual-h2">🛢️ Membuat Tabel Database (SQL)</div>
+      <p class="manual-p">ArtaFlow membutuhkan <strong>4 tabel</strong> di Supabase. Jalankan SQL berikut di <strong>SQL Editor</strong> Supabase (klik ikon Terminal/SQL di sidebar kiri).</p>
+
+      <div class="manual-warn">⚠️ Jalankan semua SQL di bawah ini <strong>sebelum</strong> menghubungkan aplikasi. Cukup sekali saja.</div>
+
+      <div class="manual-h3">Tabel 1 — transactions</div>
+      <p class="manual-p">Menyimpan semua data transaksi pemasukan dan pengeluaran.</p>
+      <div class="manual-code-label">SQL — Jalankan di Supabase SQL Editor</div>
+      <div class="manual-code">CREATE TABLE IF NOT EXISTS transactions (
+  id           TEXT PRIMARY KEY,
+  book_id      TEXT NOT NULL DEFAULT 'b_default',
+  device_id    TEXT,
+  type         TEXT NOT NULL CHECK (type IN ('income','expense')),
+  amount       NUMERIC(15,2) NOT NULL DEFAULT 0,
+  category     TEXT,
+  description  TEXT,
+  date         TIMESTAMPTZ,
+  attachment   TEXT,
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Index untuk mempercepat query per buku
+CREATE INDEX IF NOT EXISTS idx_transactions_book
+  ON transactions(book_id, date DESC);
+
+-- Aktifkan Row Level Security (RLS) — izinkan akses publik via anon key
+ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all for anon" ON transactions
+  FOR ALL USING (true) WITH CHECK (true);
+
+-- Aktifkan upsert (insert or update)
+ALTER TABLE transactions
+  REPLICA IDENTITY DEFAULT;</div>
+
+      <div class="manual-h3">Tabel 2 — audit_logs</div>
+      <p class="manual-p">Menyimpan log audit setiap aksi (tambah, ubah, hapus transaksi).</p>
+      <div class="manual-code-label">SQL</div>
+      <div class="manual-code">CREATE TABLE IF NOT EXISTS audit_logs (
+  id         BIGSERIAL PRIMARY KEY,
+  book_id    TEXT NOT NULL DEFAULT 'b_default',
+  device_id  TEXT,
+  action     TEXT,
+  details    TEXT,
+  timestamp  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_book
+  ON audit_logs(book_id, timestamp DESC);
+
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all for anon" ON audit_logs
+  FOR ALL USING (true) WITH CHECK (true);</div>
+
+      <div class="manual-h3">Tabel 3 — settings</div>
+      <p class="manual-p">Menyimpan setelan aplikasi: daftar buku, anggaran bulanan, dan konfigurasi Telegram.</p>
+      <div class="manual-code-label">SQL</div>
+      <div class="manual-code">CREATE TABLE IF NOT EXISTS settings (
+  id          BIGSERIAL PRIMARY KEY,
+  book_id     TEXT NOT NULL,
+  key         TEXT NOT NULL,
+  value       TEXT,
+  updated_at  TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(book_id, key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_settings_book
+  ON settings(book_id, key);
+
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all for anon" ON settings
+  FOR ALL USING (true) WITH CHECK (true);</div>
+
+      <div class="manual-h3">Tabel 4 — backups</div>
+      <p class="manual-p">Menyimpan cadangan data harian secara otomatis.</p>
+      <div class="manual-code-label">SQL</div>
+      <div class="manual-code">CREATE TABLE IF NOT EXISTS backups (
+  id          BIGSERIAL PRIMARY KEY,
+  book_id     TEXT NOT NULL,
+  device_id   TEXT,
+  label       TEXT,
+  data        TEXT,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_backups_book
+  ON backups(book_id, created_at DESC);
+
+ALTER TABLE backups ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all for anon" ON backups
+  FOR ALL USING (true) WITH CHECK (true);</div>
+
+      <div class="manual-tip">
+        ✅ <strong>Cara menjalankan SQL di Supabase:</strong><br>
+        1. Login ke Supabase → buka project Anda<br>
+        2. Klik ikon <strong>SQL Editor</strong> di sidebar kiri (ikon terminal / database)<br>
+        3. Klik <strong>"New query"</strong><br>
+        4. Paste salah satu SQL di atas → klik <strong>"Run"</strong> (Ctrl+Enter)<br>
+        5. Ulangi untuk semua 4 tabel
+      </div>
+
+      <div class="manual-h3">Verifikasi Tabel</div>
+      <p class="manual-p">Setelah menjalankan semua SQL, verifikasi tabel berhasil dibuat dengan query ini:</p>
+      <div class="manual-code-label">SQL — Cek tabel</div>
+      <div class="manual-code">SELECT table_name FROM information_schema.tables
+WHERE table_schema = 'public'
+ORDER BY table_name;</div>
+      <p class="manual-p">Hasilnya harus menampilkan: <code>audit_logs</code>, <code>backups</code>, <code>settings</code>, <code>transactions</code>.</p>
+
+      <div class="manual-h3">Opsi: Aktifkan Realtime (opsional)</div>
+      <p class="manual-p">Jika ingin melihat perubahan data real-time di multiple perangkat:</p>
+      <div class="manual-code-label">SQL — Aktifkan Realtime</div>
+      <div class="manual-code">ALTER PUBLICATION supabase_realtime ADD TABLE transactions;
+ALTER PUBLICATION supabase_realtime ADD TABLE audit_logs;</div>
+    </div>
+
+    <!-- ── SECTION: SETUP APLIKASI ── -->
+    <div id="manual-appsetup" class="manual-section">
+      <div class="manual-h2">⚙️ Setup Aplikasi ArtaFlow</div>
+
+      <div class="manual-h3">Setup Pertama Kali</div>
+      <div class="manual-step">
+        <div class="manual-step-num">1</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Buka modal setup</div>
+          <div class="manual-step-desc">Saat pertama kali membuka aplikasi, form setup akan muncul otomatis. Atau klik <strong>Kelola</strong> → bagian Koneksi Supabase.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">2</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Isi Supabase Project URL</div>
+          <div class="manual-step-desc">Masukkan URL project Supabase Anda, contoh: <code>https://abcdefgh.supabase.co</code></div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">3</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Isi Supabase Anon Key</div>
+          <div class="manual-step-desc">Masukkan anon/public key dari Settings → API. Mulai dengan <code>eyJhbGciOiJIUzI1NiIs...</code></div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">4</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Buat password keamanan</div>
+          <div class="manual-step-desc">Buat password minimal 6 karakter. Password ini mengenkripsi kredensial Supabase di browser Anda. <strong>Tidak dapat dipulihkan jika lupa!</strong></div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">5</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Klik "Simpan & Mulai"</div>
+          <div class="manual-step-desc">Aplikasi akan menguji koneksi, lalu menarik semua data dari cloud secara otomatis.</div>
+        </div>
+      </div>
+
+      <div class="manual-warn">
+        ⚠️ <strong>Password tidak bisa dipulihkan!</strong> Jika lupa, semua data di browser akan terhapus dan Anda harus setup ulang. Simpan password di password manager atau tempat aman.
+      </div>
+
+      <div class="manual-h3">Kelola Buku Kas</div>
+      <p class="manual-p">Klik tombol <strong>Kelola</strong> di pojok kanan atas untuk:</p>
+      <table class="manual-table">
+        <thead><tr><th>Aksi</th><th>Cara</th></tr></thead>
+        <tbody>
+          <tr><td>➕ Tambah buku baru</td><td>Isi nama di input "Nama buku baru" → klik Buat Buku Baru</td></tr>
+          <tr><td>✏️ Ganti nama buku</td><td>Klik ✏️ di samping nama buku</td></tr>
+          <tr><td>🗑️ Hapus buku</td><td>Klik 🗑️ (data buku ikut terhapus dari cloud)</td></tr>
+          <tr><td>🔄 Ganti buku aktif</td><td>Pilih dari dropdown BUKU di header utama</td></tr>
+          <tr><td>🔐 Ganti password</td><td>Isi password lama & baru di panel Ganti Password Keamanan</td></tr>
+        </tbody>
+      </table>
+
+      <div class="manual-h3">Menggunakan di Banyak Perangkat</div>
+      <div class="manual-info">
+        📱 ArtaFlow bisa digunakan di banyak perangkat secara bersamaan. Cukup buka file <code>index.html</code> di perangkat lain, setup dengan <strong>URL, Key, dan Password yang sama</strong>. Data akan otomatis tersinkron.
+      </div>
+
+      <div class="manual-h3">Anggaran Bulanan</div>
+      <div class="manual-step">
+        <div class="manual-step-num">1</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Klik "✏️ Atur" di panel anggaran</div>
+          <div class="manual-step-desc">Pilih bulan & tahun yang ingin diatur anggarannya.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">2</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Isi nominal target per kategori</div>
+          <div class="manual-step-desc">Isi anggaran untuk setiap kategori pengeluaran yang ingin dipantau. Kosongkan jika tidak ingin dibatasi.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">3</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Pantau realisasi</div>
+          <div class="manual-step-desc">Progress bar di header akan berubah warna: <strong style="color:#00875a">hijau</strong> normal, <strong style="color:#cc7b00">kuning</strong> ≥80%, <strong style="color:#de350b">merah</strong> habis/lewat.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECTION: TRANSAKSI ── -->
+    <div id="manual-transaksi" class="manual-section">
+      <div class="manual-h2">💳 Mencatat Transaksi</div>
+
+      <div class="manual-h3">Tambah Transaksi Baru</div>
+      <div class="manual-step">
+        <div class="manual-step-num">1</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Klik tombol "+ Transaksi"</div>
+          <div class="manual-step-desc">Di area atas kanan tabel transaksi.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">2</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Pilih jenis: Pemasukan atau Pengeluaran</div>
+          <div class="manual-step-desc">Untuk Pengeluaran, pilih juga kategorinya (Makanan, Transportasi, Tagihan, dll).</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">3</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Isi tanggal, deskripsi, dan nominal</div>
+          <div class="manual-step-desc">Nominal dapat diketik langsung, format rupiah ditambahkan otomatis. Contoh: ketik <code>50000</code> → tampil <code>Rp 50.000</code>.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">4</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Upload lampiran nota (opsional)</div>
+          <div class="manual-step-desc">Foto struk atau nota bisa dilampirkan sebagai bukti transaksi. Format: JPG/PNG.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">5</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Klik Simpan</div>
+          <div class="manual-step-desc">Transaksi langsung tersimpan ke cloud. Notifikasi Telegram dikirim jika sudah dikonfigurasi.</div>
+        </div>
+      </div>
+
+      <div class="manual-h3">Kategori Pengeluaran</div>
+      <table class="manual-table">
+        <thead><tr><th>Kategori</th><th>Contoh Penggunaan</th></tr></thead>
+        <tbody>
+          <tr><td>🍽️ Makanan & Minuman</td><td>Makan siang, kopi, groceries</td></tr>
+          <tr><td>🚗 Transportasi</td><td>Bensin, ojek online, parkir, tol</td></tr>
+          <tr><td>🛍️ Belanja & Pakaian</td><td>Baju, sepatu, elektronik</td></tr>
+          <tr><td>💡 Tagihan</td><td>Listrik, air, internet, telepon</td></tr>
+          <tr><td>🎬 Hiburan</td><td>Streaming, bioskop, liburan</td></tr>
+          <tr><td>🏥 Kesehatan</td><td>Obat, dokter, gym</td></tr>
+          <tr><td>📚 Pendidikan</td><td>Kursus, buku, les</td></tr>
+          <tr><td>🏦 Cicilan & Hutang</td><td>Cicilan KPR, KTA, kartu kredit</td></tr>
+          <tr><td>📈 Investasi</td><td>Saham, reksa dana, deposito</td></tr>
+          <tr><td>📌 Lain-lain</td><td>Pengeluaran yang tidak masuk kategori lain</td></tr>
+        </tbody>
+      </table>
+
+      <div class="manual-h3">Filter & Pencarian</div>
+      <table class="manual-table">
+        <thead><tr><th>Fitur</th><th>Cara Pakai</th></tr></thead>
+        <tbody>
+          <tr><td>🔍 Cari</td><td>Ketik di kotak "Cari..." untuk filter berdasarkan deskripsi</td></tr>
+          <tr><td>📂 Filter jenis</td><td>Klik Semua / Masuk / Keluar</td></tr>
+          <tr><td>📅 Filter tanggal</td><td>Isi tanggal mulai dan selesai di kotak filter tanggal</td></tr>
+          <tr><td>📄 Export PDF</td><td>Klik tombol "📄 PDF" untuk export daftar transaksi</td></tr>
+          <tr><td>📊 Laporan</td><td>Klik "📊 Laporan Bulanan" untuk laporan lengkap dengan grafik</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── SECTION: TELEGRAM ── -->
+    <div id="manual-telegram" class="manual-section">
+      <div class="manual-h2">📲 Setup Notifikasi Telegram</div>
+      <p class="manual-p">ArtaFlow dapat mengirim notifikasi otomatis ke Telegram setiap ada aktivitas penting. Klik tombol <strong>📲 Telegram</strong> di header untuk mengkonfigurasi.</p>
+
+      <div class="manual-h3">Jenis Notifikasi</div>
+      <table class="manual-table">
+        <thead><tr><th>Event</th><th>Kapan Dikirim</th></tr></thead>
+        <tbody>
+          <tr><td>➕ Transaksi baru</td><td>Setiap kali transaksi berhasil ditambahkan</td></tr>
+          <tr><td>✏️ Transaksi diubah</td><td>Setiap kali data transaksi diperbarui</td></tr>
+          <tr><td>🗑️ Transaksi dihapus</td><td>Setiap kali transaksi dihapus</td></tr>
+          <tr><td>⚠️ Anggaran 80%</td><td>Saat pengeluaran kategori / total mencapai 80% dari target</td></tr>
+          <tr><td>🚨 Anggaran habis</td><td>Saat pengeluaran melampaui 100% anggaran</td></tr>
+          <tr><td>📅 Ringkasan harian</td><td>Otomatis setiap pukul 21:00 WIB</td></tr>
+        </tbody>
+      </table>
+
+      <div class="manual-h3">Setup Bot Telegram (3 Langkah)</div>
+      <div class="manual-step">
+        <div class="manual-step-num">1</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Buat bot baru via @BotFather</div>
+          <div class="manual-step-desc">
+            Buka Telegram → cari <strong>@BotFather</strong> → klik Start → ketik <code>/newbot</code><br>
+            Ikuti instruksi: beri nama bot dan username (harus diakhiri <code>bot</code>, misal: <code>KasKuBot</code>)<br>
+            <strong>Salin Bot Token</strong> yang diberikan — format: <code>123456789:AAF-xxx...</code>
+          </div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">2</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Start bot Anda</div>
+          <div class="manual-step-desc">
+            Cari username bot yang baru dibuat di Telegram → klik <strong>Start</strong>.<br>
+            <strong>Langkah ini wajib</strong> — bot tidak bisa mengirim pesan ke chat yang belum pernah di-Start.
+          </div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">3</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Dapatkan Chat ID Anda</div>
+          <div class="manual-step-desc">
+            Buka <strong>@userinfobot</strong> di Telegram → klik Start → kirim pesan apapun.<br>
+            Bot akan membalas dengan info akun Anda. Salin angka di bagian <strong>Id</strong>.<br>
+            Untuk grup: tambahkan bot ke grup, lalu kirim pesan di grup → cek <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="manual-h3">Masukkan ke ArtaFlow</div>
+      <div class="manual-step">
+        <div class="manual-step-num">4</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Buka modal Telegram di ArtaFlow</div>
+          <div class="manual-step-desc">Klik tombol <strong>📲 Telegram</strong> di header aplikasi.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">5</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Isi Bot Token dan Chat ID</div>
+          <div class="manual-step-desc">Paste Bot Token dan Chat ID yang sudah didapat, lalu klik <strong>💾 Simpan</strong>.</div>
+        </div>
+      </div>
+      <div class="manual-step">
+        <div class="manual-step-num">6</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Tes pengiriman</div>
+          <div class="manual-step-desc">Klik <strong>📤 Tes Kirim</strong> — Anda akan menerima pesan tes di Telegram jika konfigurasi benar.</div>
+        </div>
+      </div>
+
+      <div class="manual-tip">
+        ✅ Bot Token dan Chat ID tersinkron ke Supabase, sehingga perangkat lain yang terhubung ke akun yang sama juga otomatis mendapat konfigurasi yang sama.
+      </div>
+      <div class="manual-info">
+        📊 Klik tombol <strong>"📊 Kirim Ringkasan"</strong> untuk langsung mengirim ringkasan keuangan saat ini ke Telegram tanpa harus menunggu pukul 21:00.
+      </div>
+    </div>
+
+    <!-- ── SECTION: FAQ ── -->
+    <div id="manual-faq" class="manual-section">
+      <div class="manual-h2">❓ Pertanyaan Umum (FAQ)</div>
+
+      <div class="manual-h3">🔐 Keamanan & Password</div>
+      <div class="manual-step" style="border-left-color:#de350b;">
+        <div class="manual-step-num" style="background:#de350b;">?</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Saya lupa password, bagaimana cara memulihkan data?</div>
+          <div class="manual-step-desc">Sayangnya password <strong>tidak dapat dipulihkan</strong> karena digunakan untuk enkripsi AES-256. Jika lupa, klik "Reset App" (akan menghapus semua data lokal) dan setup ulang. Data di Supabase masih ada — namun tidak bisa diakses tanpa password yang benar.</div>
+        </div>
+      </div>
+      <div class="manual-step" style="border-left-color:#0088cc;">
+        <div class="manual-step-num" style="background:#0088cc;">?</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Apakah data saya aman?</div>
+          <div class="manual-step-desc">URL dan Anon Key Supabase dienkripsi di browser menggunakan AES-256-GCM dengan key turunan dari password Anda. Data transaksi di Supabase diproteksi Row Level Security (RLS). Namun pastikan Anda tidak membagikan URL + Key + Password ke orang lain.</div>
+        </div>
+      </div>
+
+      <hr class="manual-divider">
+      <div class="manual-h3">☁️ Koneksi & Sinkronisasi</div>
+      <div class="manual-step" style="border-left-color:#0088cc;">
+        <div class="manual-step-num" style="background:#0088cc;">?</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Status cloud menunjukkan "CLOUD OFF" padahal sudah dikonfigurasi</div>
+          <div class="manual-step-desc">Cek koneksi internet Anda. Jika internet OK, buka Kelola → Supabase dan klik ulang "Hubungkan & Sinkronkan". Pastikan URL dan Key masih valid di Supabase dashboard.</div>
+        </div>
+      </div>
+      <div class="manual-step" style="border-left-color:#0088cc;">
+        <div class="manual-step-num" style="background:#0088cc;">?</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Data tidak tersinkron ke perangkat lain</div>
+          <div class="manual-step-desc">Pastikan kedua perangkat menggunakan URL, Key, dan Password yang sama. Coba klik refresh halaman di perangkat yang datanya belum sinkron.</div>
+        </div>
+      </div>
+
+      <hr class="manual-divider">
+      <div class="manual-h3">📊 Laporan & Export</div>
+      <div class="manual-step" style="border-left-color:#00875a;">
+        <div class="manual-step-num" style="background:#00875a;">?</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Bagaimana cara backup data?</div>
+          <div class="manual-step-desc">Klik tombol <strong>🔒 Backup</strong> di header. Tersedia: backup lokal (browser), backup cloud (Supabase), dan export CSV/JSON. Backup cloud berjalan otomatis harian.</div>
+        </div>
+      </div>
+      <div class="manual-step" style="border-left-color:#00875a;">
+        <div class="manual-step-num" style="background:#00875a;">?</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Bagaimana cara memindahkan data ke perangkat baru?</div>
+          <div class="manual-step-desc">Cukup buka <code>index.html</code> di perangkat baru dan setup dengan URL, Key, dan Password yang sama. Data otomatis tertarik dari cloud. Atau gunakan Export JSON → Import JSON untuk transfer manual.</div>
+        </div>
+      </div>
+
+      <hr class="manual-divider">
+      <div class="manual-h3">📲 Telegram</div>
+      <div class="manual-step" style="border-left-color:#0088cc;">
+        <div class="manual-step-num" style="background:#0088cc;">?</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Notifikasi Telegram tidak terkirim</div>
+          <div class="manual-step-desc">Pastikan: (1) Anda sudah klik Start di bot Telegram, (2) Bot Token dan Chat ID benar, (3) Bot tidak diblokir. Gunakan tombol "📤 Tes Kirim" untuk diagnosa — pesan error akan ditampilkan.</div>
+        </div>
+      </div>
+      <div class="manual-step" style="border-left-color:#0088cc;">
+        <div class="manual-step-num" style="background:#0088cc;">?</div>
+        <div class="manual-step-body">
+          <div class="manual-step-title">Bisa kirim notifikasi ke grup Telegram?</div>
+          <div class="manual-step-desc">Bisa! Tambahkan bot ke grup Telegram, lalu gunakan Chat ID grup (dimulai dengan tanda minus, contoh: <code>-100123456789</code>) sebagai Chat ID di pengaturan.</div>
+        </div>
+      </div>
+
+      <div class="manual-tip" style="margin-top: 20px;">
+        💬 Masih ada pertanyaan? Cek dokumentasi di tiap tab panduan atau hubungi developer melalui GitHub.
+      </div>
+    </div>
+
+  </div><!-- /modal-content -->
+</div><!-- /manualModal -->
 
 <div id="addModal" class="modal">
     <div class="modal-content">
@@ -3822,6 +4593,29 @@ function generatePDFReport() {
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
     html2pdf().set(opt).from(element).save();
+}
+
+// ==================== PANDUAN / MANUAL BOOK ====================
+function openManual(section) {
+    document.getElementById('manualModal').classList.add('show');
+    if (section) showManualSection(section);
+}
+
+function closeManual() {
+    document.getElementById('manualModal').classList.remove('show');
+}
+
+function showManualSection(id) {
+    document.querySelectorAll('.manual-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.manual-nav-btn').forEach(b => b.classList.remove('active'));
+    const sec = document.getElementById('manual-' + id);
+    if (sec) sec.classList.add('active');
+    // Tandai tombol nav aktif
+    document.querySelectorAll('.manual-nav-btn').forEach(b => {
+        if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + id + "'")) {
+            b.classList.add('active');
+        }
+    });
 }
 
 window.addEventListener('DOMContentLoaded', initApp);
