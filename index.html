@@ -726,6 +726,113 @@
             max-height: 260px;
             width: 100%;
         }
+        .expense-chart-section {
+            background: #fff;
+            border: 1.5px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+        .expense-chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .expense-chart-title {
+            font-size: .75rem;
+            font-weight: 700;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .expense-chart-toggle {
+            display: flex;
+            gap: 6px;
+        }
+        .expense-chart-toggle button {
+            padding: 3px 10px;
+            font-size: .7rem;
+            font-weight: 600;
+            border: 1.5px solid #ddd;
+            border-radius: 5px;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .expense-chart-toggle button.active {
+            background: #1a1a1a;
+            color: #fff;
+            border-color: #1a1a1a;
+        }
+        .expense-chart-body {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .expense-chart-canvas-wrap {
+            flex: 0 0 200px;
+            max-width: 200px;
+            height: 200px;
+            position: relative;
+        }
+        .expense-chart-canvas-wrap canvas {
+            max-height: 200px !important;
+        }
+        .expense-chart-legend {
+            flex: 1;
+            min-width: 180px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .75rem;
+        }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        .legend-label {
+            flex: 1;
+            color: #333;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .legend-amount {
+            font-weight: 700;
+            color: #de350b;
+            white-space: nowrap;
+        }
+        .legend-pct {
+            font-size: .68rem;
+            color: #999;
+            min-width: 34px;
+            text-align: right;
+        }
+        .expense-chart-empty {
+            text-align: center;
+            color: #aaa;
+            font-size: .8rem;
+            padding: 30px 0;
+            width: 100%;
+        }
+        @media (max-width: 600px) {
+            .expense-chart-canvas-wrap { flex: 0 0 160px; max-width: 160px; height: 160px; }
+            .expense-chart-canvas-wrap canvas { max-height: 160px !important; }
+        }
         .report-table {
             width: 100%;
             border-collapse: collapse;
@@ -1253,6 +1360,19 @@
         </div>
     </div>
 
+    <div class="expense-chart-section" id="expenseChartSection">
+        <div class="expense-chart-header">
+            <span class="expense-chart-title">📊 Pengeluaran per Kategori</span>
+            <div class="expense-chart-toggle">
+                <button id="expChartBtnAll" class="active" onclick="setExpenseChartMode('all')">Semua</button>
+                <button id="expChartBtnMonth" onclick="setExpenseChartMode('month')">Bulan Ini</button>
+            </div>
+        </div>
+        <div class="expense-chart-body" id="expenseChartBody">
+            <div class="expense-chart-empty">Belum ada data pengeluaran</div>
+        </div>
+    </div>
+
     <div class="controls">
         <div class="filters">
             <input type="text" id="searchInput" class="search-input" placeholder="Cari..." oninput="currentPage=1; render();">
@@ -1560,6 +1680,8 @@ let currentAttachmentData = null;
 let currentAttachmentFile = null;
 let budgets = {};
 let reportChart = null;
+let expenseChart = null;
+let expenseChartMode = 'all';
 const EXPENSE_CATEGORIES = ['Makanan & Minuman', 'Transportasi', 'Belanja & Pakaian', 'Tagihan', 'Hiburan', 'Kesehatan', 'Pendidikan', 'Cicilan & Hutang', 'Investasi', 'Lain-lain'];
 const PAGE_SIZE = 10;
 let currentPage = 1;
@@ -2335,6 +2457,112 @@ function saveTransactions() {
 }
 
 // ==================== RENDER ====================
+function setExpenseChartMode(mode) {
+    expenseChartMode = mode;
+    document.getElementById('expChartBtnAll').classList.toggle('active', mode === 'all');
+    document.getElementById('expChartBtnMonth').classList.toggle('active', mode === 'month');
+    renderExpenseChart();
+}
+
+function renderExpenseChart() {
+    const body = document.getElementById('expenseChartBody');
+    if (!body) return;
+
+    // Filter hanya pengeluaran
+    let source = txs.filter(t => t.type === 'expense');
+
+    if (expenseChartMode === 'month') {
+        const now = new Date();
+        const yy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const prefix = `${yy}-${mm}`;
+        source = source.filter(t => (t.date || '').startsWith(prefix));
+    }
+
+    // Akumulasi per kategori
+    const map = {};
+    source.forEach(t => {
+        const cat = t.category || 'Lainnya';
+        map[cat] = (map[cat] || 0) + (Number(t.amount) || 0);
+    });
+
+    const entries = Object.entries(map).sort((a, b) => b[1] - a[1]);
+
+    if (entries.length === 0) {
+        if (expenseChart) { expenseChart.destroy(); expenseChart = null; }
+        body.innerHTML = '<div class="expense-chart-empty">Belum ada data pengeluaran' + (expenseChartMode === 'month' ? ' bulan ini' : '') + '</div>';
+        return;
+    }
+
+    const total = entries.reduce((s, e) => s + e[1], 0);
+    const COLORS = [
+        '#de350b','#cc7b00','#0052cc','#00875a','#6554c0',
+        '#ff5630','#ff8b00','#36b37e','#00b8d9','#8777d9',
+        '#f6c90e','#4a5568','#e84393','#57d9a3','#ff7452'
+    ];
+
+    // Rebuild body
+    body.innerHTML = '';
+
+    // Canvas wrap
+    const canvasWrap = document.createElement('div');
+    canvasWrap.className = 'expense-chart-canvas-wrap';
+    const canvas = document.createElement('canvas');
+    canvas.id = 'expenseChartCanvas';
+    canvasWrap.appendChild(canvas);
+    body.appendChild(canvasWrap);
+
+    // Legend
+    const legend = document.createElement('div');
+    legend.className = 'expense-chart-legend';
+    entries.forEach(([cat, amt], i) => {
+        const pct = total > 0 ? ((amt / total) * 100).toFixed(1) : 0;
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.innerHTML = `
+            <div class="legend-dot" style="background:${COLORS[i % COLORS.length]}"></div>
+            <span class="legend-label" title="${escapeHtml(cat)}">${escapeHtml(cat)}</span>
+            <span class="legend-amount">${rp(amt)}</span>
+            <span class="legend-pct">${pct}%</span>
+        `;
+        legend.appendChild(item);
+    });
+    body.appendChild(legend);
+
+    // Render chart
+    if (expenseChart) { expenseChart.destroy(); expenseChart = null; }
+    const ctx = canvas.getContext('2d');
+    expenseChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: entries.map(e => e[0]),
+            datasets: [{
+                data: entries.map(e => e[1]),
+                backgroundColor: entries.map((_, i) => COLORS[i % COLORS.length]),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '62%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => {
+                            const val = ctx.parsed;
+                            const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                            return ` ${rp(val)} (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
 function render() {
     let body = document.getElementById('transactionTableBody');
     body.innerHTML = '';
@@ -2372,6 +2600,8 @@ function render() {
     document.getElementById('statBalance').innerText = rp(currentBalance);
     document.getElementById('statIncome').innerText = rp(totalInc);
     document.getElementById('statExpense').innerText = rp(totalExp);
+
+    renderExpenseChart();
 
     let allSorted = [...txs].sort((a, b) => new Date(a.date) - new Date(b.date));
     let balanceMap = {};
