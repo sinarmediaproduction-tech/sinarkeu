@@ -1367,7 +1367,7 @@
 <div class="container">
     <div class="header">
         <div>
-            <h1>Sinarkeu</h1>
+            <h1 id="headerBrandTitle">Sinarkeu</h1>
             <p>Sistem Multi Buku Kas dengan Supabase Cloud · v13 (Full Sync + Telegram Auto)</p>
         </div>
         <div class="book-selector">
@@ -3365,6 +3365,13 @@ async function addNewBook(e) {
     }
 }
 
+function updateHeaderTitle() {
+    const el = document.getElementById('headerBrandTitle');
+    if (!el) return;
+    const book = books.find(b => b.id === currentBookId);
+    el.textContent = book ? book.name : 'Sinarkeu';
+}
+
 async function switchBook(id) {
     if (!books.find(b => b.id === id)) return;
     if (id === currentBookId) return;
@@ -3379,6 +3386,7 @@ async function switchBook(id) {
     render();
 
     updateBookSelectDropdown();
+    updateHeaderTitle();
 
     if (document.getElementById('bookManagerModal').classList.contains('show')) {
         renderBookList();
@@ -4528,6 +4536,7 @@ async function continueAppInit() {
     document.getElementById('budgetMonth').value = new Date().getMonth() + 1;
 
     updateBookSelectDropdown();
+    updateHeaderTitle();
     updateSyncStatusBadge();
 
     if (!getCloudUrl() || !getSupabaseKey()) {
