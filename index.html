@@ -4691,6 +4691,9 @@ async function runAIAnalysis() {
     const footerEl = document.getElementById('aiAnalysisFooter');
     const copyBtn  = document.getElementById('aiCopyBtn');
 
+    // ⚠️ Ganti dengan URL Cloudflare Worker Anda setelah deploy
+    const WORKER_URL = 'https://sinarkeu.sinarmedia-production.workers.dev';
+
     const data = getAITransactionData();
     if (data.count === 0) {
         resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">⚠️ Tidak ada transaksi pada periode yang dipilih.</div>';
@@ -4700,35 +4703,31 @@ async function runAIAnalysis() {
     btn.disabled = true;
     btn.innerText = '⏳ Menganalisis...';
     copyBtn.style.display = 'none';
-    resultEl.innerHTML = '<div style="text-align:center; color:#6b46c1; padding:40px 0; animation: pulse 1.5s infinite;">🤖 AI sedang membaca data keuangan Anda...</div>';
+    resultEl.innerHTML = '<div style="text-align:center; color:#6b46c1; padding:40px 0;">🤖 Gemini AI sedang membaca data keuangan Anda...</div>';
     footerEl.innerText = '';
 
     const prompt = buildAIPrompt(data);
 
     try {
-        const res = await fetch('https://api.anthropic.com/v1/messages', {
+        const res = await fetch(WORKER_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: 'claude-sonnet-4-20250514',
-                max_tokens: 1000,
-                messages: [{ role: 'user', content: prompt }]
-            })
+            body: JSON.stringify({ prompt })
         });
 
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            throw new Error(err?.error?.message || `HTTP ${res.status}`);
+            throw new Error(err?.error || `HTTP ${res.status}`);
         }
 
         const json = await res.json();
-        const text = json?.content?.map(c => c.text || '').join('') || '(Tidak ada respons)';
+        const text = json?.result || '(Tidak ada respons)';
 
         resultEl.innerText = text;
-        footerEl.innerText = `✅ Dianalisis oleh Claude · ${new Date().toLocaleString('id-ID')} · ${data.count} transaksi`;
+        footerEl.innerText = `✅ Dianalisis oleh Gemini AI · ${new Date().toLocaleString('id-ID')} · ${data.count} transaksi`;
         copyBtn.style.display = 'inline-flex';
     } catch (e) {
-        resultEl.innerHTML = `<div style="color:#de350b;">❌ Gagal menghubungi Claude API.<br><small>${e.message}</small></div>`;
+        resultEl.innerHTML = `<div style="color:#de350b;">❌ Gagal menghubungi Gemini API.<br><small>${e.message}</small></div>`;
         footerEl.innerText = '';
     } finally {
         btn.disabled = false;
