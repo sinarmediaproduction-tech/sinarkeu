@@ -4715,19 +4715,19 @@ async function runAIAnalysis() {
             body: JSON.stringify({ prompt })
         });
 
-        if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err?.error || `HTTP ${res.status}`);
+        const json = await res.json();
+
+        if (!res.ok || json?.error) {
+            throw new Error(json?.error || `HTTP ${res.status}`);
         }
 
-        const json = await res.json();
         const text = json?.result || '(Tidak ada respons)';
 
         resultEl.innerText = text;
         footerEl.innerText = `✅ Dianalisis oleh Gemini AI · ${new Date().toLocaleString('id-ID')} · ${data.count} transaksi`;
         copyBtn.style.display = 'inline-flex';
     } catch (e) {
-        resultEl.innerHTML = `<div style="color:#de350b;">❌ Gagal menghubungi Gemini API.<br><small>${e.message}</small></div>`;
+        resultEl.innerHTML = `<div style="color:#de350b; line-height:1.8;">❌ Gagal: <b>${e.message}</b><br><small>Kemungkinan penyebab:<br>• API key Gemini salah/belum diisi di worker.js<br>• Worker belum di-deploy ulang setelah edit<br>• Kuota Gemini habis</small></div>`;
         footerEl.innerText = '';
     } finally {
         btn.disabled = false;
