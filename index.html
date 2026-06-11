@@ -1483,6 +1483,7 @@
             <button class="btn btn-primary" id="tambahTransaksiBtn" onclick="openModal('addModal')">+ Transaksi</button>
             <button class="btn btn-secondary" id="backupBtn" onclick="openBackupManager()"> Backup</button>
             <button id="auditLogToggleBtn" class="btn btn-secondary" onclick="toggleAuditLog()">📋 Log Audit</button>
+            <button class="btn" style="background:#6b46c1; color:#fff; border-color:#6b46c1;" onclick="openAIAnalysis()">🤖 Analisis AI</button>
         </div>
     </div>
 
@@ -1753,6 +1754,60 @@
         <button id="setupConnectBtn" class="btn btn-primary" style="width:100%; margin-bottom:16px;" onclick="doFirstTimeSetup()">
             🔐 Simpan & Mulai
         </button>
+    </div>
+</div>
+
+<!-- ===== MODAL ANALISIS AI ===== -->
+<div id="aiAnalysisModal" class="modal">
+    <div class="modal-content wide" style="max-width:680px; max-height:90vh;">
+        <div class="modal-header">
+            <h3>🤖 Analisis Keuangan AI</h3>
+            <button class="modal-close" onclick="closeModal('aiAnalysisModal')">×</button>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+            <select id="aiAnalysisPeriod" class="budget-select" style="flex:1; min-width:140px;">
+                <option value="all">Semua Data</option>
+                <option value="thismonth">Bulan Ini</option>
+                <option value="lastmonth">Bulan Lalu</option>
+                <option value="last3months">3 Bulan Terakhir</option>
+            </select>
+            <select id="aiAnalysisType" class="budget-select" style="flex:1; min-width:160px;">
+                <option value="general">Ringkasan & Saran Umum</option>
+                <option value="expense">Analisis Pengeluaran</option>
+                <option value="saving">Tips Hemat & Menabung</option>
+                <option value="cashflow">Arus Kas & Tren</option>
+            </select>
+            <button id="aiAnalysisRunBtn" class="btn btn-primary" style="background:#6b46c1; border-color:#6b46c1;" onclick="runAIAnalysis()">
+                ✨ Analisis Sekarang
+            </button>
+        </div>
+
+        <div id="aiAnalysisResult" style="
+            min-height: 200px;
+            background: #faf9ff;
+            border: 1.5px solid #e9e3ff;
+            border-radius: 10px;
+            padding: 18px 20px;
+            font-size: .82rem;
+            line-height: 1.75;
+            color: #1a1a1a;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 420px;
+        ">
+            <div style="text-align:center; color:#999; padding:40px 0;">
+                Pilih periode dan jenis analisis, lalu klik <strong>Analisis Sekarang</strong>.
+            </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:8px;">
+            <span id="aiAnalysisFooter" style="font-size:.65rem; color:#aaa;"></span>
+            <div style="display:flex; gap:8px;">
+                <button id="aiCopyBtn" class="btn btn-secondary" style="display:none;" onclick="copyAIResult()">📋 Salin</button>
+                <button class="btn btn-secondary" onclick="closeModal('aiAnalysisModal')">Tutup</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -4531,6 +4586,161 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+// ==================== ANALISIS AI ====================
+function openAIAnalysis() {
+    document.getElementById('aiAnalysisResult').innerHTML = `
+        <div style="text-align:center; color:#999; padding:40px 0;">
+            Pilih periode dan jenis analisis, lalu klik <strong>Analisis Sekarang</strong>.
+        </div>`;
+    document.getElementById('aiAnalysisFooter').innerText = '';
+    document.getElementById('aiCopyBtn').style.display = 'none';
+    openModal('aiAnalysisModal');
+}
+
+function getAITransactionData() {
+    const period = document.getElementById('aiAnalysisPeriod').value;
+    const now = new Date();
+    let filtered = [...txs];
+
+    if (period === 'thismonth') {
+        filtered = txs.filter(t => {
+            const d = new Date(t.date);
+            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        });
+    } else if (period === 'lastmonth') {
+        const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        filtered = txs.filter(t => {
+            const d = new Date(t.date);
+            return d.getMonth() === lm.getMonth() && d.getFullYear() === lm.getFullYear();
+        });
+    } else if (period === 'last3months') {
+        const cutoff = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+        filtered = txs.filter(t => new Date(t.date) >= cutoff);
+    }
+
+    const totalIncome  = filtered.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+    const totalExpense = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+    const saldo = totalIncome - totalExpense;
+
+    // Rangkum per kategori
+    const catMap = {};
+    filtered.filter(t => t.type === 'expense').forEach(t => {
+        const cat = t.category || 'Lain-lain';
+        catMap[cat] = (catMap[cat] || 0) + Number(t.amount);
+    });
+    const topCategories = Object.entries(catMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .map(([cat, amt]) => `  - ${cat}: Rp ${Number(amt).toLocaleString('id-ID')}`)
+        .join('\n');
+
+    // Ambil 20 transaksi terbaru
+    const recentSample = filtered
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 20)
+        .map(t => `  [${t.date}] ${t.type === 'income' ? 'Masuk' : 'Keluar'} | ${t.category || '-'} | ${t.description || '-'} | Rp ${Number(t.amount).toLocaleString('id-ID')}`)
+        .join('\n');
+
+    const periodLabel = { all:'Semua Data', thismonth:'Bulan Ini', lastmonth:'Bulan Lalu', last3months:'3 Bulan Terakhir' }[period];
+
+    return {
+        summary: `Periode: ${periodLabel}\nTotal Transaksi: ${filtered.length}\nTotal Pemasukan: Rp ${totalIncome.toLocaleString('id-ID')}\nTotal Pengeluaran: Rp ${totalExpense.toLocaleString('id-ID')}\nSaldo: Rp ${saldo.toLocaleString('id-ID')}`,
+        topCategories,
+        recentSample,
+        count: filtered.length
+    };
+}
+
+function buildAIPrompt(data) {
+    const type = document.getElementById('aiAnalysisType').value;
+    const typeLabel = {
+        general: 'Ringkasan & Saran Umum',
+        expense: 'Analisis Pengeluaran Mendalam',
+        saving:  'Tips Hemat & Menabung',
+        cashflow:'Analisis Arus Kas & Tren'
+    }[type];
+
+    const focus = {
+        general: 'Berikan ringkasan kondisi keuangan secara keseluruhan, identifikasi pola penting, dan berikan 3-5 saran konkret yang bisa langsung diterapkan.',
+        expense: 'Analisis pengeluaran secara mendalam per kategori, identifikasi kategori yang paling boros, bandingkan proporsinya, dan beri rekomendasi pengurangan pengeluaran.',
+        saving:  'Identifikasi peluang penghematan berdasarkan data ini, hitung estimasi penghematan yang mungkin, dan berikan tips menabung yang spesifik dan terukur.',
+        cashflow:'Analisis arus kas, rasio pemasukan vs pengeluaran, deteksi tren, dan prediksi apakah kondisi keuangan ini sehat atau perlu perhatian.'
+    }[type];
+
+    return `Kamu adalah asisten keuangan pribadi yang cerdas dan berempati. Analisis data keuangan berikut dengan gaya bahasa Indonesia yang ramah, jelas, dan to-the-point.
+
+JENIS ANALISIS: ${typeLabel}
+
+DATA RINGKASAN:
+${data.summary}
+
+PENGELUARAN PER KATEGORI:
+${data.topCategories || '  (tidak ada data pengeluaran)'}
+
+SAMPLE 20 TRANSAKSI TERBARU:
+${data.recentSample || '  (tidak ada transaksi)'}
+
+INSTRUKSI: ${focus}
+
+Format jawaban dengan emoji, poin-poin jelas, dan akhiri dengan 1 kalimat motivasi. Gunakan satuan Rupiah (Rp). Jangan terlalu panjang — maksimal 400 kata.`;
+}
+
+async function runAIAnalysis() {
+    const btn = document.getElementById('aiAnalysisRunBtn');
+    const resultEl = document.getElementById('aiAnalysisResult');
+    const footerEl = document.getElementById('aiAnalysisFooter');
+    const copyBtn  = document.getElementById('aiCopyBtn');
+
+    const data = getAITransactionData();
+    if (data.count === 0) {
+        resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">⚠️ Tidak ada transaksi pada periode yang dipilih.</div>';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = '⏳ Menganalisis...';
+    copyBtn.style.display = 'none';
+    resultEl.innerHTML = '<div style="text-align:center; color:#6b46c1; padding:40px 0; animation: pulse 1.5s infinite;">🤖 AI sedang membaca data keuangan Anda...</div>';
+    footerEl.innerText = '';
+
+    const prompt = buildAIPrompt(data);
+
+    try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 1000,
+                messages: [{ role: 'user', content: prompt }]
+            })
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err?.error?.message || `HTTP ${res.status}`);
+        }
+
+        const json = await res.json();
+        const text = json?.content?.map(c => c.text || '').join('') || '(Tidak ada respons)';
+
+        resultEl.innerText = text;
+        footerEl.innerText = `✅ Dianalisis oleh Claude · ${new Date().toLocaleString('id-ID')} · ${data.count} transaksi`;
+        copyBtn.style.display = 'inline-flex';
+    } catch (e) {
+        resultEl.innerHTML = `<div style="color:#de350b;">❌ Gagal menghubungi Claude API.<br><small>${e.message}</small></div>`;
+        footerEl.innerText = '';
+    } finally {
+        btn.disabled = false;
+        btn.innerText = '✨ Analisis Sekarang';
+    }
+}
+
+function copyAIResult() {
+    const text = document.getElementById('aiAnalysisResult').innerText;
+    navigator.clipboard.writeText(text).then(() => showToast('Hasil analisis disalin!', 'success'));
+}
+
 // ==================== KURS USD/IDR ====================
 async function fetchForexRate() {
     const apis = [
@@ -4578,9 +4788,10 @@ async function fetchForexRate() {
     srcEl.textContent  = 'Semua sumber gagal';
 }
 
-window.addEventListener('DOMContentLoaded', () => { fetchForexRate(); });
-
-window.addEventListener('DOMContentLoaded', initApp);
+window.addEventListener('DOMContentLoaded', () => {
+    initApp();
+    fetchForexRate();
+});
 </script>
 </body>
 </html>
