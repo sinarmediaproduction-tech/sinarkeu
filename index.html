@@ -1361,14 +1361,17 @@
     </div>
 
     <div class="expense-chart-section" id="expenseChartSection">
-        <div class="expense-chart-header">
+        <div class="expense-chart-header" onclick="toggleExpenseChart()" style="cursor:pointer; user-select:none;">
             <span class="expense-chart-title">📊 Pengeluaran per Kategori</span>
-            <div class="expense-chart-toggle">
-                <button id="expChartBtnAll" class="active" onclick="setExpenseChartMode('all')">Semua</button>
-                <button id="expChartBtnMonth" onclick="setExpenseChartMode('month')">Bulan Ini</button>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div class="expense-chart-toggle" id="expenseChartToggleButtons" style="display:none;" onclick="event.stopPropagation()">
+                    <button id="expChartBtnAll" class="active" onclick="setExpenseChartMode('all')">Semua</button>
+                    <button id="expChartBtnMonth" onclick="setExpenseChartMode('month')">Bulan Ini</button>
+                </div>
+                <span id="expenseChartArrow" style="font-size:.8rem; color:#999;">▼ Tampilkan</span>
             </div>
         </div>
-        <div class="expense-chart-body" id="expenseChartBody">
+        <div class="expense-chart-body" id="expenseChartBody" style="display:none;">
             <div class="expense-chart-empty">Belum ada data pengeluaran</div>
         </div>
     </div>
@@ -2457,6 +2460,19 @@ function saveTransactions() {
 }
 
 // ==================== RENDER ====================
+let expenseChartVisible = false;
+
+function toggleExpenseChart() {
+    expenseChartVisible = !expenseChartVisible;
+    const body = document.getElementById('expenseChartBody');
+    const arrow = document.getElementById('expenseChartArrow');
+    const toggleBtns = document.getElementById('expenseChartToggleButtons');
+    body.style.display = expenseChartVisible ? 'flex' : 'none';
+    toggleBtns.style.display = expenseChartVisible ? 'flex' : 'none';
+    arrow.textContent = expenseChartVisible ? '▲ Sembunyikan' : '▼ Tampilkan';
+    if (expenseChartVisible) renderExpenseChart();
+}
+
 function setExpenseChartMode(mode) {
     expenseChartMode = mode;
     document.getElementById('expChartBtnAll').classList.toggle('active', mode === 'all');
@@ -2465,6 +2481,7 @@ function setExpenseChartMode(mode) {
 }
 
 function renderExpenseChart() {
+    if (!expenseChartVisible) return;
     const body = document.getElementById('expenseChartBody');
     if (!body) return;
 
