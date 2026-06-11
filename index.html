@@ -1424,9 +1424,9 @@
             <span id="budgetProgressPct2" style="font-size:.78rem; font-weight:700; color:#666; min-width:38px; text-align:right;">0%</span>
         </div>
         <div class="budget-mini-actions">
-            <button class="btn-icon" id="anggaranBtn" onclick="openBudgetModal()">✏️ Anggarkan</button>
-            <button class="btn-icon" id="laporanBtn" onclick="openMonthlyReport()">📊 Laporan</button>
-            <button class="btn-icon" id="pdfBtn" onclick="generatePDFReport()">📄 PDF</button>
+            <button class="btn-icon" id="anggaranBtn" onclick="openBudgetModal()"> Anggarkan</button>
+            <button class="btn-icon" id="laporanBtn" onclick="openMonthlyReport()"> Laporan</button>
+            <button class="btn-icon" id="pdfBtn" onclick="generatePDFReport()"> PDF</button>
         </div>
     </div>
 
@@ -1452,7 +1452,7 @@
 
     <div class="expense-chart-section" id="expenseChartSection">
         <div class="expense-chart-header" onclick="toggleExpenseChart()" style="cursor:pointer; user-select:none;">
-            <span class="expense-chart-title">📊 Pengeluaran per Kategori</span>
+            <span class="expense-chart-title"> Pengeluaran per Kategori</span>
             <div style="display:flex; align-items:center; gap:10px;">
                 <div class="expense-chart-toggle" id="expenseChartToggleButtons" style="display:none;" onclick="event.stopPropagation()">
                     <button id="expChartBtnAll" class="active" onclick="setExpenseChartMode('all')">Semua</button>
@@ -1503,7 +1503,7 @@
 
     <div class="log-section" id="auditLogSection" style="display:none;">
         <div class="log-section-header">
-            <h2> Audit Log (Supabase)</h2>
+            <h2> Audit Log Terkunci</h2>
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-secondary" style="padding: 4px 10px;" onclick="refreshLogsFromCloud()">🔄 Refresh</button>
                 <button class="btn btn-secondary" style="padding: 4px 10px; background:#00875a; color:#fff;" onclick="testAddLog()">🔍 Test Log</button>
@@ -1689,8 +1689,8 @@
             </div>
         </div>
         <div class="panel-actions-row">
-            <button class="btn btn-primary" onclick="createBackup()" style="flex:1">💾 Cadangan Lokal</button>
-            <button class="btn btn-success" onclick="createCloudBackup()" style="flex:1">☁️ Cadangan Cloud</button>
+            <button class="btn btn-primary" onclick="createBackup()" style="flex:1"> Cadangan Lokal</button>
+            <button class="btn btn-success" onclick="createCloudBackup()" style="flex:1"> Cadangan Cloud</button>
             <button class="btn btn-warning" onclick="restoreFromBackup()" style="flex:1">🔄 Pulihkan</button>
         </div>
         <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('backupModal')">Tutup</button></div>
@@ -1761,7 +1761,7 @@
 <div id="aiAnalysisModal" class="modal">
     <div class="modal-content wide" style="max-width:680px; max-height:90vh;">
         <div class="modal-header">
-            <h3>🤖 Analisis Keuangan AI</h3>
+            <h3>Analisis Keuangan</h3>
             <button class="modal-close" onclick="closeModal('aiAnalysisModal')">×</button>
         </div>
 
