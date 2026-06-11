@@ -219,6 +219,15 @@
         }
         .stat-card.income .stat-value { color: #00875a; }
         .stat-card.expense .stat-value { color: #de350b; }
+        .stat-card.forex .stat-value { color: #0052cc; font-size: 1rem; }
+        .stat-card.forex .stat-sub { font-size: .65rem; color: #888; margin-top: 4px; }
+        .forex-change.up { color: #00875a; font-size: .7rem; font-weight: 600; }
+        .forex-change.down { color: #de350b; font-size: .7rem; font-weight: 600; }
+        .forex-refresh-btn {
+            background: none; border: none; cursor: pointer; font-size: .7rem;
+            color: #888; padding: 0; margin-left: 4px; transition: color 0.2s;
+        }
+        .forex-refresh-btn:hover { color: #0052cc; }
         
         .controls {
             display: flex;
@@ -1442,6 +1451,17 @@
         <div class="stat-card expense">
             <div class="stat-label">Total Pengeluaran</div>
             <div class="stat-value" id="statExpense">Rp 0</div>
+        </div>
+        <div class="stat-card forex">
+            <div class="stat-label">
+                Kurs USD/IDR
+                <button class="forex-refresh-btn" onclick="fetchForexRate()" title="Perbarui kurs">🔄</button>
+            </div>
+            <div class="stat-value" id="forexRate">Memuat...</div>
+            <div class="stat-sub">
+                <span id="forexChange"></span>
+                <span id="forexUpdated" style="color:#aaa; margin-left:6px;"></span>
+            </div>
         </div>
     </div>
 
@@ -4404,6 +4424,55 @@ async function doFirstTimeSetup() {
     }, 900);
 }
 
+// ==================== KURS USD/IDR REALTIME ====================
+let _lastForexRate = null;
+
+async function fetchForexRate() {
+    const rateEl = document.getElementById('forexRate');
+    const changeEl = document.getElementById('forexChange');
+    const updatedEl = document.getElementById('forexUpdated');
+    if (!rateEl) return;
+
+    try {
+        // Ambil kurs hari ini dan kemarin untuk hitung perubahan
+        const today = new Date().toISOString().split('T')[0];
+        const yday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+        const [resNow, resYday] = await Promise.all([
+            fetch(`https://api.frankfurter.app/latest?from=USD&to=IDR`),
+            fetch(`https://api.frankfurter.app/${yday}?from=USD&to=IDR`)
+        ]);
+
+        if (!resNow.ok) throw new Error('Gagal mengambil data kurs');
+        const dataNow = await resNow.json();
+        const rateNow = dataNow.rates.IDR;
+
+        rateEl.textContent = 'Rp ' + Number(rateNow).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        _lastForexRate = rateNow;
+
+        if (resYday.ok) {
+            const dataYday = await resYday.json();
+            const rateYday = dataYday.rates.IDR;
+            const diff = rateNow - rateYday;
+            const pct = ((diff / rateYday) * 100).toFixed(2);
+            const arrow = diff >= 0 ? '▲' : '▼';
+            changeEl.textContent = `${arrow} ${Math.abs(diff).toLocaleString('id-ID', {maximumFractionDigits:0})} (${Math.abs(pct)}%)`;
+            changeEl.className = 'forex-change ' + (diff >= 0 ? 'up' : 'down');
+        } else {
+            changeEl.textContent = '';
+        }
+
+        const now = new Date();
+        updatedEl.textContent = `· ${now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' })}`;
+
+    } catch (e) {
+        if (rateEl) rateEl.textContent = 'Tidak tersedia';
+        if (changeEl) changeEl.textContent = '';
+        if (updatedEl) updatedEl.textContent = '';
+        console.warn('[Forex] Gagal:', e.message);
+    }
+}
+
 // ==================== INIT APP ====================
 function initApp() {
     deviceId = localStorage.getItem('sk_device_id');
@@ -4495,6 +4564,8 @@ async function continueAppInit() {
 
     startAutoSync();
     updateUIForOnlineStatus();
+    fetchForexRate();
+    setInterval(fetchForexRate, 5 * 60 * 1000);
 
     window.addEventListener('online', () => {
         updateSyncStatusBadge();
