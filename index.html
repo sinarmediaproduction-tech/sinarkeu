@@ -1443,6 +1443,11 @@
             <div class="stat-label">Total Pengeluaran</div>
             <div class="stat-value" id="statExpense">Rp 0</div>
         </div>
+        <div class="stat-card" id="forexCard" style="border-color:#0052cc;">
+            <div class="stat-label" style="color:#0052cc;">Kurs USD/IDR</div>
+            <div class="stat-value" id="forexRate" style="color:#0052cc; font-size:1rem;">⏳ Memuat...</div>
+            <div style="font-size:.6rem; color:#999; margin-top:4px;" id="forexSource"></div>
+        </div>
     </div>
 
     <div class="expense-chart-section" id="expenseChartSection">
@@ -4525,6 +4530,55 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.warn('[SW] Gagal daftar:', err));
     });
 }
+
+// ==================== KURS USD/IDR ====================
+async function fetchForexRate() {
+    const apis = [
+        {
+            name: 'open.er-api.com',
+            url: 'https://open.er-api.com/v6/latest/USD',
+            parse: d => d?.rates?.IDR
+        },
+        {
+            name: 'cdn.jsdelivr.net',
+            url: 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json',
+            parse: d => d?.usd?.idr
+        },
+        {
+            name: 'currency-api.pages.dev',
+            url: 'https://latest.currency-api.pages.dev/v1/currencies/usd.json',
+            parse: d => d?.usd?.idr
+        },
+        {
+            name: 'hexarate.paikama.co',
+            url: 'https://hexarate.paikama.co/api/rates/latest/USD?target=IDR',
+            parse: d => d?.data?.mid
+        }
+    ];
+
+    const rateEl = document.getElementById('forexRate');
+    const srcEl  = document.getElementById('forexSource');
+    if (!rateEl) return;
+
+    for (const api of apis) {
+        try {
+            const res = await fetch(api.url, { signal: AbortSignal.timeout(7000) });
+            if (!res.ok) continue;
+            const data = await res.json();
+            const rate = api.parse(data);
+            if (rate && rate > 1000) {
+                rateEl.textContent = 'Rp ' + Number(rate).toLocaleString('id-ID', { maximumFractionDigits: 0 });
+                srcEl.textContent  = '1 USD · sumber: ' + api.name;
+                return;
+            }
+        } catch { /* coba berikutnya */ }
+    }
+
+    rateEl.textContent = '— Tidak tersedia';
+    srcEl.textContent  = 'Semua sumber gagal';
+}
+
+window.addEventListener('DOMContentLoaded', () => { fetchForexRate(); });
 
 window.addEventListener('DOMContentLoaded', initApp);
 </script>
