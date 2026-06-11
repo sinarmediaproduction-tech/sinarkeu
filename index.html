@@ -4703,7 +4703,7 @@ async function runAIAnalysis() {
     btn.disabled = true;
     btn.innerText = '⏳ Menganalisis...';
     copyBtn.style.display = 'none';
-    resultEl.innerHTML = '<div style="text-align:center; color:#6b46c1; padding:40px 0;">🤖 Gemini AI sedang membaca data keuangan Anda...</div>';
+    resultEl.innerHTML = '<div style="text-align:center; color:#6b46c1; padding:40px 0;">🤖 Groq AI sedang membaca data keuangan Anda...</div>';
     footerEl.innerText = '';
 
     const prompt = buildAIPrompt(data);
@@ -4724,7 +4724,7 @@ async function runAIAnalysis() {
         const text = json?.result || '(Tidak ada respons)';
 
         resultEl.innerText = text;
-        footerEl.innerText = `✅ Dianalisis oleh Gemini AI · ${new Date().toLocaleString('id-ID')} · ${data.count} transaksi`;
+        footerEl.innerText = `✅ Dianalisis oleh Groq AI (LLaMA 3.3) · ${new Date().toLocaleString('id-ID')} · ${data.count} transaksi`;
         copyBtn.style.display = 'inline-flex';
     } catch (e) {
         resultEl.innerHTML = `<div style="color:#de350b; line-height:1.8;">❌ Gagal: <b>${e.message}</b><br><small>Kemungkinan penyebab:<br>• API key Gemini salah/belum diisi di worker.js<br>• Worker belum di-deploy ulang setelah edit<br>• Kuota Gemini habis</small></div>`;
