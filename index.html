@@ -2315,38 +2315,61 @@ async function pullAllSettings() {
 }
 
 // ==================== PULL TRANSACTIONS ====================
+// ==================== STORAGE OPTIMIZATION ====================
+// Opsi 1: Batasi cache lokal max 300 transaksi terbaru per buku
+const MAX_LOCAL_TXS = 300;
+
+function trimAndSaveLocal(bookId, data) {
+    const sorted = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const trimmed = sorted.slice(0, MAX_LOCAL_TXS);
+    localStorage.setItem('sk_txs_' + bookId, JSON.stringify(trimmed));
+    return trimmed;
+}
+
 async function pullFromCloudSilently() {
     if (!isOnline()) return;
 
-    // Incremental: hanya fetch transaksi yang berubah sejak last sync buku ini
+    // Opsi 3: query langsung ke Supabase dengan limit, tidak load semua
     const lastSync = _lastFullSyncTime[currentBookId];
-    let query = `?book_id=eq.${currentBookId}&order=updated_at.desc`;
+    let query = `?book_id=eq.${currentBookId}&order=date.desc&limit=300`;
     if (lastSync) {
-        query += `&updated_at=gt.${lastSync}`;
+        // Incremental: hanya ambil yang berubah sejak last sync
+        query = `?book_id=eq.${currentBookId}&order=updated_at.desc&updated_at=gt.${lastSync}&limit=300`;
     }
 
     let cloudData = await callSupabaseAPI('transactions', 'GET', null, query);
 
     if (cloudData && Array.isArray(cloudData)) {
-        const localMap = {};
-        txs.forEach(t => { localMap[t.id] = t; });
+        if (lastSync && cloudData.length > 0) {
+            // Merge incremental dengan cache lokal
+            const localMap = {};
+            txs.forEach(t => { localMap[t.id] = t; });
+            cloudData.forEach(c => {
+                const cloudUpdated = c.updated_at || '1970-01-01T00:00:00.000Z';
+                const local = localMap[c.id];
+                const localUpdated = local ? (local.updated_at || '1970-01-01T00:00:00.000Z') : '1970-01-01T00:00:00.000Z';
+                if (!local || cloudUpdated >= localUpdated) {
+                    localMap[c.id] = {
+                        id: c.id, type: c.type, amount: Number(c.amount),
+                        category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
+                        description: c.description, date: c.date,
+                        attachment: c.attachment, updated_at: c.updated_at || null
+                    };
+                }
+            });
+            txs = Object.values(localMap).sort((a, b) => new Date(b.date) - new Date(a.date));
+        } else if (!lastSync) {
+            // Full fetch pertama kali
+            txs = cloudData.map(c => ({
+                id: c.id, type: c.type, amount: Number(c.amount),
+                category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
+                description: c.description, date: c.date,
+                attachment: c.attachment, updated_at: c.updated_at || null
+            }));
+        }
 
-        cloudData.forEach(c => {
-            const local = localMap[c.id];
-            const cloudUpdated = c.updated_at || '1970-01-01T00:00:00.000Z';
-            const localUpdated = local ? (local.updated_at || '1970-01-01T00:00:00.000Z') : '1970-01-01T00:00:00.000Z';
-            if (!local || cloudUpdated >= localUpdated) {
-                localMap[c.id] = {
-                    id: c.id, type: c.type, amount: Number(c.amount),
-                    category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
-                    description: c.description, date: c.date,
-                    attachment: c.attachment, updated_at: c.updated_at || null
-                };
-            }
-        });
-
-        txs = Object.values(localMap).sort((a, b) => new Date(b.date) - new Date(a.date));
-        localStorage.setItem('sk_txs_' + currentBookId, JSON.stringify(txs));
+        // Opsi 1: simpan max 300 ke localStorage
+        trimAndSaveLocal(currentBookId, txs);
         _lastFullSyncTime[currentBookId] = new Date().toISOString();
         render();
 
@@ -2362,7 +2385,9 @@ async function pullAllBooksFromCloud() {
     if (bookIds.length === 0) return;
 
     for (const bookId of bookIds) {
-        let cloudData = await callSupabaseAPI('transactions', 'GET', null, `?book_id=eq.${bookId}&order=date.desc`);
+        // Opsi 3: limit 300 per buku, tidak ambil semua
+        let cloudData = await callSupabaseAPI('transactions', 'GET', null,
+            `?book_id=eq.${bookId}&order=date.desc&limit=300`);
         if (!cloudData || !Array.isArray(cloudData)) continue;
 
         const cloudMapped = cloudData.map(c => ({
@@ -2372,11 +2397,12 @@ async function pullAllBooksFromCloud() {
             attachment: c.attachment, updated_at: c.updated_at || null
         }));
 
-        localStorage.setItem('sk_txs_' + bookId, JSON.stringify(cloudMapped));
+        // Opsi 1: trim sebelum simpan
+        trimAndSaveLocal(bookId, cloudMapped);
         _lastFullSyncTime[bookId] = new Date().toISOString();
 
         if (bookId === currentBookId) {
-            txs = cloudMapped;
+            txs = cloudMapped.slice(0, MAX_LOCAL_TXS);
             render();
         }
     }
@@ -2539,7 +2565,8 @@ function loadTransactions() {
 }
 
 function saveTransactions() {
-    localStorage.setItem('sk_txs_' + currentBookId, JSON.stringify(txs));
+    // Opsi 1: trim sebelum simpan ke localStorage
+    trimAndSaveLocal(currentBookId, txs);
     render();
     debouncedPushToCloud();
 }
@@ -3678,7 +3705,20 @@ async function checkAndRunDailyAutoBackup() {
         }
 
         const bookTxs = JSON.parse(localStorage.getItem('sk_txs_' + book.id) || '[]');
-        const result = await pushBackupToSupabaseForBook(book.id, bookTxs, 'AUTO');
+        // Kalau cache lokal kosong, fetch dari cloud dulu
+        let txsToBackup = bookTxs;
+        if (bookTxs.length === 0 && isOnline()) {
+            const cloudData = await callSupabaseAPI('transactions', 'GET', null,
+                `?book_id=eq.${book.id}&order=date.desc&limit=300`);
+            if (cloudData && Array.isArray(cloudData)) {
+                txsToBackup = cloudData.map(c => ({
+                    id: c.id, type: c.type, amount: Number(c.amount),
+                    category: c.category || '', description: c.description,
+                    date: c.date, attachment: c.attachment, updated_at: c.updated_at || null
+                }));
+            }
+        }
+        const result = await pushBackupToSupabaseForBook(book.id, txsToBackup, 'AUTO');
         if (result) {
             localStorage.setItem(lastKey, now.toISOString());
             backedUpBooks++;
