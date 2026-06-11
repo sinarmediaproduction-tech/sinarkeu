@@ -2946,19 +2946,20 @@ async function addNewBook(e) {
     }
 }
 
-function switchBook(id) {
+async function switchBook(id) {
     if (!books.find(b => b.id === id)) return;
+    if (id === currentBookId) return;
+
     currentBookId = id;
     localStorage.setItem('sk_current_book_id', currentBookId);
     budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
 
-    updateBookSelectDropdown();
+    // Langsung tampilkan data dari cache lokal agar perpindahan terasa instan
+    const cached = localStorage.getItem('sk_txs_' + currentBookId);
+    txs = cached ? JSON.parse(cached) : [];
+    render();
 
-    if (isOnline()) {
-        pullFromCloudSilently();
-    } else {
-        loadTransactions();
-    }
+    updateBookSelectDropdown();
 
     if (document.getElementById('bookManagerModal').classList.contains('show')) {
         renderBookList();
@@ -2967,7 +2968,12 @@ function switchBook(id) {
         document.getElementById('connectionStatus').innerHTML = '';
     }
 
-    showToast("Berhasil beralih buku kas");
+    showToast("Berhasil beralih ke: " + (books.find(b => b.id === id)?.name || id));
+
+    // Setelah UI berubah, baru sync dari cloud di background
+    if (isOnline()) {
+        await pullFromCloudSilently();
+    }
 }
 
 async function deleteBook(id) {
