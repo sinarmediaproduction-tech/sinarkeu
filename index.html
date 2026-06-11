@@ -4434,60 +4434,74 @@ async function fetchForexRate() {
     if (!rateEl) return;
 
     rateEl.textContent = 'Memuat...';
+    if (changeEl) changeEl.textContent = '';
+    if (updatedEl) updatedEl.textContent = '';
 
-    // Coba beberapa sumber API secara berurutan (fallback)
     const apis = [
         {
+            name: 'open.er-api.com',
             url: 'https://open.er-api.com/v6/latest/USD',
-            parse: (d) => d && d.result === 'success' ? d.rates.IDR : null
+            parse: (d) => (d && d.rates && d.rates.IDR) ? d.rates.IDR : null
         },
         {
+            name: 'fawazahmed0 jsdelivr',
             url: 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json',
-            parse: (d) => d && d.usd && d.usd.idr ? d.usd.idr : null
+            parse: (d) => (d && d.usd && d.usd.idr) ? d.usd.idr : null
         },
         {
+            name: 'currency-api pages.dev',
             url: 'https://latest.currency-api.pages.dev/v1/currencies/usd.json',
-            parse: (d) => d && d.usd && d.usd.idr ? d.usd.idr : null
+            parse: (d) => (d && d.usd && d.usd.idr) ? d.usd.idr : null
+        },
+        {
+            name: 'hexarate.paikama.co',
+            url: 'https://hexarate.paikama.co/api/rates/latest/USD?target=IDR',
+            parse: (d) => (d && d.data && d.data.mid) ? d.data.mid : null
         }
     ];
 
     let rateNow = null;
     for (const api of apis) {
         try {
-            const res = await fetch(api.url);
-            if (!res.ok) continue;
+            const res = await fetch(api.url, { signal: AbortSignal.timeout(8000) });
+            if (!res.ok) { console.warn('[Forex]', api.name, 'HTTP', res.status); continue; }
             const data = await res.json();
-            rateNow = api.parse(data);
-            if (rateNow) break;
-        } catch (e) { continue; }
+            const val = api.parse(data);
+            if (val && val > 1000) { // sanity check: IDR/USD harusnya > 1000
+                rateNow = val;
+                console.log('[Forex] Berhasil dari', api.name, '=', val);
+                break;
+            } else {
+                console.warn('[Forex]', api.name, 'parse gagal, nilai:', val);
+            }
+        } catch (e) {
+            console.warn('[Forex]', api.name, 'error:', e.message);
+        }
     }
 
     if (!rateNow) {
         rateEl.textContent = 'Tidak tersedia';
-        changeEl.textContent = '';
-        updatedEl.textContent = '';
-        console.warn('[Forex] Semua sumber API gagal');
         return;
     }
 
-    rateEl.textContent = 'Rp ' + Number(rateNow).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    rateEl.textContent = 'Rp ' + Number(rateNow).toLocaleString('id-ID', { maximumFractionDigits: 0 });
 
-    // Hitung perubahan dari nilai sebelumnya (jika ada)
     if (_lastForexRate && _lastForexRate !== rateNow) {
         const diff = rateNow - _lastForexRate;
         const pct = ((diff / _lastForexRate) * 100).toFixed(2);
         const arrow = diff >= 0 ? '▲' : '▼';
-        changeEl.textContent = `${arrow} ${Math.abs(diff).toLocaleString('id-ID', {maximumFractionDigits:0})} (${Math.abs(pct)}%)`;
-        changeEl.className = 'forex-change ' + (diff >= 0 ? 'up' : 'down');
-    } else if (!_lastForexRate) {
-        changeEl.textContent = '';
-        changeEl.className = '';
+        if (changeEl) {
+            changeEl.textContent = `${arrow} ${Math.abs(diff).toLocaleString('id-ID', {maximumFractionDigits:0})} (${Math.abs(pct)}%)`;
+            changeEl.className = 'forex-change ' + (diff >= 0 ? 'up' : 'down');
+        }
     }
 
     _lastForexRate = rateNow;
 
-    const now = new Date();
-    updatedEl.textContent = `· ${now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' })}`;
+    if (updatedEl) {
+        const now = new Date();
+        updatedEl.textContent = `· ${now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' })}`;
+    }
 }
 
 // ==================== INIT APP ====================
@@ -4581,8 +4595,6 @@ async function continueAppInit() {
 
     startAutoSync();
     updateUIForOnlineStatus();
-    fetchForexRate();
-    setInterval(fetchForexRate, 5 * 60 * 1000);
 
     window.addEventListener('online', () => {
         updateSyncStatusBadge();
@@ -4614,7 +4626,14 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-window.addEventListener('DOMContentLoaded', initApp);
+window.addEventListener('DOMContentLoaded', () => {
+    initApp();
+    fetchForexRate();
+    if (!window._forexIntervalStarted) {
+        window._forexIntervalStarted = true;
+        setInterval(fetchForexRate, 5 * 60 * 1000);
+    }
+});
 </script>
 </body>
 </html>
