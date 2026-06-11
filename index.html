@@ -1326,68 +1326,146 @@
             background: #006699;
         }
     
-/* ===== SWISS DESIGN OVERRIDES ===== */
+/* ===== SWISS DESIGN V2 PREMIUM ===== */
 :root{
- --bg:#f7f7f4;
- --surface:#ffffff;
- --text:#111111;
- --muted:#7a7a7a;
- --line:#dddddd;
- --accent:#0057ff;
+--bg:#f3f3ef;
+--surface:#ffffff;
+--text:#111111;
+--muted:#6f6f6f;
+--line:#d9d9d9;
+--accent:#0057ff;
 }
-body{background:var(--bg)!important;color:var(--text)!important;padding:32px!important;}
-.container{max-width:1600px;}
-.header{border-bottom:1px solid var(--line)!important;padding-bottom:24px!important;margin-bottom:40px!important;}
-.header h1,#headerBrandTitle{font-size:2.3rem!important;letter-spacing:-2px!important;font-weight:700!important;}
-.header p{letter-spacing:1px!important;text-transform:uppercase!important;color:var(--muted)!important;}
+body{
+ background:var(--bg)!important;
+ color:var(--text)!important;
+ padding:40px!important;
+ line-height:1.45!important;
+}
+.container{max-width:1680px!important;}
 
-.stat-card,.table-container,.budget-mini,.expense-chart-section,.log-section,.modal-content,.book-list-item{
- border:none!important;
- border-radius:0!important;
+.header{
+ border-bottom:1px solid var(--line)!important;
+ padding-bottom:28px!important;
+ margin-bottom:48px!important;
+}
+.header h1,#headerBrandTitle{
+ font-size:3rem!important;
+ font-weight:700!important;
+ letter-spacing:-3px!important;
+}
+.header p{
+ text-transform:uppercase!important;
+ letter-spacing:1.5px!important;
+ color:var(--muted)!important;
+}
+
+.stats-grid{
+ gap:24px!important;
+ margin-bottom:36px!important;
+}
+.stat-card{
  background:#fff!important;
+ border:none!important;
+ border-top:4px solid #111!important;
+ border-radius:0!important;
+ padding:28px!important;
  box-shadow:none!important;
 }
-.stat-card{border-top:3px solid var(--text)!important;padding:24px!important;}
 .stat-card:hover{transform:none!important;box-shadow:none!important;}
 .stat-label{
+ font-size:.65rem!important;
+ letter-spacing:1.5px!important;
  text-transform:uppercase!important;
- letter-spacing:1px!important;
  color:var(--muted)!important;
 }
 .stat-value{
- font-size:2rem!important;
- letter-spacing:-1px!important;
+ font-size:2.4rem!important;
+ font-weight:700!important;
+ letter-spacing:-2px!important;
 }
 
-.budget-mini{border-left:4px solid var(--accent)!important;}
-.table-container{border-top:1px solid var(--line)!important;}
+.budget-mini,
+.expense-chart-section,
+.table-container,
+.log-section,
+.modal-content,
+.book-list-item{
+ border:none!important;
+ border-radius:0!important;
+ box-shadow:none!important;
+ background:#fff!important;
+}
+
+.budget-mini{
+ border-left:6px solid var(--accent)!important;
+ padding:0!important;
+}
+
+.controls{
+ margin:32px 0 18px!important;
+}
+
+.btn,.filter-btn,.book-select,.budget-select,.search-input,.form-control{
+ border-radius:0!important;
+}
+
+.btn{
+ font-weight:600!important;
+ letter-spacing:.3px!important;
+}
+
+.btn-primary{
+ background:var(--accent)!important;
+ border-color:var(--accent)!important;
+}
+
+.table-container{
+ border-top:1px solid var(--line)!important;
+}
 th{
  background:#fff!important;
  border-bottom:1px solid var(--line)!important;
  text-transform:uppercase!important;
  letter-spacing:1px!important;
+ font-size:.68rem!important;
 }
-td{border-bottom:1px solid #efefef!important;}
-tr:hover td{background:#fafafa!important;}
+td{
+ border-bottom:1px solid #efefef!important;
+}
+tr:hover td{
+ background:#fafafa!important;
+}
 
-.btn,.filter-btn,.book-select,.budget-select,.form-control,.search-input{
+.type-badge,
+.category-badge{
  border-radius:0!important;
 }
-.btn-primary{
- background:var(--accent)!important;
- border-color:var(--accent)!important;
-}
-.btn-secondary{
- background:#fff!important;
-}
-.form-control,.search-input,.book-select,.budget-select{
- border:1px solid var(--line)!important;
-}
+
 .modal-content{
- box-shadow:0 30px 80px rgba(0,0,0,.08)!important;
+ max-width:700px!important;
+ box-shadow:0 40px 90px rgba(0,0,0,.08)!important;
 }
-.type-badge,.category-badge{
+
+.footer{
+ border-top:1px solid var(--line)!important;
+ padding-top:20px!important;
+ margin-top:32px!important;
+}
+
+.sync-status-container,
+.page-btn,
+.btn-icon{
  border-radius:0!important;
+}
+
+@media(max-width:768px){
+ body{padding:16px!important;}
+ .header h1,#headerBrandTitle{
+   font-size:2rem!important;
+ }
+ .stat-value{
+   font-size:1.5rem!important;
+ }
 }
 
 </style>
