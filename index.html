@@ -1325,7 +1325,72 @@
         .telegram-badge:hover:not(:disabled) {
             background: #006699;
         }
-    </style>
+    
+/* ===== SWISS DESIGN OVERRIDES ===== */
+:root{
+ --bg:#f7f7f4;
+ --surface:#ffffff;
+ --text:#111111;
+ --muted:#7a7a7a;
+ --line:#dddddd;
+ --accent:#0057ff;
+}
+body{background:var(--bg)!important;color:var(--text)!important;padding:32px!important;}
+.container{max-width:1600px;}
+.header{border-bottom:1px solid var(--line)!important;padding-bottom:24px!important;margin-bottom:40px!important;}
+.header h1,#headerBrandTitle{font-size:2.3rem!important;letter-spacing:-2px!important;font-weight:700!important;}
+.header p{letter-spacing:1px!important;text-transform:uppercase!important;color:var(--muted)!important;}
+
+.stat-card,.table-container,.budget-mini,.expense-chart-section,.log-section,.modal-content,.book-list-item{
+ border:none!important;
+ border-radius:0!important;
+ background:#fff!important;
+ box-shadow:none!important;
+}
+.stat-card{border-top:3px solid var(--text)!important;padding:24px!important;}
+.stat-card:hover{transform:none!important;box-shadow:none!important;}
+.stat-label{
+ text-transform:uppercase!important;
+ letter-spacing:1px!important;
+ color:var(--muted)!important;
+}
+.stat-value{
+ font-size:2rem!important;
+ letter-spacing:-1px!important;
+}
+
+.budget-mini{border-left:4px solid var(--accent)!important;}
+.table-container{border-top:1px solid var(--line)!important;}
+th{
+ background:#fff!important;
+ border-bottom:1px solid var(--line)!important;
+ text-transform:uppercase!important;
+ letter-spacing:1px!important;
+}
+td{border-bottom:1px solid #efefef!important;}
+tr:hover td{background:#fafafa!important;}
+
+.btn,.filter-btn,.book-select,.budget-select,.form-control,.search-input{
+ border-radius:0!important;
+}
+.btn-primary{
+ background:var(--accent)!important;
+ border-color:var(--accent)!important;
+}
+.btn-secondary{
+ background:#fff!important;
+}
+.form-control,.search-input,.book-select,.budget-select{
+ border:1px solid var(--line)!important;
+}
+.modal-content{
+ box-shadow:0 30px 80px rgba(0,0,0,.08)!important;
+}
+.type-badge,.category-badge{
+ border-radius:0!important;
+}
+
+</style>
 </head>
 <body>
 
