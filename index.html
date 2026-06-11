@@ -4433,44 +4433,61 @@ async function fetchForexRate() {
     const updatedEl = document.getElementById('forexUpdated');
     if (!rateEl) return;
 
-    try {
-        // Ambil kurs hari ini dan kemarin untuk hitung perubahan
-        const today = new Date().toISOString().split('T')[0];
-        const yday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    rateEl.textContent = 'Memuat...';
 
-        const [resNow, resYday] = await Promise.all([
-            fetch(`https://api.frankfurter.app/latest?from=USD&to=IDR`),
-            fetch(`https://api.frankfurter.app/${yday}?from=USD&to=IDR`)
-        ]);
-
-        if (!resNow.ok) throw new Error('Gagal mengambil data kurs');
-        const dataNow = await resNow.json();
-        const rateNow = dataNow.rates.IDR;
-
-        rateEl.textContent = 'Rp ' + Number(rateNow).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-        _lastForexRate = rateNow;
-
-        if (resYday.ok) {
-            const dataYday = await resYday.json();
-            const rateYday = dataYday.rates.IDR;
-            const diff = rateNow - rateYday;
-            const pct = ((diff / rateYday) * 100).toFixed(2);
-            const arrow = diff >= 0 ? '▲' : '▼';
-            changeEl.textContent = `${arrow} ${Math.abs(diff).toLocaleString('id-ID', {maximumFractionDigits:0})} (${Math.abs(pct)}%)`;
-            changeEl.className = 'forex-change ' + (diff >= 0 ? 'up' : 'down');
-        } else {
-            changeEl.textContent = '';
+    // Coba beberapa sumber API secara berurutan (fallback)
+    const apis = [
+        {
+            url: 'https://open.er-api.com/v6/latest/USD',
+            parse: (d) => d && d.result === 'success' ? d.rates.IDR : null
+        },
+        {
+            url: 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json',
+            parse: (d) => d && d.usd && d.usd.idr ? d.usd.idr : null
+        },
+        {
+            url: 'https://latest.currency-api.pages.dev/v1/currencies/usd.json',
+            parse: (d) => d && d.usd && d.usd.idr ? d.usd.idr : null
         }
+    ];
 
-        const now = new Date();
-        updatedEl.textContent = `· ${now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' })}`;
-
-    } catch (e) {
-        if (rateEl) rateEl.textContent = 'Tidak tersedia';
-        if (changeEl) changeEl.textContent = '';
-        if (updatedEl) updatedEl.textContent = '';
-        console.warn('[Forex] Gagal:', e.message);
+    let rateNow = null;
+    for (const api of apis) {
+        try {
+            const res = await fetch(api.url);
+            if (!res.ok) continue;
+            const data = await res.json();
+            rateNow = api.parse(data);
+            if (rateNow) break;
+        } catch (e) { continue; }
     }
+
+    if (!rateNow) {
+        rateEl.textContent = 'Tidak tersedia';
+        changeEl.textContent = '';
+        updatedEl.textContent = '';
+        console.warn('[Forex] Semua sumber API gagal');
+        return;
+    }
+
+    rateEl.textContent = 'Rp ' + Number(rateNow).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+    // Hitung perubahan dari nilai sebelumnya (jika ada)
+    if (_lastForexRate && _lastForexRate !== rateNow) {
+        const diff = rateNow - _lastForexRate;
+        const pct = ((diff / _lastForexRate) * 100).toFixed(2);
+        const arrow = diff >= 0 ? '▲' : '▼';
+        changeEl.textContent = `${arrow} ${Math.abs(diff).toLocaleString('id-ID', {maximumFractionDigits:0})} (${Math.abs(pct)}%)`;
+        changeEl.className = 'forex-change ' + (diff >= 0 ? 'up' : 'down');
+    } else if (!_lastForexRate) {
+        changeEl.textContent = '';
+        changeEl.className = '';
+    }
+
+    _lastForexRate = rateNow;
+
+    const now = new Date();
+    updatedEl.textContent = `· ${now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' })}`;
 }
 
 // ==================== INIT APP ====================
