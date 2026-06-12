@@ -4232,12 +4232,12 @@ async function openTelegramSettings() {
         if (allRows && Array.isArray(allRows) && allRows.length > 0) {
             try {
                 const parsed = JSON.parse(allRows[0].value);
+                // FIX BUG #1: Hanya timpa lokal jika cloud punya data valid.
+                // Jangan hapus token lokal hanya karena cloud kosong —
+                // ini mencegah wipe config saat buka modal dari device baru.
                 if (parsed.token) localStorage.setItem('sk_tg_token', parsed.token);
-                else localStorage.removeItem('sk_tg_token');
                 if (parsed.chatId) localStorage.setItem('sk_tg_chatid', parsed.chatId);
-                else localStorage.removeItem('sk_tg_chatid');
                 if (parsed.edgeUrl) localStorage.setItem('sk_tg_edge_url', parsed.edgeUrl);
-                else localStorage.removeItem('sk_tg_edge_url');
             } catch (e) { }
         }
         loadTgConfigToForm();
@@ -5511,9 +5511,13 @@ async function continueAppInit() {
         updateUIForOnlineStatus();
     });
 
+    // FIX: Throttle visibilitychange — hanya forceFullSync jika sudah > 60 detik sejak sync terakhir
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden && isOnline()) {
-            forceFullSync();
+            const secondsSinceSync = _lastSyncTime ? (Date.now() - _lastSyncTime.getTime()) / 1000 : Infinity;
+            if (secondsSinceSync > 60) {
+                forceFullSync();
+            }
         }
     });
 }
@@ -5833,15 +5837,8 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ========== MOBILE DRAWER ==========
-function openMobileDrawer() {
-    mirrorAccountLabel();
-    document.getElementById('mobileDrawerOverlay').classList.add('show');
-    document.getElementById('mobileDrawer').classList.add('show');
-}
-function closeMobileDrawer() {
-    document.getElementById('mobileDrawerOverlay').classList.remove('show');
-    document.getElementById('mobileDrawer').classList.remove('show');
-}
+// Implementasi open/close didefinisikan di bawah (setelah HTML drawer) menggunakan
+// window.openMobileDrawer / window.closeMobileDrawer agar konsisten dengan inline style.
 function drawerAction(fn) {
     closeMobileDrawer();
     setTimeout(fn, 180);
