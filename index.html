@@ -22,33 +22,35 @@
             box-sizing: border-box;
         }
         /* ===== SEMUA BUTTON HITAM (tidak warna-warni) ===== */
-        button, .btn, .btn-primary, .btn-secondary, .btn-success, .btn-warning,
-        .manage-books-btn, .btn-icon, .page-btn, .filter-btn, .filter-btn.active,
+        button, .btn, .btn-secondary, .btn-success, .btn-warning,
+        .manage-books-btn, .btn-icon, .page-btn, .filter-btn,
         .btn-mini, .btn-mini-danger, .date-clear-btn, .modal-close,
-        .expense-chart-toggle button, .expense-chart-toggle button.active {
-            background: #e8f0fe !important;
-            color: #1a56db !important;
-            border: 1px solid #c5d8ff !important;
+        .expense-chart-toggle button {
+            background: #f0f0f0 !important;
+            color: #555 !important;
+            border: 1px solid #ddd !important;
         }
         button:hover:not(:disabled), .btn:hover:not(:disabled),
         .page-btn:hover:not(:disabled), .filter-btn:hover,
         .btn-icon:hover:not(:disabled), .manage-books-btn:hover:not(:disabled) {
-            background: #d6e4ff !important;
-            border-color: #a8c5ff !important;
+            background: #e2e2e2 !important;
+            border-color: #ccc !important;
         }
         button:disabled, .btn:disabled, .manage-books-btn:disabled, .btn-icon:disabled, .page-btn:disabled {
             opacity: 0.4 !important;
             cursor: not-allowed;
         }
-        .filter-btn:not(.active), .page-btn:not(.active) {
-            background: #fff !important;
-            color: #5b7bb5 !important;
-            border: 1.5px solid #c5d8ff !important;
-        }
-        .filter-btn:not(.active):hover, .page-btn:not(.active):hover:not(:disabled) {
+        /* Aksi utama / aktif: aksen biru lembut */
+        .btn-primary, .filter-btn.active, .page-btn.active,
+        .expense-chart-toggle button.active {
             background: #e8f0fe !important;
             color: #1a56db !important;
-            border-color: #c5d8ff !important;
+            border: 1px solid #c5d8ff !important;
+        }
+        .btn-primary:hover:not(:disabled), .filter-btn.active:hover,
+        .page-btn.active:hover:not(:disabled) {
+            background: #d6e4ff !important;
+            border-color: #a8c5ff !important;
         }
         body {
             font-family: 'Inter', sans-serif;
