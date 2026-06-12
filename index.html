@@ -1787,6 +1787,29 @@
             <button class="modal-close" onclick="closeModal('setelanModal')">×</button>
         </div>
 
+        <!-- Analisis AI -->
+        <div class="data-management-panel" style="border-color:#6b46c1; background:#faf5ff; margin-top:0;">
+            <div class="panel-title" style="color:#553c9a; display:flex; align-items:center; gap:8px;">
+                🤖 Analisis AI
+                <span id="aiWorkerStatusBadge" style="font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:10px; background:#eee; color:#666;">Belum dikonfigurasi</span>
+            </div>
+            <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
+                Masukkan URL Cloudflare Worker milik Anda untuk mengaktifkan fitur Analisis Keuangan AI. Deploy worker sendiri agar tidak bergantung pada worker orang lain.
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label>Worker URL</label>
+                <input type="text" id="aiWorkerUrlInput" class="form-control"
+                    placeholder="https://nama-worker-anda.workers.dev"
+                    oninput="updateAiWorkerBadge()">
+            </div>
+            <div id="aiWorkerTestStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary" style="flex:1;" onclick="testAiWorkerUrl()">📡 Tes Koneksi</button>
+                <button class="btn btn-danger" style="flex:1;" onclick="clearAiWorkerUrl()">🗑️ Hapus</button>
+                <button class="btn btn-primary" style="flex:2; background:#6b46c1; border-color:#6b46c1;" onclick="saveAiWorkerUrl()">💾 Simpan</button>
+            </div>
+        </div>
+
         <!-- Telegram -->
         <div class="data-management-panel" style="border-color:#0088cc; background:#f0f8ff; margin-top:0;">
             <div class="panel-title" style="color:#0055aa; display:flex; align-items:center; gap:8px;">
@@ -1960,6 +1983,10 @@
         <div class="modal-header">
             <h3>Analisis Keuangan</h3>
             <button class="modal-close" onclick="closeModal('aiAnalysisModal')">×</button>
+        </div>
+
+        <div id="aiWorkerWarning" style="display:none; background:#fff3e0; border:1px solid #ffab00; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:.75rem; color:#7a4f00; line-height:1.6;">
+            ⚠️ <strong>Worker URL belum dikonfigurasi.</strong> Buka <a href="#" onclick="closeModal('aiAnalysisModal'); openSetelanModal(); return false;" style="color:#cc7b00; font-weight:600;">⚙️ Setelan → Analisis AI</a> untuk mengisi URL Cloudflare Worker Anda.
         </div>
 
         <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
@@ -2548,6 +2575,14 @@ function openSetelanModal() {
     if (urlEl) urlEl.value = getCloudUrl() || globalSupabaseUrl || '';
     if (keyEl) keyEl.value = '';
     if (statusEl) statusEl.innerHTML = '';
+
+    // Isi Worker URL AI
+    const workerInp = document.getElementById('aiWorkerUrlInput');
+    const workerSt  = document.getElementById('aiWorkerTestStatus');
+    if (workerInp) workerInp.value = localStorage.getItem('sk_ai_worker_url') || '';
+    if (workerSt)  workerSt.innerText = '';
+    updateAiWorkerBadge();
+
     openModal('setelanModal');
 }
 
@@ -5378,6 +5413,22 @@ if ('serviceWorker' in navigator) {
 
 // ==================== ANALISIS AI ====================
 function openAIAnalysis() {
+    const workerUrl = localStorage.getItem('sk_ai_worker_url') || '';
+    const warningEl = document.getElementById('aiWorkerWarning');
+    const runBtn    = document.getElementById('aiAnalysisRunBtn');
+
+    if (!workerUrl) {
+        warningEl.style.display = 'block';
+        runBtn.disabled = true;
+        runBtn.style.opacity = '0.5';
+        runBtn.title = 'Worker URL belum dikonfigurasi di Setelan';
+    } else {
+        warningEl.style.display = 'none';
+        runBtn.disabled = false;
+        runBtn.style.opacity = '1';
+        runBtn.title = '';
+    }
+
     document.getElementById('aiAnalysisResult').innerHTML = `
         <div style="text-align:center; color:#999; padding:40px 0;">
             Pilih periode dan jenis analisis, lalu klik <strong>Analisis Sekarang</strong>.
@@ -5481,8 +5532,11 @@ async function runAIAnalysis() {
     const footerEl = document.getElementById('aiAnalysisFooter');
     const copyBtn  = document.getElementById('aiCopyBtn');
 
-    // ⚠️ Ganti dengan URL Cloudflare Worker Anda setelah deploy
-    const WORKER_URL = 'https://sinarkeu.sinarmedia-production.workers.dev';
+    const WORKER_URL = (localStorage.getItem('sk_ai_worker_url') || '').trim();
+    if (!WORKER_URL) {
+        resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">⚠️ Worker URL belum dikonfigurasi. Buka Setelan → Analisis AI.</div>';
+        return;
+    }
 
     const data = getAITransactionData();
     if (data.count === 0) {
@@ -5522,6 +5576,83 @@ async function runAIAnalysis() {
     } finally {
         btn.disabled = false;
         btn.innerText = '✨ Analisis Sekarang';
+    }
+}
+
+function getAiWorkerUrl() {
+    return localStorage.getItem('sk_ai_worker_url') || '';
+}
+
+function updateAiWorkerBadge() {
+    const badge = document.getElementById('aiWorkerStatusBadge');
+    if (!badge) return;
+    const val = (document.getElementById('aiWorkerUrlInput')?.value || '').trim();
+    if (val) {
+        badge.style.background = '#e3fcef'; badge.style.color = '#006644';
+        badge.innerText = 'Terkonfigurasi';
+    } else {
+        badge.style.background = '#eee'; badge.style.color = '#666';
+        badge.innerText = 'Belum dikonfigurasi';
+    }
+}
+
+function saveAiWorkerUrl() {
+    const url = (document.getElementById('aiWorkerUrlInput')?.value || '').trim();
+    const st  = document.getElementById('aiWorkerTestStatus');
+    if (!url) {
+        st.style.color = '#de350b';
+        st.innerText = '❌ URL tidak boleh kosong!';
+        return;
+    }
+    if (!url.startsWith('http')) {
+        st.style.color = '#de350b';
+        st.innerText = '❌ URL harus diawali https://';
+        return;
+    }
+    localStorage.setItem('sk_ai_worker_url', url);
+    st.style.color = '#00875a';
+    st.innerText = '✅ Worker URL berhasil disimpan!';
+    updateAiWorkerBadge();
+    showToast('Worker URL AI disimpan!', 'success');
+}
+
+function clearAiWorkerUrl() {
+    if (!confirm('Hapus Worker URL? Fitur Analisis AI akan dinonaktifkan.')) return;
+    localStorage.removeItem('sk_ai_worker_url');
+    const inp = document.getElementById('aiWorkerUrlInput');
+    if (inp) inp.value = '';
+    const st = document.getElementById('aiWorkerTestStatus');
+    if (st) { st.style.color = '#666'; st.innerText = 'Worker URL dihapus.'; }
+    updateAiWorkerBadge();
+    showToast('Worker URL dihapus.', 'info');
+}
+
+async function testAiWorkerUrl() {
+    const url = (document.getElementById('aiWorkerUrlInput')?.value || '').trim();
+    const st  = document.getElementById('aiWorkerTestStatus');
+    if (!url) { st.style.color='#de350b'; st.innerText='❌ Isi URL dulu sebelum tes.'; return; }
+
+    st.style.color = '#cc7b00';
+    st.innerText = '⏳ Menghubungi worker...';
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: 'ping' }),
+            signal: AbortSignal.timeout(8000)
+        });
+        if (res.ok || res.status === 400 || res.status === 422) {
+            // Worker merespons (400/422 wajar untuk prompt "ping" yang terlalu pendek)
+            st.style.color = '#00875a';
+            st.innerText = '✅ Worker merespons! Koneksi berhasil.';
+        } else {
+            st.style.color = '#de350b';
+            st.innerText = `⚠️ Worker merespons tapi status: ${res.status}. Periksa konfigurasi worker.`;
+        }
+    } catch (e) {
+        st.style.color = '#de350b';
+        st.innerText = `❌ Gagal terhubung: ${e.message}`;
     }
 }
 
