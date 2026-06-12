@@ -1543,13 +1543,13 @@
                 <span id="deviceIdDisplay" class="device-id-badge">------</span>
             </div>
             <span id="syncTimeBadge" style="font-size:.65rem;color:#666;font-weight:600;">🕐 --:--:--</span>
-            <span id="activeAccountLabel" style="font-size:.7rem;font-weight:700;color:#1a1a1a;padding:4px 10px;background:#e8f0fe;border-radius:6px;"></span>
-            <button class="manage-books-btn" onclick="logoutToLockScreen()" style="background:#666;" title="Ganti Akun">🔒 Ganti Akun</button>
             <label>BUKU:</label>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
             <button class="manage-books-btn" id="kelolaBukuBtn" onclick="openBookManager()">Kelola</button>
-            <button class="manage-books-btn telegram-badge" id="telegramBtn" onclick="openTelegramSettings()" style="background:#0088cc;" title="Setelan Notifikasi Telegram">Telegram</button>
             <button class="manage-books-btn" id="manualSyncBtn" style="background:#00875a;" onclick="forceFullSync()">🔄 Sinkronisasi</button>
+            <button class="manage-books-btn" id="setelanBtn" onclick="openSetelanModal()" style="background:#4a5568;" title="Setelan">⚙️ Setelan</button>
+            <span id="activeAccountLabel" style="font-size:.7rem;font-weight:700;color:#1a1a1a;padding:4px 10px;background:#e8f0fe;border-radius:6px;"></span>
+            <button class="manage-books-btn" onclick="logoutToLockScreen()" style="background:#666;" title="Ganti Akun">Ganti Akun</button>
         </div>
     </div>
 
@@ -1733,67 +1733,6 @@
         <div class="modal-header"><h3>Kelola Buku Kas</h3><button class="modal-close" onclick="closeModal('bookManagerModal')">×</button></div>
         <div id="bookListContainer"></div>
         <form onsubmit="addNewBook(event)" style="border-top:1px solid #eee; padding-top:16px; margin-bottom:16px"><input type="text" id="newBookName" class="form-control" placeholder="Nama buku baru..." required><button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px">Buat Buku Baru</button></form>
-
-        <div style="border-top:2px dashed #1a1a1a; padding-top:16px">
-            <div class="form-group">
-                <div style="font-size:.72rem; font-weight:700; color:#1a1a1a; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-                    ☁️ Koneksi Supabase
-                    <span style="font-size:.6rem; background:#e3fcef; color:#006644; padding:2px 8px; border-radius:10px; font-weight:600;">Berlaku untuk semua buku</span>
-                </div>
-                <label>Supabase URL Connection</label>
-                <input type="text" id="supabaseUrlInput" class="form-control" placeholder="https://yourproject.supabase.co" style="margin-bottom: 10px;">
-                <label>Supabase Anon Key</label>
-                <input type="password" id="supabaseKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-                <div class="cloud-connect-row">
-                    <button class="btn btn-primary" style="width:100%" onclick="testCloudConnection()">Hubungkan & Sinkronkan Semua Buku</button>
-                </div>
-                <div id="connectionStatus" style="margin-top:8px"></div>
-            </div>
-        </div>
-
-        <div class="data-management-panel" style="border-color:#1a1a1a; background:#fafafa;">
-            <div class="panel-title">🔐 Ganti Password Keamanan</div>
-            <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
-                Ganti password yang digunakan untuk mengenkripsi koneksi Supabase Anda.
-            </div>
-            <input type="password" id="changePwdOld" class="form-control" placeholder="Password saat ini" style="margin-bottom:8px;">
-            <input type="password" id="changePwdNew" class="form-control" placeholder="Password baru (min. 6 karakter)" style="margin-bottom:8px;">
-            <input type="password" id="changePwdNew2" class="form-control" placeholder="Konfirmasi password baru" style="margin-bottom:10px;">
-            <div id="changePwdStatus" style="font-size:.7rem; min-height:16px; margin-bottom:8px;"></div>
-            <button class="btn btn-primary" style="width:100%;" onclick="changePassword()">🔐 Ganti Password</button>
-        </div>
-
-        <div class="data-management-panel" style="border-color:#0088cc; background:#f0f8ff;">
-            <div class="panel-title" style="color:#0055aa; display:flex; align-items:center; gap:8px;">
-                ☁️ Sinkronisasi Setelan
-                <span id="settingsSyncBadge" style="font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:10px; background:#e3fcef; color:#006644;">Otomatis</span>
-            </div>
-            <div style="font-size:.7rem; color:#555; line-height:1.6;">
-                Daftar buku kas, anggaran bulanan, dan konfigurasi Telegram tersinkronisasi otomatis ke Supabase setiap kali ada perubahan.
-            </div>
-            <div id="settingsSyncStatus" style="font-size:.68rem; color:#888; margin-top:8px;"></div>
-        </div>
-
-        <div class="data-management-panel">
-            <div class="panel-title">Cadangan Data</div>
-            <div class="panel-actions-row">
-                <button class="btn btn-secondary" onclick="exportToCSV()">📥 CSV</button>
-                <button class="btn btn-secondary" onclick="exportToJSON()">📦 JSON</button>
-                <button class="btn btn-secondary" onclick="triggerJsonImport()">📤 Impor</button>
-            </div>
-            <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)">
-        </div>
-
-        <div class="data-management-panel" style="border-color:#de350b; background:#fff5f5;">
-            <div class="panel-title" style="color:#de350b;">🗃️ Arsipkan & Kosongkan Database</div>
-            <div style="font-size:.7rem; color:#666; margin-bottom:12px; line-height:1.6;">
-                Export semua transaksi buku ini ke file JSON sebagai arsip, lalu <b>hapus permanen</b> seluruh data dari Supabase dan lokal. Gunakan saat storage hampir penuh.
-            </div>
-            <div id="archiveStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
-            <button class="btn btn-danger" style="width:100%;" onclick="archiveAndClearData()">
-                🗃️ Arsipkan JSON & Kosongkan Database
-            </button>
-        </div>
     </div>
 </div>
 
@@ -1836,6 +1775,95 @@
             ➕ Transaksi baru · ✏️ Transaksi diubah · 🗑️ Transaksi dihapus<br>
             ⚠️ Peringatan anggaran 80% & 🚨 anggaran habis<br>
             📅 Ringkasan harian otomatis pukul <b>21:00</b>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL SETELAN ===== -->
+<div id="setelanModal" class="modal">
+    <div class="modal-content" style="max-width:540px;">
+        <div class="modal-header">
+            <h3>⚙️ Setelan</h3>
+            <button class="modal-close" onclick="closeModal('setelanModal')">×</button>
+        </div>
+
+        <!-- Telegram -->
+        <div class="data-management-panel" style="border-color:#0088cc; background:#f0f8ff; margin-top:0;">
+            <div class="panel-title" style="color:#0055aa; display:flex; align-items:center; gap:8px;">
+                📲 Notifikasi Telegram
+            </div>
+            <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
+                Kirim notifikasi transaksi, peringatan anggaran, dan ringkasan harian lewat Telegram Bot.
+            </div>
+            <button class="btn btn-primary" style="background:#0088cc; border-color:#0088cc;" onclick="closeModal('setelanModal'); openTelegramSettings()">
+                📲 Atur Notifikasi Telegram
+            </button>
+        </div>
+
+        <!-- Koneksi Supabase -->
+        <div class="data-management-panel" style="margin-top:0;">
+            <div class="form-group" style="margin-bottom:0;">
+                <div style="font-size:.72rem; font-weight:700; color:#1a1a1a; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+                    ☁️ Koneksi Supabase
+                    <span style="font-size:.6rem; background:#e3fcef; color:#006644; padding:2px 8px; border-radius:10px; font-weight:600;">Berlaku untuk semua buku</span>
+                </div>
+                <label>Supabase URL Connection</label>
+                <input type="text" id="supabaseUrlInput" class="form-control" placeholder="https://yourproject.supabase.co" style="margin-bottom: 10px;">
+                <label>Supabase Anon Key</label>
+                <input type="password" id="supabaseKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                <div class="cloud-connect-row">
+                    <button class="btn btn-primary" style="width:100%" onclick="testCloudConnection()">Hubungkan & Sinkronkan Semua Buku</button>
+                </div>
+                <div id="connectionStatus" style="margin-top:8px"></div>
+            </div>
+        </div>
+
+        <!-- Ganti Password -->
+        <div class="data-management-panel" style="border-color:#1a1a1a; background:#fafafa; margin-top:0;">
+            <div class="panel-title">🔐 Ganti Password Keamanan</div>
+            <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
+                Ganti password yang digunakan untuk mengenkripsi koneksi Supabase Anda.
+            </div>
+            <input type="password" id="changePwdOld" class="form-control" placeholder="Password saat ini" style="margin-bottom:8px;">
+            <input type="password" id="changePwdNew" class="form-control" placeholder="Password baru (min. 6 karakter)" style="margin-bottom:8px;">
+            <input type="password" id="changePwdNew2" class="form-control" placeholder="Konfirmasi password baru" style="margin-bottom:10px;">
+            <div id="changePwdStatus" style="font-size:.7rem; min-height:16px; margin-bottom:8px;"></div>
+            <button class="btn btn-primary" style="width:100%;" onclick="changePassword()">🔐 Ganti Password</button>
+        </div>
+
+        <!-- Sinkronisasi Setelan -->
+        <div class="data-management-panel" style="border-color:#0088cc; background:#f0f8ff; margin-top:0;">
+            <div class="panel-title" style="color:#0055aa; display:flex; align-items:center; gap:8px;">
+                ☁️ Sinkronisasi Setelan
+                <span id="settingsSyncBadge" style="font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:10px; background:#e3fcef; color:#006644;">Otomatis</span>
+            </div>
+            <div style="font-size:.7rem; color:#555; line-height:1.6;">
+                Daftar buku kas, anggaran bulanan, dan konfigurasi Telegram tersinkronisasi otomatis ke Supabase setiap kali ada perubahan.
+            </div>
+            <div id="settingsSyncStatus" style="font-size:.68rem; color:#888; margin-top:8px;"></div>
+        </div>
+
+        <!-- Cadangan Data -->
+        <div class="data-management-panel" style="margin-top:0;">
+            <div class="panel-title">💾 Cadangan Data</div>
+            <div class="panel-actions-row">
+                <button class="btn btn-secondary" onclick="exportToCSV()">📥 CSV</button>
+                <button class="btn btn-secondary" onclick="exportToJSON()">📦 JSON</button>
+                <button class="btn btn-secondary" onclick="triggerJsonImport()">📤 Impor</button>
+            </div>
+            <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)">
+        </div>
+
+        <!-- Arsipkan JSON -->
+        <div class="data-management-panel" style="border-color:#de350b; background:#fff5f5; margin-top:0;">
+            <div class="panel-title" style="color:#de350b;">🗃️ Arsipkan & Kosongkan Database</div>
+            <div style="font-size:.7rem; color:#666; margin-bottom:12px; line-height:1.6;">
+                Export semua transaksi buku ini ke file JSON sebagai arsip, lalu <b>hapus permanen</b> seluruh data dari Supabase dan lokal. Gunakan saat storage hampir penuh.
+            </div>
+            <div id="archiveStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
+            <button class="btn btn-danger" style="width:100%;" onclick="archiveAndClearData()">
+                🗃️ Arsipkan JSON & Kosongkan Database
+            </button>
         </div>
     </div>
 </div>
@@ -2279,7 +2307,6 @@ function renderAccModalList(highlightId) {
         return `<div class="acc-modal-item${isActive ? ' current' : ''}" onclick="handleAccModalItemClick('${acc.id}')">
             <div>
                 <div class="acc-modal-item-name">${escHtml(acc.name)}</div>
-                <div class="acc-modal-item-url">${escHtml(urlPreview)}</div>
             </div>
             <div class="acc-item-actions">
                 ${badge}
@@ -2512,6 +2539,16 @@ function updateActiveAccountLabel() {
 function logoutToLockScreen() {
     sessionStorage.removeItem('sk_session_unlocked');
     location.reload();
+}
+
+function openSetelanModal() {
+    const urlEl = document.getElementById('supabaseUrlInput');
+    const keyEl = document.getElementById('supabaseKeyInput');
+    const statusEl = document.getElementById('connectionStatus');
+    if (urlEl) urlEl.value = getCloudUrl() || globalSupabaseUrl || '';
+    if (keyEl) keyEl.value = '';
+    if (statusEl) statusEl.innerHTML = '';
+    openModal('setelanModal');
 }
 
 function openAccountManagerFromLock() {
@@ -4029,9 +4066,6 @@ function openBookManager() {
     if (!requireOnline('mengelola buku')) return;
     openModal('bookManagerModal');
     renderBookList();
-    document.getElementById('supabaseUrlInput').value = getCloudUrl();
-    document.getElementById('supabaseKeyInput').value = getSupabaseKey();
-    document.getElementById('connectionStatus').innerHTML = '';
 }
 
 async function openTelegramSettings() {
@@ -4134,9 +4168,6 @@ async function switchBook(id) {
 
     if (document.getElementById('bookManagerModal').classList.contains('show')) {
         renderBookList();
-        document.getElementById('supabaseUrlInput').value = getCloudUrl();
-        document.getElementById('supabaseKeyInput').value = getSupabaseKey();
-        document.getElementById('connectionStatus').innerHTML = '';
     }
 
     showToast("Berhasil beralih ke: " + (books.find(b => b.id === id)?.name || id));
@@ -4958,7 +4989,7 @@ function updateUIForOnlineStatus() {
     const online = isOnline();
     const offlineWarning = document.getElementById('offlineWarningBar');
     const actionButtons = [
-        'tambahTransaksiBtn', 'kelolaBukuBtn', 'telegramBtn', 
+        'tambahTransaksiBtn', 'kelolaBukuBtn', 'setelanBtn', 
         'manualSyncBtn', 'anggaranBtn', 'backupBtn'
     ];
     
