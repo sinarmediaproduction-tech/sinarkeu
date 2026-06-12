@@ -1312,6 +1312,56 @@
             width: 0%;
         }
 
+        /* Account picker di lock screen */
+        .lock-account-picker {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .lock-account-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: left;
+            background: #fff;
+            font-family: inherit;
+            width: 100%;
+        }
+        .lock-account-item:hover { border-color: #1a1a1a; background: #f9f9f9; }
+        .lock-account-item.selected { border-color: #1a1a1a; background: #f5f5f5; }
+        .lock-account-avatar {
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: #1a1a1a;
+            color: #fff;
+            font-size: .85rem;
+            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .lock-account-info { flex: 1; }
+        .lock-account-name { font-size: .85rem; font-weight: 600; color: #1a1a1a; }
+        .lock-account-sub  { font-size: .65rem; color: #888; margin-top: 2px; }
+        .lock-account-check { font-size: 1.1rem; opacity: 0; transition: opacity 0.15s; }
+        .lock-account-item.selected .lock-account-check { opacity: 1; }
+        .lock-add-account {
+            margin-top: 14px;
+            font-size: .72rem;
+            color: #888;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-family: inherit;
+            text-decoration: underline;
+        }
+        .lock-add-account:hover { color: #1a1a1a; }
+
         #manualSyncBtn {
             background: #00875a;
         }
@@ -1456,9 +1506,12 @@
 
 <div id="passwordLockScreen">
     <div class="lock-card">
-        <span class="lock-icon" id="lockIcon">🔒</span>
-        <div class="lock-title" id="lockTitle">Sinarkeu</div>
-        <div class="lock-subtitle" id="lockSubtitle">Masukkan password untuk membuka aplikasi</div>
+        <span class="lock-icon">🔒</span>
+        <div class="lock-title">Sinarkeu</div>
+        <div class="lock-subtitle" id="lockSubtitle">Pilih akun dan masukkan password</div>
+
+        <!-- Daftar akun (ditampilkan kalau ada >1 akun) -->
+        <div class="lock-account-picker" id="lockAccountPicker"></div>
 
         <div class="lock-input-wrap">
             <input type="password" id="lockPasswordInput" class="lock-input"
@@ -1468,34 +1521,16 @@
             <button class="lock-eye-btn" onclick="toggleLockEye()" id="lockEyeBtn" title="Tampilkan/sembunyikan">👁</button>
         </div>
 
-        <div id="lockConfirmWrap" style="display:none;">
-            <div class="lock-input-wrap" style="margin-bottom:6px;">
-                <input type="password" id="lockConfirmInput" class="lock-input"
-                       placeholder="Konfirmasi Password"
-                       onkeydown="if(event.key==='Enter') submitLockPassword()">
-            </div>
-            <div class="pwd-strength"><div class="pwd-strength-fill" id="pwdStrengthFill"></div></div>
-            <div style="font-size:.65rem; color:#888; margin-top:4px;" id="pwdStrengthLabel"></div>
-        </div>
-
         <div style="margin-top:14px;">
             <button class="lock-btn" id="lockSubmitBtn" onclick="submitLockPassword()">🔓 Buka</button>
         </div>
         <div class="lock-status" id="lockStatus"></div>
 
-        <div class="lock-warning" id="lockWarning" style="display:none;">
-            ⚠️ <strong>Perhatian:</strong> Jika password lupa, tidak ada cara untuk memulihkan data. Simpan password Anda di tempat yang aman.
-        </div>
+        <button class="lock-add-account" onclick="openAccountManagerFromLock()">＋ Tambah akun baru</button>
     </div>
 </div>
 
 <!-- ===== ACCOUNT BAR ===== -->
-<div class="account-bar" id="accountBar">
-    <span class="account-bar-label">AKUN:</span>
-    <div class="account-tabs" id="accountTabs"></div>
-    <button class="account-bar-add" onclick="openAccountManager()">＋ Tambah Akun</button>
-</div>
-
 <div class="container">
     <div class="header">
         <div>
@@ -1508,6 +1543,8 @@
                 <span id="deviceIdDisplay" class="device-id-badge">------</span>
             </div>
             <span id="syncTimeBadge" style="font-size:.65rem;color:#666;font-weight:600;">🕐 --:--:--</span>
+            <span id="activeAccountLabel" style="font-size:.7rem;font-weight:700;color:#1a1a1a;padding:4px 10px;background:#e8f0fe;border-radius:6px;"></span>
+            <button class="manage-books-btn" onclick="logoutToLockScreen()" style="background:#666;" title="Ganti Akun">🔒 Ganti Akun</button>
             <label>BUKU:</label>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
             <button class="manage-books-btn" id="kelolaBukuBtn" onclick="openBookManager()">Kelola</button>
@@ -2422,27 +2459,73 @@ async function deleteAccount(accId) {
 }
 
 function renderAccountBar() {
+    renderLockScreenPicker();
+    updateActiveAccountLabel();
+}
+
+function renderLockScreenPicker() {
     const accounts = getAllAccounts();
     const activeId = getActiveAccountId();
-    const tabsEl   = document.getElementById('accountTabs');
-    if (!tabsEl) return;
+    const el = document.getElementById('lockAccountPicker');
+    if (!el) return;
 
-    if (accounts.length === 0) {
-        tabsEl.innerHTML = '<span style="color:#555;font-size:.68rem;padding:0 12px;">Belum ada akun tersimpan</span>';
+    if (accounts.length <= 1) {
+        el.style.display = 'none';
         return;
     }
 
-    tabsEl.innerHTML = accounts.map(acc => {
-        const isActive  = acc.id === activeId;
-        const hasSess   = !!sessionStorage.getItem('sk_acc_sess_' + acc.id);
-        const offlineCls = (!hasSess && !isActive) ? ' offline-acc' : '';
-        return `<button class="account-tab${isActive ? ' active' : ''}${offlineCls}"
-            onclick="switchAccount('${acc.id}')">
-            <span class="acc-dot"></span>
-            ${escHtml(acc.name)}
-            <span class="acc-close" onclick="event.stopPropagation(); deleteAccount('${acc.id}')">×</span>
+    el.style.display = 'flex';
+    el.innerHTML = accounts.map(acc => {
+        const isSelected = acc.id === activeId;
+        const initials = acc.name.slice(0, 2).toUpperCase();
+        const hasConfig = isAccountConfigured(acc.id);
+        const sub = hasConfig ? 'Sudah terkonfigurasi' : 'Belum setup';
+        return `<button class="lock-account-item${isSelected ? ' selected' : ''}"
+            onclick="selectLockAccount(event, '${acc.id}')">
+            <div class="lock-account-avatar">${initials}</div>
+            <div class="lock-account-info">
+                <div class="lock-account-name">${escHtml(acc.name)}</div>
+                <div class="lock-account-sub">${sub}</div>
+            </div>
+            <span class="lock-account-check">&#10003;</span>
         </button>`;
     }).join('');
+}
+
+function selectLockAccount(e, accId) {
+    document.querySelectorAll('.lock-account-item').forEach(el => el.classList.remove('selected'));
+    e.currentTarget.classList.add('selected');
+    _setActiveAccountId(accId);
+    document.getElementById('lockPasswordInput').value = '';
+    document.getElementById('lockStatus').innerText = '';
+    document.getElementById('lockPasswordInput').focus();
+}
+
+function updateActiveAccountLabel() {
+    const accounts = getAllAccounts();
+    const activeId = getActiveAccountId();
+    const acc = accounts.find(a => a.id === activeId);
+    const el = document.getElementById('activeAccountLabel');
+    if (el && acc) el.innerText = '👤 ' + acc.name;
+}
+
+function logoutToLockScreen() {
+    sessionStorage.removeItem('sk_session_unlocked');
+    location.reload();
+}
+
+function openAccountManagerFromLock() {
+    document.getElementById('passwordLockScreen').style.display = 'none';
+    openAccountManager();
+    const origClose = window.closeModal;
+    window.closeModal = function(id) {
+        origClose(id);
+        if (id === 'accountManagerModal') {
+            window.closeModal = origClose;
+            renderLockScreenPicker();
+            document.getElementById('passwordLockScreen').style.display = 'flex';
+        }
+    };
 }
 
 // ── Bootstrap ────────────────────────────────────────────────────────
@@ -5169,6 +5252,7 @@ function initApp() {
     }
 
     if (!sessionStorage.getItem('sk_session_unlocked')) {
+        renderLockScreenPicker();
         document.getElementById('passwordLockScreen').style.display = 'flex';
         document.getElementById('lockPasswordInput').focus();
         return;
@@ -5180,10 +5264,12 @@ function initApp() {
 async function continueAppInit() {
     if (!globalSupabaseUrl && !_sessionCryptoKey) {
         sessionStorage.removeItem('sk_session_unlocked');
+        renderLockScreenPicker();
         document.getElementById('passwordLockScreen').style.display = 'flex';
         return;
     }
-    renderAccountBar();
+    document.getElementById('passwordLockScreen').style.display = 'none';
+    updateActiveAccountLabel();
 
     budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
 
