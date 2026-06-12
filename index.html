@@ -2307,10 +2307,19 @@ function switchAccount(accId) {
 }
 
 function _doSwitch(fromId, toId) {
+    // FIX BUG #2: Tandai proses switching sedang berjalan SEBELUM operasi destruktif.
+    // Jika browser crash di tengah jalan, bootstrapMultiAccount() akan mendeteksi ini
+    // dan menyelesaikan proses restore saat halaman dibuka kembali.
+    localStorage.setItem('sk_switching_in_progress', JSON.stringify({ fromId, toId, ts: Date.now() }));
+
     if (fromId) _saveOutAccount(fromId);
     _clearActiveKeys();
     _restoreInAccount(toId);
     _setActiveAccountId(toId);
+
+    // Proses selesai dengan aman — hapus flag
+    localStorage.removeItem('sk_switching_in_progress');
+
     sessionStorage.setItem('sk_session_unlocked', '1');
     location.reload();
 }
@@ -2663,6 +2672,24 @@ function openAccountManagerFromLock() {
 
 // ── Bootstrap ────────────────────────────────────────────────────────
 function bootstrapMultiAccount() {
+    // FIX BUG #2: Deteksi crash di tengah proses switch dan selesaikan restore-nya.
+    const pendingSwitch = localStorage.getItem('sk_switching_in_progress');
+    if (pendingSwitch) {
+        try {
+            const { toId } = JSON.parse(pendingSwitch);
+            console.warn('[MultiAccount] Terdeteksi crash saat switch. Memulihkan ke akun:', toId);
+            localStorage.removeItem('sk_switching_in_progress');
+            _clearActiveKeys();
+            _restoreInAccount(toId);
+            _setActiveAccountId(toId);
+            sessionStorage.setItem('sk_session_unlocked', '1');
+            // Lanjut normal — data sudah dipulihkan
+        } catch (e) {
+            console.error('[MultiAccount] Gagal memulihkan dari crash switch:', e);
+            localStorage.removeItem('sk_switching_in_progress');
+        }
+    }
+
     let accounts = getAllAccounts();
 
     if (accounts.length === 0) {
@@ -2838,8 +2865,22 @@ function updateSyncTimeBadge() {
 function rp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
 function unRp(s) { return Number(String(s).replace(/[^0-9]/g, '')) || 0; }
 function formatRupiah(el) {
+    // FIX BUG #4: Simpan posisi kursor sebelum memformat, lalu kembalikan setelahnya.
+    // Ini mencegah kursor loncat ke paling kanan saat mengetik di Android.
+    const selStart = el.selectionStart;
+    const selEnd   = el.selectionEnd;
+    const oldLen   = el.value.length;
+
     let v = el.value.replace(/[^0-9]/g, '');
     el.value = v ? Number(v).toLocaleString('id-ID') : '';
+
+    // Hitung selisih panjang akibat pemformatan (titik ribuan bertambah/berkurang)
+    const newLen  = el.value.length;
+    const delta   = newLen - oldLen;
+    const newPos  = Math.max(0, selStart + delta);
+
+    // Terapkan posisi kursor baru (hanya jika browser mendukung, abaikan error di input type=number)
+    try { el.setSelectionRange(newPos, newPos); } catch (_) {}
 }
 function escapeHtml(str) {
     if (!str) return '';
@@ -3211,23 +3252,25 @@ async function pullAllSettings() {
             if (row.key === 'telegram_config') {
                 console.log('[Sync] Menemukan telegram_config di cloud:', parsed);
                 
+                // FIX BUG #3: Hanya timpa lokal jika cloud punya data yang valid.
+                // Jika cloud kosong (token/chatId = ''), JANGAN hapus data lokal —
+                // ini mencegah wipe token saat login dari device baru yang belum tersinkron.
                 if (parsed.token) {
                     localStorage.setItem('sk_tg_token', parsed.token);
                     console.log('[Sync] Token Telegram tersimpan');
-                } else {
-                    localStorage.removeItem('sk_tg_token');
                 }
+                // else: biarkan token lokal tetap ada — cloud mungkin belum diisi di device ini
+                
                 if (parsed.chatId) {
                     localStorage.setItem('sk_tg_chatid', parsed.chatId);
                     console.log('[Sync] Chat ID Telegram tersimpan:', parsed.chatId);
-                } else {
-                    localStorage.removeItem('sk_tg_chatid');
                 }
+                // else: biarkan chatId lokal tetap ada
+                
                 if (parsed.edgeUrl) {
                     localStorage.setItem('sk_tg_edge_url', parsed.edgeUrl);
-                } else {
-                    localStorage.removeItem('sk_tg_edge_url');
                 }
+                // else: biarkan edgeUrl lokal tetap ada
                 
                 telegramUpdated = true;
                 updateTgStatusBadge();
@@ -3260,6 +3303,18 @@ function trimAndSaveLocal(bookId, data) {
     const sorted = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
     const trimmed = sorted.slice(0, MAX_LOCAL_TXS);
     localStorage.setItem('sk_txs_' + bookId, JSON.stringify(trimmed));
+
+    // FIX BUG #1: Hitung saldo dari transaksi yang TIDAK masuk lokal (dipotong),
+    // simpan sebagai "saldo awal" agar render() menghasilkan saldo yang akurat.
+    const remainder = sorted.slice(MAX_LOCAL_TXS);
+    let balanceOffset = 0;
+    remainder.forEach(t => {
+        const amt = Number(t.amount) || 0;
+        if (t.type === 'income') balanceOffset += amt;
+        else balanceOffset -= amt;
+    });
+    localStorage.setItem('sk_balance_offset_' + bookId, String(balanceOffset));
+
     return trimmed;
 }
 
@@ -3662,7 +3717,10 @@ function render() {
         else totalExp += amt;
     });
 
-    let currentBalance = totalInc - totalExp;
+    // FIX BUG #1: Tambahkan saldo offset dari transaksi yang dipotong (> MAX_LOCAL_TXS)
+    // agar saldo dashboard selalu mencerminkan SELURUH riwayat, bukan hanya 300 terakhir.
+    const balanceOffset = Number(localStorage.getItem('sk_balance_offset_' + currentBookId)) || 0;
+    let currentBalance = totalInc - totalExp + balanceOffset;
     document.getElementById('statBalance').innerText = rp(currentBalance);
     document.getElementById('statIncome').innerText = rp(totalInc);
     document.getElementById('statExpense').innerText = rp(totalExp);
