@@ -1556,12 +1556,7 @@
     </style>
 </head>
 <body>
-<button onclick="logoutToLockScreen()" title="Ganti Akun" style="
-    position:fixed; top:16px; right:16px; z-index:2500;
-    padding:8px 16px; font-size:.75rem; font-weight:600;
-    background:#e8f0fe; color:#1a56db; border:1px solid #c5d8ff; border-radius:6px;
-    cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.2);
-">🔄 Ganti Akun</button>
+
 
 <div id="passwordLockScreen">
     <div class="lock-card">
@@ -1654,6 +1649,13 @@
             </div>
             <span id="budgetProgressPct2" style="font-size:.78rem; font-weight:700; color:#666; min-width:38px; text-align:right;">0%</span>
         </div>
+        <div style="border-top:1px solid #e0e0e0; padding:8px 16px; display:flex; justify-content:flex-end;">
+            <button onclick="logoutToLockScreen()" title="Ganti Akun" style="
+                padding:6px 14px; font-size:.72rem; font-weight:600;
+                background:#e8f0fe; color:#1a56db; border:1px solid #c5d8ff; border-radius:6px;
+                cursor:pointer;
+            ">🔄 Ganti Akun</button>
+        </div>
         <div class="budget-mini-actions">
             <button class="btn-icon" id="anggaranBtn" onclick="openBudgetModal()"> Anggarkan</button>
             <button class="btn-icon" id="laporanBtn" onclick="openMonthlyReport()"> Laporan</button>
@@ -1725,7 +1727,7 @@
         </table>
     </div>
 
-    <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+    <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; justify-content:flex-end;">
         <button class="btn" id="backupBtn" onclick="openBackupManager()">💾 Kelola Backup</button>
         <button class="btn" onclick="toggleAuditLogInline()">📋 Log Audit <span id="auditLogInlineArrow">▼</span></button>
     </div>
