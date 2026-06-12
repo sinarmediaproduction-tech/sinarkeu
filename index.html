@@ -3389,12 +3389,13 @@ async function pullAllBooksFromCloud() {
             attachment: c.attachment, updated_at: c.updated_at || null
         }));
 
-        // Opsi 1: trim sebelum simpan
-        trimAndSaveLocal(bookId, cloudMapped);
+        // Opsi 1: trim sebelum simpan — gunakan hasil return-nya untuk txs
+        // agar balanceOffset (sk_balance_offset_*) ikut dihitung dengan benar.
+        const trimmed = trimAndSaveLocal(bookId, cloudMapped);
         _lastFullSyncTime[bookId] = new Date().toISOString();
 
         if (bookId === currentBookId) {
-            txs = cloudMapped.slice(0, MAX_LOCAL_TXS);
+            txs = trimmed;
             render();
         }
     }
@@ -3729,7 +3730,9 @@ function render() {
 
     let allSorted = [...txs].sort((a, b) => new Date(a.date) - new Date(b.date));
     let balanceMap = {};
-    let tempBal = 0;
+    // FIX BUG: Mulai dari balanceOffset agar saldo per baris di tabel mencerminkan
+    // seluruh riwayat transaksi, bukan hanya 300 yang tersimpan lokal.
+    let tempBal = balanceOffset;
     allSorted.forEach(t => {
         let amt = Number(t.amount) || 0;
         if (t.type === 'income') tempBal += amt;
