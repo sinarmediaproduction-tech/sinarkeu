@@ -21,6 +21,34 @@
             padding: 0;
             box-sizing: border-box;
         }
+        /* ===== SEMUA BUTTON HITAM (tidak warna-warni) ===== */
+        button, .btn, .btn-primary, .btn-secondary, .btn-success, .btn-warning,
+        .manage-books-btn, .btn-icon, .page-btn, .filter-btn, .filter-btn.active,
+        .btn-mini, .btn-mini-danger, .date-clear-btn, .modal-close,
+        .expense-chart-toggle button, .expense-chart-toggle button.active {
+            background: #1a1a1a !important;
+            color: #fff !important;
+            border: 1px solid #1a1a1a !important;
+        }
+        button:hover:not(:disabled), .btn:hover:not(:disabled),
+        .page-btn:hover:not(:disabled), .filter-btn:hover,
+        .btn-icon:hover:not(:disabled), .manage-books-btn:hover:not(:disabled) {
+            background: #333 !important;
+            border-color: #333 !important;
+        }
+        button:disabled, .btn:disabled, .manage-books-btn:disabled, .btn-icon:disabled, .page-btn:disabled {
+            opacity: 0.4 !important;
+            cursor: not-allowed;
+        }
+        .filter-btn:not(.active), .page-btn:not(.active) {
+            background: #fff !important;
+            color: #1a1a1a !important;
+            border: 1.5px solid #1a1a1a !important;
+        }
+        .filter-btn:not(.active):hover, .page-btn:not(.active):hover:not(:disabled) {
+            background: #1a1a1a !important;
+            color: #fff !important;
+        }
         body {
             font-family: 'Inter', sans-serif;
             background: #f5f5f5;
@@ -1525,6 +1553,12 @@
     </style>
 </head>
 <body>
+<button onclick="logoutToLockScreen()" title="Ganti Akun" style="
+    position:fixed; top:16px; right:16px; z-index:2500;
+    padding:8px 16px; font-size:.75rem; font-weight:600;
+    background:#1a1a1a; color:#fff; border:none; border-radius:6px;
+    cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.2);
+">🔄 Ganti Akun</button>
 
 <div id="passwordLockScreen">
     <div class="lock-card">
@@ -1573,7 +1607,6 @@
             <button class="manage-books-btn desktop-only" id="kelolaBukuBtn" onclick="openBookManager()">Kelola</button>
             <button class="manage-books-btn desktop-only" id="manualSyncBtn" style="background:#00875a;" onclick="forceFullSync()">🔄 Sinkronisasi</button>
             <button class="manage-books-btn desktop-only" id="setelanBtn" onclick="openSetelanModal()" style="background:#4a5568;" title="Setelan">⚙️ Setelan</button>
-            <button class="manage-books-btn desktop-only" onclick="logoutToLockScreen()" style="background:#666;" title="Ganti Akun">Ganti Akun</button>
             <!-- Tombol hamburger hanya di mobile -->
             <button class="mobile-only hamburger-btn" onclick="openMobileDrawer()" title="Menu">☰</button>
         </div>
@@ -1689,49 +1722,32 @@
         </table>
     </div>
 
+    <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+        <button class="btn" id="backupBtn" onclick="openBackupManager()">💾 Kelola Backup</button>
+        <button class="btn" onclick="toggleAuditLogInline()">📋 Log Audit <span id="auditLogInlineArrow">▼</span></button>
+    </div>
+    <div id="auditLogInlineBody" style="display:none; padding:10px 14px; border:1.5px solid #1a1a1a; border-radius:8px; margin-bottom:12px; background:#fff;">
+        <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+            <button class="btn" style="padding:4px 12px; font-size:.7rem;" onclick="refreshLogsFromCloud()">🔄 Refresh</button>
+        </div>
+        <div id="logSummaryArea" class="log-container-box">Memuat log...</div>
+    </div>
+
     <div class="pagination-bar" id="paginationBar">
         <div class="pagination-info" id="paginationInfo"></div>
         <div class="pagination-controls" id="paginationControls"></div>
     </div>
 
-    <!-- ===== BOTTOM ROW: footer kiri + backup & log kanan ===== -->
-    <div style="display:flex; gap:16px; align-items:flex-start; margin-top:16px; flex-wrap:wrap;">
-
-        <!-- Kiri: footer info -->
-        <div class="footer" style="flex:1; min-width:180px; border-top:1px solid #ddd; padding-top:12px; margin-top:0; margin-bottom:0;">
-            <div id="transactionCount">0 transaksi</div>
-            <div id="liveClock">00:00:00</div>
-        </div>
-
-        <!-- Kanan: Backup & Log Audit -->
-        <div style="display:flex; flex-direction:column; gap:10px; min-width:260px; max-width:480px; flex:1.5;">
-
-            <!-- Backup mini panel -->
-            <div style="background:#fff; border:1.5px solid #1a1a1a; border-radius:10px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-                <span style="font-size:.72rem; font-weight:700; color:#444; display:flex; align-items:center; gap:6px;">💾 Backup & Cadangan</span>
-                <button class="btn btn-secondary" id="backupBtn" onclick="openBackupManager()" style="font-size:.72rem; padding:5px 14px;"> Kelola Backup</button>
-            </div>
-
-            <!-- Log Audit collapsible -->
-            <div style="background:#fff; border:1.5px solid #1a1a1a; border-radius:10px; overflow:hidden;">
-                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 16px; border-bottom:1px solid #eee; cursor:pointer;" onclick="toggleAuditLogInline()">
-                    <span style="font-size:.72rem; font-weight:700; color:#444;">📋 Log Audit Terkunci</span>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <button class="btn btn-secondary" style="padding: 3px 9px; font-size:.65rem;" onclick="event.stopPropagation(); refreshLogsFromCloud()">🔄 Refresh</button>
-                        <span id="auditLogInlineArrow" style="font-size:.75rem; color:#999;">▼</span>
-                    </div>
-                </div>
-                <div id="auditLogInlineBody" style="display:none; padding:10px 14px;">
-                    <div id="logSummaryArea" class="log-container-box">Memuat log...</div>
-                </div>
-            </div>
-
-        </div>
+    <!-- ===== FOOTER ===== -->
+    <div class="footer" style="border-top:1px solid #ddd; padding-top:12px; margin-top:16px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <div id="transactionCount">0 transaksi</div>
+        <div id="liveClock">00:00:00</div>
     </div>
 
     <!-- hidden legacy audit log toggle (kept for JS compatibility) -->
     <div id="auditLogSection" style="display:none;"></div>
 </div>
+
 
 <div id="toastMessage" class="toast-message"><span id="toastIcon">✅</span><span id="toastText"></span></div>
 
