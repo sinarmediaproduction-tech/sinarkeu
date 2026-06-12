@@ -1325,6 +1325,131 @@
         .telegram-badge:hover:not(:disabled) {
             background: #006699;
         }
+
+        /* ===== MULTI-ACCOUNT BAR ===== */
+        .account-bar {
+            background: #1a1a1a;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            padding: 0 24px;
+            font-size: .7rem;
+            min-height: 36px;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+        .account-bar-label {
+            font-size: .6rem;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 10px;
+            white-space: nowrap;
+        }
+        .account-tabs {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            flex: 1;
+            overflow-x: auto;
+        }
+        .account-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 14px;
+            height: 36px;
+            font-size: .72rem;
+            font-weight: 600;
+            color: #aaa;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            border-right: 1px solid #333;
+            white-space: nowrap;
+            transition: all 0.15s;
+            font-family: inherit;
+            position: relative;
+        }
+        .account-tab:hover { color: #fff; background: #2a2a2a; }
+        .account-tab.active {
+            color: #fff;
+            background: #2a2a2a;
+        }
+        .account-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background: #00875a;
+        }
+        .account-tab .acc-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: #555;
+            flex-shrink: 0;
+        }
+        .account-tab.active .acc-dot { background: #00875a; }
+        .account-tab.offline-acc .acc-dot { background: #ffab00; }
+        .account-tab .acc-close {
+            opacity: 0;
+            font-size: .7rem;
+            padding: 1px 3px;
+            border-radius: 3px;
+            transition: opacity 0.15s, background 0.15s;
+            line-height: 1;
+        }
+        .account-tab:hover .acc-close { opacity: 1; }
+        .account-tab .acc-close:hover { background: #de350b; color: #fff; }
+
+        .account-bar-add {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 0 14px;
+            height: 36px;
+            font-size: .7rem;
+            font-weight: 600;
+            color: #888;
+            background: transparent;
+            border: none;
+            border-left: 1px solid #333;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s;
+            font-family: inherit;
+            margin-left: auto;
+        }
+        .account-bar-add:hover { color: #fff; }
+
+        /* account modal */
+        .acc-modal-list { margin-bottom: 16px; }
+        .acc-modal-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            border: 1.5px solid #1a1a1a;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .acc-modal-item:hover { background: #f5f5f5; }
+        .acc-modal-item.current { border-color: #00875a; background: #f0fff8; }
+        .acc-modal-item-name { font-size: .82rem; font-weight: 600; }
+        .acc-modal-item-url { font-size: .65rem; color: #888; font-family: monospace; }
+        .acc-modal-item-badge {
+            font-size: .58rem; font-weight: 700; padding: 2px 7px;
+            border-radius: 10px; white-space: nowrap;
+        }
+        .acc-badge-active { background: #e3fcef; color: #006644; }
+        .acc-badge-locked { background: #fff3e0; color: #cc7b00; }
+        .acc-badge-noconn { background: #f0f0f0; color: #666; }
+        .acc-item-actions { display: flex; gap: 6px; align-items: center; }
     </style>
 </head>
 <body>
@@ -1362,6 +1487,13 @@
             ⚠️ <strong>Perhatian:</strong> Jika password lupa, tidak ada cara untuk memulihkan data. Simpan password Anda di tempat yang aman.
         </div>
     </div>
+</div>
+
+<!-- ===== ACCOUNT BAR ===== -->
+<div class="account-bar" id="accountBar">
+    <span class="account-bar-label">AKUN:</span>
+    <div class="account-tabs" id="accountTabs"></div>
+    <button class="account-bar-add" onclick="openAccountManager()">＋ Tambah Akun</button>
 </div>
 
 <div class="container">
@@ -1811,7 +1943,536 @@
     </div>
 </div>
 
+<!-- ===== MODAL MANAJER AKUN ===== -->
+<div id="accountManagerModal" class="modal" style="z-index:2100;">
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header">
+            <h3>👤 Manajer Akun</h3>
+            <button class="modal-close" onclick="closeModal('accountManagerModal')">×</button>
+        </div>
+        <div style="padding:0 22px 16px;">
+            <div style="font-size:.72rem; color:#666; margin-bottom:14px; line-height:1.6;">
+                Setiap akun terhubung ke database Supabase yang berbeda. Beralih akun akan memuat data dari database tersebut.
+            </div>
+            <div id="accModalList" class="acc-modal-list"></div>
+
+            <div style="border-top:1.5px dashed #1a1a1a; padding-top:16px; margin-top:4px;">
+                <div style="font-size:.75rem; font-weight:700; margin-bottom:12px;">＋ Tambah / Edit Akun</div>
+                <div class="form-group">
+                    <label>Nama Akun</label>
+                    <input type="text" id="newAccName" class="form-control" placeholder="Contoh: Pribadi, Bisnis, Keluarga...">
+                </div>
+                <div class="form-group">
+                    <label>Supabase Project URL</label>
+                    <input type="text" id="newAccUrl" class="form-control" placeholder="https://xxxxxxxx.supabase.co">
+                </div>
+                <div class="form-group">
+                    <label>Supabase Anon Key</label>
+                    <input type="password" id="newAccKey" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                    <div style="display:flex; align-items:center; gap:6px; margin-top:5px;">
+                        <input type="checkbox" id="newAccShowKey" onchange="document.getElementById('newAccKey').type = this.checked ? 'text' : 'password'">
+                        <label for="newAccShowKey" style="font-size:.68rem; color:#888; cursor:pointer; text-transform:none; letter-spacing:0;">Tampilkan key</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Password Enkripsi</label>
+                    <input type="password" id="newAccPwd" class="form-control" placeholder="Min. 6 karakter — wajib diingat!">
+                    <div style="font-size:.65rem; color:#888; margin-top:4px;">Password digunakan untuk mengenkripsi koneksi akun ini secara terpisah.</div>
+                </div>
+                <input type="hidden" id="editingAccId" value="">
+                <div id="newAccStatus" style="font-size:.72rem; margin-bottom:10px; min-height:16px;"></div>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-secondary" style="flex:1;" onclick="cancelEditAccount()">Batal</button>
+                    <button class="btn btn-primary" style="flex:2;" onclick="saveNewAccount()">💾 Simpan Akun</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL UNLOCK AKUN LAIN ===== -->
+<div id="accountUnlockModal" class="modal" style="z-index:2200;">
+    <div class="modal-content" style="max-width:360px; text-align:center;">
+        <div class="modal-header">
+            <h3 id="accUnlockTitle">🔑 Buka Akun</h3>
+            <button class="modal-close" onclick="closeModal('accountUnlockModal')">×</button>
+        </div>
+        <div style="padding:20px 22px 22px;">
+            <div style="font-size:.75rem; color:#666; margin-bottom:16px;" id="accUnlockSubtitle">Masukkan password untuk akun ini</div>
+            <div style="position:relative; margin-bottom:14px;">
+                <input type="password" id="accUnlockPwdInput" class="form-control"
+                    placeholder="Password akun"
+                    onkeydown="if(event.key==='Enter') submitAccountUnlock()">
+            </div>
+            <div id="accUnlockStatus" style="font-size:.72rem; color:#de350b; margin-bottom:12px; min-height:16px;"></div>
+            <button class="btn btn-primary" style="width:100%;" onclick="submitAccountUnlock()">🔓 Buka & Beralih</button>
+        </div>
+    </div>
+</div>
+
 <script>
+// ==================== MULTI-ACCOUNT ENGINE ====================
+//
+// STRATEGI: Namespace copy + reload. TIDAK ada proxy localStorage.
+// Kode lama bekerja 100% dengan sk_* keys seperti biasa.
+//
+// Layout localStorage:
+//   sk_accounts           → JSON [{id, name}]  — daftar akun (global)
+//   sk_active_account     → id akun aktif       (global)
+//   sk_device_id          → device id           (global)
+//   sk_a{id}_*            → snapshot namespace per-akun
+//                           (semua key "sk_" kecuali global disalin ke sini saat switch keluar)
+//
+// Alur switch akun (A → B):
+//   1. Simpan semua sk_* lama ke namespace sk_a{A}_*  (save_out)
+//   2. Tulis semua sk_a{B}_* ke posisi sk_* canonical (restore_in)
+//   3. location.reload()  → kode lama baca sk_* seperti biasa, tidak sadar apa-apa
+//
+// Keuntungan:
+//   - Tidak ada proxy → tidak ada risiko merusak library pihak ketiga
+//   - key(n) / length tetap benar
+//   - Kode lama 100% tidak tersentuh
+// =====================================================================
+
+const ACC_LIST_KEY   = 'sk_accounts';
+const ACC_ACTIVE_KEY = 'sk_active_account';
+
+// Key global yang TIDAK masuk ke namespace per-akun
+const ACC_GLOBAL_KEYS = new Set([
+    'sk_accounts', 'sk_active_account', 'sk_device_id',
+]);
+
+let _pendingUnlockAccId = null;
+
+// ── helpers daftar akun ──────────────────────────────────────────────
+function getAllAccounts() {
+    try { return JSON.parse(localStorage.getItem(ACC_LIST_KEY) || '[]'); } catch { return []; }
+}
+function saveAllAccounts(list) {
+    localStorage.setItem(ACC_LIST_KEY, JSON.stringify(list));
+}
+function getActiveAccountId() {
+    return localStorage.getItem(ACC_ACTIVE_KEY) || null;
+}
+function _setActiveAccountId(id) {
+    localStorage.setItem(ACC_ACTIVE_KEY, id);
+}
+
+// ── namespace key untuk akun tertentu ───────────────────────────────
+// "sk_books"  →  "sk_a{id}_books"
+function _nsKey(accId, rawKey) {
+    // rawKey dimulai "sk_", slice 2 char "sk" → "sk_a{id}_{rest}"
+    return 'sk_a' + accId + '_' + rawKey.slice(3);
+}
+
+// ── Kumpulkan semua sk_* keys yang aktif (bukan global, bukan namespace lain) ──
+function _collectActiveKeys() {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (k.startsWith('sk_') && !ACC_GLOBAL_KEYS.has(k) && !k.startsWith('sk_a')) {
+            keys.push(k);
+        }
+    }
+    return keys;
+}
+
+// ── Simpan state akun aktif saat ini ke namespace-nya ───────────────
+function _saveOutAccount(accId) {
+    const nsPrefix = 'sk_a' + accId + '_';
+    // Hapus snapshot lama akun ini dulu
+    const oldSnap = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(nsPrefix)) oldSnap.push(k);
+    }
+    oldSnap.forEach(k => localStorage.removeItem(k));
+    // Tulis snapshot baru
+    _collectActiveKeys().forEach(k => {
+        const v = localStorage.getItem(k);
+        if (v !== null) localStorage.setItem(_nsKey(accId, k), v);
+    });
+}
+
+// ── Hapus semua sk_* aktif (bukan global, bukan namespace) ──────────
+function _clearActiveKeys() {
+    const keys = _collectActiveKeys();
+    keys.forEach(k => localStorage.removeItem(k));
+}
+
+// ── Restore snapshot akun target ke posisi sk_* canonical ───────────
+function _restoreInAccount(accId) {
+    const nsPrefix = 'sk_a' + accId + '_';
+    for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(nsPrefix)) {
+            // "sk_a{id}_{rest}" → "sk_{rest}"
+            const canonical = 'sk_' + k.slice(nsPrefix.length);
+            localStorage.setItem(canonical, localStorage.getItem(k));
+        }
+    }
+}
+
+// ── Apakah akun ini pernah di-setup (punya snapshot atau crypto check) ──
+function isAccountConfigured(accId) {
+    // Punya crypto check di namespace → sudah setup
+    const checkKey = 'sk_a' + accId + '_enc_supabase_url';
+    if (localStorage.getItem(checkKey)) return true;
+    // Atau akun aktif saat ini
+    if (getActiveAccountId() === accId && localStorage.getItem('sk_enc_supabase_url')) return true;
+    return false;
+}
+
+// ── Switch akun ──────────────────────────────────────────────────────
+function switchAccount(accId) {
+    const accounts = getAllAccounts();
+    const acc = accounts.find(a => a.id === accId);
+    if (!acc) return;
+
+    const currentId = getActiveAccountId();
+    if (accId === currentId) return;
+
+    if (!isAccountConfigured(accId)) {
+        openAccountManager(accId);
+        return;
+    }
+
+    // Akun lain perlu unlock password jika belum di-session ini
+    const sessKey = 'sk_acc_sess_' + accId;
+    if (!sessionStorage.getItem(sessKey)) {
+        _pendingUnlockAccId = accId;
+        document.getElementById('accUnlockTitle').innerText = '🔑 Buka "' + acc.name + '"';
+        document.getElementById('accUnlockSubtitle').innerText = 'Masukkan password enkripsi untuk akun ' + acc.name;
+        document.getElementById('accUnlockPwdInput').value = '';
+        document.getElementById('accUnlockStatus').innerText = '';
+        openModal('accountUnlockModal');
+        return;
+    }
+
+    _doSwitch(currentId, accId);
+}
+
+function _doSwitch(fromId, toId) {
+    if (fromId) _saveOutAccount(fromId);
+    _clearActiveKeys();
+    _restoreInAccount(toId);
+    _setActiveAccountId(toId);
+    sessionStorage.setItem('sk_session_unlocked', '1');
+    location.reload();
+}
+
+async function submitAccountUnlock() {
+    const pwd = document.getElementById('accUnlockPwdInput').value;
+    const st  = document.getElementById('accUnlockStatus');
+    if (!pwd) { st.innerText = 'Masukkan password terlebih dahulu.'; return; }
+
+    st.innerText = '⏳ Memverifikasi...';
+
+    // Verifikasi: restore sementara ke tempat saja, cek bisa decrypt tidak
+    const accId    = _pendingUnlockAccId;
+    const nsPrefix = 'sk_a' + accId + '_';
+    const saltKey  = nsPrefix + 'crypto_salt';
+    const checkKey = nsPrefix + 'crypto_check';
+    const saltB64  = localStorage.getItem(saltKey);
+    const checkEnc = localStorage.getItem(checkKey);
+
+    if (!saltB64 || !checkEnc) {
+        st.innerText = '❌ Data enkripsi tidak ditemukan.';
+        return;
+    }
+
+    try {
+        const salt  = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+        const key   = await deriveKey(pwd, salt);
+        const plain = await decryptStr(key, checkEnc);
+        if (plain !== SENTINEL_PLAIN) throw new Error('wrong');
+    } catch {
+        st.innerText = '❌ Password salah. Coba lagi.';
+        return;
+    }
+
+    sessionStorage.setItem('sk_acc_sess_' + accId, '1');
+    closeModal('accountUnlockModal');
+    showToast('Membuka akun...', 'info');
+
+    const currentId = getActiveAccountId();
+    _doSwitch(currentId, accId);
+}
+
+// ── Account Manager UI ───────────────────────────────────────────────
+function openAccountManager(highlightId) {
+    renderAccModalList(highlightId);
+    cancelEditAccount();
+    openModal('accountManagerModal');
+}
+
+function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderAccModalList(highlightId) {
+    const accounts = getAllAccounts();
+    const activeId = getActiveAccountId();
+    const el = document.getElementById('accModalList');
+    if (!accounts.length) {
+        el.innerHTML = '<div style="text-align:center;color:#aaa;font-size:.75rem;padding:10px 0;">Belum ada akun tersimpan.</div>';
+        return;
+    }
+    el.innerHTML = accounts.map(acc => {
+        const isActive  = acc.id === activeId;
+        const hasConfig = isAccountConfigured(acc.id);
+        const hasSess   = !!sessionStorage.getItem('sk_acc_sess_' + acc.id);
+        const badge = isActive
+            ? '<span class="acc-modal-item-badge acc-badge-active">● Aktif</span>'
+            : (hasSess
+                ? '<span class="acc-modal-item-badge" style="background:#e8f0fe;color:#1a56db;">Terbuka</span>'
+                : (hasConfig
+                    ? '<span class="acc-modal-item-badge acc-badge-locked">🔒 Terkunci</span>'
+                    : '<span class="acc-modal-item-badge acc-badge-noconn">Belum setup</span>'));
+
+        // Preview URL dari namespace (tanpa decrypt)
+        let urlPreview = '—';
+        if (isActive) {
+            urlPreview = (localStorage.getItem('sk_supabase_url') || localStorage.getItem('sk_enc_supabase_url') || '—')
+                .replace('https://','').split('.')[0];
+            if (urlPreview !== '—') urlPreview += '.supabase.co';
+        }
+
+        return `<div class="acc-modal-item${isActive ? ' current' : ''}" onclick="handleAccModalItemClick('${acc.id}')">
+            <div>
+                <div class="acc-modal-item-name">${escHtml(acc.name)}</div>
+                <div class="acc-modal-item-url">${escHtml(urlPreview)}</div>
+            </div>
+            <div class="acc-item-actions">
+                ${badge}
+                <button class="btn-mini" onclick="event.stopPropagation(); editAccount('${acc.id}')">✏️</button>
+                ${!isActive ? `<button class="btn-mini btn-mini-danger" onclick="event.stopPropagation(); deleteAccount('${acc.id}')">🗑️</button>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function handleAccModalItemClick(accId) {
+    if (accId === getActiveAccountId()) return;
+    closeModal('accountManagerModal');
+    switchAccount(accId);
+}
+
+function editAccount(accId) {
+    const acc = getAllAccounts().find(a => a.id === accId);
+    if (!acc) return;
+    document.getElementById('editingAccId').value = accId;
+    document.getElementById('newAccName').value = acc.name || '';
+    // Tidak bisa pre-fill URL/key — terenkripsi, hanya bisa diganti
+    document.getElementById('newAccUrl').value = '';
+    document.getElementById('newAccKey').value = '';
+    document.getElementById('newAccPwd').value = '';
+    document.getElementById('newAccPwd').placeholder = 'Isi untuk update password / credentials';
+    document.getElementById('newAccStatus').innerText = '⚠️ Isi URL, Key, dan Password baru untuk memperbarui koneksi.';
+}
+
+function cancelEditAccount() {
+    document.getElementById('editingAccId').value = '';
+    document.getElementById('newAccName').value = '';
+    document.getElementById('newAccUrl').value = '';
+    document.getElementById('newAccKey').value = '';
+    document.getElementById('newAccPwd').value = '';
+    document.getElementById('newAccPwd').placeholder = 'Min. 6 karakter — wajib diingat!';
+    document.getElementById('newAccStatus').innerText = '';
+}
+
+async function saveNewAccount() {
+    const editId = document.getElementById('editingAccId').value.trim();
+    const name   = document.getElementById('newAccName').value.trim();
+    const url    = document.getElementById('newAccUrl').value.trim();
+    const key    = document.getElementById('newAccKey').value.trim();
+    const pwd    = document.getElementById('newAccPwd').value;
+    const st     = document.getElementById('newAccStatus');
+
+    if (!name) { st.style.color='#de350b'; st.innerText='❌ Nama akun wajib diisi!'; return; }
+
+    const isEdit = !!editId;
+    // Saat edit, URL/key/pwd opsional (hanya update nama jika kosong)
+    const hasCredentials = url && key && pwd;
+    if (!isEdit && (!url || !key || !pwd || pwd.length < 6)) {
+        st.style.color='#de350b'; st.innerText='❌ URL, Anon Key, dan Password (min 6 karakter) wajib diisi!'; return;
+    }
+    if (isEdit && hasCredentials && pwd.length < 6) {
+        st.style.color='#de350b'; st.innerText='❌ Password minimal 6 karakter!'; return;
+    }
+
+    let accounts = getAllAccounts();
+    const accId  = editId || ('acc_' + Date.now());
+
+    // Update/tambah nama dulu
+    if (isEdit) {
+        const idx = accounts.findIndex(a => a.id === editId);
+        if (idx >= 0) accounts[idx].name = name;
+    } else {
+        accounts.push({ id: accId, name });
+    }
+
+    if (hasCredentials) {
+        st.style.color='#888'; st.innerText='⏳ Mengetes koneksi ke Supabase...';
+
+        // Test koneksi sementara
+        const oldUrl = globalSupabaseUrl, oldKey = globalSupabaseKey;
+        globalSupabaseUrl = url; globalSupabaseKey = key;
+        const test = await callSupabaseAPI('transactions', 'GET', null, '?limit=1');
+        globalSupabaseUrl = oldUrl; globalSupabaseKey = oldKey;
+
+        if (test === null) {
+            st.style.color='#de350b'; st.innerText='❌ Koneksi gagal! Periksa URL dan Anon Key.'; return;
+        }
+
+        st.innerText = '⏳ Mengenkripsi dan menyimpan...';
+
+        // Jika akun baru atau update credentials → simpan ke namespace akun tsb
+        // Kita perlu menyimpan crypto + semua sk_* ke namespace sk_a{accId}_*
+        // Caranya: setup password menghasilkan sk_crypto_salt, sk_crypto_check, dll
+        // Kita simpan ke namespace secara manual
+
+        const salt    = crypto.getRandomValues(new Uint8Array(16));
+        const saltB64 = btoa(String.fromCharCode(...salt));
+        const cryptoKey = await deriveKey(pwd, salt);
+
+        const encUrl   = await encryptStr(cryptoKey, url);
+        const encAKey  = await encryptStr(cryptoKey, key);
+        const encCheck = await encryptStr(cryptoKey, SENTINEL_PLAIN);
+
+        const ns = 'sk_a' + accId + '_';
+
+        // Jika ini akun yang sedang aktif: simpan ke posisi canonical DAN namespace
+        if (isEdit && accId === getActiveAccountId()) {
+            // Update canonical keys
+            localStorage.setItem('sk_crypto_salt',       saltB64);
+            localStorage.setItem('sk_crypto_check',      encCheck);
+            localStorage.setItem('sk_enc_supabase_url',  encUrl);
+            localStorage.setItem('sk_enc_supabase_key',  encAKey);
+            // Update globals
+            globalSupabaseUrl = url;
+            globalSupabaseKey = key;
+            // Re-encrypt via existing engine
+            await setupNewPassword(pwd, url, key);
+        }
+
+        // Simpan ke namespace akun (untuk restore nanti saat switch)
+        localStorage.setItem(ns + 'crypto_salt',      saltB64);
+        localStorage.setItem(ns + 'crypto_check',     encCheck);
+        localStorage.setItem(ns + 'enc_supabase_url', encUrl);
+        localStorage.setItem(ns + 'enc_supabase_key', encAKey);
+
+        sessionStorage.setItem('sk_acc_sess_' + accId, '1');
+    }
+
+    saveAllAccounts(accounts);
+
+    st.style.color='#00875a';
+    st.innerText = isEdit ? '✅ Akun berhasil diperbarui!' : '✅ Akun berhasil ditambahkan!';
+    showToast(isEdit ? 'Akun diperbarui!' : 'Akun baru ditambahkan!', 'success');
+
+    cancelEditAccount();
+    renderAccModalList();
+    renderAccountBar();
+
+    // Akun pertama / belum ada akun aktif → switch ke sini otomatis
+    if (!isEdit && (!getActiveAccountId() || accounts.length === 1)) {
+        // Ini akun pertama: isi sk_* canonical langsung (tidak perlu copy-swap)
+        _setActiveAccountId(accId);
+        setTimeout(() => { closeModal('accountManagerModal'); location.reload(); }, 800);
+    }
+}
+
+async function deleteAccount(accId) {
+    const acc = getAllAccounts().find(a => a.id === accId);
+    if (!acc) return;
+    if (!confirm(`Hapus akun "${acc.name}"?\n\nData lokal akun ini akan dihapus dari browser. Data di Supabase TIDAK terpengaruh.`)) return;
+
+    // Hapus semua namespace akun ini
+    const nsPrefix = 'sk_a' + accId + '_';
+    const toRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(nsPrefix)) toRemove.push(k);
+    }
+    toRemove.forEach(k => localStorage.removeItem(k));
+    sessionStorage.removeItem('sk_acc_sess_' + accId);
+
+    let accounts = getAllAccounts().filter(a => a.id !== accId);
+    saveAllAccounts(accounts);
+
+    if (getActiveAccountId() === accId) {
+        if (accounts.length > 0) {
+            const nextId = accounts[0].id;
+            _clearActiveKeys();
+            _restoreInAccount(nextId);
+            _setActiveAccountId(nextId);
+        } else {
+            _clearActiveKeys();
+            localStorage.removeItem(ACC_ACTIVE_KEY);
+        }
+        location.reload();
+        return;
+    }
+
+    renderAccModalList();
+    renderAccountBar();
+    showToast('Akun dihapus.', 'success');
+}
+
+function renderAccountBar() {
+    const accounts = getAllAccounts();
+    const activeId = getActiveAccountId();
+    const tabsEl   = document.getElementById('accountTabs');
+    if (!tabsEl) return;
+
+    if (accounts.length === 0) {
+        tabsEl.innerHTML = '<span style="color:#555;font-size:.68rem;padding:0 12px;">Belum ada akun tersimpan</span>';
+        return;
+    }
+
+    tabsEl.innerHTML = accounts.map(acc => {
+        const isActive  = acc.id === activeId;
+        const hasSess   = !!sessionStorage.getItem('sk_acc_sess_' + acc.id);
+        const offlineCls = (!hasSess && !isActive) ? ' offline-acc' : '';
+        return `<button class="account-tab${isActive ? ' active' : ''}${offlineCls}"
+            onclick="switchAccount('${acc.id}')">
+            <span class="acc-dot"></span>
+            ${escHtml(acc.name)}
+            <span class="acc-close" onclick="event.stopPropagation(); deleteAccount('${acc.id}')">×</span>
+        </button>`;
+    }).join('');
+}
+
+// ── Bootstrap ────────────────────────────────────────────────────────
+function bootstrapMultiAccount() {
+    let accounts = getAllAccounts();
+
+    if (accounts.length === 0) {
+        // Instalasi baru / migrasi dari versi lama (data legacy di sk_* tanpa namespace)
+        const defaultAcc = { id: 'acc_default', name: 'Akun Utama' };
+        accounts = [defaultAcc];
+        saveAllAccounts(accounts);
+        _setActiveAccountId('acc_default');
+        // Data lama (sk_books, sk_txs_*, dll) sudah ada di posisi canonical — tidak perlu apa-apa.
+        // Saat pertama kali switch keluar, _saveOutAccount akan snapshot-kan mereka.
+        sessionStorage.setItem('sk_acc_sess_acc_default', '1');
+    }
+
+    // Pastikan akun aktif valid
+    let activeId = getActiveAccountId();
+    if (!activeId || !accounts.find(a => a.id === activeId)) {
+        activeId = accounts[0].id;
+        _setActiveAccountId(activeId);
+    }
+
+    // Tandai session akun aktif sebagai "terbuka"
+    sessionStorage.setItem('sk_acc_sess_' + activeId, '1');
+
+    renderAccountBar();
+}
+
 // ==================== GLOBAL VARIABLES ====================
 let txs = [];
 let books = [];
@@ -4474,6 +5135,8 @@ async function doFirstTimeSetup() {
 
 // ==================== INIT APP ====================
 function initApp() {
+    bootstrapMultiAccount();   // ← Multi-account init
+
     deviceId = localStorage.getItem('sk_device_id');
     if (!deviceId) {
         deviceId = 'DEV-' + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -4520,6 +5183,7 @@ async function continueAppInit() {
         document.getElementById('passwordLockScreen').style.display = 'flex';
         return;
     }
+    renderAccountBar();
 
     budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
 
