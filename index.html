@@ -1605,6 +1605,7 @@
             <button class="manage-books-btn desktop-only" id="kelolaBukuBtn" onclick="openBookManager()">Kelola</button>
             <button class="manage-books-btn desktop-only" id="manualSyncBtn" style="background:#00875a;" onclick="forceFullSync()">🔄 Sinkronisasi</button>
             <button class="manage-books-btn desktop-only" id="setelanBtn" onclick="openSetelanModal()" style="background:#4a5568;" title="Setelan">⚙️ Setelan</button>
+            <button class="manage-books-btn desktop-only" onclick="logoutToLockScreen()" title="Ganti Akun" style="background:#e8f0fe; color:#1a56db; border:1px solid #c5d8ff;">🔄 Ganti Akun</button>
             <!-- Tombol hamburger hanya di mobile -->
             <button class="mobile-only hamburger-btn" onclick="openMobileDrawer()" title="Menu">☰</button>
         </div>
@@ -1648,13 +1649,6 @@
                 <div class="budget-mini-progress-fill" id="budgetProgressFill2"></div>
             </div>
             <span id="budgetProgressPct2" style="font-size:.78rem; font-weight:700; color:#666; min-width:38px; text-align:right;">0%</span>
-        </div>
-        <div style="border-top:1px solid #e0e0e0; padding:8px 16px; display:flex; justify-content:flex-end;">
-            <button onclick="logoutToLockScreen()" title="Ganti Akun" style="
-                padding:6px 14px; font-size:.72rem; font-weight:600;
-                background:#e8f0fe; color:#1a56db; border:1px solid #c5d8ff; border-radius:6px;
-                cursor:pointer;
-            ">🔄 Ganti Akun</button>
         </div>
         <div class="budget-mini-actions">
             <button class="btn-icon" id="anggaranBtn" onclick="openBudgetModal()"> Anggarkan</button>
