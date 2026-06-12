@@ -3763,7 +3763,6 @@ function render() {
         let expText = t.type === 'expense' ? rp(amt) : '-';
 
         let badge = t.type === 'income' ? '<span class="type-badge badge-inc">MASUK</span>' : '<span class="type-badge badge-exp">KELUAR</span>';
-        let catText = t.category ? `<span class="category-badge">${escapeHtml(t.category)}</span>` : '-';
 
         let attCell = '<span class="no-attachment">❌</span>';
         if (t.attachment) {
@@ -3776,7 +3775,7 @@ function render() {
         tr.innerHTML = `
             <td class="text-center col-no">${globalIndex}</td>
             <td>${formatDateTime(t.date)}</td>
-            <td>${badge}${catText}</td>
+            <td>${badge}</td>
             <td>${escapeHtml(t.description)}</td>
             <td class="text-right" style="color:#00875a; font-weight:500;">${incText}</td>
             <td class="text-right" style="color:#de350b; font-weight:500;">${expText}</td>
