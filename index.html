@@ -1500,6 +1500,28 @@
         .acc-badge-locked { background: #fff3e0; color: #cc7b00; }
         .acc-badge-noconn { background: #f0f0f0; color: #666; }
         .acc-item-actions { display: flex; gap: 6px; align-items: center; }
+
+        /* ===== RESPONSIVE DRAWER ===== */
+        .desktop-only { display: inline-flex; }
+        .mobile-only  { display: none; }
+        .hamburger-btn {
+            padding: 6px 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: #1a1a1a;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            line-height: 1;
+        }
+        @media (max-width: 640px) {
+            .desktop-only { display: none !important; }
+            .mobile-only  { display: inline-flex !important; }
+            body { padding: 14px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .book-selector { flex-wrap: wrap; gap: 8px; }
+        }
     </style>
 </head>
 <body>
@@ -1538,6 +1560,8 @@
             <p>Membantu Anda mengelola keuangan dengan transparansi penuh, efisiensi tinggi, dan hasil nyata</p>
         </div>
         <div class="book-selector">
+            <!-- Akun label di paling kiri, sebelah sync status -->
+            <span id="activeAccountLabel" style="font-size:.7rem;font-weight:700;color:#1a1a1a;padding:4px 10px;background:#e8f0fe;border-radius:6px;"></span>
             <div id="syncStatusWrapper" class="sync-status-container offline">
                 <span id="syncStatusTag" class="sync-status-badge">📴 CLOUD OFF</span>
                 <span id="deviceIdDisplay" class="device-id-badge">------</span>
@@ -1545,11 +1569,13 @@
             <span id="syncTimeBadge" style="font-size:.65rem;color:#666;font-weight:600;">🕐 --:--:--</span>
             <label>BUKU:</label>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
-            <button class="manage-books-btn" id="kelolaBukuBtn" onclick="openBookManager()">Kelola</button>
-            <button class="manage-books-btn" id="manualSyncBtn" style="background:#00875a;" onclick="forceFullSync()">🔄 Sinkronisasi</button>
-            <button class="manage-books-btn" id="setelanBtn" onclick="openSetelanModal()" style="background:#4a5568;" title="Setelan">⚙️ Setelan</button>
-            <span id="activeAccountLabel" style="font-size:.7rem;font-weight:700;color:#1a1a1a;padding:4px 10px;background:#e8f0fe;border-radius:6px;"></span>
-            <button class="manage-books-btn" onclick="logoutToLockScreen()" style="background:#666;" title="Ganti Akun">Ganti Akun</button>
+            <!-- Tombol desktop (disembunyikan di mobile) -->
+            <button class="manage-books-btn desktop-only" id="kelolaBukuBtn" onclick="openBookManager()">Kelola</button>
+            <button class="manage-books-btn desktop-only" id="manualSyncBtn" style="background:#00875a;" onclick="forceFullSync()">🔄 Sinkronisasi</button>
+            <button class="manage-books-btn desktop-only" id="setelanBtn" onclick="openSetelanModal()" style="background:#4a5568;" title="Setelan">⚙️ Setelan</button>
+            <button class="manage-books-btn desktop-only" onclick="logoutToLockScreen()" style="background:#666;" title="Ganti Akun">Ganti Akun</button>
+            <!-- Tombol hamburger hanya di mobile -->
+            <button class="mobile-only hamburger-btn" onclick="openMobileDrawer()" title="Menu">☰</button>
         </div>
     </div>
 
@@ -1650,8 +1676,6 @@
         </div>
         <div class="actions">
             <button class="btn btn-primary" id="tambahTransaksiBtn" onclick="openModal('addModal')">+ Transaksi</button>
-            <button class="btn btn-secondary" id="backupBtn" onclick="openBackupManager()"> Backup</button>
-            <button id="auditLogToggleBtn" class="btn btn-secondary" onclick="toggleAuditLog()">📋 Log Audit</button>
             <button class="btn" style="background:#6b46c1; color:#fff; border-color:#6b46c1;" onclick="openAIAnalysis()">🤖 Analisis AI</button>
         </div>
     </div>
@@ -1670,21 +1694,43 @@
         <div class="pagination-controls" id="paginationControls"></div>
     </div>
 
-    <div class="log-section" id="auditLogSection" style="display:none;">
-        <div class="log-section-header">
-            <h2> Audit Log Terkunci</h2>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn btn-secondary" style="padding: 4px 10px;" onclick="refreshLogsFromCloud()">🔄 Refresh</button>
-                <button class="btn btn-secondary" style="padding: 4px 10px; background:#00875a; color:#fff;" onclick="testAddLog()">🔍 Test Log</button>
-            </div>
+    <!-- ===== BOTTOM ROW: footer kiri + backup & log kanan ===== -->
+    <div style="display:flex; gap:16px; align-items:flex-start; margin-top:16px; flex-wrap:wrap;">
+
+        <!-- Kiri: footer info -->
+        <div class="footer" style="flex:1; min-width:180px; border-top:1px solid #ddd; padding-top:12px; margin-top:0; margin-bottom:0;">
+            <div id="transactionCount">0 transaksi</div>
+            <div id="liveClock">00:00:00</div>
         </div>
-        <div id="logSummaryArea" class="log-container-box">Memuat log...</div>
+
+        <!-- Kanan: Backup & Log Audit -->
+        <div style="display:flex; flex-direction:column; gap:10px; min-width:260px; max-width:480px; flex:1.5;">
+
+            <!-- Backup mini panel -->
+            <div style="background:#fff; border:1.5px solid #1a1a1a; border-radius:10px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                <span style="font-size:.72rem; font-weight:700; color:#444; display:flex; align-items:center; gap:6px;">💾 Backup & Cadangan</span>
+                <button class="btn btn-secondary" id="backupBtn" onclick="openBackupManager()" style="font-size:.72rem; padding:5px 14px;"> Kelola Backup</button>
+            </div>
+
+            <!-- Log Audit collapsible -->
+            <div style="background:#fff; border:1.5px solid #1a1a1a; border-radius:10px; overflow:hidden;">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 16px; border-bottom:1px solid #eee; cursor:pointer;" onclick="toggleAuditLogInline()">
+                    <span style="font-size:.72rem; font-weight:700; color:#444;">📋 Log Audit Terkunci</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <button class="btn btn-secondary" style="padding: 3px 9px; font-size:.65rem;" onclick="event.stopPropagation(); refreshLogsFromCloud()">🔄 Refresh</button>
+                        <span id="auditLogInlineArrow" style="font-size:.75rem; color:#999;">▼</span>
+                    </div>
+                </div>
+                <div id="auditLogInlineBody" style="display:none; padding:10px 14px;">
+                    <div id="logSummaryArea" class="log-container-box">Memuat log...</div>
+                </div>
+            </div>
+
+        </div>
     </div>
 
-    <div class="footer">
-        <div id="transactionCount">0 transaksi</div>
-        <div id="liveClock">00:00:00</div>
-    </div>
+    <!-- hidden legacy audit log toggle (kept for JS compatibility) -->
+    <div id="auditLogSection" style="display:none;"></div>
 </div>
 
 <div id="toastMessage" class="toast-message"><span id="toastIcon">✅</span><span id="toastText"></span></div>
@@ -5712,6 +5758,108 @@ window.addEventListener('DOMContentLoaded', () => {
     initApp();
     fetchForexRate();
 });
+
+// ========== MOBILE DRAWER ==========
+function openMobileDrawer() {
+    mirrorAccountLabel();
+    document.getElementById('mobileDrawerOverlay').classList.add('show');
+    document.getElementById('mobileDrawer').classList.add('show');
+}
+function closeMobileDrawer() {
+    document.getElementById('mobileDrawerOverlay').classList.remove('show');
+    document.getElementById('mobileDrawer').classList.remove('show');
+}
+function drawerAction(fn) {
+    closeMobileDrawer();
+    setTimeout(fn, 180);
+}
+function toggleAuditLogInline() {
+    const body = document.getElementById('auditLogInlineBody');
+    const arrow = document.getElementById('auditLogInlineArrow');
+    if (!body) return;
+    if (body.style.display === 'none') {
+        body.style.display = 'block';
+        if (arrow) arrow.textContent = '▲';
+        refreshLogsFromCloud();
+    } else {
+        body.style.display = 'none';
+        if (arrow) arrow.textContent = '▼';
+    }
+}
+
+function mirrorAccountLabel() {
+    const src = document.getElementById('activeAccountLabel');
+    const dst = document.getElementById('drawerAccountLabel');
+    if (src && dst) dst.textContent = src.textContent;
+}
 </script>
+
+<!-- ===== MOBILE DRAWER ===== -->
+<div id="mobileDrawerOverlay" onclick="closeMobileDrawer()" style="
+    position:fixed; inset:0; background:rgba(0,0,0,0.45);
+    z-index:3000; backdrop-filter:blur(2px);
+    opacity:0; pointer-events:none;
+    transition:opacity 0.25s;
+"></div>
+<div id="mobileDrawer" style="
+    position:fixed; top:0; right:0; height:100%; width:82%; max-width:300px;
+    background:#fff; z-index:3001; box-shadow:-4px 0 24px rgba(0,0,0,0.18);
+    border-left:2px solid #1a1a1a; overflow-y:auto;
+    transform:translateX(100%);
+    transition:transform 0.25s cubic-bezier(.4,0,.2,1);
+    display:flex; flex-direction:column;
+">
+    <div style="display:flex; align-items:center; justify-content:space-between;
+        padding:18px 18px 14px; border-bottom:1.5px solid #1a1a1a; background:#1a1a1a;">
+        <span style="font-size:.9rem; font-weight:700; color:#fff;">☰ Menu</span>
+        <button onclick="closeMobileDrawer()" style="
+            background:none; border:none; font-size:1.4rem; cursor:pointer; color:#fff; line-height:1;">×</button>
+    </div>
+    <div style="padding:14px 18px; background:#e8f0fe; border-bottom:1px solid #c5d8ff;">
+        <div style="font-size:.62rem; font-weight:600; color:#555; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px;">Akun Aktif</div>
+        <div id="drawerAccountLabel" style="font-size:.8rem; font-weight:700; color:#1a1a1a;">—</div>
+    </div>
+    <div style="padding:16px 18px; display:flex; flex-direction:column; gap:10px; flex:1;">
+        <button onclick="drawerAction(openBookManager)" style="
+            width:100%; padding:13px 16px; font-size:.85rem; font-weight:600;
+            background:#1a1a1a; color:#fff; border:none; border-radius:8px;
+            cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">
+            📚 Kelola Buku
+        </button>
+        <button onclick="drawerAction(forceFullSync)" style="
+            width:100%; padding:13px 16px; font-size:.85rem; font-weight:600;
+            background:#00875a; color:#fff; border:none; border-radius:8px;
+            cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">
+            🔄 Sinkronisasi
+        </button>
+        <button onclick="drawerAction(openSetelanModal)" style="
+            width:100%; padding:13px 16px; font-size:.85rem; font-weight:600;
+            background:#4a5568; color:#fff; border:none; border-radius:8px;
+            cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">
+            ⚙️ Setelan
+        </button>
+        <div style="height:1px; background:#eee; margin:4px 0;"></div>
+        <button onclick="drawerAction(logoutToLockScreen)" style="
+            width:100%; padding:13px 16px; font-size:.85rem; font-weight:600;
+            background:#f5f5f5; color:#1a1a1a; border:1.5px solid #ddd; border-radius:8px;
+            cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">
+            🔄 Ganti Akun
+        </button>
+    </div>
+</div>
+<script>
+window.openMobileDrawer = function() {
+    mirrorAccountLabel();
+    document.getElementById("mobileDrawerOverlay").style.opacity = "1";
+    document.getElementById("mobileDrawerOverlay").style.pointerEvents = "auto";
+    document.getElementById("mobileDrawer").style.transform = "translateX(0)";
+};
+window.closeMobileDrawer = function() {
+    document.getElementById("mobileDrawerOverlay").style.opacity = "0";
+    document.getElementById("mobileDrawerOverlay").style.pointerEvents = "none";
+    document.getElementById("mobileDrawer").style.transform = "translateX(100%)";
+};
+</script>
+
 </body>
 </html>
