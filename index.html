@@ -2619,7 +2619,17 @@ function renderLockScreenPicker() {
 function selectLockAccount(e, accId) {
     document.querySelectorAll('.lock-account-item').forEach(el => el.classList.remove('selected'));
     e.currentTarget.classList.add('selected');
-    _setActiveAccountId(accId);
+
+    // FIX: Restore namespace akun yang dipilih ke posisi canonical
+    // agar unlockWithPassword() membaca crypto salt/check yang benar.
+    const currentActiveId = getActiveAccountId();
+    if (accId !== currentActiveId) {
+        if (currentActiveId) _saveOutAccount(currentActiveId);
+        _clearActiveKeys();
+        _restoreInAccount(accId);
+        _setActiveAccountId(accId);
+    }
+
     document.getElementById('lockPasswordInput').value = '';
     document.getElementById('lockStatus').innerText = '';
     document.getElementById('lockPasswordInput').focus();
