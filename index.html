@@ -5864,31 +5864,45 @@ async function fetchGoldPrice() {
     const srcEl   = document.getElementById('goldSource');
     if (!priceEl) return;
 
-    try {
-        // Ambil harga XAU/USD dari metals.live (gratis, tanpa API key)
-        const res = await fetch('https://metals.live/v1/spot/gold', {
-            signal: AbortSignal.timeout(7000)
-        });
-        if (!res.ok) throw new Error('metals.live gagal');
-        const data = await res.json();
-        // Response: [ { gold: 3300.xx } ] — dalam USD per troy oz
-        const xauUsd = Array.isArray(data) ? data[0]?.gold : data?.gold;
-        if (!xauUsd) throw new Error('Data emas tidak valid');
+    // Sumber: fawazahmed0 currency-api (sama dengan yang dipakai forexRate)
+    // XAU = troy oz emas dalam USD. Endpoint: /currencies/xau.json → xau.usd = harga 1 oz dalam USD
+    const apis = [
+        {
+            name: 'jsdelivr',
+            url: 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/xau.json',
+            parse: d => d?.xau?.usd
+        },
+        {
+            name: 'currency-api',
+            url: 'https://latest.currency-api.pages.dev/v1/currencies/xau.json',
+            parse: d => d?.xau?.usd
+        }
+    ];
 
-        // Parse kurs IDR dari elemen forexRate yang sudah di-fetch
-        const rateText = document.getElementById('forexRate')?.textContent || '';
-        const cleaned = rateText.replace(/[^0-9]/g, '');
-        const idrRate = parseInt(cleaned) || 16200; // fallback kasar
+    for (const api of apis) {
+        try {
+            const res = await fetch(api.url, { signal: AbortSignal.timeout(7000) });
+            if (!res.ok) continue;
+            const data = await res.json();
+            const xauUsd = api.parse(data); // harga 1 troy oz dalam USD
+            if (!xauUsd || xauUsd < 100) continue;
 
-        // Konversi: 1 troy oz = 31.1035 gram
-        const pricePerGram = (xauUsd / 31.1035) * idrRate;
+            // Parse kurs IDR dari elemen forexRate yang sudah di-fetch
+            const rateText = document.getElementById('forexRate')?.textContent || '';
+            const cleaned  = rateText.replace(/[^0-9]/g, '');
+            const idrRate  = parseInt(cleaned) || 16200;
 
-        priceEl.textContent = 'Rp ' + Math.round(pricePerGram).toLocaleString('id-ID');
-        srcEl.textContent   = `XAU $${xauUsd.toFixed(0)}/oz · metals.live`;
-    } catch (err) {
-        priceEl.textContent = '— Tidak tersedia';
-        srcEl.textContent   = 'Cek koneksi';
+            // Konversi: 1 troy oz = 31.1035 gram
+            const pricePerGram = (xauUsd / 31.1035) * idrRate;
+
+            priceEl.textContent = 'Rp ' + Math.round(pricePerGram).toLocaleString('id-ID');
+            srcEl.textContent   = `XAU $${Math.round(xauUsd).toLocaleString('en')}/oz · ${api.name}`;
+            return;
+        } catch { /* coba berikutnya */ }
     }
+
+    priceEl.textContent = '— Tidak tersedia';
+    srcEl.textContent   = 'Semua sumber gagal';
 }
 
 window.addEventListener('DOMContentLoaded', () => {
