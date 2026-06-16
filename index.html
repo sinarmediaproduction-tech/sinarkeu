@@ -3109,7 +3109,7 @@ async function pullAllSettings() {
                     budgetUpdated = true;
                 }
             }
-            // === TAMBAHAN: Google Sheets URL ===
+            // ========== GOOGLE SHEETS URL ==========
             if (row.key === 'google_sheets_url') {
                 if (typeof parsed === 'string' && parsed) {
                     localStorage.setItem('sk_google_sheets_url', parsed);
@@ -4962,7 +4962,7 @@ function saveGoogleSheetsUrl() {
     st.innerText = '✅ URL Google Sheets Web App berhasil disimpan!';
     showToast('URL Google Sheets tersimpan', 'success');
 
-    // --- SIMPAN KE SUPABASE ---
+    // Simpan ke Supabase
     pushSetting('google_sheets_url', url, 'global');
 }
 
@@ -5109,6 +5109,14 @@ async function continueAppInit() {
         if (isOnline()) {
             await pullAllSettings();
             loadGoogleSheetsUrl(); // muat URL Google Sheets dari cloud
+            
+            // === TAMBAHAN: Pastikan URL lokal tersinkronisasi ke cloud jika ada ===
+            const localGsUrl = localStorage.getItem('sk_google_sheets_url');
+            if (localGsUrl && isOnline()) {
+                // Kirim ke cloud untuk memastikan sinkron (jika belum ada atau berbeda)
+                pushSetting('google_sheets_url', localGsUrl, 'global');
+            }
+            
             updateBookSelectDropdown();
             budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
             updateTgStatusBadge();
