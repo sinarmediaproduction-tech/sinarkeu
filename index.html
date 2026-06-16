@@ -1684,6 +1684,11 @@
                 <div style="font-size:.85rem; font-weight:700; color:#92400e;" id="goldValue"></div>
             </div>
         </div>
+        <div class="stat-card" id="zakatCard" style="border-color:#276749; display:none;">
+            <div class="stat-label" style="color:#276749;">🕌 Zakat Maal</div>
+            <div class="stat-value" id="zakatValue" style="color:#276749; font-size:1rem;">Rp 0</div>
+            <div style="font-size:.6rem; color:#999; margin-top:4px;" id="zakatSource"></div>
+        </div>
     </div>
 
     <div class="expense-chart-section" id="expenseChartSection">
@@ -1907,6 +1912,25 @@
                 <button class="btn btn-secondary" style="flex:1;" onclick="testEmasApiKey()">📡 Tes</button>
                 <button class="btn btn-danger" style="flex:1;" onclick="clearEmasApiKey()">🗑️ Hapus</button>
                 <button class="btn btn-primary" style="flex:2; background:#b7791f; border-color:#b7791f;" onclick="saveEmasApiKey()">💾 Simpan</button>
+            </div>
+        </div>
+
+        <!-- Zakat Maal -->
+        <div class="data-management-panel" style="border-color:#276749; background:#f0fff4; margin-top:0;">
+            <div class="panel-title" style="color:#276749;">🕌 Zakat Maal</div>
+            <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
+                Estimasi zakat maal dihitung dari <strong>total saldo akhir</strong>. Nisab zakat maal umumnya 2,5% dari harta yang telah mencapai haul (1 tahun).
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label>Persentase Zakat (%)</label>
+                <input type="number" id="zakatPersenInput" class="form-control"
+                    placeholder="Contoh: 2.5" min="0" max="100" step="0.1"
+                    oninput="updateZakatPreview()">
+                <div id="zakatPreview" style="font-size:.7rem; color:#276749; margin-top:5px; min-height:16px;"></div>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-danger" style="flex:1;" onclick="clearZakatSetting()">🗑️ Hapus</button>
+                <button class="btn btn-primary" style="flex:2; background:#276749; border-color:#276749;" onclick="saveZakatSetting()">💾 Simpan</button>
             </div>
         </div>
 
@@ -2721,6 +2745,11 @@ function openSetelanModal() {
     if (emasGramInp) emasGramInp.value = localStorage.getItem('sk_emas_gram') || '';
     updateEmasApiBadge();
     updateEmasGramPreview();
+
+    // Isi Zakat Maal
+    const zakatInp = document.getElementById('zakatPersenInput');
+    if (zakatInp) zakatInp.value = localStorage.getItem('sk_zakat_persen') || '';
+    updateZakatPreview();
 
     openModal('setelanModal');
 }
@@ -3794,6 +3823,7 @@ function render() {
     document.getElementById('statBalance').innerText = rp(currentBalance);
     document.getElementById('statIncome').innerText = rp(totalInc);
     document.getElementById('statExpense').innerText = rp(totalExp);
+    updateZakatCard();
 
     renderExpenseChart();
 
@@ -5855,7 +5885,66 @@ function copyAIResult() {
     navigator.clipboard.writeText(text).then(() => showToast('Hasil analisis disalin!', 'success'));
 }
 
-// ==================== KURS USD/IDR ====================
+// ==================== ZAKAT MAAL ====================
+function updateZakatPreview() {
+    const persen = parseFloat(document.getElementById('zakatPersenInput')?.value) || 0;
+    const prev   = document.getElementById('zakatPreview');
+    if (!prev) return;
+    if (persen <= 0) { prev.innerText = ''; return; }
+    // Ambil saldo dari stat card yang sudah tampil
+    const saldoText = document.getElementById('statBalance')?.innerText || '';
+    const saldo     = parseInt(saldoText.replace(/[^0-9]/g, '')) || 0;
+    if (saldo > 0) {
+        const zakat = Math.round(saldo * persen / 100);
+        prev.innerText = `Zakat dari saldo saat ini: Rp ${zakat.toLocaleString('id-ID')}`;
+    } else {
+        prev.innerText = `${persen}% dari total saldo akhir`;
+    }
+}
+
+function saveZakatSetting() {
+    const persen = parseFloat(document.getElementById('zakatPersenInput')?.value) || 0;
+    if (persen <= 0 || persen > 100) {
+        showToast('Persentase zakat tidak valid!', 'warning');
+        return;
+    }
+    localStorage.setItem('sk_zakat_persen', persen);
+    showToast('Setelan zakat disimpan!', 'success');
+    updateZakatPreview();
+    updateZakatCard();
+}
+
+function clearZakatSetting() {
+    if (!confirm('Hapus setelan zakat? Card zakat akan disembunyikan dari dashboard.')) return;
+    localStorage.removeItem('sk_zakat_persen');
+    const inp = document.getElementById('zakatPersenInput');
+    if (inp) inp.value = '';
+    document.getElementById('zakatPreview').innerText = '';
+    showToast('Setelan zakat dihapus.', 'info');
+    updateZakatCard();
+}
+
+function updateZakatCard() {
+    const persen = parseFloat(localStorage.getItem('sk_zakat_persen')) || 0;
+    const card   = document.getElementById('zakatCard');
+    const valEl  = document.getElementById('zakatValue');
+    const srcEl  = document.getElementById('zakatSource');
+    if (!card) return;
+
+    if (persen <= 0) {
+        card.style.display = 'none';
+        return;
+    }
+
+    // Ambil saldo dari statBalance
+    const saldoText = document.getElementById('statBalance')?.innerText || '';
+    const saldo     = parseInt(saldoText.replace(/[^0-9]/g, '')) || 0;
+    const zakat     = Math.round(saldo * persen / 100);
+
+    valEl.innerText = 'Rp ' + zakat.toLocaleString('id-ID');
+    srcEl.innerText = `${persen}% × saldo akhir`;
+    card.style.display = 'block';
+}
 async function fetchForexRate() {
     const apis = [
         {
