@@ -2393,7 +2393,13 @@ function updateActiveAccountLabel() {
     const el = document.getElementById('activeAccountLabel');
     if (el && acc) el.innerText = '👤 ' + acc.name;
 }
-function logoutToLockScreen() { sessionStorage.removeItem('sk_session_unlocked'); location.reload(); }
+function logoutToLockScreen() {
+    sessionStorage.removeItem('sk_session_unlocked');
+    sessionStorage.removeItem('sk_session_url');
+    sessionStorage.removeItem('sk_session_akey');
+    sessionStorage.removeItem('sk_session_ts');
+    location.reload();
+}
 function openSetelanModal() {
     const urlEl = document.getElementById('supabaseUrlInput');
     const keyEl = document.getElementById('supabaseKeyInput');
@@ -2965,6 +2971,9 @@ async function unlockWithPassword(password) {
     } catch { return false; }
     _sessionCryptoKey = key;
     sessionStorage.setItem('sk_session_unlocked', '1');
+    sessionStorage.setItem('sk_session_url', globalSupabaseUrl);
+    sessionStorage.setItem('sk_session_akey', globalSupabaseKey);
+    sessionStorage.setItem('sk_session_ts', Date.now().toString());
     return true;
 }
 
@@ -2975,6 +2984,9 @@ async function setupNewPassword(password, url, apiKey) {
     await saveEncryptedCredentials(key, url, apiKey);
     _sessionCryptoKey = key;
     sessionStorage.setItem('sk_session_unlocked', '1');
+    sessionStorage.setItem('sk_session_url', url);
+    sessionStorage.setItem('sk_session_akey', apiKey);
+    sessionStorage.setItem('sk_session_ts', Date.now().toString());
 }
 
 async function reEncryptCredentials(url, apiKey) {
@@ -4932,12 +4944,34 @@ function initApp() {
         document.getElementById('lockPasswordInput').focus();
         return;
     }
+    // Restore credentials dari sessionStorage setelah refresh (dalam 1 menit)
+    const _sessTs = parseInt(sessionStorage.getItem('sk_session_ts') || '0');
+    const _sessAge = Date.now() - _sessTs;
+    const SESSION_TIMEOUT_MS = 60 * 1000; // 1 menit
+    if (_sessAge > SESSION_TIMEOUT_MS) {
+        // Sesi sudah expired, paksa login ulang
+        sessionStorage.removeItem('sk_session_unlocked');
+        sessionStorage.removeItem('sk_session_url');
+        sessionStorage.removeItem('sk_session_akey');
+        sessionStorage.removeItem('sk_session_ts');
+        renderLockScreenPicker();
+        document.getElementById('passwordLockScreen').style.display = 'flex';
+        document.getElementById('lockPasswordInput').focus();
+        return;
+    }
+    if (!globalSupabaseUrl) {
+        globalSupabaseUrl = sessionStorage.getItem('sk_session_url') || '';
+        globalSupabaseKey = sessionStorage.getItem('sk_session_akey') || '';
+    }
     continueAppInit();
 }
 
 async function continueAppInit() {
-    if (!globalSupabaseUrl && !_sessionCryptoKey) {
+    if (!globalSupabaseUrl) {
         sessionStorage.removeItem('sk_session_unlocked');
+        sessionStorage.removeItem('sk_session_url');
+        sessionStorage.removeItem('sk_session_akey');
+        sessionStorage.removeItem('sk_session_ts');
         renderLockScreenPicker();
         document.getElementById('passwordLockScreen').style.display = 'flex';
         return;
