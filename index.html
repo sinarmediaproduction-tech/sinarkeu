@@ -2090,12 +2090,13 @@
 </div>
 
 <script>
-// ==================== CRYPTO CONSTANTS (harus di atas segalanya) ====================
+// ==================== SEMUA KONSTANTA GLOBAL (harus di atas segalanya) ====================
 const CRYPTO_SALT_KEY  = 'sk_crypto_salt';
 const CRYPTO_CHECK_KEY = 'sk_crypto_check';
 const CRYPTO_URL_KEY   = 'sk_enc_supabase_url';
 const CRYPTO_AKEY_KEY  = 'sk_enc_supabase_key';
 const SENTINEL_PLAIN   = 'sinarkeu_ok';
+const MAX_LOCAL_TXS    = 300;
 
 // ==================== MULTI-ACCOUNT ENGINE ====================
 const ACC_LIST_KEY   = 'sk_accounts';
@@ -3282,8 +3283,6 @@ async function pullAllSettings() {
 }
 
 // ==================== PULL TRANSACTIONS ====================
-const MAX_LOCAL_TXS = 300;
-
 function trimAndSaveLocal(bookId, data) {
     const sorted = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
     const trimmed = sorted.slice(0, MAX_LOCAL_TXS);
