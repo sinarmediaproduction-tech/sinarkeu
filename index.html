@@ -2468,6 +2468,7 @@ let budgets = {};
 let reportChart = null;
 let expenseChart = null;
 let expenseChartMode = 'all';
+let expenseChartVisible = false;
 const EXPENSE_CATEGORIES = ['Makanan & Minuman', 'Tagihan', 'Belanja', 'Kesehatan', 'Hiburan', 'Pendidikan', 'Transportasi', 'Investasi', 'Skin & Body Care', 'Kitchen', 'Cleaning', 'Pajak & Iuran', 'Pertanian', 'Sedekah', 'Sumbangan'];
 const PAGE_SIZE = 21;
 let currentPage = 1;
@@ -3484,8 +3485,6 @@ function saveTransactions() {
 }
 
 // ==================== RENDER ====================
-let expenseChartVisible = false;
-
 function toggleExpenseChart() {
     expenseChartVisible = !expenseChartVisible;
     const body = document.getElementById('expenseChartBody');
