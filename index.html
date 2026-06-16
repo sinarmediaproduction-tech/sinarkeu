@@ -1679,6 +1679,10 @@
             <div class="stat-label" style="color:#b7791f;">⚜️ Emas / gram</div>
             <div class="stat-value" id="goldPrice" style="color:#b7791f; font-size:1rem;">⏳ Memuat...</div>
             <div style="font-size:.6rem; color:#999; margin-top:4px;" id="goldSource"></div>
+            <div id="goldValueRow" style="display:none; margin-top:6px; padding-top:6px; border-top:1px dashed #e9c46a;">
+                <div style="font-size:.6rem; color:#92400e; font-weight:600;" id="goldValueLabel"></div>
+                <div style="font-size:.85rem; font-weight:700; color:#92400e;" id="goldValue"></div>
+            </div>
         </div>
     </div>
 
@@ -1890,6 +1894,13 @@
                 <input type="text" id="emasApiKeyInput" class="form-control"
                     placeholder="Masukkan API key dari emas.maulanar.my.id"
                     oninput="updateEmasApiBadge()">
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label>Jumlah Emas yang Dimiliki (gram)</label>
+                <input type="number" id="emasGramInput" class="form-control"
+                    placeholder="Contoh: 5.5" min="0" step="0.01"
+                    oninput="updateEmasGramPreview()">
+                <div id="emasGramPreview" style="font-size:.7rem; color:#92400e; margin-top:5px; min-height:16px;"></div>
             </div>
             <div id="emasApiTestStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
             <div style="display:flex; gap:8px;">
@@ -2706,7 +2717,10 @@ function openSetelanModal() {
     const emasSt  = document.getElementById('emasApiTestStatus');
     if (emasInp) emasInp.value = localStorage.getItem('sk_emas_api_key') || '';
     if (emasSt)  emasSt.innerText = '';
+    const emasGramInp = document.getElementById('emasGramInput');
+    if (emasGramInp) emasGramInp.value = localStorage.getItem('sk_emas_gram') || '';
     updateEmasApiBadge();
+    updateEmasGramPreview();
 
     openModal('setelanModal');
 }
@@ -5902,6 +5916,38 @@ function updateEmasApiBadge() {
     }
 }
 
+function updateEmasGramPreview() {
+    const gram = parseFloat(document.getElementById('emasGramInput')?.value) || 0;
+    const prev = document.getElementById('emasGramPreview');
+    if (!prev) return;
+    if (gram <= 0) { prev.innerText = ''; return; }
+    // Ambil harga per gram dari widget yang sudah tampil
+    const priceText = document.getElementById('goldPrice')?.textContent || '';
+    const priceNum  = parseInt(priceText.replace(/[^0-9]/g, ''));
+    if (priceNum > 0) {
+        const total = gram * priceNum;
+        prev.innerText = `Estimasi nilai: Rp ${Math.round(total).toLocaleString('id-ID')}`;
+    } else {
+        prev.innerText = `${gram} gram tersimpan — harga belum dimuat`;
+    }
+}
+
+function updateGoldValueDisplay(pricePerGram) {
+    const gram = parseFloat(localStorage.getItem('sk_emas_gram')) || 0;
+    const row   = document.getElementById('goldValueRow');
+    const label = document.getElementById('goldValueLabel');
+    const val   = document.getElementById('goldValue');
+    if (!row) return;
+    if (gram > 0 && pricePerGram > 0) {
+        const total = gram * pricePerGram;
+        label.innerText = `Estimasi nilai ${gram} gram`;
+        val.innerText   = 'Rp ' + Math.round(total).toLocaleString('id-ID');
+        row.style.display = 'block';
+    } else {
+        row.style.display = 'none';
+    }
+}
+
 async function testEmasApiKey() {
     const key = (document.getElementById('emasApiKeyInput')?.value || '').trim();
     const st  = document.getElementById('emasApiTestStatus');
@@ -5926,15 +5972,17 @@ async function testEmasApiKey() {
 }
 
 function saveEmasApiKey() {
-    const key = (document.getElementById('emasApiKeyInput')?.value || '').trim();
-    const st  = document.getElementById('emasApiTestStatus');
+    const key  = (document.getElementById('emasApiKeyInput')?.value || '').trim();
+    const gram = parseFloat(document.getElementById('emasGramInput')?.value) || 0;
+    const st   = document.getElementById('emasApiTestStatus');
     if (!key) { st.style.color = '#de350b'; st.innerText = '❌ API key tidak boleh kosong!'; return; }
     localStorage.setItem('sk_emas_api_key', key);
+    if (gram > 0) localStorage.setItem('sk_emas_gram', gram);
+    else localStorage.removeItem('sk_emas_gram');
     st.style.color = '#00875a';
-    st.innerText = '✅ API key berhasil disimpan!';
+    st.innerText = '✅ Tersimpan! API key & jumlah emas diperbarui.';
     updateEmasApiBadge();
-    showToast('API key emas disimpan!', 'success');
-    // Langsung refresh widget
+    showToast('Setelan emas disimpan!', 'success');
     fetchGoldPrice();
 }
 
@@ -5968,8 +6016,10 @@ async function fetchGoldPrice() {
                 const json = await res.json();
                 const item = json?.data?.[0];
                 if (item?.sell_price) {
-                    priceEl.textContent = 'Rp ' + Number(item.sell_price).toLocaleString('id-ID');
+                    const harga = Number(item.sell_price);
+                    priceEl.textContent = 'Rp ' + harga.toLocaleString('id-ID');
                     srcEl.textContent   = `Antam ${item.weight}gr · emas.maulanar.my.id`;
+                    updateGoldValueDisplay(harga);
                     return;
                 }
             }
@@ -6004,6 +6054,7 @@ async function fetchGoldPrice() {
 
             priceEl.textContent = '~Rp ' + Math.round(pricePerGram).toLocaleString('id-ID');
             srcEl.textContent   = `estimasi spot · ${api.name}`;
+            updateGoldValueDisplay(Math.round(pricePerGram));
             return;
         } catch { /* coba berikutnya */ }
     }
