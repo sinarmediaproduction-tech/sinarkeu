@@ -5021,74 +5021,29 @@ async function backupToGoogleSheets() {
         }))
     };
 
-    // Coba POST dulu, jika CORS error fallback ke GET dengan query param
-    let success = false;
-    let errMsg = '';
-
+    // Gunakan no-cors + text/plain agar tidak trigger CORS preflight
+    // Response akan opaque (status 0) — dianggap sukses jika tidak throw error
     try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 15000);
-        try {
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload),
-                signal: controller.signal
-            });
-            clearTimeout(timer);
-            if (res.ok || res.status === 0) {
-                // status 0 = opaque (no-cors fallback), anggap sukses
-                const text = await res.text().catch(() => '');
-                if (text && text.toLowerCase().includes('error')) {
-                    errMsg = text.substring(0, 120);
-                } else {
-                    success = true;
-                }
-            } else {
-                errMsg = `HTTP ${res.status}: ${res.statusText}`;
-            }
-        } catch (fetchErr) {
-            clearTimeout(timer);
-            // Jika abort
-            if (fetchErr.name === 'AbortError') {
-                errMsg = 'Timeout: server tidak merespons dalam 15 detik.';
-            } else {
-                // Kemungkinan CORS — coba via GET dengan data di query string (terbatas 2000 char)
-                const compact = JSON.stringify({ book: currentBookId, exported_at: payload.exported_at, count: txs.length, rows: payload.rows });
-                if (compact.length <= 7500) {
-                    const getUrl = url + '?data=' + encodeURIComponent(compact);
-                    const controller2 = new AbortController();
-                    const timer2 = setTimeout(() => controller2.abort(), 15000);
-                    try {
-                        const res2 = await fetch(getUrl, { signal: controller2.signal });
-                        clearTimeout(timer2);
-                        success = res2.ok;
-                        if (!success) errMsg = `HTTP ${res2.status} (via GET)`;
-                    } catch (e2) {
-                        clearTimeout(timer2);
-                        errMsg = e2.name === 'AbortError' ? 'Timeout (GET)' : e2.message;
-                    }
-                } else {
-                    errMsg = `CORS error: ${fetchErr.message}. Pastikan Apps Script mengizinkan akses anonim.`;
-                }
-            }
-        }
-    } catch (e) {
-        errMsg = e.message;
-    }
-
-    if (success) {
+        await fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        });
         const now = new Date().toLocaleString('id-ID');
-        setStatus('#00875a', `✅ Berhasil dikirim ke Google Sheets! (${now})`);
+        setStatus('#00875a', '✅ Data terkirim ke Google Sheets! (' + now + ')');
         localStorage.setItem('sk_last_gsheets_backup_' + currentBookId, new Date().toISOString());
+        const lastEl = document.getElementById('googleSheetsLastBackup');
+        if (lastEl) lastEl.innerText = 'Backup terakhir: ' + now;
         showToast('✅ Backup ke Google Sheets sukses!', 'success');
-        await addCloudLog('BACKUP', `Backup ke Google Sheets: ${txs.length} transaksi`);
-    } else {
-        setStatus('#de350b', `❌ Gagal: ${errMsg}`);
+        await addCloudLog('BACKUP', 'Backup ke Google Sheets: ' + txs.length + ' transaksi');
+    } catch (e) {
+        setStatus('#de350b', '❌ Gagal: ' + e.message + ' — Periksa koneksi internet dan URL Web App.');
         showToast('❌ Gagal backup ke Google Sheets', 'error');
-        console.error('[BackupGSheets]', errMsg);
+        console.error('[BackupGSheets]', e);
     }
 }
+
 
 // ==================== INIT APP ====================
 function initApp() {
