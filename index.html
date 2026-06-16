@@ -1675,6 +1675,11 @@
             <div class="stat-value" id="forexRate" style="color:#0052cc; font-size:1rem;">⏳ Memuat...</div>
             <div style="font-size:.6rem; color:#999; margin-top:4px;" id="forexSource"></div>
         </div>
+        <div class="stat-card" id="goldCard" style="border-color:#b7791f;">
+            <div class="stat-label" style="color:#b7791f;">⚜️ Emas / gram</div>
+            <div class="stat-value" id="goldPrice" style="color:#b7791f; font-size:1rem;">⏳ Memuat...</div>
+            <div style="font-size:.6rem; color:#999; margin-top:4px;" id="goldSource"></div>
+        </div>
     </div>
 
     <div class="expense-chart-section" id="expenseChartSection">
@@ -5853,9 +5858,44 @@ async function fetchForexRate() {
     srcEl.textContent  = 'Semua sumber gagal';
 }
 
+// ==================== HARGA EMAS ====================
+async function fetchGoldPrice() {
+    const priceEl = document.getElementById('goldPrice');
+    const srcEl   = document.getElementById('goldSource');
+    if (!priceEl) return;
+
+    try {
+        // Ambil harga XAU/USD dari metals.live (gratis, tanpa API key)
+        const res = await fetch('https://metals.live/v1/spot/gold', {
+            signal: AbortSignal.timeout(7000)
+        });
+        if (!res.ok) throw new Error('metals.live gagal');
+        const data = await res.json();
+        // Response: [ { gold: 3300.xx } ] — dalam USD per troy oz
+        const xauUsd = Array.isArray(data) ? data[0]?.gold : data?.gold;
+        if (!xauUsd) throw new Error('Data emas tidak valid');
+
+        // Parse kurs IDR dari elemen forexRate yang sudah di-fetch
+        const rateText = document.getElementById('forexRate')?.textContent || '';
+        const cleaned = rateText.replace(/[^0-9]/g, '');
+        const idrRate = parseInt(cleaned) || 16200; // fallback kasar
+
+        // Konversi: 1 troy oz = 31.1035 gram
+        const pricePerGram = (xauUsd / 31.1035) * idrRate;
+
+        priceEl.textContent = 'Rp ' + Math.round(pricePerGram).toLocaleString('id-ID');
+        srcEl.textContent   = `XAU $${xauUsd.toFixed(0)}/oz · metals.live`;
+    } catch (err) {
+        priceEl.textContent = '— Tidak tersedia';
+        srcEl.textContent   = 'Cek koneksi';
+    }
+}
+
 window.addEventListener('DOMContentLoaded', () => {
     initApp();
     fetchForexRate();
+    // Tunggu forexRate selesai dulu (~1.5 detik) sebelum hitung harga emas dalam IDR
+    setTimeout(fetchGoldPrice, 1500);
 });
 
 // ========== MOBILE DRAWER ==========
