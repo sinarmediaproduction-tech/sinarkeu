@@ -1876,6 +1876,29 @@
             </div>
         </div>
 
+        <!-- Harga Emas Antam -->
+        <div class="data-management-panel" style="border-color:#b7791f; background:#fffbeb; margin-top:0;">
+            <div class="panel-title" style="color:#92400e; display:flex; align-items:center; gap:8px;">
+                ⚜️ Harga Emas Antam
+                <span id="emasApiStatusBadge" style="font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:10px; background:#eee; color:#666;">Belum dikonfigurasi</span>
+            </div>
+            <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
+                Masukkan API key dari <strong>emas.maulanar.my.id</strong> untuk menampilkan harga emas Antam terkini. Daftar gratis di situs tersebut.
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label>API Key</label>
+                <input type="text" id="emasApiKeyInput" class="form-control"
+                    placeholder="Masukkan API key dari emas.maulanar.my.id"
+                    oninput="updateEmasApiBadge()">
+            </div>
+            <div id="emasApiTestStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary" style="flex:1;" onclick="testEmasApiKey()">📡 Tes</button>
+                <button class="btn btn-danger" style="flex:1;" onclick="clearEmasApiKey()">🗑️ Hapus</button>
+                <button class="btn btn-primary" style="flex:2; background:#b7791f; border-color:#b7791f;" onclick="saveEmasApiKey()">💾 Simpan</button>
+            </div>
+        </div>
+
         <!-- Telegram -->
         <div class="data-management-panel" style="border-color:#0088cc; background:#f0f8ff; margin-top:0;">
             <div class="panel-title" style="color:#0055aa; display:flex; align-items:center; gap:8px;">
@@ -2677,6 +2700,13 @@ function openSetelanModal() {
     if (workerInp) workerInp.value = localStorage.getItem('sk_ai_worker_url') || '';
     if (workerSt)  workerSt.innerText = '';
     updateAiWorkerBadge();
+
+    // Isi Emas API Key
+    const emasInp = document.getElementById('emasApiKeyInput');
+    const emasSt  = document.getElementById('emasApiTestStatus');
+    if (emasInp) emasInp.value = localStorage.getItem('sk_emas_api_key') || '';
+    if (emasSt)  emasSt.innerText = '';
+    updateEmasApiBadge();
 
     openModal('setelanModal');
 }
@@ -5859,13 +5889,94 @@ async function fetchForexRate() {
 }
 
 // ==================== HARGA EMAS ====================
+function updateEmasApiBadge() {
+    const badge = document.getElementById('emasApiStatusBadge');
+    if (!badge) return;
+    const val = (document.getElementById('emasApiKeyInput')?.value || '').trim();
+    if (val) {
+        badge.style.background = '#fef3c7'; badge.style.color = '#92400e';
+        badge.innerText = 'Terkonfigurasi';
+    } else {
+        badge.style.background = '#eee'; badge.style.color = '#666';
+        badge.innerText = 'Belum dikonfigurasi';
+    }
+}
+
+async function testEmasApiKey() {
+    const key = (document.getElementById('emasApiKeyInput')?.value || '').trim();
+    const st  = document.getElementById('emasApiTestStatus');
+    if (!key) { st.style.color = '#de350b'; st.innerText = '❌ Isi API key dulu.'; return; }
+    st.style.color = '#cc7b00'; st.innerText = '⏳ Menghubungi server...';
+    try {
+        const res = await fetch('https://emas.maulanar.my.id/api/prices/brand/antam?limit=1', {
+            headers: { 'X-API-Key': key },
+            signal: AbortSignal.timeout(8000)
+        });
+        if (res.ok) {
+            st.style.color = '#00875a';
+            st.innerText = '✅ API key valid! Data Antam berhasil diakses.';
+        } else {
+            st.style.color = '#de350b';
+            st.innerText = `❌ Server menolak: status ${res.status}. Periksa API key Anda.`;
+        }
+    } catch (e) {
+        st.style.color = '#de350b';
+        st.innerText = `❌ Gagal terhubung: ${e.message}`;
+    }
+}
+
+function saveEmasApiKey() {
+    const key = (document.getElementById('emasApiKeyInput')?.value || '').trim();
+    const st  = document.getElementById('emasApiTestStatus');
+    if (!key) { st.style.color = '#de350b'; st.innerText = '❌ API key tidak boleh kosong!'; return; }
+    localStorage.setItem('sk_emas_api_key', key);
+    st.style.color = '#00875a';
+    st.innerText = '✅ API key berhasil disimpan!';
+    updateEmasApiBadge();
+    showToast('API key emas disimpan!', 'success');
+    // Langsung refresh widget
+    fetchGoldPrice();
+}
+
+function clearEmasApiKey() {
+    if (!confirm('Hapus API key emas? Widget harga Antam akan menggunakan estimasi spot.')) return;
+    localStorage.removeItem('sk_emas_api_key');
+    const inp = document.getElementById('emasApiKeyInput');
+    if (inp) inp.value = '';
+    const st = document.getElementById('emasApiTestStatus');
+    if (st) { st.style.color = '#666'; st.innerText = 'API key dihapus. Beralih ke estimasi spot.'; }
+    updateEmasApiBadge();
+    showToast('API key emas dihapus.', 'info');
+    fetchGoldPrice();
+}
+
 async function fetchGoldPrice() {
     const priceEl = document.getElementById('goldPrice');
     const srcEl   = document.getElementById('goldSource');
     if (!priceEl) return;
 
-    // Sumber: fawazahmed0 currency-api (sama dengan yang dipakai forexRate)
-    // XAU = troy oz emas dalam USD. Endpoint: /currencies/xau.json → xau.usd = harga 1 oz dalam USD
+    const emasApiKey = (localStorage.getItem('sk_emas_api_key') || '').trim();
+
+    // === JALUR 1: Harga Antam resmi via emas.maulanar.my.id ===
+    if (emasApiKey) {
+        try {
+            const res = await fetch(
+                'https://emas.maulanar.my.id/api/prices/brand/antam?limit=1',
+                { headers: { 'X-API-Key': emasApiKey }, signal: AbortSignal.timeout(8000) }
+            );
+            if (res.ok) {
+                const json = await res.json();
+                const item = json?.data?.[0];
+                if (item?.sell_price) {
+                    priceEl.textContent = 'Rp ' + Number(item.sell_price).toLocaleString('id-ID');
+                    srcEl.textContent   = `Antam ${item.weight}gr · emas.maulanar.my.id`;
+                    return;
+                }
+            }
+        } catch { /* fallback ke estimasi spot */ }
+    }
+
+    // === JALUR 2: Estimasi spot (XAU × kurs IDR) — tanpa API key ===
     const apis = [
         {
             name: 'jsdelivr',
@@ -5884,19 +5995,15 @@ async function fetchGoldPrice() {
             const res = await fetch(api.url, { signal: AbortSignal.timeout(7000) });
             if (!res.ok) continue;
             const data = await res.json();
-            const xauUsd = api.parse(data); // harga 1 troy oz dalam USD
+            const xauUsd = api.parse(data);
             if (!xauUsd || xauUsd < 100) continue;
 
-            // Parse kurs IDR dari elemen forexRate yang sudah di-fetch
             const rateText = document.getElementById('forexRate')?.textContent || '';
-            const cleaned  = rateText.replace(/[^0-9]/g, '');
-            const idrRate  = parseInt(cleaned) || 16200;
-
-            // Konversi: 1 troy oz = 31.1035 gram
+            const idrRate  = parseInt(rateText.replace(/[^0-9]/g, '')) || 16200;
             const pricePerGram = (xauUsd / 31.1035) * idrRate;
 
-            priceEl.textContent = 'Rp ' + Math.round(pricePerGram).toLocaleString('id-ID');
-            srcEl.textContent   = `XAU $${Math.round(xauUsd).toLocaleString('en')}/oz · ${api.name}`;
+            priceEl.textContent = '~Rp ' + Math.round(pricePerGram).toLocaleString('id-ID');
+            srcEl.textContent   = `estimasi spot · ${api.name}`;
             return;
         } catch { /* coba berikutnya */ }
     }
