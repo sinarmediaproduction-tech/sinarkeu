@@ -3109,6 +3109,17 @@ async function pullAllSettings() {
                     budgetUpdated = true;
                 }
             }
+            // === TAMBAHAN: Google Sheets URL ===
+            if (row.key === 'google_sheets_url') {
+                if (typeof parsed === 'string' && parsed) {
+                    localStorage.setItem('sk_google_sheets_url', parsed);
+                    // Update UI jika modal setelan terbuka
+                    const gsInput = document.getElementById('googleSheetsUrlInput');
+                    if (gsInput) gsInput.value = parsed;
+                } else {
+                    localStorage.removeItem('sk_google_sheets_url');
+                }
+            }
         }
         if (booksUpdated) updateBookSelectDropdown();
         if (telegramUpdated) {}
@@ -4950,6 +4961,9 @@ function saveGoogleSheetsUrl() {
     st.style.color = '#00875a';
     st.innerText = '✅ URL Google Sheets Web App berhasil disimpan!';
     showToast('URL Google Sheets tersimpan', 'success');
+
+    // --- SIMPAN KE SUPABASE ---
+    pushSetting('google_sheets_url', url, 'global');
 }
 
 function loadGoogleSheetsUrl() {
@@ -4976,7 +4990,6 @@ async function backupToGoogleSheets() {
     }
 
     try {
-        // Kirim semua transaksi
         const payload = txs.map(t => ({
             id: t.id,
             date: t.date,
@@ -4987,7 +5000,6 @@ async function backupToGoogleSheets() {
             attachment: t.attachment ? 'Ada' : ''
         }));
 
-        // Gunakan no-cors agar tidak ada blokir CORS (tapi kita tidak bisa baca respons)
         const res = await fetch(url, {
             method: 'POST',
             mode: 'no-cors',
@@ -4995,8 +5007,6 @@ async function backupToGoogleSheets() {
             body: JSON.stringify(payload)
         });
 
-        // Karena mode no-cors, response tidak bisa dibaca, tapi request tetap terkirim
-        // Kita asumsikan berhasil jika tidak ada error network
         if (st) {
             st.style.color = '#00875a';
             st.innerText = '✅ Data berhasil dikirim ke Google Sheets!';
@@ -5098,6 +5108,7 @@ async function continueAppInit() {
     } else {
         if (isOnline()) {
             await pullAllSettings();
+            loadGoogleSheetsUrl(); // muat URL Google Sheets dari cloud
             updateBookSelectDropdown();
             budgets = JSON.parse(localStorage.getItem('sk_budgets_' + currentBookId) || '{}');
             updateTgStatusBadge();
