@@ -1729,6 +1729,18 @@
 <div id="bookManagerModal" class="modal">
     <div class="modal-content">
         <div class="modal-header"><h3>Kelola Buku Kas</h3><button class="modal-close" onclick="closeModal('bookManagerModal')">×</button></div>
+
+        <!-- Storage Estimasi Supabase -->
+        <div id="storageEstimPanel" style="background:#f0f8ff; border:1px solid #c5d8ff; border-radius:10px; padding:14px 16px; margin-bottom:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                <span style="font-size:.75rem; font-weight:700; color:#1a56db;">☁️ Estimasi Storage Supabase</span>
+                <button onclick="refreshStorageEstimate()" id="storageRefreshBtn" style="font-size:.65rem; padding:2px 10px; border:1px solid #c5d8ff; border-radius:6px; background:#e8f0fe; color:#1a56db; cursor:pointer; font-weight:600;">🔄 Refresh</button>
+            </div>
+            <div id="storageEstimContent">
+                <div style="font-size:.7rem; color:#888; text-align:center; padding:8px 0;">Memuat estimasi storage...</div>
+            </div>
+        </div>
+
         <div id="bookListContainer"></div>
         <form onsubmit="addNewBook(event)" style="border-top:1px solid #eee; padding-top:16px; margin-bottom:16px"><input type="text" id="newBookName" class="form-control" placeholder="Nama buku baru..." required><button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px">Buat Buku Baru</button></form>
     </div>
@@ -3995,10 +4007,124 @@ function resetDateFilter() {
 }
 
 // ==================== BOOK MANAGEMENT ====================
+// ==================== STORAGE ESTIMATION ====================
+const SUPABASE_FREE_DB_BYTES   = 500 * 1024 * 1024;  // 500 MB database
+const SUPABASE_FREE_FILE_BYTES = 1   * 1024 * 1024 * 1024; // 1 GB file storage
+
+async function estimateSupabaseStorage() {
+    if (!isOnline()) return null;
+    const baseUrl = getCloudUrl();
+    const apiKey  = getSupabaseKey();
+    if (!baseUrl || !apiKey) return null;
+
+    const headers = { 'apikey': apiKey, 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json', 'Prefer': 'count=exact' };
+
+    async function countTable(table, qs = '') {
+        try {
+            const res = await fetch(`${baseUrl}/rest/v1/${table}?select=id${qs}&limit=1`, { headers });
+            const cnt = res.headers.get('content-range');
+            if (cnt) {
+                const m = cnt.match(/\/(\d+)$/);
+                if (m) return parseInt(m[1]);
+            }
+            const data = await res.json();
+            return Array.isArray(data) ? data.length : 0;
+        } catch { return 0; }
+    }
+
+    // Count rows per table
+    const [txCount, logCount, settCount] = await Promise.all([
+        countTable('transactions'),
+        countTable('audit_logs'),
+        countTable('settings'),
+    ]);
+
+    // Rough size estimate per row (bytes)
+    const TX_ROW_BYTES   = 380;
+    const LOG_ROW_BYTES  = 250;
+    const SET_ROW_BYTES  = 180;
+
+    const estimatedBytes =
+        (txCount  * TX_ROW_BYTES) +
+        (logCount * LOG_ROW_BYTES) +
+        (settCount * SET_ROW_BYTES);
+
+    return { txCount, logCount, settCount, estimatedBytes };
+}
+
+function formatBytes(bytes) {
+    if (bytes < 1024)          return bytes + ' B';
+    if (bytes < 1024 * 1024)   return (bytes / 1024).toFixed(1) + ' KB';
+    if (bytes < 1024**3)       return (bytes / (1024*1024)).toFixed(2) + ' MB';
+    return (bytes / (1024**3)).toFixed(2) + ' GB';
+}
+
+function renderStorageBar(usedBytes, totalBytes, label) {
+    const pct = Math.min((usedBytes / totalBytes) * 100, 100);
+    const colorClass = pct >= 90 ? '#de350b' : pct >= 70 ? '#cc7b00' : '#1a56db';
+    return `
+        <div style="margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+                <span style="font-size:.7rem; font-weight:600; color:#333;">${label}</span>
+                <span style="font-size:.68rem; color:#555;">${formatBytes(usedBytes)} / ${formatBytes(totalBytes)} &nbsp;·&nbsp; <b style="color:${colorClass}">${pct.toFixed(1)}%</b></span>
+            </div>
+            <div style="height:8px; background:#dde8ff; border-radius:4px; overflow:hidden;">
+                <div style="height:100%; width:${pct}%; background:${colorClass}; border-radius:4px; transition:width .4s;"></div>
+            </div>
+            <div style="font-size:.63rem; color:#888; margin-top:3px; text-align:right;">Sisa: ${formatBytes(totalBytes - usedBytes)}</div>
+        </div>`;
+}
+
+async function refreshStorageEstimate() {
+    const el  = document.getElementById('storageEstimContent');
+    const btn = document.getElementById('storageRefreshBtn');
+    if (!el) return;
+    el.innerHTML = '<div style="font-size:.7rem; color:#888; text-align:center; padding:8px 0;">⏳ Menghitung...</div>';
+    if (btn) btn.disabled = true;
+
+    const data = await estimateSupabaseStorage();
+    if (btn) btn.disabled = false;
+
+    if (!data) {
+        el.innerHTML = '<div style="font-size:.7rem; color:#de350b; text-align:center; padding:8px 0;">⚠️ Tidak dapat memuat — pastikan koneksi Supabase aktif.</div>';
+        return;
+    }
+
+    const { txCount, logCount, settCount, estimatedBytes } = data;
+    const totalRows = txCount + logCount + settCount;
+
+    const dbBar   = renderStorageBar(estimatedBytes, SUPABASE_FREE_DB_BYTES, '🗄️ Database (estimasi)');
+
+    const pctNum  = Math.min((estimatedBytes / SUPABASE_FREE_DB_BYTES) * 100, 100);
+    const statusColor = pctNum >= 90 ? '#de350b' : pctNum >= 70 ? '#cc7b00' : '#006644';
+    const statusText  = pctNum >= 90 ? '🚨 Hampir penuh! Pertimbangkan arsipkan data lama.' :
+                        pctNum >= 70 ? '⚠️ Mendekati batas — pantau secara berkala.' :
+                                       '✅ Kapasitas masih aman.';
+
+    el.innerHTML = `
+        ${dbBar}
+        <div style="background:#f5f5f5; border-radius:8px; padding:10px 12px; font-size:.68rem; color:#444; line-height:1.8; margin-bottom:10px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px 16px;">
+                <span>📋 Transaksi</span><b>${txCount.toLocaleString('id-ID')} baris</b>
+                <span>📜 Log Aktivitas</span><b>${logCount.toLocaleString('id-ID')} baris</b>
+                <span>⚙️ Setelan</span><b>${settCount.toLocaleString('id-ID')} baris</b>
+                <span>📊 Total Baris</span><b>${totalRows.toLocaleString('id-ID')} baris</b>
+            </div>
+        </div>
+        <div style="font-size:.68rem; color:${statusColor}; font-weight:600; text-align:center; padding:4px 8px; background:${pctNum>=90?'#fff5f5':pctNum>=70?'#fffbeb':'#e3fcef'}; border-radius:6px;">
+            ${statusText}
+        </div>
+        <div style="font-size:.6rem; color:#aaa; margin-top:8px; text-align:right;">
+            * Estimasi berdasarkan jumlah baris × rata-rata ukuran baris. Free tier Supabase: DB 500 MB, File Storage 1 GB.
+        </div>
+    `;
+}
+
 function openBookManager() {
     if (!requireOnline('mengelola buku')) return;
     openModal('bookManagerModal');
     renderBookList();
+    refreshStorageEstimate();
 }
 
 async function openTelegramSettings() {
