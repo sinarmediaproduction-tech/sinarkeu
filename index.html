@@ -1314,6 +1314,18 @@
         }
         .lock-add-account:hover { color: #1a1a1a; }
 
+        .lock-manual-btn {
+            background: none;
+            border: none;
+            color: #1a56db;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: .8rem;
+            margin-top: 14px;
+        }
+        .lock-manual-btn:hover { color: #0a3a8a; }
+
         #manualSyncBtn { background: #00875a; }
         #manualSyncBtn:hover:not(:disabled) { background: #006644; }
         
@@ -1505,6 +1517,120 @@
         </div>
         <div class="lock-status" id="lockStatus"></div>
         <button class="lock-add-account" onclick="openAccountManagerFromLock()">＋ Tambah akun baru</button>
+        <!-- TOMBOL MANUAL PENGGUNA -->
+        <button class="lock-manual-btn" onclick="toggleManual()">📖 Panduan Pengguna</button>
+    </div>
+</div>
+
+<!-- ===== MANUAL PENGGUNA MODAL ===== -->
+<div id="manualModal" class="modal" style="z-index:9999;">
+    <div class="modal-content report" style="max-width:780px; max-height:90vh; padding:20px;">
+        <div class="modal-header">
+            <h3>📖 Panduan Lengkap Sinarkeu</h3>
+            <button class="modal-close" onclick="closeModal('manualModal')">×</button>
+        </div>
+        <div style="overflow-y:auto; max-height:70vh; padding-right:6px; font-size:.82rem; line-height:1.7; color:#1a1a1a;">
+            <h4 style="margin-top:0;">Selamat datang di Sinarkeu!</h4>
+            <p>Aplikasi ini adalah buku kas digital yang aman, multi‑akun, dan bisa disinkronkan ke cloud. Semua data Anda dienkripsi dengan password pribadi.</p>
+            <hr style="margin:14px 0;">
+
+            <h5>🔐 1. Setup Awal</h5>
+            <ul>
+                <li><strong>Supabase URL &amp; Anon Key</strong> – Dapatkan dari dashboard Supabase Anda. Masukkan di form setup pertama kali.</li>
+                <li><strong>Password Enkripsi</strong> – Buat password minimal 6 karakter. <strong>Simpan baik‑baik</strong>, karena tidak bisa dipulihkan. Password ini digunakan untuk membuka kunci aplikasi setiap kali.</li>
+            </ul>
+
+            <h5>👤 2. Manajemen Akun</h5>
+            <ul>
+                <li>Klik tombol <strong>“Ganti Akun”</strong> di pojok kanan atas.</li>
+                <li>Setiap akun terhubung ke <em>database Supabase yang berbeda</em>. Cocok untuk memisahkan keuangan pribadi, bisnis, atau keluarga.</li>
+                <li>Untuk menambah akun, buka <strong>“Manajer Akun”</strong> dari layar kunci atau dari menu <strong>⚙️ Setelan</strong>.</li>
+                <li>Setiap akun memiliki password enkripsi sendiri – Anda akan diminta saat beralih akun.</li>
+            </ul>
+
+            <h5>📚 3. Buku Kas</h5>
+            <ul>
+                <li>Di dalam satu akun, Anda bisa membuat <strong>banyak buku kas</strong> (misal: “Bulanan”, “Investasi”, “Proyek A”).</li>
+                <li>Gunakan dropdown <strong>“BUKU”</strong> di header untuk berpindah buku.</li>
+                <li>Kelola buku (tambah/hapus) melalui tombol <strong>“Kelola”</strong> atau menu <strong>⚙️ Setelan</strong>.</li>
+                <li>Setiap buku punya anggaran, transaksi, dan lognya sendiri.</li>
+            </ul>
+
+            <h5>💰 4. Transaksi</h5>
+            <ul>
+                <li>Tekan tombol <strong>“+ Transaksi”</strong> untuk mencatat pemasukan atau pengeluaran.</li>
+                <li>Isi <strong>jenis</strong>, <strong>kategori</strong> (untuk pengeluaran), <strong>deskripsi</strong>, dan <strong>jumlah</strong>.</li>
+                <li>Anda bisa <strong>melampirkan foto nota</strong> – gambar akan diunggah ke Supabase Storage.</li>
+                <li>Edit atau hapus transaksi dengan menekan tombol <strong>⋮</strong> di kolom Aksi.</li>
+                <li>Gunakan <strong>pencarian</strong>, <strong>filter jenis</strong>, dan <strong>filter tanggal</strong> untuk menemukan transaksi dengan cepat.</li>
+            </ul>
+
+            <h5>📊 5. Anggaran</h5>
+            <ul>
+                <li><strong>Anggaran Dasar</strong> – Template yang berlaku otomatis untuk setiap bulan baru. Atur melalui tombol <strong>“Dasar”</strong> di panel anggaran.</li>
+                <li><strong>Anggaran Bulanan</strong> – Klik <strong>“Anggarkan”</strong> untuk mengatur anggaran khusus untuk bulan tertentu. Ini akan menimpa Anggaran Dasar hanya untuk bulan itu.</li>
+                <li>Progress anggaran terlihat di panel atas (target, realisasi, sisa).</li>
+                <li>Sistem memberi <strong>peringatan visual</strong> dan <strong>notifikasi Telegram</strong> saat anggaran mencapai 80% dan 100%.</li>
+            </ul>
+
+            <h5>📈 6. Laporan &amp; Grafik</h5>
+            <ul>
+                <li>Panel <strong>“Pengeluaran per Kategori”</strong> menampilkan diagram donat – klik judulnya untuk membuka/tutup.</li>
+                <li>Tombol <strong>“Laporan”</strong> membuka laporan bulanan lengkap dengan tabel perbandingan target vs realisasi, serta grafik batang.</li>
+                <li>Laporan bisa diekspor ke <strong>PDF</strong> dengan tombol di dalam modal.</li>
+            </ul>
+
+            <h5>🤖 7. Analisis AI</h5>
+            <ul>
+                <li>Fitur ini membutuhkan <strong>URL Cloudflare Worker</strong> yang Anda deploy sendiri (gratis).</li>
+                <li>Masukkan URL di <strong>⚙️ Setelan → Analisis AI</strong>.</li>
+                <li>Setelah dikonfigurasi, klik <strong>“Analisis AI”</strong> di dashboard, pilih periode dan jenis analisis, lalu dapatkan wawasan dari Groq AI (LLaMA).</li>
+            </ul>
+
+            <h5>📲 8. Notifikasi Telegram</h5>
+            <ul>
+                <li>Buka <strong>⚙️ Setelan → Notifikasi Telegram</strong>.</li>
+                <li>Isi <strong>Bot Token</strong> (dari @BotFather) dan <strong>Chat ID</strong> (dari @userinfobot).</li>
+                <li>Setelah disimpan, Anda akan menerima notifikasi untuk setiap transaksi, peringatan anggaran, dan ringkasan harian otomatis pukul 21:00.</li>
+            </ul>
+
+            <h5>💾 9. Backup &amp; Restore</h5>
+            <ul>
+                <li><strong>Backup Lokal</strong> – Simpan snapshot data ke localStorage browser (maksimal 5 versi).</li>
+                <li><strong>Backup Cloud</strong> – Simpan ke tabel Supabase, bisa di-restore dari perangkat lain.</li>
+                <li><strong>Google Sheets</strong> – Masukkan URL Web App di <strong>⚙️ Setelan</strong> untuk mengirim backup ke spreadsheet Google.</li>
+                <li>Semua backup otomatis berjalan setiap hari (untuk cloud) dan dapat dipicu manual.</li>
+            </ul>
+
+            <h5>📦 10. Ekspor &amp; Impor Data</h5>
+            <ul>
+                <li>Ekspor ke <strong>CSV</strong> untuk dibuka di Excel, atau <strong>JSON</strong> untuk arsip.</li>
+                <li>Impor data dari file JSON (duplikat ID akan dilewati).</li>
+                <li>Fitur <strong>“Arsipkan JSON &amp; Kosongkan Database”</strong> di <strong>⚙️ Setelan</strong> – berguna untuk membersihkan data lama dan tetap mempertahankan arsip.</li>
+            </ul>
+
+            <h5>📊 11. Fitur Pendukung Lainnya</h5>
+            <ul>
+                <li><strong>Kurs USD/IDR</strong> – Ditampilkan secara otomatis dari beberapa sumber API.</li>
+                <li><strong>Harga Emas Antam</strong> – Bisa diaktifkan dengan API key dari <em>emas.maulanar.my.id</em> (gratis).</li>
+                <li><strong>Zakat Maal</strong> – Atur persentase di <strong>⚙️ Setelan</strong>, dan kartu zakat akan muncul di dashboard.</li>
+                <li><strong>Log Audit</strong> – Semua aktivitas tercatat dan bisa dilihat di bawah tabel transaksi.</li>
+            </ul>
+
+            <h5>📶 12. Mode Offline &amp; Sinkronisasi</h5>
+            <ul>
+                <li>Aplikasi bekerja <strong>offline</strong> dalam mode baca‑saja (tambah/edit/hapus dinonaktifkan).</li>
+                <li>Setiap kali koneksi pulih, sinkronisasi terjadi otomatis setiap 30 detik.</li>
+                <li>Tombol <strong>“Sinkronisasi”</strong> di header memicu sinkronisasi penuh manual (pull semua buku &amp; setelan).</li>
+            </ul>
+
+            <hr style="margin:14px 0;">
+            <p><strong>💡 Tips:</strong> Gunakan password yang kuat dan simpan di tempat aman. Manfaatkan fitur notifikasi Telegram agar tidak ketinggalan perubahan.</p>
+            <p style="color:#888; font-size:.7rem;">Sinarkeu – v1.0 (Multi Akun &amp; Buku Kas)</p>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #eee; padding-top:12px; margin-top:12px;">
+            <button class="btn btn-secondary" onclick="closeModal('manualModal')">Tutup Panduan</button>
+        </div>
     </div>
 </div>
 
@@ -5021,8 +5147,6 @@ async function backupToGoogleSheets() {
         }))
     };
 
-    // Gunakan no-cors + text/plain agar tidak trigger CORS preflight
-    // Response akan opaque (status 0) — dianggap sukses jika tidak throw error
     try {
         await fetch(url, {
             method: 'POST',
@@ -5131,12 +5255,11 @@ async function continueAppInit() {
     } else {
         if (isOnline()) {
             await pullAllSettings();
-            loadGoogleSheetsUrl(); // muat URL Google Sheets dari cloud
+            loadGoogleSheetsUrl();
             
             // === TAMBAHAN: Pastikan URL lokal tersinkronisasi ke cloud jika ada ===
             const localGsUrl = localStorage.getItem('sk_google_sheets_url');
             if (localGsUrl && isOnline()) {
-                // Kirim ke cloud untuk memastikan sinkron (jika belum ada atau berbeda)
                 pushSetting('google_sheets_url', localGsUrl, 'global');
             }
             
@@ -5567,6 +5690,16 @@ function requireOnline(operationName) {
         return false;
     }
     return true;
+}
+
+// ==================== TOGGLE MANUAL ====================
+function toggleManual() {
+    const modal = document.getElementById('manualModal');
+    if (modal.classList.contains('show')) {
+        closeModal('manualModal');
+    } else {
+        openModal('manualModal');
+    }
 }
 
 // ==================== DRAWER ====================
