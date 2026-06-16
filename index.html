@@ -1916,6 +1916,7 @@
                     <button class="btn btn-success" onclick="backupToGoogleSheets()" style="flex:0 0 auto; background:#0f9d58; border-color:#0f9d58;">📊 Backup ke Google Sheets</button>
                 </div>
                 <div id="googleSheetsStatus" style="font-size:.7rem; margin-top:6px; min-height:16px;"></div>
+                <div id="googleSheetsLastBackup" style="font-size:.65rem; color:#888; margin-top:3px;"></div>
             </div>
         </div>
 
@@ -4970,12 +4971,28 @@ function loadGoogleSheetsUrl() {
     const saved = localStorage.getItem('sk_google_sheets_url') || '';
     const input = document.getElementById('googleSheetsUrlInput');
     if (input) input.value = saved;
+    // Tampilkan info backup terakhir
+    const lastEl = document.getElementById('googleSheetsLastBackup');
+    if (lastEl) {
+        const lastTs = localStorage.getItem('sk_last_gsheets_backup_' + currentBookId);
+        if (lastTs) {
+            const d = new Date(lastTs);
+            lastEl.innerText = `Backup terakhir: ${d.toLocaleString('id-ID')}`;
+        } else {
+            lastEl.innerText = 'Belum pernah backup ke Google Sheets.';
+        }
+    }
 }
 
 async function backupToGoogleSheets() {
-    const url = localStorage.getItem('sk_google_sheets_url');
+    const url = (document.getElementById('googleSheetsUrlInput')?.value.trim()) ||
+                localStorage.getItem('sk_google_sheets_url') || '';
     if (!url) {
         showToast('⚠️ Belum ada URL Web App. Simpan dulu di Setelan!', 'warning');
+        return;
+    }
+    if (!url.startsWith('https://script.google.com/macros/')) {
+        showToast('❌ URL tidak valid. Harus diawali https://script.google.com/macros/', 'error');
         return;
     }
     if (txs.length === 0) {
@@ -4984,13 +5001,16 @@ async function backupToGoogleSheets() {
     }
 
     const st = document.getElementById('googleSheetsStatus');
-    if (st) {
-        st.style.color = '#cc7b00';
-        st.innerText = '⏳ Mengirim data ke Google Sheets...';
-    }
+    const setStatus = (color, msg) => {
+        if (st) { st.style.color = color; st.innerText = msg; }
+    };
 
-    try {
-        const payload = txs.map(t => ({
+    setStatus('#cc7b00', '⏳ Mengirim data ke Google Sheets...');
+
+    const payload = {
+        book: currentBookId,
+        exported_at: new Date().toISOString(),
+        rows: txs.map(t => ({
             id: t.id,
             date: t.date,
             type: t.type,
@@ -4998,27 +5018,75 @@ async function backupToGoogleSheets() {
             description: t.description,
             amount: Number(t.amount) || 0,
             attachment: t.attachment ? 'Ada' : ''
-        }));
+        }))
+    };
 
-        const res = await fetch(url, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+    // Coba POST dulu, jika CORS error fallback ke GET dengan query param
+    let success = false;
+    let errMsg = '';
 
-        if (st) {
-            st.style.color = '#00875a';
-            st.innerText = '✅ Data berhasil dikirim ke Google Sheets!';
+    try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 15000);
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload),
+                signal: controller.signal
+            });
+            clearTimeout(timer);
+            if (res.ok || res.status === 0) {
+                // status 0 = opaque (no-cors fallback), anggap sukses
+                const text = await res.text().catch(() => '');
+                if (text && text.toLowerCase().includes('error')) {
+                    errMsg = text.substring(0, 120);
+                } else {
+                    success = true;
+                }
+            } else {
+                errMsg = `HTTP ${res.status}: ${res.statusText}`;
+            }
+        } catch (fetchErr) {
+            clearTimeout(timer);
+            // Jika abort
+            if (fetchErr.name === 'AbortError') {
+                errMsg = 'Timeout: server tidak merespons dalam 15 detik.';
+            } else {
+                // Kemungkinan CORS — coba via GET dengan data di query string (terbatas 2000 char)
+                const compact = JSON.stringify({ book: currentBookId, exported_at: payload.exported_at, count: txs.length, rows: payload.rows });
+                if (compact.length <= 7500) {
+                    const getUrl = url + '?data=' + encodeURIComponent(compact);
+                    const controller2 = new AbortController();
+                    const timer2 = setTimeout(() => controller2.abort(), 15000);
+                    try {
+                        const res2 = await fetch(getUrl, { signal: controller2.signal });
+                        clearTimeout(timer2);
+                        success = res2.ok;
+                        if (!success) errMsg = `HTTP ${res2.status} (via GET)`;
+                    } catch (e2) {
+                        clearTimeout(timer2);
+                        errMsg = e2.name === 'AbortError' ? 'Timeout (GET)' : e2.message;
+                    }
+                } else {
+                    errMsg = `CORS error: ${fetchErr.message}. Pastikan Apps Script mengizinkan akses anonim.`;
+                }
+            }
         }
+    } catch (e) {
+        errMsg = e.message;
+    }
+
+    if (success) {
+        const now = new Date().toLocaleString('id-ID');
+        setStatus('#00875a', `✅ Berhasil dikirim ke Google Sheets! (${now})`);
+        localStorage.setItem('sk_last_gsheets_backup_' + currentBookId, new Date().toISOString());
         showToast('✅ Backup ke Google Sheets sukses!', 'success');
         await addCloudLog('BACKUP', `Backup ke Google Sheets: ${txs.length} transaksi`);
-    } catch (e) {
-        if (st) {
-            st.style.color = '#de350b';
-            st.innerText = `❌ Gagal: ${e.message}`;
-        }
+    } else {
+        setStatus('#de350b', `❌ Gagal: ${errMsg}`);
         showToast('❌ Gagal backup ke Google Sheets', 'error');
+        console.error('[BackupGSheets]', errMsg);
     }
 }
 
