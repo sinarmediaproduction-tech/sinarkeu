@@ -2626,189 +2626,6 @@ async function pullDefaultBudget() {
     }
 }
 
-// ===== UPDATE PULL ALL SETTINGS =====
-// Tambahkan di dalam pullAllSettings()
-const originalPullAllSettings = pullAllSettings;
-pullAllSettings = async function() {
-    await originalPullAllSettings();
-    await pullDefaultBudget();
-};
-
-// ===== UPDATE PUSH SETTING BUDGETS =====
-const originalPushSettingBudgets = pushSettingBudgets;
-pushSettingBudgets = async function() {
-    await originalPushSettingBudgets();
-    await pushSettingDefaultBudget();
-};
-
-// ===== UPDATE RENDER BUDGET =====
-const originalRenderBudget = renderBudget;
-renderBudget = function() {
-    // Auto-apply default budget jika bulan baru
-    checkNewMonthAutoApply();
-    
-    const m = document.getElementById('budgetMonth').value;
-    const y = document.getElementById('budgetYear').value;
-    const key = `${y}-${m}`;
-    
-    // Dapatkan anggaran efektif
-    const effective = getEffectiveBudget(parseInt(y), parseInt(m), currentBookId);
-    const currentBudget = effective.budget;
-    const source = effective.source;
-    
-    // Update source tag
-    const tag = document.getElementById('budgetSourceTag');
-    if (tag) {
-        if (source === 'custom') {
-            tag.className = 'budget-source-tag custom';
-            tag.innerText = '📌 Khusus bulan ini';
-        } else if (source === 'default' && Object.keys(currentBudget).length > 0) {
-            tag.className = 'budget-source-tag default';
-            tag.innerText = '🏠 Anggaran Dasar';
-        } else {
-            tag.className = 'budget-source-tag none';
-            tag.innerText = 'Tidak ada';
-        }
-    }
-    
-    // Hitung total target dari anggaran efektif
-    let totalTarget = 0;
-    EXPENSE_CATEGORIES.forEach(cat => { totalTarget += (currentBudget[cat] || 0); });
-    
-    let totalActual = 0;
-    txs.forEach(t => {
-        if (t.type === 'expense') {
-            let d = new Date(t.date);
-            if ((d.getMonth() + 1) == m && d.getFullYear() == y) {
-                totalActual += (Number(t.amount) || 0);
-            }
-        }
-    });
-    
-    document.getElementById('budgetTargetDisplay').innerText = rp(totalTarget);
-    document.getElementById('budgetActualDisplay').innerText = rp(totalActual);
-    
-    let remaining = totalTarget - totalActual;
-    let remEl = document.getElementById('budgetRemainingDisplay');
-    remEl.innerText = rp(remaining);
-    if (remaining >= 0) { remEl.className = "budget-mini-value positive"; }
-    else { remEl.className = "budget-mini-value negative"; }
-    
-    let pct = 0;
-    if (totalTarget > 0) { pct = Math.min((totalActual / totalTarget) * 100, 100); }
-    else if (totalActual > 0) { pct = 100; }
-    
-    let fill = document.getElementById('budgetProgressFill');
-    fill.style.width = pct + '%';
-    let fill2 = document.getElementById('budgetProgressFill2');
-    if (fill2) fill2.style.width = pct + '%';
-    
-    let pctEl = document.getElementById('budgetProgressPct');
-    pctEl.innerText = Math.round(pct) + '%';
-    let pctEl2 = document.getElementById('budgetProgressPct2');
-    if (pctEl2) pctEl2.innerText = Math.round(pct) + '%';
-    
-    if (pct >= 100 && totalTarget > 0) {
-        fill.className = "budget-mini-progress-fill danger";
-        if (fill2) fill2.className = "budget-mini-progress-fill danger";
-        pctEl.style.color = '#de350b';
-        if (pctEl2) pctEl2.style.color = '#de350b';
-    } else if (pct >= 80) {
-        fill.className = "budget-mini-progress-fill warning";
-        if (fill2) fill2.className = "budget-mini-progress-fill warning";
-        pctEl.style.color = '#cc7b00';
-        if (pctEl2) pctEl2.style.color = '#cc7b00';
-    } else {
-        fill.className = "budget-mini-progress-fill";
-        if (fill2) fill2.className = "budget-mini-progress-fill";
-        pctEl.style.color = '#00875a';
-        if (pctEl2) pctEl2.style.color = '#00875a';
-    }
-}
-
-// ===== UPDATE BUDGET MODAL =====
-// Modifikasi renderBudgetFormFields untuk menampilkan status source
-const originalRenderBudgetFormFields = renderBudgetFormFields;
-renderBudgetFormFields = function() {
-    const container = document.getElementById('budgetCategoriesContainer');
-    container.innerHTML = '';
-    
-    let m = document.getElementById('budgetModalMonth').value;
-    let y = document.getElementById('budgetModalYear').value;
-    let key = `${y}-${m}`;
-    
-    // Ambil anggaran efektif
-    const effective = getEffectiveBudget(parseInt(y), parseInt(m), currentBookId);
-    const currentBudget = effective.budget;
-    const source = effective.source;
-    
-    // Info status
-    const infoDiv = document.createElement('div');
-    infoDiv.style.cssText = 'font-size:.72rem; color:#666; margin-bottom:12px; padding:8px 12px; border-radius:6px; background:#f5f5f5;';
-    if (source === 'default') {
-        infoDiv.innerHTML = '🏠 <b>Menggunakan Anggaran Dasar</b> — Anda dapat mengubahnya di sini untuk membuat versi khusus bulan ini.';
-        infoDiv.style.background = '#e3fcef';
-        infoDiv.style.color = '#006644';
-    } else if (source === 'custom') {
-        infoDiv.innerHTML = '📌 <b>Anggaran Khusus Bulan Ini</b> — Bulan berikutnya akan kembali ke Anggaran Dasar.';
-        infoDiv.style.background = '#e8f0fe';
-        infoDiv.style.color = '#1a56db';
-    } else {
-        infoDiv.innerHTML = '⚠️ <b>Belum ada anggaran</b> — Atur anggaran di bawah, atau buat Anggaran Dasar di menu terpisah.';
-        infoDiv.style.background = '#fff3e0';
-        infoDiv.style.color = '#cc7b00';
-    }
-    container.appendChild(infoDiv);
-    
-    EXPENSE_CATEGORIES.forEach(cat => {
-        const val = currentBudget[cat] || 0;
-        const div = document.createElement('div');
-        div.className = 'budget-cat-row';
-        div.innerHTML = `
-            <span class="budget-cat-label">${escapeHtml(cat)}</span>
-            <input type="text" class="form-control budget-input-field" data-cat="${escapeHtml(cat)}" value="${val ? Number(val).toLocaleString('id-ID') : ''}" oninput="formatRupiah(this); updateBudgetSummary();" placeholder="Rp 0">
-        `;
-        container.appendChild(div);
-    });
-    updateBudgetSummary();
-}
-
-// ===== UPDATE SAVE BUDGET =====
-const originalSaveBudget = saveBudget;
-saveBudget = function() {
-    if (!requireOnline('menyimpan anggaran')) return;
-    
-    let m = document.getElementById('budgetModalMonth').value;
-    let y = document.getElementById('budgetModalYear').value;
-    let key = `${y}-${m}`;
-    
-    if (!budgets[key]) budgets[key] = {};
-    
-    let inputs = document.querySelectorAll('.budget-input-field');
-    let hasAnyValue = false;
-    inputs.forEach(input => {
-        let cat = input.getAttribute('data-cat');
-        if (EXPENSE_CATEGORIES.includes(cat)) {
-            const val = unRp(input.value);
-            budgets[key][cat] = val;
-            if (val > 0) hasAnyValue = true;
-        }
-    });
-    
-    // Jika semua nilai 0, hapus entri bulan ini (agar fallback ke default)
-    if (!hasAnyValue) {
-        delete budgets[key];
-        showToast('Anggaran bulan ini dihapus, akan menggunakan Anggaran Dasar.', 'info');
-    } else {
-        showToast('Anggaran bulanan berhasil diperbarui', 'success');
-    }
-    
-    localStorage.setItem('sk_budgets_' + currentBookId, JSON.stringify(budgets));
-    closeModal('budgetModal');
-    renderBudget();
-    pushSettingBudgets();
-}
-
 // ==================== REST OF CODE ====================
 // (Semua fungsi lain seperti CRUD, sync, backup, dll tetap sama)
 // Saya akan menaruh fungsi-fungsi yang belum di-override di sini.
@@ -3282,6 +3099,197 @@ async function pullAllSettings() {
     }
     updateSettingsSyncStatus('pull');
 }
+
+// ===== STUB AWAL (akan di-override di bawah oleh fungsi lengkap) =====
+if (typeof renderBudget === 'undefined')           var renderBudget           = function() {};
+if (typeof renderBudgetFormFields === 'undefined') var renderBudgetFormFields = function() {};
+if (typeof saveBudget === 'undefined')             var saveBudget             = function() {};
+if (typeof pullAllSettings === 'undefined')        var pullAllSettings        = async function() {};
+if (typeof pushSettingBudgets === 'undefined')     var pushSettingBudgets     = async function() {};
+
+// ===== UPDATE PULL ALL SETTINGS =====
+// Tambahkan di dalam pullAllSettings()
+const originalPullAllSettings = pullAllSettings;
+pullAllSettings = async function() {
+    await originalPullAllSettings();
+    await pullDefaultBudget();
+};
+
+// ===== UPDATE PUSH SETTING BUDGETS =====
+const originalPushSettingBudgets = pushSettingBudgets;
+pushSettingBudgets = async function() {
+    await originalPushSettingBudgets();
+    await pushSettingDefaultBudget();
+};
+
+// ===== UPDATE RENDER BUDGET =====
+const originalRenderBudget = renderBudget;
+renderBudget = function() {
+    // Auto-apply default budget jika bulan baru
+    checkNewMonthAutoApply();
+    
+    const m = document.getElementById('budgetMonth').value;
+    const y = document.getElementById('budgetYear').value;
+    const key = `${y}-${m}`;
+    
+    // Dapatkan anggaran efektif
+    const effective = getEffectiveBudget(parseInt(y), parseInt(m), currentBookId);
+    const currentBudget = effective.budget;
+    const source = effective.source;
+    
+    // Update source tag
+    const tag = document.getElementById('budgetSourceTag');
+    if (tag) {
+        if (source === 'custom') {
+            tag.className = 'budget-source-tag custom';
+            tag.innerText = '📌 Khusus bulan ini';
+        } else if (source === 'default' && Object.keys(currentBudget).length > 0) {
+            tag.className = 'budget-source-tag default';
+            tag.innerText = '🏠 Anggaran Dasar';
+        } else {
+            tag.className = 'budget-source-tag none';
+            tag.innerText = 'Tidak ada';
+        }
+    }
+    
+    // Hitung total target dari anggaran efektif
+    let totalTarget = 0;
+    EXPENSE_CATEGORIES.forEach(cat => { totalTarget += (currentBudget[cat] || 0); });
+    
+    let totalActual = 0;
+    txs.forEach(t => {
+        if (t.type === 'expense') {
+            let d = new Date(t.date);
+            if ((d.getMonth() + 1) == m && d.getFullYear() == y) {
+                totalActual += (Number(t.amount) || 0);
+            }
+        }
+    });
+    
+    document.getElementById('budgetTargetDisplay').innerText = rp(totalTarget);
+    document.getElementById('budgetActualDisplay').innerText = rp(totalActual);
+    
+    let remaining = totalTarget - totalActual;
+    let remEl = document.getElementById('budgetRemainingDisplay');
+    remEl.innerText = rp(remaining);
+    if (remaining >= 0) { remEl.className = "budget-mini-value positive"; }
+    else { remEl.className = "budget-mini-value negative"; }
+    
+    let pct = 0;
+    if (totalTarget > 0) { pct = Math.min((totalActual / totalTarget) * 100, 100); }
+    else if (totalActual > 0) { pct = 100; }
+    
+    let fill = document.getElementById('budgetProgressFill');
+    fill.style.width = pct + '%';
+    let fill2 = document.getElementById('budgetProgressFill2');
+    if (fill2) fill2.style.width = pct + '%';
+    
+    let pctEl = document.getElementById('budgetProgressPct');
+    pctEl.innerText = Math.round(pct) + '%';
+    let pctEl2 = document.getElementById('budgetProgressPct2');
+    if (pctEl2) pctEl2.innerText = Math.round(pct) + '%';
+    
+    if (pct >= 100 && totalTarget > 0) {
+        fill.className = "budget-mini-progress-fill danger";
+        if (fill2) fill2.className = "budget-mini-progress-fill danger";
+        pctEl.style.color = '#de350b';
+        if (pctEl2) pctEl2.style.color = '#de350b';
+    } else if (pct >= 80) {
+        fill.className = "budget-mini-progress-fill warning";
+        if (fill2) fill2.className = "budget-mini-progress-fill warning";
+        pctEl.style.color = '#cc7b00';
+        if (pctEl2) pctEl2.style.color = '#cc7b00';
+    } else {
+        fill.className = "budget-mini-progress-fill";
+        if (fill2) fill2.className = "budget-mini-progress-fill";
+        pctEl.style.color = '#00875a';
+        if (pctEl2) pctEl2.style.color = '#00875a';
+    }
+}
+
+// ===== UPDATE BUDGET MODAL =====
+// Modifikasi renderBudgetFormFields untuk menampilkan status source
+const originalRenderBudgetFormFields = renderBudgetFormFields;
+renderBudgetFormFields = function() {
+    const container = document.getElementById('budgetCategoriesContainer');
+    container.innerHTML = '';
+    
+    let m = document.getElementById('budgetModalMonth').value;
+    let y = document.getElementById('budgetModalYear').value;
+    let key = `${y}-${m}`;
+    
+    // Ambil anggaran efektif
+    const effective = getEffectiveBudget(parseInt(y), parseInt(m), currentBookId);
+    const currentBudget = effective.budget;
+    const source = effective.source;
+    
+    // Info status
+    const infoDiv = document.createElement('div');
+    infoDiv.style.cssText = 'font-size:.72rem; color:#666; margin-bottom:12px; padding:8px 12px; border-radius:6px; background:#f5f5f5;';
+    if (source === 'default') {
+        infoDiv.innerHTML = '🏠 <b>Menggunakan Anggaran Dasar</b> — Anda dapat mengubahnya di sini untuk membuat versi khusus bulan ini.';
+        infoDiv.style.background = '#e3fcef';
+        infoDiv.style.color = '#006644';
+    } else if (source === 'custom') {
+        infoDiv.innerHTML = '📌 <b>Anggaran Khusus Bulan Ini</b> — Bulan berikutnya akan kembali ke Anggaran Dasar.';
+        infoDiv.style.background = '#e8f0fe';
+        infoDiv.style.color = '#1a56db';
+    } else {
+        infoDiv.innerHTML = '⚠️ <b>Belum ada anggaran</b> — Atur anggaran di bawah, atau buat Anggaran Dasar di menu terpisah.';
+        infoDiv.style.background = '#fff3e0';
+        infoDiv.style.color = '#cc7b00';
+    }
+    container.appendChild(infoDiv);
+    
+    EXPENSE_CATEGORIES.forEach(cat => {
+        const val = currentBudget[cat] || 0;
+        const div = document.createElement('div');
+        div.className = 'budget-cat-row';
+        div.innerHTML = `
+            <span class="budget-cat-label">${escapeHtml(cat)}</span>
+            <input type="text" class="form-control budget-input-field" data-cat="${escapeHtml(cat)}" value="${val ? Number(val).toLocaleString('id-ID') : ''}" oninput="formatRupiah(this); updateBudgetSummary();" placeholder="Rp 0">
+        `;
+        container.appendChild(div);
+    });
+    updateBudgetSummary();
+}
+
+// ===== UPDATE SAVE BUDGET =====
+const originalSaveBudget = saveBudget;
+saveBudget = function() {
+    if (!requireOnline('menyimpan anggaran')) return;
+    
+    let m = document.getElementById('budgetModalMonth').value;
+    let y = document.getElementById('budgetModalYear').value;
+    let key = `${y}-${m}`;
+    
+    if (!budgets[key]) budgets[key] = {};
+    
+    let inputs = document.querySelectorAll('.budget-input-field');
+    let hasAnyValue = false;
+    inputs.forEach(input => {
+        let cat = input.getAttribute('data-cat');
+        if (EXPENSE_CATEGORIES.includes(cat)) {
+            const val = unRp(input.value);
+            budgets[key][cat] = val;
+            if (val > 0) hasAnyValue = true;
+        }
+    });
+    
+    // Jika semua nilai 0, hapus entri bulan ini (agar fallback ke default)
+    if (!hasAnyValue) {
+        delete budgets[key];
+        showToast('Anggaran bulan ini dihapus, akan menggunakan Anggaran Dasar.', 'info');
+    } else {
+        showToast('Anggaran bulanan berhasil diperbarui', 'success');
+    }
+    
+    localStorage.setItem('sk_budgets_' + currentBookId, JSON.stringify(budgets));
+    closeModal('budgetModal');
+    renderBudget();
+    pushSettingBudgets();
+}
+
 
 // ==================== PULL TRANSACTIONS ====================
 function trimAndSaveLocal(bookId, data) {
