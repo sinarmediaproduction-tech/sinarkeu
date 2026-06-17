@@ -288,12 +288,12 @@
             <div style="font-size:.65rem; color:#888; margin-top:4px;">Dana darurat + anggaran tahunan</div>
         </div>
         <!-- ===== CARD FASE KEHIDUPAN ===== -->
-        <div class="stat-card" id="cardFaseKehidupan" style="border-top:3px solid #e53e8a; cursor:pointer;" onclick="openFaseKehidupanModal()" title="Klik untuk atur fase kehidupan">
+        <div class="stat-card" id="cardFaseKehidupan" style="border-top:3px solid #e53e8a; cursor:pointer;" onclick="window.openFaseKehidupanModal()" title="Klik untuk atur fase kehidupan">
             <div class="stat-label">💍 Fase Kehidupan <span style="font-size:.6rem; background:#fff0f7; color:#e53e8a; padding:1px 6px; border-radius:8px; margin-left:4px;">✏️ Atur</span></div>
             <div style="font-size:.88rem; font-weight:700; color:#e53e8a; margin-top:4px; min-height:20px;" id="fcFaseNama">Belum diatur</div>
             <div style="font-size:.62rem; color:#888; margin-top:4px; line-height:1.5;" id="fcFaseDesc">Klik untuk mengatur fase kehidupan pernikahan Anda</div>
             <div style="margin-top:8px;">
-                <button onclick="event.stopPropagation(); runFaseAIAnalysis()" id="faseAIBtn" class="btn" style="font-size:.65rem; padding:3px 10px; background:#e53e8a; color:#fff; border-color:#e53e8a; display:none;">🤖 Analisis AI</button>
+                <button onclick="event.stopPropagation(); window.runFaseAIAnalysis()" id="faseAIBtn" class="btn" style="font-size:.65rem; padding:3px 10px; background:#e53e8a; color:#fff; border-color:#e53e8a; display:none;">🤖 Analisis AI</button>
             </div>
         </div>
         <div class="stat-card" id="cardDanaSalingJaga" style="border-top:3px solid #00875a;">
@@ -766,7 +766,7 @@
     <div class="modal-content" style="max-width:480px;">
         <div class="modal-header">
             <h3>💍 Fase Kehidupan Pernikahan</h3>
-            <button class="modal-close" onclick="closeModal('faseKehidupanModal')">×</button>
+            <button class="modal-close" onclick="window.closeModal('faseKehidupanModal')">×</button>
         </div>
         <div style="padding:0 22px 16px;">
             <div style="font-size:.72rem; color:#666; margin-bottom:14px; line-height:1.6; background:#fff0f7; border:1px solid #fbb6ce; border-radius:8px; padding:10px 12px;">
@@ -774,7 +774,7 @@
             </div>
             <div class="form-group">
                 <label>Fase Kehidupan Saat Ini</label>
-                <select id="faseSelect" class="form-control" onchange="updateFaseDesc()">
+                <select id="faseSelect" class="form-control" onchange="window.updateFaseDesc()">
                     <option value="">-- Pilih Fase --</option>
                     <option value="1">💑 Fase 1 — Bulan Madu (0–2 thn menikah)</option>
                     <option value="2">🏠 Fase 2 — Penyesuaian & Realita (2–5 thn)</option>
@@ -795,8 +795,8 @@
                 <input type="text" id="faseTarget" class="form-control" placeholder="Contoh: Beli rumah, Dana pendidikan anak, Cicilan KPR...">
             </div>
             <div style="display:flex; gap:8px; margin-top:4px;">
-                <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('faseKehidupanModal')">Batal</button>
-                <button class="btn btn-primary" style="flex:2; background:#e53e8a; border-color:#e53e8a;" onclick="saveFaseKehidupan()">💾 Simpan</button>
+                <button class="btn btn-secondary" style="flex:1;" onclick="window.closeModal('faseKehidupanModal')">Batal</button>
+                <button class="btn btn-primary" style="flex:2; background:#e53e8a; border-color:#e53e8a;" onclick="window.saveFaseKehidupan()">💾 Simpan</button>
             </div>
         </div>
     </div>
@@ -807,7 +807,7 @@
     <div class="modal-content report" style="max-width:620px;">
         <div class="modal-header">
             <h3>🤖 Analisis AI — Fase Kehidupan</h3>
-            <button class="modal-close" onclick="closeModal('faseAIModal')">×</button>
+            <button class="modal-close" onclick="window.closeModal('faseAIModal')">×</button>
         </div>
         <div style="padding:0 22px 16px;">
             <div id="faseAIResult" style="min-height:200px; background:#faf9ff; border:1.5px solid #fbb6ce; border-radius:10px; padding:18px 20px; font-size:.82rem; line-height:1.75; color:#1a1a1a; white-space:pre-wrap; overflow-y:auto; max-height:420px;">
@@ -816,9 +816,9 @@
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:8px;">
                 <span id="faseAIFooter" style="font-size:.65rem; color:#aaa;"></span>
                 <div style="display:flex; gap:8px;">
-                    <button id="faseAICopyBtn" class="btn btn-secondary" style="display:none;" onclick="copyFaseAIResult()">📋 Salin</button>
-                    <button id="faseAIRunBtn" class="btn btn-primary" style="background:#e53e8a; border-color:#e53e8a;" onclick="runFaseAIAnalysis()">✨ Analisis Sekarang</button>
-                    <button class="btn btn-secondary" onclick="closeModal('faseAIModal')">Tutup</button>
+                    <button id="faseAICopyBtn" class="btn btn-secondary" style="display:none;" onclick="window.copyFaseAIResult()">📋 Salin</button>
+                    <button id="faseAIRunBtn" class="btn btn-primary" style="background:#e53e8a; border-color:#e53e8a;" onclick="window.runFaseAIAnalysis()">✨ Analisis Sekarang</button>
+                    <button class="btn btn-secondary" onclick="window.closeModal('faseAIModal')">Tutup</button>
                 </div>
             </div>
         </div>
