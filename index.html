@@ -177,6 +177,7 @@
             <button class="manage-books-btn desktop-only" id="kelolaBukuBtn" onclick="openBookManager()">Kelola</button>
             <button class="manage-books-btn desktop-only" id="manualSyncBtn" style="background:#00875a;" onclick="forceFullSync()">🔄 Sinkronisasi</button>
             <button class="manage-books-btn desktop-only" id="setelanBtn" onclick="openSetelanModal()" style="background:#4a5568;" title="Setelan">⚙️ Setelan</button>
+            <button class="manage-books-btn desktop-only" id="reminderBtn" onclick="openPaymentReminderModal()" style="background:#d97706; position:relative;" title="Pengingat Pembayaran">🔔 Pengingat <span id="reminderBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:#fff; font-size:.55rem; font-weight:700; border-radius:50%; width:16px; height:16px; line-height:16px; text-align:center;"></span></button>
             <button class="manage-books-btn desktop-only" onclick="logoutToLockScreen()" title="Ganti Akun" style="background:#e8f0fe; color:#1a56db; border:1px solid #c5d8ff;">🔄 Ganti Akun</button>
             <button class="mobile-only hamburger-btn" onclick="openMobileDrawer()" title="Menu">☰</button>
         </div>
@@ -185,6 +186,20 @@
     <div class="offline-warning-bar" id="offlineWarningBar">
         <span>⚠️</span>
         <span><strong>Mode Baca Saja</strong> - Anda sedang offline. Untuk menambah/mengedit/menghapus data, sambungkan ke internet.</span>
+    </div>
+
+    <!-- ===== PAYMENT REMINDER NOTIFICATION BANNER ===== -->
+    <div id="paymentReminderBanner" style="display:none; background:#fef3c7; border:1.5px solid #f59e0b; border-radius:10px; padding:12px 16px; margin-bottom:10px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:1.3rem;">🔔</span>
+                <div>
+                    <div style="font-size:.78rem; font-weight:700; color:#92400e;">Pengingat Pembayaran</div>
+                    <div id="paymentReminderBannerText" style="font-size:.72rem; color:#78350f; line-height:1.6;"></div>
+                </div>
+            </div>
+            <button onclick="openPaymentReminderModal()" style="font-size:.7rem; padding:5px 12px; background:#d97706; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; white-space:nowrap;">Lihat Semua</button>
+        </div>
     </div>
 
     <div class="budget-mini">
@@ -873,8 +888,73 @@
         <button onclick="drawerAction(openBookManager)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#1a1a1a; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">📚 Kelola Buku</button>
         <button onclick="drawerAction(forceFullSync)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#00875a; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">🔄 Sinkronisasi</button>
         <button onclick="drawerAction(openSetelanModal)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#4a5568; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">⚙️ Setelan</button>
+        <button onclick="drawerAction(openPaymentReminderModal)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#d97706; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px; position:relative;">🔔 Pengingat Pembayaran <span id="drawerReminderBadge" style="display:none; background:#ef4444; color:#fff; font-size:.6rem; font-weight:700; border-radius:10px; padding:1px 6px; margin-left:auto;"></span></button>
         <div style="height:1px; background:#eee; margin:4px 0;"></div>
         <button onclick="drawerAction(logoutToLockScreen)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#f5f5f5; color:#1a1a1a; border:1.5px solid #ddd; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">🔄 Ganti Akun</button>
+    </div>
+</div>
+
+<!-- ===== MODAL PENGINGAT PEMBAYARAN ===== -->
+<div id="paymentReminderModal" class="modal" style="z-index:2000;">
+    <div class="modal-content" style="max-width:560px;">
+        <div class="modal-header">
+            <h3>🔔 Jadwal Pembayaran</h3>
+            <button class="modal-close" onclick="closeModal('paymentReminderModal')">×</button>
+        </div>
+        <div style="padding:0 22px 16px;">
+
+            <!-- Notif segera jatuh tempo -->
+            <div id="prUpcomingAlert" style="display:none; background:#fef3c7; border:1.5px solid #f59e0b; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:.75rem; color:#92400e; line-height:1.8;"></div>
+
+            <!-- Daftar pengingat aktif -->
+            <div style="margin-bottom:14px;">
+                <div style="font-size:.75rem; font-weight:700; color:#1a1a1a; margin-bottom:8px;">Daftar Jadwal</div>
+                <div id="prList" style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; padding-right:4px;">
+                    <div id="prEmptyMsg" style="font-size:.72rem; color:#aaa; text-align:center; padding:18px 0;">Belum ada jadwal pembayaran. Tambahkan di bawah.</div>
+                </div>
+            </div>
+
+            <!-- Form tambah/edit -->
+            <div style="border-top:1.5px dashed #1a1a1a; padding-top:14px;">
+                <div style="font-size:.75rem; font-weight:700; margin-bottom:10px;" id="prFormTitle">＋ Tambah Jadwal Baru</div>
+                <input type="hidden" id="prEditId" value="">
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label>Jenis Pembayaran</label>
+                    <input type="text" id="prName" class="form-control" placeholder="Contoh: Listrik, BPJS, Pajak Kendaraan...">
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <div class="form-group" style="flex:1; min-width:120px; margin-bottom:10px;">
+                        <label>Tanggal Jatuh Tempo</label>
+                        <input type="number" id="prDay" class="form-control" min="1" max="31" placeholder="Tanggal (1–31)">
+                    </div>
+                    <div class="form-group" style="flex:1; min-width:120px; margin-bottom:10px;">
+                        <label>Pengulangan</label>
+                        <select id="prRecurrence" class="form-control" onchange="togglePrMonthField()">
+                            <option value="monthly">📅 Bulanan</option>
+                            <option value="yearly">📆 Tahunan</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="prMonthGroup" style="flex:1; min-width:120px; margin-bottom:10px; display:none;">
+                        <label>Bulan</label>
+                        <select id="prMonth" class="form-control">
+                            <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
+                            <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
+                            <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
+                            <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label>Catatan <span style="font-weight:400; color:#aaa;">(opsional)</span></label>
+                    <input type="text" id="prNote" class="form-control" placeholder="Contoh: Via m-banking, estimasi Rp 150.000...">
+                </div>
+                <div id="prFormStatus" style="font-size:.72rem; color:#de350b; margin-bottom:8px; min-height:16px;"></div>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-secondary" style="flex:1;" onclick="cancelPrEdit()">Batal</button>
+                    <button class="btn btn-primary" style="flex:2; background:#d97706; border-color:#d97706;" onclick="savePaymentReminder()">💾 Simpan Jadwal</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -897,5 +977,223 @@
 <script src="js/ai.js"></script>
 <script src="js/settings.js"></script>
 <script src="js/app.js"></script>
+
+<!-- ===== PAYMENT REMINDER SCRIPT ===== -->
+<script>
+(function() {
+    const PR_KEY = 'sinarkeu_payment_reminders';
+    const ALERT_DAYS = 3;
+
+    function loadReminders() {
+        try { return JSON.parse(localStorage.getItem(PR_KEY) || '[]'); } catch(e) { return []; }
+    }
+    function saveReminders(list) {
+        localStorage.setItem(PR_KEY, JSON.stringify(list));
+    }
+    function genId() {
+        return 'pr_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+    }
+
+    // Hitung hari tersisa menuju jatuh tempo berikutnya
+    function getDaysUntilNext(item) {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        let candidate;
+        if (item.recurrence === 'monthly') {
+            // Bulan ini
+            candidate = new Date(today.getFullYear(), today.getMonth(), item.day);
+            if (candidate < today) {
+                // Bulan depan
+                candidate = new Date(today.getFullYear(), today.getMonth() + 1, item.day);
+            }
+        } else {
+            // Tahunan
+            candidate = new Date(today.getFullYear(), item.month - 1, item.day);
+            if (candidate < today) {
+                candidate = new Date(today.getFullYear() + 1, item.month - 1, item.day);
+            }
+        }
+        const diff = Math.round((candidate - today) / (1000 * 60 * 60 * 24));
+        return { days: diff, date: candidate };
+    }
+
+    function formatNextDate(item) {
+        const { date } = getDaysUntilNext(item);
+        return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    function renderPrList() {
+        const list = loadReminders();
+        const container = document.getElementById('prList');
+        const emptyMsg = document.getElementById('prEmptyMsg');
+        const upcomingAlert = document.getElementById('prUpcomingAlert');
+        if (!container) return;
+
+        if (list.length === 0) {
+            emptyMsg.style.display = 'block';
+            container.innerHTML = '';
+            container.appendChild(emptyMsg);
+            upcomingAlert.style.display = 'none';
+            return;
+        }
+        emptyMsg.style.display = 'none';
+
+        // Sort by days until next
+        const sorted = list.map(item => ({ item, ...getDaysUntilNext(item) }))
+                           .sort((a, b) => a.days - b.days);
+
+        // Upcoming alert inside modal
+        const urgent = sorted.filter(s => s.days <= ALERT_DAYS);
+        if (urgent.length > 0) {
+            upcomingAlert.style.display = 'block';
+            upcomingAlert.innerHTML = '⚠️ <strong>Segera jatuh tempo:</strong><br>' +
+                urgent.map(s => {
+                    const label = s.days === 0 ? '🔴 Hari ini!' : `🟡 ${s.days} hari lagi`;
+                    return `• ${s.item.name} — ${formatNextDate(s.item)} <strong>${label}</strong>`;
+                }).join('<br>');
+        } else {
+            upcomingAlert.style.display = 'none';
+        }
+
+        container.innerHTML = '';
+        sorted.forEach(({ item, days }) => {
+            const isUrgent = days <= ALERT_DAYS;
+            const recLabel = item.recurrence === 'monthly'
+                ? `Bulanan — tgl ${item.day}`
+                : `Tahunan — ${['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][item.month-1]} tgl ${item.day}`;
+            const dayLabel = days === 0 ? '🔴 Hari ini!' : days <= ALERT_DAYS ? `🟡 ${days} hari lagi` : `🟢 ${days} hari lagi`;
+
+            const el = document.createElement('div');
+            el.style.cssText = `display:flex; align-items:center; gap:10px; background:${isUrgent ? '#fef3c7' : '#f9fafb'}; border:1.5px solid ${isUrgent ? '#f59e0b' : '#e5e7eb'}; border-radius:8px; padding:10px 12px;`;
+            el.innerHTML = `
+                <div style="flex:1; min-width:0;">
+                    <div style="font-size:.8rem; font-weight:700; color:#1a1a1a;">${item.name}</div>
+                    <div style="font-size:.68rem; color:#666; margin-top:2px;">${recLabel} &nbsp;·&nbsp; Berikutnya: ${formatNextDate(item)}</div>
+                    ${item.note ? `<div style="font-size:.65rem; color:#888; margin-top:2px; font-style:italic;">${item.note}</div>` : ''}
+                </div>
+                <div style="font-size:.68rem; font-weight:700; white-space:nowrap; color:${isUrgent ? '#92400e' : '#374151'};">${dayLabel}</div>
+                <div style="display:flex; gap:4px;">
+                    <button onclick="editPaymentReminder('${item.id}')" style="background:none; border:1px solid #d1d5db; border-radius:5px; padding:3px 7px; cursor:pointer; font-size:.7rem;" title="Edit">✏️</button>
+                    <button onclick="deletePaymentReminder('${item.id}')" style="background:none; border:1px solid #fca5a5; border-radius:5px; padding:3px 7px; cursor:pointer; font-size:.7rem; color:#ef4444;" title="Hapus">🗑️</button>
+                </div>
+            `;
+            container.appendChild(el);
+        });
+    }
+
+    function updateBannerAndBadge() {
+        const list = loadReminders();
+        const urgent = list.map(item => ({ item, ...getDaysUntilNext(item) }))
+                           .filter(s => s.days <= ALERT_DAYS)
+                           .sort((a, b) => a.days - b.days);
+
+        const banner = document.getElementById('paymentReminderBanner');
+        const bannerText = document.getElementById('paymentReminderBannerText');
+        const badge = document.getElementById('reminderBadge');
+        const drawerBadge = document.getElementById('drawerReminderBadge');
+
+        if (urgent.length > 0) {
+            if (banner) {
+                banner.style.display = 'block';
+                bannerText.innerHTML = urgent.map(s => {
+                    const label = s.days === 0 ? '<strong style="color:#ef4444">Hari ini!</strong>' : `<strong>${s.days} hari lagi</strong>`;
+                    return `🔔 <strong>${s.item.name}</strong> — ${formatNextDate(s.item)} · ${label}`;
+                }).join('<br>');
+            }
+            if (badge) { badge.style.display = 'inline-block'; badge.textContent = urgent.length; }
+            if (drawerBadge) { drawerBadge.style.display = 'inline-block'; drawerBadge.textContent = urgent.length + ' mendesak'; }
+        } else {
+            if (banner) banner.style.display = 'none';
+            if (badge) badge.style.display = 'none';
+            if (drawerBadge) drawerBadge.style.display = 'none';
+        }
+    }
+
+    window.openPaymentReminderModal = function() {
+        renderPrList();
+        cancelPrEdit();
+        openModal('paymentReminderModal');
+    };
+
+    window.togglePrMonthField = function() {
+        const rec = document.getElementById('prRecurrence').value;
+        const mg = document.getElementById('prMonthGroup');
+        if (mg) mg.style.display = rec === 'yearly' ? 'block' : 'none';
+    };
+
+    window.savePaymentReminder = function() {
+        const name = (document.getElementById('prName').value || '').trim();
+        const day = parseInt(document.getElementById('prDay').value);
+        const recurrence = document.getElementById('prRecurrence').value;
+        const month = parseInt(document.getElementById('prMonth').value) || 1;
+        const note = (document.getElementById('prNote').value || '').trim();
+        const editId = document.getElementById('prEditId').value;
+        const statusEl = document.getElementById('prFormStatus');
+
+        if (!name) { statusEl.textContent = 'Isi jenis pembayaran.'; return; }
+        if (!day || day < 1 || day > 31) { statusEl.textContent = 'Tanggal harus antara 1–31.'; return; }
+        statusEl.textContent = '';
+
+        let list = loadReminders();
+        if (editId) {
+            list = list.map(item => item.id === editId ? { ...item, name, day, recurrence, month, note } : item);
+        } else {
+            list.push({ id: genId(), name, day, recurrence, month, note, createdAt: new Date().toISOString() });
+        }
+        saveReminders(list);
+        renderPrList();
+        updateBannerAndBadge();
+        cancelPrEdit();
+        if (typeof showToast === 'function') showToast('✅', 'Jadwal pembayaran disimpan!');
+    };
+
+    window.editPaymentReminder = function(id) {
+        const list = loadReminders();
+        const item = list.find(r => r.id === id);
+        if (!item) return;
+        document.getElementById('prEditId').value = item.id;
+        document.getElementById('prName').value = item.name;
+        document.getElementById('prDay').value = item.day;
+        document.getElementById('prRecurrence').value = item.recurrence;
+        document.getElementById('prMonth').value = item.month || 1;
+        document.getElementById('prNote').value = item.note || '';
+        document.getElementById('prFormTitle').textContent = '✏️ Edit Jadwal';
+        document.getElementById('prFormStatus').textContent = '';
+        window.togglePrMonthField();
+    };
+
+    window.deletePaymentReminder = function(id) {
+        if (!confirm('Hapus jadwal pembayaran ini?')) return;
+        let list = loadReminders().filter(r => r.id !== id);
+        saveReminders(list);
+        renderPrList();
+        updateBannerAndBadge();
+        if (typeof showToast === 'function') showToast('🗑️', 'Jadwal dihapus.');
+    };
+
+    window.cancelPrEdit = function() {
+        document.getElementById('prEditId').value = '';
+        document.getElementById('prName').value = '';
+        document.getElementById('prDay').value = '';
+        document.getElementById('prRecurrence').value = 'monthly';
+        document.getElementById('prMonth').value = '1';
+        document.getElementById('prNote').value = '';
+        document.getElementById('prFormTitle').textContent = '＋ Tambah Jadwal Baru';
+        document.getElementById('prFormStatus').textContent = '';
+        const mg = document.getElementById('prMonthGroup');
+        if (mg) mg.style.display = 'none';
+    };
+
+    // Init on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Slight delay to let app initialize first
+        setTimeout(updateBannerAndBadge, 1200);
+        // Check every hour
+        setInterval(updateBannerAndBadge, 60 * 60 * 1000);
+    });
+    // Also run now in case DOM is already ready
+    if (document.readyState !== 'loading') setTimeout(updateBannerAndBadge, 1200);
+})();
+</script>
 </body>
 </html>
