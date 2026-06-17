@@ -1001,5 +1001,517 @@
 <script src="js/settings.js"></script>
 <script src="js/app.js"></script>
 
+<!-- ===== PATCH: SINKRONISASI ANGGARAN & JADWAL PEMBAYARAN ANTAR PERANGKAT ===== -->
+<!--
+  PATCH ini mensinkronkan:
+    1. Anggaran Bulanan (default/template)   → localStorage key: defaultBudget_{bookId}
+    2. Anggaran Bulanan Khusus per bulan     → localStorage key: budget_{bookId}_{YYYY-MM}
+    3. Anggaran Tahunan                      → localStorage key: annualBudget_{bookId}
+    4. Jadwal Pembayaran                     → localStorage key: paymentReminders_{bookId}
+
+  Cara kerja:
+    - Setiap kali data disimpan, otomatis push ke Supabase (tabel: settings_sync)
+    - Saat load/switch buku, pull dari Supabase dan bandingkan updated_at
+    - Data yang lebih baru (cloud vs lokal) menang (last-write-wins)
+    - Pull otomatis setiap 30 detik (sama dengan interval sync transaksi)
+
+  Syarat Supabase:
+    Jalankan SQL ini sekali di Supabase SQL Editor:
+
+    CREATE TABLE IF NOT EXISTS settings_sync (
+      id TEXT PRIMARY KEY,
+      book_id TEXT NOT NULL,
+      setting_key TEXT NOT NULL,
+      value TEXT NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      device_id TEXT,
+      UNIQUE(book_id, setting_key)
+    );
+    CREATE INDEX IF NOT EXISTS idx_settings_sync_book ON settings_sync(book_id);
+-->
+<script>
+(function() {
+'use strict';
+
+// ─── Utilitas ───────────────────────────────────────────────────────────────
+
+const PATCH_VERSION = '1.0.3';
+const SYNC_KEYS = ['defaultBudget', 'budget_monthly', 'annualBudget', 'paymentReminders'];
+let _patchReady = false;
+let _syncIntervalId = null;
+
+function _log(msg, ...args) {
+  console.log(`[SyncPatch v${PATCH_VERSION}]`, msg, ...args);
+}
+
+function _getSupabase() {
+  // Coba ambil client Supabase yang sudah dibuat oleh app utama
+  if (window._supabaseClient) return window._supabaseClient;
+  if (window.supabaseClient) return window.supabaseClient;
+  // Fallback: coba buat dari localStorage
+  try {
+    const accounts = JSON.parse(localStorage.getItem('sinarkeu_accounts') || '[]');
+    const activeId = localStorage.getItem('sinarkeu_active_account');
+    const acc = accounts.find(a => a.id === activeId) || accounts[0];
+    if (!acc) return null;
+    // Dekripsi kredensial jika tersedia via fungsi app
+    if (window._supabaseUrl && window._supabaseKey) {
+      return window.supabase.createClient(window._supabaseUrl, window._supabaseKey);
+    }
+  } catch(e) {}
+  return null;
+}
+
+function _getDeviceId() {
+  let did = localStorage.getItem('sinarkeu_device_id');
+  if (!did) {
+    did = 'dev_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now();
+    localStorage.setItem('sinarkeu_device_id', did);
+  }
+  return did;
+}
+
+function _getCurrentBookId() {
+  // Ambil dari select element atau variabel global app
+  const sel = document.getElementById('currentBookSelect');
+  if (sel && sel.value) return sel.value;
+  if (window.currentBookId) return window.currentBookId;
+  if (window.activeBookId) return window.activeBookId;
+  return null;
+}
+
+function _now() {
+  return new Date().toISOString();
+}
+
+// ─── Push ke Supabase ───────────────────────────────────────────────────────
+
+async function pushSettingToCloud(bookId, settingKey, value) {
+  const sb = _getSupabase();
+  if (!sb) return { ok: false, reason: 'no_client' };
+  
+  const id = `${bookId}__${settingKey}`;
+  const payload = {
+    id,
+    book_id: bookId,
+    setting_key: settingKey,
+    value: JSON.stringify(value),
+    updated_at: _now(),
+    device_id: _getDeviceId()
+  };
+
+  try {
+    const { error } = await sb
+      .from('settings_sync')
+      .upsert(payload, { onConflict: 'id' });
+    if (error) throw error;
+    _log(`Push OK: ${settingKey} (book: ${bookId})`);
+    return { ok: true };
+  } catch(e) {
+    _log(`Push FAIL: ${settingKey}`, e.message);
+    return { ok: false, reason: e.message };
+  }
+}
+
+// ─── Pull dari Supabase ─────────────────────────────────────────────────────
+
+async function pullSettingsFromCloud(bookId) {
+  const sb = _getSupabase();
+  if (!sb) return { ok: false, reason: 'no_client' };
+
+  try {
+    const { data, error } = await sb
+      .from('settings_sync')
+      .select('setting_key, value, updated_at, device_id')
+      .eq('book_id', bookId);
+    if (error) throw error;
+    if (!data || data.length === 0) return { ok: true, updated: 0 };
+
+    let updated = 0;
+    const myDevice = _getDeviceId();
+
+    for (const row of data) {
+      const { setting_key, value, updated_at, device_id } = row;
+      
+      // Skip kalau data dari perangkat ini sendiri (sudah up-to-date)
+      if (device_id === myDevice) continue;
+
+      const localKey = _buildLocalKey(bookId, setting_key);
+      const cloudTime = new Date(updated_at).getTime();
+
+      // Bandingkan dengan timestamp lokal
+      const localMeta = localStorage.getItem(`${localKey}__updated_at`);
+      const localTime = localMeta ? new Date(localMeta).getTime() : 0;
+
+      if (cloudTime > localTime) {
+        // Cloud lebih baru → pakai cloud
+        try {
+          const parsed = JSON.parse(value);
+          localStorage.setItem(localKey, JSON.stringify(parsed));
+          localStorage.setItem(`${localKey}__updated_at`, updated_at);
+          _log(`Pull applied: ${setting_key} (cloud: ${updated_at})`);
+          updated++;
+        } catch(parseErr) {
+          _log(`Parse fail: ${setting_key}`, parseErr.message);
+        }
+      }
+    }
+
+    // Jika ada yang diperbarui, refresh UI
+    if (updated > 0) {
+      _refreshUI();
+    }
+
+    return { ok: true, updated };
+  } catch(e) {
+    _log(`Pull FAIL (book: ${bookId})`, e.message);
+    return { ok: false, reason: e.message };
+  }
+}
+
+function _buildLocalKey(bookId, settingKey) {
+  // Konversi setting_key cloud ke localStorage key
+  if (settingKey === 'defaultBudget') return `defaultBudget_${bookId}`;
+  if (settingKey === 'annualBudget')  return `annualBudget_${bookId}`;
+  if (settingKey === 'paymentReminders') return `paymentReminders_${bookId}`;
+  // budget_monthly_YYYY-MM
+  if (settingKey.startsWith('budget_monthly_')) {
+    const ym = settingKey.replace('budget_monthly_', '');
+    return `budget_${bookId}_${ym}`;
+  }
+  return `${settingKey}_${bookId}`;
+}
+
+function _buildCloudKey(localKey, bookId) {
+  // Konversi localStorage key ke setting_key cloud
+  if (localKey === `defaultBudget_${bookId}`) return 'defaultBudget';
+  if (localKey === `annualBudget_${bookId}`)  return 'annualBudget';
+  if (localKey === `paymentReminders_${bookId}`) return 'paymentReminders';
+  // budget_{bookId}_{YYYY-MM}
+  const m = localKey.match(/^budget_(.+)_(\d{4}-\d{2})$/);
+  if (m) return `budget_monthly_${m[2]}`;
+  return null;
+}
+
+function _refreshUI() {
+  try {
+    if (typeof window.renderBudget === 'function') window.renderBudget();
+  } catch(e) {}
+  try {
+    if (typeof window.renderPaymentReminders === 'function') window.renderPaymentReminders();
+  } catch(e) {}
+  try {
+    if (typeof window.renderFinancialCards === 'function') window.renderFinancialCards();
+  } catch(e) {}
+  try {
+    if (typeof window.updateFinancialCards === 'function') window.updateFinancialCards();
+  } catch(e) {}
+  try {
+    if (typeof window.render === 'function') window.render();
+  } catch(e) {}
+}
+
+// ─── Intercept fungsi simpan ─────────────────────────────────────────────────
+
+function _interceptSave() {
+  // 1. saveBudget (anggaran bulanan khusus per bulan)
+  const _origSaveBudget = window.saveBudget;
+  if (typeof _origSaveBudget === 'function') {
+    window.saveBudget = async function(...args) {
+      const result = _origSaveBudget.apply(this, args);
+      await _syncAfterSaveBudget();
+      return result;
+    };
+    _log('Intercepted: saveBudget');
+  }
+
+  // 2. saveDefaultBudget (anggaran bulanan template/dasar)
+  const _origSaveDefault = window.saveDefaultBudget;
+  if (typeof _origSaveDefault === 'function') {
+    window.saveDefaultBudget = async function(...args) {
+      const result = _origSaveDefault.apply(this, args);
+      await _syncAfterSaveDefaultBudget();
+      return result;
+    };
+    _log('Intercepted: saveDefaultBudget');
+  }
+
+  // 3. saveAnnualBudget (anggaran tahunan)
+  const _origSaveAnnual = window.saveAnnualBudget;
+  if (typeof _origSaveAnnual === 'function') {
+    window.saveAnnualBudget = async function(...args) {
+      const result = _origSaveAnnual.apply(this, args);
+      await _syncAfterSaveAnnualBudget();
+      return result;
+    };
+    _log('Intercepted: saveAnnualBudget');
+  }
+
+  // 4. savePaymentReminderHandler (jadwal pembayaran)
+  const _origSavePR = window.savePaymentReminderHandler;
+  if (typeof _origSavePR === 'function') {
+    window.savePaymentReminderHandler = async function(...args) {
+      const result = _origSavePR.apply(this, args);
+      await _syncAfterSavePaymentReminders();
+      return result;
+    };
+    _log('Intercepted: savePaymentReminderHandler');
+  }
+
+  // 5. deletePaymentReminder (hapus jadwal pembayaran)
+  const _origDelPR = window.deletePaymentReminder;
+  if (typeof _origDelPR === 'function') {
+    window.deletePaymentReminder = async function(...args) {
+      const result = _origDelPR.apply(this, args);
+      await _syncAfterSavePaymentReminders();
+      return result;
+    };
+    _log('Intercepted: deletePaymentReminder');
+  }
+}
+
+// ─── Sync setelah simpan ─────────────────────────────────────────────────────
+
+async function _syncAfterSaveBudget() {
+  const bookId = _getCurrentBookId();
+  if (!bookId) return;
+  // Cari semua key budget_{bookId}_{YYYY-MM} di localStorage
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key) continue;
+    const m = key.match(/^budget_(.+)_(\d{4}-\d{2})$/);
+    if (m && m[1] === bookId) {
+      const ym = m[2];
+      try {
+        const val = JSON.parse(localStorage.getItem(key));
+        // Simpan timestamp lokal
+        const ts = _now();
+        localStorage.setItem(`${key}__updated_at`, ts);
+        await pushSettingToCloud(bookId, `budget_monthly_${ym}`, val);
+      } catch(e) {}
+    }
+  }
+}
+
+async function _syncAfterSaveDefaultBudget() {
+  const bookId = _getCurrentBookId();
+  if (!bookId) return;
+  const key = `defaultBudget_${bookId}`;
+  try {
+    const val = JSON.parse(localStorage.getItem(key) || 'null');
+    if (val === null) return;
+    const ts = _now();
+    localStorage.setItem(`${key}__updated_at`, ts);
+    await pushSettingToCloud(bookId, 'defaultBudget', val);
+  } catch(e) { _log('Sync defaultBudget fail', e.message); }
+}
+
+async function _syncAfterSaveAnnualBudget() {
+  const bookId = _getCurrentBookId();
+  if (!bookId) return;
+  const key = `annualBudget_${bookId}`;
+  try {
+    const val = JSON.parse(localStorage.getItem(key) || 'null');
+    if (val === null) return;
+    const ts = _now();
+    localStorage.setItem(`${key}__updated_at`, ts);
+    await pushSettingToCloud(bookId, 'annualBudget', val);
+  } catch(e) { _log('Sync annualBudget fail', e.message); }
+}
+
+async function _syncAfterSavePaymentReminders() {
+  const bookId = _getCurrentBookId();
+  if (!bookId) return;
+  const key = `paymentReminders_${bookId}`;
+  try {
+    const val = JSON.parse(localStorage.getItem(key) || 'null');
+    if (val === null) return;
+    const ts = _now();
+    localStorage.setItem(`${key}__updated_at`, ts);
+    await pushSettingToCloud(bookId, 'paymentReminders', val);
+  } catch(e) { _log('Sync paymentReminders fail', e.message); }
+}
+
+// ─── Pull otomatis saat switch buku ─────────────────────────────────────────
+
+function _interceptSwitchBook() {
+  const _origSwitch = window.switchBook;
+  if (typeof _origSwitch === 'function') {
+    window.switchBook = async function(bookId, ...args) {
+      const result = _origSwitch.apply(this, [bookId, ...args]);
+      // Delay sedikit agar UI selesai render
+      setTimeout(() => pullSettingsFromCloud(bookId), 800);
+      return result;
+    };
+    _log('Intercepted: switchBook');
+  }
+}
+
+// ─── Migrasi & cek status (dipanggil dari tombol di UI) ──────────────────────
+
+window.runFullMigration = async function() {
+  const statusEl = document.getElementById('migrationStatus');
+  const bookId = _getCurrentBookId();
+
+  if (!bookId) {
+    if (statusEl) statusEl.textContent = '❌ Tidak ada buku aktif. Pilih buku dulu.';
+    return;
+  }
+
+  const sb = _getSupabase();
+  if (!sb) {
+    if (statusEl) statusEl.textContent = '❌ Tidak terhubung ke Supabase. Pastikan koneksi aktif.';
+    return;
+  }
+
+  if (statusEl) statusEl.innerHTML = '⏳ Sedang migrasi data...';
+  let pushed = 0;
+
+  // Push defaultBudget
+  const db = localStorage.getItem(`defaultBudget_${bookId}`);
+  if (db) {
+    try {
+      const ts = _now();
+      localStorage.setItem(`defaultBudget_${bookId}__updated_at`, ts);
+      const r = await pushSettingToCloud(bookId, 'defaultBudget', JSON.parse(db));
+      if (r.ok) pushed++;
+    } catch(e) {}
+  }
+
+  // Push annualBudget
+  const ab = localStorage.getItem(`annualBudget_${bookId}`);
+  if (ab) {
+    try {
+      const ts = _now();
+      localStorage.setItem(`annualBudget_${bookId}__updated_at`, ts);
+      const r = await pushSettingToCloud(bookId, 'annualBudget', JSON.parse(ab));
+      if (r.ok) pushed++;
+    } catch(e) {}
+  }
+
+  // Push paymentReminders
+  const pr = localStorage.getItem(`paymentReminders_${bookId}`);
+  if (pr) {
+    try {
+      const ts = _now();
+      localStorage.setItem(`paymentReminders_${bookId}__updated_at`, ts);
+      const r = await pushSettingToCloud(bookId, 'paymentReminders', JSON.parse(pr));
+      if (r.ok) pushed++;
+    } catch(e) {}
+  }
+
+  // Push semua budget bulanan khusus
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key) continue;
+    const m = key.match(/^budget_(.+)_(\d{4}-\d{2})$/);
+    if (m && m[1] === bookId) {
+      try {
+        const val = JSON.parse(localStorage.getItem(key));
+        const ts = _now();
+        localStorage.setItem(`${key}__updated_at`, ts);
+        const r = await pushSettingToCloud(bookId, `budget_monthly_${m[2]}`, val);
+        if (r.ok) pushed++;
+      } catch(e) {}
+    }
+  }
+
+  if (statusEl) statusEl.innerHTML = `✅ Migrasi selesai: ${pushed} data berhasil dikirim ke cloud.`;
+  _log(`Migrasi selesai: ${pushed} item`);
+};
+
+window.checkMigrationStatus = async function() {
+  const statusEl = document.getElementById('migrationStatus');
+  const bookId = _getCurrentBookId();
+  if (!bookId) {
+    if (statusEl) statusEl.textContent = '❌ Tidak ada buku aktif.';
+    return;
+  }
+  const sb = _getSupabase();
+  if (!sb) {
+    if (statusEl) statusEl.textContent = '❌ Tidak terhubung ke Supabase.';
+    return;
+  }
+  if (statusEl) statusEl.textContent = '⏳ Memeriksa...';
+  try {
+    const { data, error } = await sb
+      .from('settings_sync')
+      .select('setting_key, updated_at, device_id')
+      .eq('book_id', bookId);
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      if (statusEl) statusEl.innerHTML = '⚠️ Belum ada data di cloud. Klik <b>Migrasi Semua Data</b> untuk memulai.';
+      return;
+    }
+    const lines = data.map(r => {
+      const d = new Date(r.updated_at);
+      const dStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      const isMe = r.device_id === _getDeviceId() ? ' (perangkat ini)' : '';
+      return `✅ ${r.setting_key} — ${dStr}${isMe}`;
+    });
+    if (statusEl) statusEl.innerHTML = `<b>${data.length} data tersinkron:</b><br>${lines.join('<br>')}`;
+  } catch(e) {
+    if (statusEl) statusEl.textContent = `❌ Gagal cek: ${e.message}`;
+  }
+};
+
+// ─── Auto sync periodik ──────────────────────────────────────────────────────
+
+async function _autoSync() {
+  const bookId = _getCurrentBookId();
+  if (!bookId) return;
+  const result = await pullSettingsFromCloud(bookId);
+  if (result.ok && result.updated > 0) {
+    _log(`Auto-sync: ${result.updated} pembaruan dari cloud`);
+  }
+}
+
+function _startAutoSync() {
+  if (_syncIntervalId) clearInterval(_syncIntervalId);
+  _syncIntervalId = setInterval(_autoSync, 30000); // setiap 30 detik
+  _log('Auto-sync dimulai (interval: 30 detik)');
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+
+function _init() {
+  _log('Inisialisasi patch sinkronisasi...');
+  _interceptSave();
+  _interceptSwitchBook();
+  _startAutoSync();
+
+  // Pull data saat pertama load (delay agar app utama selesai init)
+  setTimeout(async () => {
+    const bookId = _getCurrentBookId();
+    if (bookId) {
+      _log(`Pull awal untuk buku: ${bookId}`);
+      await pullSettingsFromCloud(bookId);
+    }
+  }, 2500);
+
+  _patchReady = true;
+  _log('Patch aktif ✅');
+
+  // Expose untuk debugging
+  window._syncPatch = {
+    version: PATCH_VERSION,
+    push: pushSettingToCloud,
+    pull: pullSettingsFromCloud,
+    syncNow: _autoSync,
+    getDeviceId: _getDeviceId,
+  };
+}
+
+// Tunggu app utama selesai load
+if (document.readyState === 'complete') {
+  setTimeout(_init, 1500);
+} else {
+  window.addEventListener('load', () => setTimeout(_init, 1500));
+}
+
+})();
+</script>
+<!-- ===== AKHIR PATCH SINKRONISASI ===== -->
+
 </body>
 </html>
