@@ -136,3 +136,108 @@ window.doFirstTimeSetup = async function() {
         await window.continueAppInit();
     }, 900);
 };
+
+// ============================================================
+// SETTINGS.JS - FUNGSI MIGRASI & STATUS
+// ============================================================
+
+window.runFullMigration = async function() {
+    const bookId = window.currentBookId;
+    const st = document.getElementById('migrationStatus');
+    
+    if (!window.isOnline()) {
+        st.style.color = '#de350b';
+        st.innerText = '❌ Anda harus ONLINE untuk migrasi!';
+        return;
+    }
+    
+    st.style.color = '#cc7b00';
+    st.innerText = '⏳ Memulai migrasi data...';
+    
+    try {
+        st.innerText = '⏳ Migrasi jadwal pembayaran...';
+        await window.migratePaymentReminders(bookId);
+        
+        st.innerText = '⏳ Migrasi anggaran...';
+        await window.migrateAllBudgets(bookId);
+        
+        st.innerText = '⏳ Sinkronisasi akhir...';
+        await window.syncAllPaymentReminders(bookId);
+        await window.syncAllBudgetsToCloud(bookId);
+        
+        st.style.color = '#00875a';
+        st.innerText = '✅ Migrasi selesai! Semua data tersinkronisasi ke cloud.';
+        window.showToast('✅ Migrasi data berhasil!', 'success');
+        
+        await window.pullAllSettings();
+        await window.pullPaymentRemindersFromCloud(bookId);
+        window.renderBudget();
+        await window.renderPaymentReminders();
+        
+    } catch (e) {
+        st.style.color = '#de350b';
+        st.innerText = `❌ Gagal migrasi: ${e.message}`;
+        console.error('[Migration] Error:', e);
+    }
+};
+
+window.checkMigrationStatus = async function() {
+    const bookId = window.currentBookId;
+    const st = document.getElementById('migrationStatus');
+    
+    if (!window.isOnline()) {
+        st.style.color = '#de350b';
+        st.innerText = '❌ Anda harus ONLINE untuk cek status!';
+        return;
+    }
+    
+    st.style.color = '#cc7b00';
+    st.innerText = '⏳ Memeriksa status...';
+    
+    try {
+        const prResult = await window.callSupabaseAPI(
+            'payment_reminders',
+            'GET',
+            null,
+            `?book_id=eq.${bookId}&limit=1`
+        );
+        const hasPR = prResult && Array.isArray(prResult) && prResult.length > 0;
+        
+        const budgetResult = await window.callSupabaseAPI(
+            'settings',
+            'GET',
+            null,
+            `?book_id=eq.${bookId}&key=eq.default_budget&limit=1`
+        );
+        const hasBudget = budgetResult && Array.isArray(budgetResult) && budgetResult.length > 0;
+        
+        const annualResult = await window.callSupabaseAPI(
+            'settings',
+            'GET',
+            null,
+            `?book_id=eq.${bookId}&key=eq.annual_budget&limit=1`
+        );
+        const hasAnnual = annualResult && Array.isArray(annualResult) && annualResult.length > 0;
+        
+        let status = [];
+        if (hasPR) status.push('✅ Jadwal pembayaran');
+        else status.push('❌ Jadwal pembayaran (belum di-cloud)');
+        
+        if (hasBudget) status.push('✅ Anggaran dasar & bulanan');
+        else status.push('❌ Anggaran (belum di-cloud)');
+        
+        if (hasAnnual) status.push('✅ Anggaran tahunan');
+        else status.push('❌ Anggaran tahunan (belum di-cloud)');
+        
+        st.style.color = '#1a1a1a';
+        st.innerHTML = status.join('<br>');
+        
+        if (!hasPR || !hasBudget || !hasAnnual) {
+            st.innerHTML += '<br><span style="color:#cc7b00;">💡 Klik "Migrasi Semua Data" untuk menyinkronkan.</span>';
+        }
+        
+    } catch (e) {
+        st.style.color = '#de350b';
+        st.innerText = `❌ Gagal cek status: ${e.message}`;
+    }
+};
