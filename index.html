@@ -18,7 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -65,23 +65,23 @@
 
             <h5>👤 2. Manajemen Akun</h5>
             <ul>
-                <li>Klik tombol <strong>“Ganti Akun”</strong> di pojok kanan atas.</li>
+                <li>Klik tombol <strong>"Ganti Akun"</strong> di pojok kanan atas.</li>
                 <li>Setiap akun terhubung ke <em>database Supabase yang berbeda</em>. Cocok untuk memisahkan keuangan pribadi, bisnis, atau keluarga.</li>
-                <li>Untuk menambah akun, buka <strong>“Manajer Akun”</strong> dari layar kunci atau dari menu <strong>⚙️ Setelan</strong>.</li>
+                <li>Untuk menambah akun, buka <strong>"Manajer Akun"</strong> dari layar kunci atau dari menu <strong>⚙️ Setelan</strong>.</li>
                 <li>Setiap akun memiliki password enkripsi sendiri – Anda akan diminta saat beralih akun.</li>
             </ul>
 
             <h5>📚 3. Buku Kas</h5>
             <ul>
-                <li>Di dalam satu akun, Anda bisa membuat <strong>banyak buku kas</strong> (misal: “Bulanan”, “Investasi”, “Proyek A”).</li>
-                <li>Gunakan dropdown <strong>“BUKU”</strong> di header untuk berpindah buku.</li>
-                <li>Kelola buku (tambah/hapus) melalui tombol <strong>“Kelola”</strong> atau menu <strong>⚙️ Setelan</strong>.</li>
+                <li>Di dalam satu akun, Anda bisa membuat <strong>banyak buku kas</strong> (misal: "Bulanan", "Investasi", "Proyek A").</li>
+                <li>Gunakan dropdown <strong>"BUKU"</strong> di header untuk berpindah buku.</li>
+                <li>Kelola buku (tambah/hapus) melalui tombol <strong>"Kelola"</strong> atau menu <strong>⚙️ Setelan</strong>.</li>
                 <li>Setiap buku punya anggaran, transaksi, dan lognya sendiri.</li>
             </ul>
 
             <h5>💰 4. Transaksi</h5>
             <ul>
-                <li>Tekan tombol <strong>“+ Transaksi”</strong> untuk mencatat pemasukan atau pengeluaran.</li>
+                <li>Tekan tombol <strong>"+ Transaksi"</strong> untuk mencatat pemasukan atau pengeluaran.</li>
                 <li>Isi <strong>jenis</strong>, <strong>kategori</strong> (untuk pengeluaran), <strong>deskripsi</strong>, dan <strong>jumlah</strong>.</li>
                 <li>Anda bisa <strong>melampirkan foto nota</strong> – gambar akan diunggah ke Supabase Storage.</li>
                 <li>Edit atau hapus transaksi dengan menekan tombol <strong>⋮</strong> di kolom Aksi.</li>
@@ -90,16 +90,16 @@
 
             <h5>📊 5. Anggaran</h5>
             <ul>
-                <li><strong>Anggaran Dasar</strong> – Template yang berlaku otomatis untuk setiap bulan baru. Atur melalui tombol <strong>“Dasar”</strong> di panel anggaran.</li>
-                <li><strong>Anggaran Bulanan</strong> – Klik <strong>“Anggarkan”</strong> untuk mengatur anggaran khusus untuk bulan tertentu. Ini akan menimpa Anggaran Dasar hanya untuk bulan itu.</li>
+                <li><strong>Anggaran Dasar</strong> – Template yang berlaku otomatis untuk setiap bulan baru. Atur melalui tombol <strong>"Dasar"</strong> di panel anggaran.</li>
+                <li><strong>Anggaran Bulanan</strong> – Klik <strong>"Anggarkan"</strong> untuk mengatur anggaran khusus untuk bulan tertentu. Ini akan menimpa Anggaran Dasar hanya untuk bulan itu.</li>
                 <li>Progress anggaran terlihat di panel atas (target, realisasi, sisa).</li>
                 <li>Sistem memberi <strong>peringatan visual</strong> dan <strong>notifikasi Telegram</strong> saat anggaran mencapai 80% dan 100%.</li>
             </ul>
 
             <h5>📈 6. Laporan &amp; Grafik</h5>
             <ul>
-                <li>Panel <strong>“Pengeluaran per Kategori”</strong> menampilkan diagram donat – klik judulnya untuk membuka/tutup.</li>
-                <li>Tombol <strong>“Laporan”</strong> membuka laporan bulanan lengkap dengan tabel perbandingan target vs realisasi, serta grafik batang.</li>
+                <li>Panel <strong>"Pengeluaran per Kategori"</strong> menampilkan diagram donat – klik judulnya untuk membuka/tutup.</li>
+                <li>Tombol <strong>"Laporan"</strong> membuka laporan bulanan lengkap dengan tabel perbandingan target vs realisasi, serta grafik batang.</li>
                 <li>Laporan bisa diekspor ke <strong>PDF</strong> dengan tombol di dalam modal.</li>
             </ul>
 
@@ -107,7 +107,7 @@
             <ul>
                 <li>Fitur ini membutuhkan <strong>URL Cloudflare Worker</strong> yang Anda deploy sendiri (gratis).</li>
                 <li>Masukkan URL di <strong>⚙️ Setelan → Analisis AI</strong>.</li>
-                <li>Setelah dikonfigurasi, klik <strong>“Analisis AI”</strong> di dashboard, pilih periode dan jenis analisis, lalu dapatkan wawasan dari Groq AI (LLaMA).</li>
+                <li>Setelah dikonfigurasi, klik <strong>"Analisis AI"</strong> di dashboard, pilih periode dan jenis analisis, lalu dapatkan wawasan dari Groq AI (LLaMA).</li>
             </ul>
 
             <h5>📲 8. Notifikasi Telegram</h5>
@@ -129,7 +129,7 @@
             <ul>
                 <li>Ekspor ke <strong>CSV</strong> untuk dibuka di Excel, atau <strong>JSON</strong> untuk arsip.</li>
                 <li>Impor data dari file JSON (duplikat ID akan dilewati).</li>
-                <li>Fitur <strong>“Arsipkan JSON &amp; Kosongkan Database”</strong> di <strong>⚙️ Setelan</strong> – berguna untuk membersihkan data lama dan tetap mempertahankan arsip.</li>
+                <li>Fitur <strong>"Arsipkan JSON &amp; Kosongkan Database"</strong> di <strong>⚙️ Setelan</strong> – berguna untuk membersihkan data lama dan tetap mempertahankan arsip.</li>
             </ul>
 
             <h5>📊 11. Fitur Pendukung Lainnya</h5>
@@ -144,7 +144,7 @@
             <ul>
                 <li>Aplikasi bekerja <strong>offline</strong> dalam mode baca‑saja (tambah/edit/hapus dinonaktifkan).</li>
                 <li>Setiap kali koneksi pulih, sinkronisasi terjadi otomatis setiap 30 detik.</li>
-                <li>Tombol <strong>“Sinkronisasi”</strong> di header memicu sinkronisasi penuh manual (pull semua buku &amp; setelan).</li>
+                <li>Tombol <strong>"Sinkronisasi"</strong> di header memicu sinkronisasi penuh manual (pull semua buku &amp; setelan).</li>
             </ul>
 
             <hr style="margin:14px 0;">
@@ -332,7 +332,6 @@
 
 <div id="toastMessage" class="toast-message"><span id="toastIcon">✅</span><span id="toastText"></span></div>
 
-<!-- ===== MODALS (semua modal tetap sama, saya singkat di sini karena panjang) ===== -->
 <!-- Add Modal -->
 <div id="addModal" class="modal">
     <div class="modal-content">
@@ -378,8 +377,6 @@
 <div id="bookManagerModal" class="modal">
     <div class="modal-content">
         <div class="modal-header"><h3>Kelola Buku Kas</h3><button class="modal-close" onclick="closeModal('bookManagerModal')">×</button></div>
-
-        <!-- Storage Estimasi Supabase -->
         <div id="storageEstimPanel" style="background:#f0f8ff; border:1px solid #c5d8ff; border-radius:10px; padding:14px 16px; margin-bottom:16px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
                 <span style="font-size:.75rem; font-weight:700; color:#1a56db;">☁️ Estimasi Storage Supabase</span>
@@ -389,7 +386,6 @@
                 <div style="font-size:.7rem; color:#888; text-align:center; padding:8px 0;">Memuat estimasi storage...</div>
             </div>
         </div>
-
         <div id="bookListContainer"></div>
         <form onsubmit="addNewBook(event)" style="border-top:1px solid #eee; padding-top:16px; margin-bottom:16px"><input type="text" id="newBookName" class="form-control" placeholder="Nama buku baru..." required><button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px">Buat Buku Baru</button></form>
     </div>
@@ -437,7 +433,7 @@
                 <span id="aiWorkerStatusBadge" style="font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:10px; background:#eee; color:#666;">Belum dikonfigurasi</span>
             </div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
-                Masukkan URL Cloudflare Worker milik Anda untuk mengaktifkan fitur Analisis Keuangan AI. Deploy worker sendiri agar tidak bergantung pada worker orang lain.
+                Masukkan URL Cloudflare Worker milik Anda untuk mengaktifkan fitur Analisis Keuangan AI.
             </div>
             <div class="form-group" style="margin-bottom:10px;">
                 <label>Worker URL</label>
@@ -458,7 +454,7 @@
                 <span id="emasApiStatusBadge" style="font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:10px; background:#eee; color:#666;">Belum dikonfigurasi</span>
             </div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
-                Masukkan API key dari <strong>emas.maulanar.my.id</strong> untuk menampilkan harga emas Antam terkini. Daftar gratis di situs tersebut.
+                Masukkan API key dari <strong>emas.maulanar.my.id</strong> untuk menampilkan harga emas Antam terkini.
             </div>
             <div class="form-group" style="margin-bottom:10px;">
                 <label>API Key</label>
@@ -555,8 +551,6 @@
                 <button class="btn btn-secondary" onclick="triggerJsonImport()">📤 Impor</button>
             </div>
             <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)">
-            
-            <!-- Google Sheets -->
             <div style="margin-top:16px; border-top:1px dashed #ddd; padding-top:14px;">
                 <label style="font-size:.7rem; font-weight:600; color:#666; display:block; margin-bottom:6px;">📊 Google Sheets Web App URL</label>
                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -612,7 +606,7 @@
     </div>
 </div>
 
-<!-- ===== MODAL ANGGARAN DASAR (BARU) ===== -->
+<!-- Modal Anggaran Dasar -->
 <div id="defaultBudgetModal" class="modal">
     <div class="modal-content wide">
         <div class="modal-header"><h3>📋 Anggaran Dasar</h3><button class="modal-close" onclick="closeModal('defaultBudgetModal')">×</button></div>
@@ -772,6 +766,7 @@
 <script src="js/book.js"></script>
 <script src="js/transaction.js"></script>
 <script src="js/budget.js"></script>
+<script src="js/render.js"></script>
 <script src="js/report.js"></script>
 <script src="js/backup.js"></script>
 <script src="js/forex.js"></script>
