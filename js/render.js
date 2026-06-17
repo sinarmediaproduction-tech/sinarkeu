@@ -117,9 +117,9 @@ window.updateFinancialCards = function() {
     // Kebutuhan Setahun = Dana Darurat + Anggaran Tahunan
     const kebutuhanSetahun = danaDarurat + anggaranTahunan;
 
-    // Dana Saling Jaga = 30% dari (saldo - dana darurat), min 0
+    // Dana Saling Jaga = 40% dari (saldo - dana darurat), min 0
     const sisaSetelahDarurat = saldoAkhir - danaDarurat;
-    const danaSalingJaga = sisaSetelahDarurat > 0 ? sisaSetelahDarurat * 0.3 : 0;
+    const danaSalingJaga = sisaSetelahDarurat > 0 ? sisaSetelahDarurat * 0.4 : 0;
 
     // Update DOM
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = window.rp(val); };
@@ -141,7 +141,7 @@ window.updateFinancialCards = function() {
         } else {
             cardDSJ.style.borderTopColor = '#00875a';
             cardDSJ.style.background = '';
-            note.innerText = '30% dari saldo setelah dana darurat';
+            note.innerText = '40% dari saldo setelah dana darurat';
             note.style.color = '#888';
         }
     }
