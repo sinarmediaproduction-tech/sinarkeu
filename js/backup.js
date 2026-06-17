@@ -287,19 +287,30 @@ window.saveGoogleSheetsUrl = function() {
     window.showToast('URL Google Sheets tersimpan', 'success');
     window.pushSetting('google_sheets_url', url, 'global');
 };
-window.loadGoogleSheetsUrl = function() {
+window.loadGoogleSheetsUrl = async function() {
     const saved = localStorage.getItem('sk_google_sheets_url') || '';
     const input = document.getElementById('googleSheetsUrlInput');
     if (input) input.value = saved;
     const lastEl = document.getElementById('googleSheetsLastBackup');
-    if (lastEl) {
-        const lastTs = localStorage.getItem('sk_last_gsheets_backup_' + window.currentBookId);
-        if (lastTs) {
-            const d = new Date(lastTs);
-            lastEl.innerText = `Backup terakhir: ${d.toLocaleString('id-ID')}`;
-        } else {
-            lastEl.innerText = 'Belum pernah backup ke Google Sheets.';
-        }
+    if (!lastEl) return;
+    // Coba ambil timestamp dari Supabase agar sinkron antar device
+    let lastTs = localStorage.getItem('sk_last_gsheets_backup_' + window.currentBookId);
+    if (window.isOnline()) {
+        try {
+            const cloudTs = await window.pullSetting('last_gsheets_backup', window.currentBookId);
+            if (cloudTs) {
+                // Pakai mana yang lebih baru
+                if (!lastTs || new Date(cloudTs) > new Date(lastTs)) {
+                    lastTs = cloudTs;
+                    localStorage.setItem('sk_last_gsheets_backup_' + window.currentBookId, lastTs);
+                }
+            }
+        } catch (e) { /* fallback ke localStorage */ }
+    }
+    if (lastTs) {
+        lastEl.innerText = 'Backup terakhir: ' + new Date(lastTs).toLocaleString('id-ID');
+    } else {
+        lastEl.innerText = 'Belum pernah backup ke Google Sheets.';
     }
 };
 window.backupToGoogleSheets = async function() {
@@ -342,12 +353,17 @@ window.backupToGoogleSheets = async function() {
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify(payload)
         });
+        const nowIso = new Date().toISOString();
         const now = new Date().toLocaleString('id-ID');
         setStatus('#00875a', '✅ Data terkirim ke Google Sheets! (' + now + ')');
-        localStorage.setItem('sk_last_gsheets_backup_' + window.currentBookId, new Date().toISOString());
+        localStorage.setItem('sk_last_gsheets_backup_' + window.currentBookId, nowIso);
         const lastEl = document.getElementById('googleSheetsLastBackup');
         if (lastEl) lastEl.innerText = 'Backup terakhir: ' + now;
         window.showToast('✅ Backup ke Google Sheets sukses!', 'success');
+        // Simpan timestamp ke Supabase agar sinkron di semua device
+        if (window.isOnline()) {
+            await window.pushSetting('last_gsheets_backup', nowIso, window.currentBookId);
+        }
         await window.addCloudLog('BACKUP', 'Backup ke Google Sheets: ' + window.txs.length + ' transaksi');
     } catch (e) {
         setStatus('#de350b', '❌ Gagal: ' + e.message + ' — Periksa koneksi internet dan URL Web App.');
