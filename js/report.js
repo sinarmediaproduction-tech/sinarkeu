@@ -35,8 +35,8 @@ function generateMonthlyReport() {
   const year  = parseInt(document.getElementById('reportYear').value);
   const key   = `${year}-${String(month).padStart(2, '0')}`;
 
-  const allTx    = (window.transactions || []).filter(t => {
-    const d = new Date(t.date || t.created_at);
+  const allTx    = (window.txs || []).filter(t => {
+    const d = new Date(t.date);
     return d.getFullYear() === year && (d.getMonth() + 1) === month;
   });
 
@@ -57,7 +57,8 @@ function generateMonthlyReport() {
   const totalBudget = Object.values(budgets).reduce((s, v) => s + (+v || 0), 0);
 
   // Buat HTML untuk modal
-  const bookName = (window.currentBook && window.currentBook.name) ? window.currentBook.name : 'Buku Kas';
+  const _book   = (window.books || []).find(b => b.id === window.currentBookId);
+  const bookName = _book ? _book.name : 'Buku Kas';
   const accName  = document.getElementById('activeAccountLabel')?.textContent || '';
 
   let catRows = cats.length
@@ -145,12 +146,12 @@ function generateMonthlyReport() {
           </thead>
           <tbody>
             ${allTx.length
-              ? allTx.slice().sort((a, b) => new Date(a.date || a.created_at) - new Date(b.date || b.created_at))
+              ? allTx.slice().sort((a, b) => new Date(a.date) - new Date(b.date))
                   .map((t, i) => `
                     <tr style="background:${i % 2 === 0 ? '#fff' : '#fafafa'}; border-top:1px solid #f0f0f0;">
-                      <td style="padding:7px 10px; white-space:nowrap;">${fmtDate(t.date || t.created_at)}</td>
+                      <td style="padding:7px 10px; white-space:nowrap;">${fmtDate(t.date)}</td>
                       <td style="padding:7px 10px;">${t.category || (t.type === 'income' ? 'Pemasukan' : 'Lainnya')}</td>
-                      <td style="padding:7px 10px; color:#444;">${t.description || t.desc || '-'}</td>
+                      <td style="padding:7px 10px; color:#444;">${t.description || '-'}</td>
                       <td style="padding:7px 10px; text-align:right; font-weight:600; color:${t.type === 'income' ? '#006644' : '#bf2600'};">
                         ${t.type === 'income' ? '+' : '-'}${fmtRp(t.amount)}
                       </td>
@@ -170,11 +171,12 @@ function exportReportAsPDF() {
   const month    = parseInt(document.getElementById('reportMonth').value);
   const year     = parseInt(document.getElementById('reportYear').value);
   const key      = `${year}-${String(month).padStart(2, '0')}`;
-  const bookName = (window.currentBook && window.currentBook.name) ? window.currentBook.name : 'Buku Kas';
+  const _book2   = (window.books || []).find(b => b.id === window.currentBookId);
+  const bookName = _book2 ? _book2.name : 'Buku Kas';
   const accName  = document.getElementById('activeAccountLabel')?.textContent?.trim() || 'Sinarkeu';
 
-  const allTx   = (window.transactions || []).filter(t => {
-    const d = new Date(t.date || t.created_at);
+  const allTx   = (window.txs || []).filter(t => {
+    const d = new Date(t.date);
     return d.getFullYear() === year && (d.getMonth() + 1) === month;
   });
 
@@ -192,15 +194,15 @@ function exportReportAsPDF() {
   const totalBudget = Object.values(budgets).reduce((s, v) => s + (+v || 0), 0);
 
   // ── Sorted transactions ──────────────────────────────────
-  const sorted = allTx.slice().sort((a, b) => new Date(a.date || a.created_at) - new Date(b.date || b.created_at));
+  const sorted = allTx.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
 
   // ── Row helpers ──────────────────────────────────────────
   const txRows = sorted.map((t, i) => `
     <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f9f9f9'};">
       <td class="center">${i + 1}</td>
-      <td>${fmtDate(t.date || t.created_at)}</td>
+      <td>${fmtDate(t.date)}</td>
       <td>${t.category || (t.type === 'income' ? 'Pemasukan' : 'Lainnya')}</td>
-      <td>${t.description || t.desc || '-'}</td>
+      <td>${t.description || '-'}</td>
       <td class="money income">${t.type === 'income' ? fmtRp(t.amount) : ''}</td>
       <td class="money expense">${t.type === 'expense' ? fmtRp(t.amount) : ''}</td>
     </tr>`).join('');
