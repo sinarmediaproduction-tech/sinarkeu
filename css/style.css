@@ -1,33 +1,41 @@
 /* ===== SEMUA STYLE SAMA SEPERTI SEBELUMNYA ===== */
 * { margin: 0; padding: 0; box-sizing: border-box; }
+/* Warna default generik untuk tombol tanpa modifier khusus.
+   !important DIHAPUS dengan sengaja: sebelumnya blok ini memaksa semua
+   <button> dan kelas turunannya (termasuk .btn-primary, .btn-danger,
+   .btn-success, .manage-books-btn, bahkan inline style di HTML) jadi
+   abu-abu, karena !important menang melawan specificity apa pun.
+   Tanpa !important, cascade normal berlaku lagi: rule modifier yang lebih
+   spesifik / lebih bawah di file ini, dan inline style, kembali bisa
+   menimpa default abu-abu ini sesuai desain aslinya. */
 button, .btn, .btn-secondary, .btn-success, .btn-warning,
 .manage-books-btn, .btn-icon, .page-btn, .filter-btn,
 .btn-mini, .btn-mini-danger, .date-clear-btn, .modal-close,
 .expense-chart-toggle button {
-    background: #f0f0f0 !important;
-    color: #555 !important;
-    border: 1px solid #ddd !important;
+    background: #f0f0f0;
+    color: #555;
+    border: 1px solid #ddd;
 }
 button:hover:not(:disabled), .btn:hover:not(:disabled),
 .page-btn:hover:not(:disabled), .filter-btn:hover,
 .btn-icon:hover:not(:disabled), .manage-books-btn:hover:not(:disabled) {
-    background: #e2e2e2 !important;
-    border-color: #ccc !important;
+    background: #e2e2e2;
+    border-color: #ccc;
 }
 button:disabled, .btn:disabled, .manage-books-btn:disabled, .btn-icon:disabled, .page-btn:disabled {
-    opacity: 0.4 !important;
+    opacity: 0.4;
     cursor: not-allowed;
 }
 .btn-primary, .filter-btn.active, .page-btn.active,
 .expense-chart-toggle button.active {
-    background: #e8f0fe !important;
-    color: #1a56db !important;
-    border: 1px solid #c5d8ff !important;
+    background: #e8f0fe;
+    color: #1a56db;
+    border: 1px solid #c5d8ff;
 }
 .btn-primary:hover:not(:disabled), .filter-btn.active:hover,
 .page-btn.active:hover:not(:disabled) {
-    background: #d6e4ff !important;
-    border-color: #a8c5ff !important;
+    background: #d6e4ff;
+    border-color: #a8c5ff;
 }
 body {
     font-family: 'Inter', sans-serif;
