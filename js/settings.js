@@ -28,6 +28,7 @@ window.openSetelanModal = function() {
     if (gsStatus) gsStatus.innerText = '';
     window.openModal('setelanModal');
 };
+
 window.testCloudConnection = async function() {
     let urlInput = document.getElementById('supabaseUrlInput').value.trim();
     let keyInput = document.getElementById('supabaseKeyInput').value.trim();
@@ -59,6 +60,7 @@ window.testCloudConnection = async function() {
         window.updateSyncStatusBadge();
     }
 };
+
 window.changePassword = async function() {
     const oldPwd = document.getElementById('changePwdOld').value;
     const newPwd = document.getElementById('changePwdNew').value;
@@ -98,6 +100,7 @@ window.changePassword = async function() {
     document.getElementById('changePwdNew2').value = '';
     window.showToast('Password berhasil diganti 🔐', 'success');
 };
+
 window.doFirstTimeSetup = async function() {
     const url = document.getElementById('setupUrlInput').value.trim();
     const key = document.getElementById('setupKeyInput').value.trim();
@@ -239,5 +242,42 @@ window.checkMigrationStatus = async function() {
     } catch (e) {
         st.style.color = '#de350b';
         st.innerText = `❌ Gagal cek status: ${e.message}`;
+    }
+};
+
+// ── PULL SETTING (untuk fase kehidupan dll) ──
+window.pullSetting = async function(key, bookId) {
+    if (!window.isOnline()) return null;
+    if (!bookId) bookId = window.currentBookId;
+    
+    try {
+        const result = await window.callSupabaseAPI(
+            'settings',
+            'GET',
+            null,
+            `?book_id=eq.${bookId}&key=eq.${key}&limit=1`
+        );
+        
+        if (result && Array.isArray(result) && result.length > 0) {
+            const decrypted = await window._decryptSettingValue(result[0].value);
+            const parsed = JSON.parse(decrypted);
+            return parsed;
+        }
+        return null;
+    } catch (e) {
+        console.warn('[Settings] Gagal pull setting:', e);
+        return null;
+    }
+};
+
+// ── OPEN SETUP MODAL ──
+window.openSetupModal = function() {
+    const modal = document.getElementById('firstTimeSetupModal');
+    if (modal) {
+        modal.classList.add('show');
+        document.getElementById('setupStatusMsg').className = 'setup-status';
+        document.getElementById('setupStatusMsg').innerText = '';
+        document.getElementById('setupConnectBtn').disabled = false;
+        document.getElementById('setupConnectBtn').innerText = '🔐 Simpan & Mulai';
     }
 };
