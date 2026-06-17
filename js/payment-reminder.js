@@ -2,7 +2,9 @@
 // PAYMENT-REMINDER.JS - Supabase + Local Storage dengan Fallback
 // ============================================================
 
-const PR_CACHE_KEY = 'sk_payment_reminders';
+function prCacheKey(bookId) {
+    return 'sk_payment_reminders_' + bookId;
+}
 
 // ── LOAD dari Supabase (dengan fallback ke Local Storage) ──
 window.loadPaymentReminders = async function(bookId) {
@@ -21,7 +23,7 @@ window.loadPaymentReminders = async function(bookId) {
             
             if (result && Array.isArray(result)) {
                 // Cache ke Local Storage
-                localStorage.setItem(PR_CACHE_KEY, JSON.stringify(result));
+                localStorage.setItem(prCacheKey(bookId), JSON.stringify(result));
                 return result;
             }
         } catch (e) {
@@ -31,7 +33,7 @@ window.loadPaymentReminders = async function(bookId) {
     
     // Fallback ke Local Storage
     try {
-        const local = JSON.parse(localStorage.getItem(PR_CACHE_KEY) || '[]');
+        const local = JSON.parse(localStorage.getItem(prCacheKey(bookId)) || '[]');
         return local.filter(r => r.book_id === bookId);
     } catch {
         return [];
@@ -46,14 +48,14 @@ window.savePaymentReminder = async function(bookId, reminderData) {
     // Simpan ke Local Storage dulu (cache)
     let localReminders = [];
     try {
-        localReminders = JSON.parse(localStorage.getItem(PR_CACHE_KEY) || '[]');
+        localReminders = JSON.parse(localStorage.getItem(prCacheKey(bookId)) || '[]');
         const index = localReminders.findIndex(r => r.id === reminderData.id);
         if (index >= 0) {
             localReminders[index] = { ...reminderData, book_id: bookId };
         } else {
             localReminders.push({ ...reminderData, book_id: bookId });
         }
-        localStorage.setItem(PR_CACHE_KEY, JSON.stringify(localReminders));
+        localStorage.setItem(prCacheKey(bookId), JSON.stringify(localReminders));
     } catch (e) {
         console.warn('[PaymentReminder] Gagal save ke localStorage:', e);
     }
@@ -89,9 +91,9 @@ window.deletePaymentReminder = async function(reminderId, bookId) {
     
     // Hapus dari Local Storage
     try {
-        let localReminders = JSON.parse(localStorage.getItem(PR_CACHE_KEY) || '[]');
+        let localReminders = JSON.parse(localStorage.getItem(prCacheKey(bookId)) || '[]');
         localReminders = localReminders.filter(r => r.id !== reminderId);
-        localStorage.setItem(PR_CACHE_KEY, JSON.stringify(localReminders));
+        localStorage.setItem(prCacheKey(bookId), JSON.stringify(localReminders));
     } catch (e) {
         console.warn('[PaymentReminder] Gagal hapus dari localStorage:', e);
     }
@@ -125,7 +127,7 @@ window.syncAllPaymentReminders = async function(bookId) {
     if (!bookId || !window.isOnline()) return false;
     
     try {
-        const localReminders = JSON.parse(localStorage.getItem(PR_CACHE_KEY) || '[]')
+        const localReminders = JSON.parse(localStorage.getItem(prCacheKey(bookId)) || '[]')
             .filter(r => r.book_id === bookId);
         
         if (localReminders.length === 0) return true;
@@ -167,7 +169,17 @@ window.migratePaymentReminders = async function(bookId) {
     // Ambil dari Local Storage
     let localReminders = [];
     try {
-        localReminders = JSON.parse(localStorage.getItem(PR_CACHE_KEY) || '[]');
+        localReminders = JSON.parse(localStorage.getItem(prCacheKey(bookId)) || '[]');
+        if (localReminders.length === 0) {
+            // Migrasi dari key lama (global, sebelum per-buku) bila masih ada
+            const oldGlobalKey = 'sk_payment_reminders';
+            const oldGlobalData = JSON.parse(localStorage.getItem(oldGlobalKey) || '[]');
+            const oldGlobalForBook = oldGlobalData.filter(r => r.book_id === bookId);
+            if (oldGlobalForBook.length > 0) {
+                localReminders = oldGlobalForBook;
+                localStorage.setItem(prCacheKey(bookId), JSON.stringify(localReminders));
+            }
+        }
         if (localReminders.length === 0) {
             const oldKey = 'sinarkeu_payment_reminders';
             const oldData = localStorage.getItem(oldKey);
@@ -178,7 +190,7 @@ window.migratePaymentReminders = async function(bookId) {
                     book_id: bookId,
                     id: r.id || 'pr_' + Date.now() + '_' + Math.random().toString(36).slice(2,7)
                 }));
-                localStorage.setItem(PR_CACHE_KEY, JSON.stringify(localReminders));
+                localStorage.setItem(prCacheKey(bookId), JSON.stringify(localReminders));
                 localStorage.removeItem(oldKey);
             }
         }
@@ -348,7 +360,8 @@ window.editPaymentReminder = async function(id) {
 // ── UPDATE BANNER ──
 window.updatePaymentReminderBanner = function(list) {
     if (!list) {
-        try { list = JSON.parse(localStorage.getItem(PR_CACHE_KEY) || '[]'); }
+        const bookId = window.currentBookId;
+        try { list = bookId ? JSON.parse(localStorage.getItem(prCacheKey(bookId)) || '[]') : []; }
         catch { list = []; }
     }
     
