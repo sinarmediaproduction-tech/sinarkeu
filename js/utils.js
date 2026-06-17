@@ -7,7 +7,7 @@ window.escapeHtml = function(str) {
 };
 window.formatDateTime = function(dtStr) {
     if (!dtStr) return '-';
-    let d = new Date(dtStr);
+    let d = window.parseTxDate(dtStr);
     if (isNaN(d.getTime())) return dtStr;
     return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 };
