@@ -981,8 +981,21 @@
 <!-- ===== PAYMENT REMINDER SCRIPT ===== -->
 <script>
 (function() {
-    const PR_KEY = 'sinarkeu_payment_reminders';
+    const PR_KEY_OLD = 'sinarkeu_payment_reminders'; // key lama, global, tidak ter-namespace per akun
+    const PR_KEY = 'sk_payment_reminders'; // prefix sk_ agar otomatis ikut sistem namespace per akun di account.js
     const ALERT_DAYS = 3;
+
+    // Migrasi sekali jalan: pindahkan data dari key lama (global, dipakai bersama semua akun)
+    // ke key baru yang akan otomatis dipisah per akun oleh _saveOutAccount/_restoreInAccount.
+    (function migrateOldReminderKey() {
+        try {
+            const oldRaw = localStorage.getItem(PR_KEY_OLD);
+            if (oldRaw !== null && localStorage.getItem(PR_KEY) === null) {
+                localStorage.setItem(PR_KEY, oldRaw);
+            }
+            if (oldRaw !== null) localStorage.removeItem(PR_KEY_OLD);
+        } catch(e) { /* abaikan jika localStorage tidak bisa diakses */ }
+    })();
 
     function loadReminders() {
         try { return JSON.parse(localStorage.getItem(PR_KEY) || '[]'); } catch(e) { return []; }
@@ -994,23 +1007,37 @@
         return 'pr_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
     }
 
+    // Jumlah hari valid di sebuah bulan (monthIndex 0-based)
+    function daysInMonth(year, monthIndex) {
+        return new Date(year, monthIndex + 1, 0).getDate();
+    }
+    // Pastikan tanggal tidak "meluber" ke bulan berikutnya kalau bulan tujuan lebih pendek
+    // (misal tanggal 31 di bulan Februari akan di-clamp jadi 28/29, bukan jadi 2/3 Maret)
+    function clampDay(year, monthIndex, day) {
+        return Math.min(day, daysInMonth(year, monthIndex));
+    }
+
     // Hitung hari tersisa menuju jatuh tempo berikutnya
     function getDaysUntilNext(item) {
         const today = new Date();
         today.setHours(0,0,0,0);
         let candidate;
         if (item.recurrence === 'monthly') {
-            // Bulan ini
-            candidate = new Date(today.getFullYear(), today.getMonth(), item.day);
+            let y = today.getFullYear(), m = today.getMonth();
+            candidate = new Date(y, m, clampDay(y, m, item.day));
             if (candidate < today) {
                 // Bulan depan
-                candidate = new Date(today.getFullYear(), today.getMonth() + 1, item.day);
+                m += 1;
+                if (m > 11) { m = 0; y += 1; }
+                candidate = new Date(y, m, clampDay(y, m, item.day));
             }
         } else {
             // Tahunan
-            candidate = new Date(today.getFullYear(), item.month - 1, item.day);
+            let y = today.getFullYear();
+            candidate = new Date(y, item.month - 1, clampDay(y, item.month - 1, item.day));
             if (candidate < today) {
-                candidate = new Date(today.getFullYear() + 1, item.month - 1, item.day);
+                y += 1;
+                candidate = new Date(y, item.month - 1, clampDay(y, item.month - 1, item.day));
             }
         }
         const diff = Math.round((candidate - today) / (1000 * 60 * 60 * 24));
