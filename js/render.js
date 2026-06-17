@@ -32,7 +32,7 @@ window.render = function() {
     document.getElementById('statIncome').innerText = window.rp(totalInc);
     document.getElementById('statExpense').innerText = window.rp(totalExp);
     window.updateZakatCard();
-    if (window.expenseChartVisible || !window._expenseChartInitialized) {
+    if ((window.expenseChartVisible || !window._expenseChartInitialized) && typeof window.renderExpenseChart === 'function') {
         window.renderExpenseChart();
     }
     let allSorted = [...window.txs].sort((a, b) => new Date(a.date) - new Date(b.date));
