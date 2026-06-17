@@ -263,6 +263,30 @@
         </div>
     </div>
 
+    <!-- ===== FINANCIAL PLANNING CARDS ===== -->
+    <div class="stats-grid" style="margin-top:10px;">
+        <div class="stat-card" style="border-top:3px solid #1a56db;">
+            <div class="stat-label">📋 Anggaran Bulanan</div>
+            <div class="stat-value" id="fcAnggaranBulanan" style="color:#1a56db; font-size:1rem;">Rp 0</div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;">Dari template Anggaran Dasar</div>
+        </div>
+        <div class="stat-card" id="cardAnggaranTahunan" style="border-top:3px solid #6b46c1; cursor:pointer;" onclick="openAnnualBudgetModal()" title="Klik untuk atur anggaran tahunan">
+            <div class="stat-label">📅 Anggaran Tahunan <span style="font-size:.6rem; background:#f3e8ff; color:#553c9a; padding:1px 6px; border-radius:8px; margin-left:4px;">✏️ Atur</span></div>
+            <div class="stat-value" id="fcAnggaranTahunan" style="color:#6b46c1; font-size:1rem;">Rp 0</div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;">Biaya tahunan: hari raya, pajak, dll</div>
+        </div>
+        <div class="stat-card" style="border-top:3px solid #cc7b00;">
+            <div class="stat-label">🛡️ Dana Darurat</div>
+            <div class="stat-value" id="fcDanaDarurat" style="color:#cc7b00; font-size:1rem;">Rp 0</div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;">12× anggaran bulanan (target ideal)</div>
+        </div>
+        <div class="stat-card" id="cardDanaSalingJaga" style="border-top:3px solid #00875a;">
+            <div class="stat-label">🤝 Dana Saling Jaga</div>
+            <div class="stat-value" id="fcDanaSalingJaga" style="color:#00875a; font-size:1rem;">Rp 0</div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;" id="fcDSJNote">30% dari saldo setelah dana darurat</div>
+        </div>
+    </div>
+
     <div class="expense-chart-section" id="expenseChartSection">
         <div class="expense-chart-header" onclick="toggleExpenseChart()" style="cursor:pointer; user-select:none;">
             <span class="expense-chart-title"> Pengeluaran per Kategori</span>
@@ -619,6 +643,25 @@
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="closeModal('defaultBudgetModal')">Tutup</button>
             <button class="btn btn-primary" onclick="saveDefaultBudget()">💾 Simpan Template</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Anggaran Tahunan -->
+<div id="annualBudgetModal" class="modal">
+    <div class="modal-content wide">
+        <div class="modal-header"><h3>📅 Anggaran Tahunan</h3><button class="modal-close" onclick="closeModal('annualBudgetModal')">×</button></div>
+        <div style="background:#f3e8ff; border:1px solid #d6bcfa; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:#553c9a;">
+            📅 <b>Anggaran Tahunan</b> adalah rencana biaya yang terjadi <b>tidak setiap bulan</b> — seperti hari raya, pajak, servis kendaraan, liburan, dll. Total anggaran ini membantu menghitung kebutuhan cadangan dana Anda.
+        </div>
+        <div id="annualBudgetItemsContainer"></div>
+        <div style="margin:10px 0;">
+            <button class="btn btn-secondary" style="width:100%;" onclick="addAnnualBudgetRow()">＋ Tambah Item</button>
+        </div>
+        <div id="annualBudgetSummary" class="budget-summary-row"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('annualBudgetModal')">Tutup</button>
+            <button class="btn btn-primary" onclick="saveAnnualBudget()">💾 Simpan</button>
         </div>
     </div>
 </div>
