@@ -24,12 +24,21 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
 };
 
 // ==================== PUSH SETTINGS ====================
+// Semua nilai dienkripsi (AES-GCM) dengan kunci sesi sebelum dikirim ke cloud,
+// supaya isi tabel `settings` di Supabase tidak pernah berupa plain text
+// (sebelumnya hanya kredensial koneksi yang dienkripsi, isi setting tidak).
 window.pushSetting = async function(key, value, bookId) {
     if (!window.isOnline()) return;
+    if (!window._sessionCryptoKey) {
+        console.warn(`[Sync] Crypto key sesi tidak tersedia, push '${key}' dibatalkan (mencegah kebocoran plain text ke cloud).`);
+        return;
+    }
+    const plainJson = JSON.stringify(value);
+    const encryptedValue = await window.encryptStr(window._sessionCryptoKey, plainJson);
     const payload = [{
         book_id: bookId || window.currentBookId,
         key: key,
-        value: JSON.stringify(value),
+        value: encryptedValue,
         updated_at: new Date().toISOString()
     }];
     await window.callSupabaseAPI('settings', 'POST', payload);
@@ -61,6 +70,20 @@ window.pushSettingTelegram = async function() {
 };
 
 // ==================== PULL SETTINGS ====================
+// Mencoba dekripsi nilai dari cloud dengan kunci sesi. Jika gagal (data lama
+// dari sebelum migrasi enkripsi, masih plain text), pakai apa adanya sebagai
+// fallback supaya tidak memutus kompatibilitas dengan data yang sudah ada.
+window._decryptSettingValue = async function(rawValue) {
+    if (window._sessionCryptoKey) {
+        try {
+            return await window.decryptStr(window._sessionCryptoKey, rawValue);
+        } catch (e) {
+            console.warn('[Sync] Gagal dekripsi nilai setting, asumsikan data lama (plain text):', e);
+        }
+    }
+    return rawValue;
+};
+
 window.pullAllSettings = async function() {
     if (!window.isOnline()) return;
     const allRows = await window.callSupabaseAPI('settings', 'GET', null, '?order=updated_at.desc');
@@ -70,7 +93,8 @@ window.pullAllSettings = async function() {
         let budgetUpdated = false;
         for (const row of allRows) {
             let parsed;
-            try { parsed = JSON.parse(row.value); } catch { continue; }
+            const decryptedValue = await window._decryptSettingValue(row.value);
+            try { parsed = JSON.parse(decryptedValue); } catch { continue; }
             if (row.key === 'books' && Array.isArray(parsed) && parsed.length > 0) {
                 const cloudIds = new Set(parsed.map(b => b.id));
                 const localIds = new Set(window.books.map(b => b.id));
