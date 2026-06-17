@@ -395,32 +395,9 @@ window.saveAnnualBudget = function() {
     window.updateFinancialCards();
 };
 
-// ==================== PATCH: simpan Anggaran Dasar juga ke Supabase ====================
-// Override saveDefaultBudget untuk juga push ke Supabase via pushSetting
+// ==================== PATCH: update financial cards setelah simpan Anggaran Dasar ====================
 const _origSaveDefaultBudget = window.saveDefaultBudget;
 window.saveDefaultBudget = function() {
     _origSaveDefaultBudget();
-    // pushSetting sudah dipanggil di dalam _origSaveDefaultBudget via pushSettingBudgets
-    // Tidak perlu duplikasi, cukup update financial cards
-    window.updateFinancialCards && window.updateFinancialCards();
-};
-
-// Patch pullAllSettings agar juga load annual_budget dari Supabase
-const _origPullAllSettings = window.pullAllSettings;
-window.pullAllSettings = async function() {
-    if (_origPullAllSettings) await _origPullAllSettings();
-    // Setelah pull selesai, coba ambil annual_budget per buku
-    if (window.books && window.books.length > 0) {
-        for (const book of window.books) {
-            try {
-                const rows = await window.callSupabaseAPI('settings', 'GET', null,
-                    `?book_id=eq.${book.id}&key=eq.annual_budget`);
-                if (rows && rows.length > 0 && rows[0].value) {
-                    const val = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value;
-                    window.saveAnnualBudgetToLocal(book.id, val);
-                }
-            } catch(e) { /* silent fail */ }
-        }
-    }
     window.updateFinancialCards && window.updateFinancialCards();
 };

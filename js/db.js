@@ -124,6 +124,12 @@ window.pullAllSettings = async function() {
                     budgetUpdated = true;
                 }
             }
+            if (row.key === 'annual_budget') {
+                window.saveAnnualBudgetToLocal(row.book_id, parsed);
+                if (row.book_id === window.currentBookId) {
+                    budgetUpdated = true;
+                }
+            }
             if (row.key === 'google_sheets_url') {
                 if (typeof parsed === 'string' && parsed) {
                     localStorage.setItem('sk_google_sheets_url', parsed);
@@ -137,6 +143,7 @@ window.pullAllSettings = async function() {
         if (booksUpdated) window.updateBookSelectDropdown();
         if (budgetUpdated) {
             window.renderBudget();
+            window.updateFinancialCards && window.updateFinancialCards();
             if (document.getElementById('budgetModal').classList.contains('show')) {
                 window.renderBudgetFormFields();
             }
