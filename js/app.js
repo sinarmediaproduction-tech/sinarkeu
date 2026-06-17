@@ -52,6 +52,17 @@ window.startAutoSync = function() {
             window.updateBookSelectDropdown();
             window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
             window.renderBudget();
+
+            // ── PULL PAYMENT REMINDERS ──
+            // payment_reminders pakai tabel Supabase sendiri, bukan tabel `settings`,
+            // jadi tidak ter-cover oleh pullAllSettings() di atas.
+            try {
+                await window.loadPaymentReminders(window.currentBookId);
+                if (typeof window.renderPaymentReminders === 'function') await window.renderPaymentReminders();
+                if (typeof window.updatePaymentReminderBanner === 'function') window.updatePaymentReminderBanner();
+            } catch (e) {
+                console.warn('[AutoSync] Gagal pull payment reminders:', e);
+            }
         }
     }, 30000);
     console.log('[AutoSync] Dimulai, interval 30 detik.');
@@ -130,7 +141,7 @@ window.continueAppInit = async function() {
             // ── LOAD PAYMENT REMINDERS DARI CLOUD ──
             if (window.isOnline()) {
                 try {
-                    const cloudReminders = await window.pullPaymentRemindersFromCloud(window.currentBookId);
+                    const cloudReminders = await window.loadPaymentReminders(window.currentBookId);
                     if (cloudReminders && cloudReminders.length > 0) {
                         localStorage.setItem('sk_payment_reminders', JSON.stringify(cloudReminders));
                     } else {
