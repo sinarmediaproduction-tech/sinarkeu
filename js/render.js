@@ -82,7 +82,65 @@ window.render = function() {
     });
     window.renderPagination(filtered.length, totalPages);
     window.renderBudget();
+    window.updateFinancialCards();
     window.updateUIForOnlineStatus();
+};
+
+window.updateFinancialCards = function() {
+    // Anggaran Bulanan dari Anggaran Dasar
+    const defaultBudget = window.getDefaultBudget(window.currentBookId);
+    let anggaranBulanan = 0;
+    if (window.EXPENSE_CATEGORIES) {
+        window.EXPENSE_CATEGORIES.forEach(cat => {
+            anggaranBulanan += (defaultBudget[cat] || 0);
+        });
+    }
+
+    // Anggaran Tahunan dari annual_budget
+    const annualBudget = window.getAnnualBudget(window.currentBookId);
+    let anggaranTahunan = 0;
+    annualBudget.forEach(item => { anggaranTahunan += (Number(item.amount) || 0); });
+
+    // Saldo akhir seluruh histori
+    let totalInc = 0, totalExp = 0;
+    window.txs.forEach(t => {
+        const amt = Number(t.amount) || 0;
+        if (t.type === 'income') totalInc += amt;
+        else totalExp += amt;
+    });
+    const balanceOffset = Number(localStorage.getItem('sk_balance_offset_' + window.currentBookId)) || 0;
+    const saldoAkhir = totalInc - totalExp + balanceOffset;
+
+    // Dana Darurat = 12x anggaran bulanan
+    const danaDarurat = anggaranBulanan * 12;
+
+    // Dana Saling Jaga = 30% dari (saldo - dana darurat), min 0
+    const sisaSetelahDarurat = saldoAkhir - danaDarurat;
+    const danaSalingJaga = sisaSetelahDarurat > 0 ? sisaSetelahDarurat * 0.3 : 0;
+
+    // Update DOM
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = window.rp(val); };
+    set('fcAnggaranBulanan', anggaranBulanan);
+    set('fcAnggaranTahunan', anggaranTahunan);
+    set('fcDanaDarurat', danaDarurat);
+    set('fcDanaSalingJaga', danaSalingJaga);
+
+    // Warna peringatan card Dana Saling Jaga
+    const cardDSJ = document.getElementById('cardDanaSalingJaga');
+    const note = document.getElementById('fcDSJNote');
+    if (cardDSJ && note) {
+        if (sisaSetelahDarurat <= 0) {
+            cardDSJ.style.borderTopColor = '#de350b';
+            cardDSJ.style.background = '#fff5f5';
+            note.innerText = '⚠️ Saldo belum cukup untuk dana darurat';
+            note.style.color = '#de350b';
+        } else {
+            cardDSJ.style.borderTopColor = '#00875a';
+            cardDSJ.style.background = '';
+            note.innerText = '30% dari saldo setelah dana darurat';
+            note.style.color = '#888';
+        }
+    }
 };
 
 window.renderPagination = function(totalCount, totalPages) {

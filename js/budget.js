@@ -305,3 +305,122 @@ window.checkBudgetWarningAfterSave = function(date, category) {
         }
     }
 };
+// ==================== ANGGARAN TAHUNAN ====================
+
+window.getAnnualBudget = function(bookId) {
+    const raw = localStorage.getItem('sk_annual_budget_' + (bookId || window.currentBookId));
+    if (raw) { try { return JSON.parse(raw); } catch { return []; } }
+    return [];
+};
+
+window.saveAnnualBudgetToLocal = function(bookId, items) {
+    localStorage.setItem('sk_annual_budget_' + (bookId || window.currentBookId), JSON.stringify(items));
+};
+
+window.pushAnnualBudget = function(bookId) {
+    const items = window.getAnnualBudget(bookId || window.currentBookId);
+    window.pushSetting('annual_budget', items, bookId || window.currentBookId);
+};
+
+window.openAnnualBudgetModal = function() {
+    if (!window.requireOnline('mengatur anggaran tahunan')) return;
+    window.renderAnnualBudgetForm();
+    window.openModal('annualBudgetModal');
+};
+
+window.renderAnnualBudgetForm = function() {
+    const container = document.getElementById('annualBudgetItemsContainer');
+    container.innerHTML = '';
+    const items = window.getAnnualBudget(window.currentBookId);
+    if (items.length === 0) {
+        // Tambah 1 baris kosong default jika belum ada isi
+        window._annualBudgetRows = [{ name: '', amount: 0 }];
+    } else {
+        window._annualBudgetRows = items.map(i => ({ name: i.name, amount: i.amount }));
+    }
+    window._annualBudgetRows.forEach((_, idx) => window._renderAnnualRow(idx));
+    window.updateAnnualBudgetSummary();
+};
+
+window._renderAnnualRow = function(idx) {
+    const container = document.getElementById('annualBudgetItemsContainer');
+    const row = window._annualBudgetRows[idx];
+    const div = document.createElement('div');
+    div.className = 'budget-cat-row';
+    div.id = 'annual-row-' + idx;
+    div.style.cssText = 'display:flex; gap:8px; align-items:center; margin-bottom:8px;';
+    div.innerHTML = `
+        <input type="text" class="form-control" style="flex:2;" placeholder="Nama kebutuhan (misal: THR, Pajak, Servis)" 
+            value="${window.escapeHtml(row.name)}"
+            oninput="window._annualBudgetRows[${idx}].name = this.value; window.updateAnnualBudgetSummary();">
+        <input type="text" class="form-control" style="flex:1;" placeholder="Rp 0"
+            value="${row.amount ? Number(row.amount).toLocaleString('id-ID') : ''}"
+            oninput="window.formatRupiah(this); window._annualBudgetRows[${idx}].amount = window.unRp(this.value); window.updateAnnualBudgetSummary();">
+        <button onclick="window.removeAnnualBudgetRow(${idx})" 
+            style="background:none; border:1.5px solid #de350b; color:#de350b; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:.85rem; flex-shrink:0;">🗑</button>
+    `;
+    container.appendChild(div);
+};
+
+window.addAnnualBudgetRow = function() {
+    if (!window._annualBudgetRows) window._annualBudgetRows = [];
+    const idx = window._annualBudgetRows.length;
+    window._annualBudgetRows.push({ name: '', amount: 0 });
+    window._renderAnnualRow(idx);
+    window.updateAnnualBudgetSummary();
+};
+
+window.removeAnnualBudgetRow = function(idx) {
+    window._annualBudgetRows.splice(idx, 1);
+    // Re-render semua baris
+    const container = document.getElementById('annualBudgetItemsContainer');
+    container.innerHTML = '';
+    window._annualBudgetRows.forEach((_, i) => window._renderAnnualRow(i));
+    window.updateAnnualBudgetSummary();
+};
+
+window.updateAnnualBudgetSummary = function() {
+    const total = (window._annualBudgetRows || []).reduce((s, r) => s + (Number(r.amount) || 0), 0);
+    const el = document.getElementById('annualBudgetSummary');
+    if (el) el.innerText = 'Total Anggaran Tahunan: ' + window.rp(total);
+};
+
+window.saveAnnualBudget = function() {
+    if (!window.requireOnline('menyimpan anggaran tahunan')) return;
+    const items = (window._annualBudgetRows || []).filter(r => r.name.trim() !== '' || r.amount > 0);
+    window.saveAnnualBudgetToLocal(window.currentBookId, items);
+    window.pushAnnualBudget(window.currentBookId);
+    window.showToast('✅ Anggaran Tahunan berhasil disimpan!', 'success');
+    window.closeModal('annualBudgetModal');
+    window.updateFinancialCards();
+};
+
+// ==================== PATCH: simpan Anggaran Dasar juga ke Supabase ====================
+// Override saveDefaultBudget untuk juga push ke Supabase via pushSetting
+const _origSaveDefaultBudget = window.saveDefaultBudget;
+window.saveDefaultBudget = function() {
+    _origSaveDefaultBudget();
+    // pushSetting sudah dipanggil di dalam _origSaveDefaultBudget via pushSettingBudgets
+    // Tidak perlu duplikasi, cukup update financial cards
+    window.updateFinancialCards && window.updateFinancialCards();
+};
+
+// Patch pullAllSettings agar juga load annual_budget dari Supabase
+const _origPullAllSettings = window.pullAllSettings;
+window.pullAllSettings = async function() {
+    if (_origPullAllSettings) await _origPullAllSettings();
+    // Setelah pull selesai, coba ambil annual_budget per buku
+    if (window.books && window.books.length > 0) {
+        for (const book of window.books) {
+            try {
+                const rows = await window.callSupabaseAPI('settings', 'GET', null,
+                    `?book_id=eq.${book.id}&key=eq.annual_budget`);
+                if (rows && rows.length > 0 && rows[0].value) {
+                    const val = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value;
+                    window.saveAnnualBudgetToLocal(book.id, val);
+                }
+            } catch(e) { /* silent fail */ }
+        }
+    }
+    window.updateFinancialCards && window.updateFinancialCards();
+};
