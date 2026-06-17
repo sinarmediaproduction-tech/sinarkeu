@@ -1004,9 +1004,9 @@
 <!-- ===== PATCH: SINKRONISASI ANGGARAN & JADWAL PEMBAYARAN ANTAR PERANGKAT ===== -->
 <!--
   PATCH ini mensinkronkan:
-    1. Anggaran Bulanan (default/template)   → localStorage key: defaultBudget_{bookId}
-    2. Anggaran Bulanan Khusus per bulan     → localStorage key: budget_{bookId}_{YYYY-MM}
-    3. Anggaran Tahunan                      → localStorage key: annualBudget_{bookId}
+    1. Anggaran Bulanan (default/template)   → localStorage key: sk_default_budget_{bookId}
+    2. Anggaran Bulanan Khusus per bulan     → localStorage key: sk_budgets_{bookId}_{YYYY-MM}
+    3. Anggaran Tahunan                      → localStorage key: sk_annual_budget_{bookId}
     4. Jadwal Pembayaran                     → localStorage key: paymentReminders_{bookId}
 
   Cara kerja:
@@ -1048,15 +1048,17 @@ function _getSupabase() {
   // Coba ambil client Supabase yang sudah dibuat oleh app utama
   if (window._supabaseClient) return window._supabaseClient;
   if (window.supabaseClient) return window.supabaseClient;
-  // Fallback: coba buat dari localStorage
+  // Fallback: coba buat dari variabel global app
   try {
-    const accounts = JSON.parse(localStorage.getItem('sinarkeu_accounts') || '[]');
-    const activeId = localStorage.getItem('sinarkeu_active_account');
-    const acc = accounts.find(a => a.id === activeId) || accounts[0];
-    if (!acc) return null;
-    // Dekripsi kredensial jika tersedia via fungsi app
+    // Prioritas 1: _supabaseUrl + _supabaseKey (variabel internal app)
     if (window._supabaseUrl && window._supabaseKey) {
       return window.supabase.createClient(window._supabaseUrl, window._supabaseKey);
+    }
+    // Prioritas 2: getCloudUrl() + globalSupabaseKey (fungsi/variabel publik app)
+    const url = (typeof window.getCloudUrl === 'function') ? window.getCloudUrl() : null;
+    const key = window.globalSupabaseKey || null;
+    if (url && key) {
+      return window.supabase.createClient(url, key);
     }
   } catch(e) {}
   return null;
@@ -1171,24 +1173,24 @@ async function pullSettingsFromCloud(bookId) {
 
 function _buildLocalKey(bookId, settingKey) {
   // Konversi setting_key cloud ke localStorage key
-  if (settingKey === 'defaultBudget') return `defaultBudget_${bookId}`;
-  if (settingKey === 'annualBudget')  return `annualBudget_${bookId}`;
+  if (settingKey === 'defaultBudget') return `sk_default_budget_${bookId}`;
+  if (settingKey === 'annualBudget')  return `sk_annual_budget_${bookId}`;
   if (settingKey === 'paymentReminders') return `paymentReminders_${bookId}`;
   // budget_monthly_YYYY-MM
   if (settingKey.startsWith('budget_monthly_')) {
     const ym = settingKey.replace('budget_monthly_', '');
-    return `budget_${bookId}_${ym}`;
+    return `sk_budgets_${bookId}_${ym}`;
   }
   return `${settingKey}_${bookId}`;
 }
 
 function _buildCloudKey(localKey, bookId) {
   // Konversi localStorage key ke setting_key cloud
-  if (localKey === `defaultBudget_${bookId}`) return 'defaultBudget';
-  if (localKey === `annualBudget_${bookId}`)  return 'annualBudget';
+  if (localKey === `sk_default_budget_${bookId}`) return 'defaultBudget';
+  if (localKey === `sk_annual_budget_${bookId}`)  return 'annualBudget';
   if (localKey === `paymentReminders_${bookId}`) return 'paymentReminders';
-  // budget_{bookId}_{YYYY-MM}
-  const m = localKey.match(/^budget_(.+)_(\d{4}-\d{2})$/);
+  // sk_budgets_{bookId}_{YYYY-MM}
+  const m = localKey.match(/^sk_budgets_(.+)_(\d{4}-\d{2})$/);
   if (m) return `budget_monthly_${m[2]}`;
   return null;
 }
@@ -1275,11 +1277,11 @@ function _interceptSave() {
 async function _syncAfterSaveBudget() {
   const bookId = _getCurrentBookId();
   if (!bookId) return;
-  // Cari semua key budget_{bookId}_{YYYY-MM} di localStorage
+  // Cari semua key sk_budgets_{bookId}_{YYYY-MM} di localStorage
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (!key) continue;
-    const m = key.match(/^budget_(.+)_(\d{4}-\d{2})$/);
+    const m = key.match(/^sk_budgets_(.+)_(\d{4}-\d{2})$/);
     if (m && m[1] === bookId) {
       const ym = m[2];
       try {
@@ -1296,7 +1298,7 @@ async function _syncAfterSaveBudget() {
 async function _syncAfterSaveDefaultBudget() {
   const bookId = _getCurrentBookId();
   if (!bookId) return;
-  const key = `defaultBudget_${bookId}`;
+  const key = `sk_default_budget_${bookId}`;
   try {
     const val = JSON.parse(localStorage.getItem(key) || 'null');
     if (val === null) return;
@@ -1309,7 +1311,7 @@ async function _syncAfterSaveDefaultBudget() {
 async function _syncAfterSaveAnnualBudget() {
   const bookId = _getCurrentBookId();
   if (!bookId) return;
-  const key = `annualBudget_${bookId}`;
+  const key = `sk_annual_budget_${bookId}`;
   try {
     const val = JSON.parse(localStorage.getItem(key) || 'null');
     if (val === null) return;
@@ -1368,22 +1370,22 @@ window.runFullMigration = async function() {
   let pushed = 0;
 
   // Push defaultBudget
-  const db = localStorage.getItem(`defaultBudget_${bookId}`);
+  const db = localStorage.getItem(`sk_default_budget_${bookId}`);
   if (db) {
     try {
       const ts = _now();
-      localStorage.setItem(`defaultBudget_${bookId}__updated_at`, ts);
+      localStorage.setItem(`sk_default_budget_${bookId}__updated_at`, ts);
       const r = await pushSettingToCloud(bookId, 'defaultBudget', JSON.parse(db));
       if (r.ok) pushed++;
     } catch(e) {}
   }
 
   // Push annualBudget
-  const ab = localStorage.getItem(`annualBudget_${bookId}`);
+  const ab = localStorage.getItem(`sk_annual_budget_${bookId}`);
   if (ab) {
     try {
       const ts = _now();
-      localStorage.setItem(`annualBudget_${bookId}__updated_at`, ts);
+      localStorage.setItem(`sk_annual_budget_${bookId}__updated_at`, ts);
       const r = await pushSettingToCloud(bookId, 'annualBudget', JSON.parse(ab));
       if (r.ok) pushed++;
     } catch(e) {}
@@ -1404,7 +1406,7 @@ window.runFullMigration = async function() {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (!key) continue;
-    const m = key.match(/^budget_(.+)_(\d{4}-\d{2})$/);
+    const m = key.match(/^sk_budgets_(.+)_(\d{4}-\d{2})$/);
     if (m && m[1] === bookId) {
       try {
         const val = JSON.parse(localStorage.getItem(key));
