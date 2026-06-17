@@ -126,6 +126,43 @@ window.continueAppInit = async function() {
             window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
             window.updateTgStatusBadge();
             await window.pullAllBooksFromCloud();
+            
+            // ── LOAD PAYMENT REMINDERS DARI CLOUD ──
+            if (window.isOnline()) {
+                try {
+                    const cloudReminders = await window.pullPaymentRemindersFromCloud(window.currentBookId);
+                    if (cloudReminders && cloudReminders.length > 0) {
+                        localStorage.setItem('sk_payment_reminders', JSON.stringify(cloudReminders));
+                    } else {
+                        await window.migratePaymentReminders(window.currentBookId);
+                    }
+                } catch (e) {
+                    console.warn('[App] Gagal load payment reminders:', e);
+                }
+            }
+
+            // ── LOAD BUDGETS DARI CLOUD ──
+            if (window.isOnline()) {
+                try {
+                    const defaultBudget = await window.loadDefaultBudgetFromCloud(window.currentBookId);
+                    if (Object.keys(defaultBudget).length > 0) {
+                        window.saveDefaultBudgetToLocal(window.currentBookId, defaultBudget);
+                    }
+                    
+                    const monthlyBudget = await window.loadMonthlyBudgetFromCloud(window.currentBookId);
+                    if (Object.keys(monthlyBudget).length > 0) {
+                        window.budgets = monthlyBudget;
+                    }
+                    
+                    const annualBudget = await window.loadAnnualBudgetFromCloud(window.currentBookId);
+                    if (annualBudget.length > 0) {
+                        window.saveAnnualBudgetToLocal(window.currentBookId, annualBudget);
+                    }
+                } catch (e) {
+                    console.warn('[App] Gagal load budgets dari cloud:', e);
+                }
+            }
+            
             // Pull fase kehidupan dari cloud
             if (window.isOnline()) {
                 try {
