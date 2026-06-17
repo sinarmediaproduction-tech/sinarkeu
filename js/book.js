@@ -139,16 +139,20 @@ window.estimateSupabaseStorage = async function() {
     const apiKey  = window.getSupabaseKey();
     if (!baseUrl || !apiKey) return null;
     const headers = { 'apikey': apiKey, 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json', 'Prefer': 'count=exact' };
-    async function countTable(table, qs = '') {
+
+    // Tiap tabel punya primary key berbeda, gunakan HEAD request agar tidak perlu tahu nama kolom
+    async function countTable(table) {
         try {
-            const res = await fetch(`${baseUrl}/rest/v1/${table}?select=id${qs}&limit=1`, { headers });
+            const res = await fetch(`${baseUrl}/rest/v1/${table}?select=*`, {
+                method: 'HEAD',
+                headers
+            });
             const cnt = res.headers.get('content-range');
             if (cnt) {
                 const m = cnt.match(/\/(\d+)$/);
                 if (m) return parseInt(m[1]);
             }
-            const data = await res.json();
-            return Array.isArray(data) ? data.length : 0;
+            return 0;
         } catch { return 0; }
     }
     const [txCount, logCount, settCount] = await Promise.all([
