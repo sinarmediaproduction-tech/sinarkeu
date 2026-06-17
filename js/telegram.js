@@ -1,19 +1,16 @@
 // ==================== TELEGRAM NOTIFICATIONS ====================
-window.getTgConfig = function() {
-    let token = localStorage.getItem('sk_tg_token') || '';
-    let chatId = localStorage.getItem('sk_tg_chatid') || '';
-    let edgeUrl = localStorage.getItem('sk_tg_edge_url') || '';
+// getTgConfig sekarang async karena membaca dari enkripsi
+window.getTgConfig = async function() {
+    const { token, chatId, edgeUrl } = await window.getTelegramConfigDecrypted();
     return { token, edgeUrl, chatId, active: !!(token || edgeUrl) };
 };
 
-window.saveTelegramConfig = function() {
+window.saveTelegramConfig = async function() {
     let token = document.getElementById('tgBotTokenInput').value.trim();
     let chatId = document.getElementById('tgChatIdInput').value.trim();
     if (!chatId) { window.showToast('Chat ID penerima wajib diisi!', 'error'); return; }
     if (!token) { window.showToast('Bot Token wajib diisi!', 'error'); return; }
-    localStorage.setItem('sk_tg_token', token);
-    localStorage.setItem('sk_tg_chatid', chatId);
-    localStorage.removeItem('sk_tg_edge_url');
+    await window.saveTelegramConfigEncrypted(token, chatId, '');
     window.updateTgStatusBadge();
     window.showToast('Konfigurasi Telegram disimpan ✅', 'success');
     window.pushSettingTelegram();
@@ -21,6 +18,11 @@ window.saveTelegramConfig = function() {
 
 window.clearTelegramConfig = function() {
     if (!confirm('Hapus konfigurasi Telegram?')) return;
+    // Hapus versi terenkripsi
+    localStorage.removeItem('sk_tg_token_enc');
+    localStorage.removeItem('sk_tg_chatid_enc');
+    localStorage.removeItem('sk_tg_edge_enc');
+    // Hapus versi plain-text (migrasi lama)
     localStorage.removeItem('sk_tg_token');
     localStorage.removeItem('sk_tg_edge_url');
     localStorage.removeItem('sk_tg_chatid');
@@ -32,10 +34,10 @@ window.clearTelegramConfig = function() {
     window.pushSettingTelegram();
 };
 
-window.updateTgStatusBadge = function() {
+window.updateTgStatusBadge = async function() {
     let badge = document.getElementById('tgStatusBadge');
     if (!badge) return;
-    let cfg = window.getTgConfig();
+    let cfg = await window.getTgConfig();
     if (cfg.active) {
         badge.style.background = '#e3fcef';
         badge.style.color = '#006644';
@@ -47,8 +49,8 @@ window.updateTgStatusBadge = function() {
     }
 };
 
-window.loadTgConfigToForm = function() {
-    let cfg = window.getTgConfig();
+window.loadTgConfigToForm = async function() {
+    let cfg = await window.getTgConfig();
     let tokenEl = document.getElementById('tgBotTokenInput');
     let edgeEl = document.getElementById('tgEdgeUrlInput');
     let chatEl = document.getElementById('tgChatIdInput');
@@ -59,7 +61,7 @@ window.loadTgConfigToForm = function() {
 };
 
 window.sendTelegramNotif = async function(msg) {
-    let cfg = window.getTgConfig();
+    let cfg = await window.getTgConfig();
     if (!cfg.active) return;
     try {
         if (cfg.edgeUrl) {
@@ -92,11 +94,8 @@ window.testTelegramNotif = async function() {
     let statusEl = document.getElementById('tgTestStatus');
     if (!chatId) { window.showToast('Chat ID penerima wajib diisi!', 'error'); return; }
     if (!token && !edgeUrl) { window.showToast('Isi Bot Token!', 'error'); return; }
-    if (token) localStorage.setItem('sk_tg_token', token);
-    else localStorage.removeItem('sk_tg_token');
-    if (edgeUrl) localStorage.setItem('sk_tg_edge_url', edgeUrl);
-    else localStorage.removeItem('sk_tg_edge_url');
-    localStorage.setItem('sk_tg_chatid', chatId);
+    // Simpan terenkripsi
+    await window.saveTelegramConfigEncrypted(token, chatId, edgeUrl);
     window.updateTgStatusBadge();
     statusEl.innerHTML = '<span style="color:#cc7b00;">⏳ Mengirim pesan tes...</span>';
     const testMsg = `🔔 <b>Sinarkeu — Tes Notifikasi</b>\n\nKonfigurasi berhasil! Notifikasi transaksi akan dikirim ke sini.\n\n<i>Chat ID: ${chatId}</i>`;
@@ -161,8 +160,8 @@ window.getCurrentBookName = function() {
     return book ? book.name : window.currentBookId;
 };
 
-window.sendDailySummaryToTelegram = function() {
-    let cfg = window.getTgConfig();
+window.sendDailySummaryToTelegram = async function() {
+    let cfg = await window.getTgConfig();
     if (!cfg.active) return;
     let now = new Date();
     let today = now.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
@@ -200,8 +199,8 @@ window.sendDailySummaryToTelegram = function() {
     window.sendTelegramNotif(msg);
 };
 
-window.scheduleDailySummary = function() {
-    let cfg = window.getTgConfig();
+window.scheduleDailySummary = async function() {
+    let cfg = await window.getTgConfig();
     if (!cfg.active) return;
     let now = new Date();
     let target = new Date(now);

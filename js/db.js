@@ -56,7 +56,7 @@ window.pushSettingDefaultBudget = async function() {
 
 window.pushSettingTelegram = async function() {
     if (!window.isOnline()) return;
-    const cfg = window.getTgConfig();
+    const cfg = await window.getTgConfig();
     await window.pushSetting('telegram_config', { token: cfg.token, chatId: cfg.chatId, edgeUrl: cfg.edgeUrl }, 'global');
 };
 
@@ -102,9 +102,12 @@ window.pullAllSettings = async function() {
                 }
             }
             if (row.key === 'telegram_config') {
-                if (parsed.token) localStorage.setItem('sk_tg_token', parsed.token);
-                if (parsed.chatId) localStorage.setItem('sk_tg_chatid', parsed.chatId);
-                if (parsed.edgeUrl) localStorage.setItem('sk_tg_edge_url', parsed.edgeUrl);
+                // Simpan ke encrypted storage, bukan plain-text
+                await window.saveTelegramConfigEncrypted(
+                    parsed.token  || '',
+                    parsed.chatId || '',
+                    parsed.edgeUrl || ''
+                );
                 telegramUpdated = true;
                 window.updateTgStatusBadge();
             }

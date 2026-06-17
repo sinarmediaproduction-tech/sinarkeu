@@ -292,15 +292,19 @@ window.logoutToLockScreen = function() {
 window.openAccountManagerFromLock = function() {
     document.getElementById('passwordLockScreen').style.display = 'none';
     window.openAccountManager();
-    const origClose = window.closeModal;
-    window.closeModal = function(id) {
-        origClose(id);
-        if (id === 'accountManagerModal') {
-            window.closeModal = origClose;
-            window.renderLockScreenPicker();
-            document.getElementById('passwordLockScreen').style.display = 'flex';
-        }
-    };
+    // Gunakan flag, bukan override global closeModal
+    window._fromLockScreen = true;
+};
+
+// Patch closeModal agar aman: cek flag _fromLockScreen
+const _origCloseModal = window.closeModal;
+window.closeModal = function(id) {
+    _origCloseModal(id);
+    if (id === 'accountManagerModal' && window._fromLockScreen) {
+        window._fromLockScreen = false;
+        window.renderLockScreenPicker();
+        document.getElementById('passwordLockScreen').style.display = 'flex';
+    }
 };
 window.bootstrapMultiAccount = function() {
     const pendingSwitch = localStorage.getItem('sk_switching_in_progress');

@@ -50,11 +50,12 @@ window.render = function() {
         window.renderBudget();
         return;
     }
-    const totalPages = Math.ceil(filtered.length / 21);
+    const pageSize = window.PAGE_SIZE || 21;
+    const totalPages = Math.ceil(filtered.length / pageSize);
     if (window.currentPage > totalPages) window.currentPage = totalPages;
     if (window.currentPage < 1) window.currentPage = 1;
-    const startIdx = (window.currentPage - 1) * 21;
-    const paginated = filtered.slice(startIdx, startIdx + 21);
+    const startIdx = (window.currentPage - 1) * pageSize;
+    const paginated = filtered.slice(startIdx, startIdx + pageSize);
     const online = window.isOnline();
     paginated.forEach((t, index) => {
         let tr = document.createElement('tr');
@@ -90,8 +91,9 @@ window.renderPagination = function(totalCount, totalPages) {
     const controls = document.getElementById('paginationControls');
     if (totalPages <= 1) { bar.style.display = 'none'; return; }
     bar.style.display = 'flex';
-    const startItem = (window.currentPage - 1) * 21 + 1;
-    const endItem = Math.min(window.currentPage * 21, totalCount);
+    const pageSize = window.PAGE_SIZE || 21;
+    const startItem = (window.currentPage - 1) * pageSize + 1;
+    const endItem = Math.min(window.currentPage * pageSize, totalCount);
     info.textContent = `Menampilkan ${startItem}–${endItem} dari ${totalCount} transaksi`;
     controls.innerHTML = '';
     const prevBtn = document.createElement('button');

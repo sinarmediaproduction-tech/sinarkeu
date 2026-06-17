@@ -242,6 +242,7 @@ window.archiveAndClearData = async function() {
     if (window.isOnline()) {
         await window.callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${window.currentBookId}`);
         await window.callSupabaseAPI('audit_logs', 'DELETE', null, `?book_id=eq.${window.currentBookId}`);
+        // Hapus semua settings buku ini (termasuk budgets & default_budget)
         await window.callSupabaseAPI('settings', 'DELETE', null, `?book_id=eq.${window.currentBookId}`);
     }
     window.txs = [];
@@ -252,6 +253,11 @@ window.archiveAndClearData = async function() {
     localStorage.removeItem('sk_budgets_' + window.currentBookId);
     localStorage.removeItem('sk_default_budget_' + window.currentBookId);
     window.budgets = {};
+    // Push anggaran kosong ke cloud agar tidak ter-restore saat sync berikutnya
+    if (window.isOnline()) {
+        await window.pushSetting('budgets', {}, window.currentBookId);
+        await window.pushSetting('default_budget', {}, window.currentBookId);
+    }
     window.render();
     st.style.background = '#e3fcef';
     st.style.color = '#006644';

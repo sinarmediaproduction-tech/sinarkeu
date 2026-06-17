@@ -75,6 +75,63 @@ window.reEncryptCredentials = async function(url, apiKey) {
     await window.saveEncryptedCredentials(window._sessionCryptoKey, url, apiKey);
 };
 
+// ==================== TELEGRAM SECURE STORAGE ====================
+window.saveTelegramConfigEncrypted = async function(token, chatId, edgeUrl) {
+    if (!window._sessionCryptoKey) {
+        // Fallback plain-text jika session key belum tersedia
+        if (token)   localStorage.setItem('sk_tg_token', token);
+        if (chatId)  localStorage.setItem('sk_tg_chatid', chatId);
+        if (edgeUrl) localStorage.setItem('sk_tg_edge_url', edgeUrl);
+        else         localStorage.removeItem('sk_tg_edge_url');
+        return;
+    }
+    try {
+        const encToken  = token   ? await window.encryptStr(window._sessionCryptoKey, token)   : '';
+        const encChatId = chatId  ? await window.encryptStr(window._sessionCryptoKey, chatId)  : '';
+        const encEdge   = edgeUrl ? await window.encryptStr(window._sessionCryptoKey, edgeUrl) : '';
+        localStorage.setItem('sk_tg_token_enc',  encToken);
+        localStorage.setItem('sk_tg_chatid_enc', encChatId);
+        localStorage.setItem('sk_tg_edge_enc',   encEdge);
+        // Hapus nilai plain-text lama
+        localStorage.removeItem('sk_tg_token');
+        localStorage.removeItem('sk_tg_chatid');
+        localStorage.removeItem('sk_tg_edge_url');
+    } catch (e) {
+        console.warn('[Crypto] Gagal enkripsi Telegram config, fallback plain-text:', e);
+        localStorage.setItem('sk_tg_token', token);
+        localStorage.setItem('sk_tg_chatid', chatId);
+        if (edgeUrl) localStorage.setItem('sk_tg_edge_url', edgeUrl);
+    }
+};
+
+window.getTelegramConfigDecrypted = async function() {
+    const tryDecrypt = async (encVal) => {
+        if (!encVal || !window._sessionCryptoKey) return '';
+        try { return await window.decryptStr(window._sessionCryptoKey, encVal); }
+        catch { return ''; }
+    };
+    const encToken  = localStorage.getItem('sk_tg_token_enc');
+    const encChatId = localStorage.getItem('sk_tg_chatid_enc');
+    const encEdge   = localStorage.getItem('sk_tg_edge_enc');
+    if (encToken || encChatId) {
+        // Baca versi terenkripsi
+        return {
+            token:   await tryDecrypt(encToken),
+            chatId:  await tryDecrypt(encChatId),
+            edgeUrl: await tryDecrypt(encEdge),
+        };
+    }
+    // Fallback migrasi: baca plain-text lama, lalu enkripsi ulang
+    const token   = localStorage.getItem('sk_tg_token')    || '';
+    const chatId  = localStorage.getItem('sk_tg_chatid')   || '';
+    const edgeUrl = localStorage.getItem('sk_tg_edge_url') || '';
+    if (token || chatId) {
+        // Migrasi otomatis ke enkripsi
+        await window.saveTelegramConfigEncrypted(token, chatId, edgeUrl);
+    }
+    return { token, chatId, edgeUrl };
+};
+
 // Lock screen helpers
 window.clearLockError = function() {
     document.getElementById('lockStatus').innerText = '';
