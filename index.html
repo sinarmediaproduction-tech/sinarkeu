@@ -287,6 +287,15 @@
             <div class="stat-value" id="fcKebutuhanSetahun" style="color:#d69e2e; font-size:1rem;">Rp 0</div>
             <div style="font-size:.65rem; color:#888; margin-top:4px;">Dana darurat + anggaran tahunan</div>
         </div>
+        <!-- ===== CARD FASE KEHIDUPAN ===== -->
+        <div class="stat-card" id="cardFaseKehidupan" style="border-top:3px solid #e53e8a; cursor:pointer;" onclick="openFaseKehidupanModal()" title="Klik untuk atur fase kehidupan">
+            <div class="stat-label">💍 Fase Kehidupan <span style="font-size:.6rem; background:#fff0f7; color:#e53e8a; padding:1px 6px; border-radius:8px; margin-left:4px;">✏️ Atur</span></div>
+            <div style="font-size:.88rem; font-weight:700; color:#e53e8a; margin-top:4px; min-height:20px;" id="fcFaseNama">Belum diatur</div>
+            <div style="font-size:.62rem; color:#888; margin-top:4px; line-height:1.5;" id="fcFaseDesc">Klik untuk mengatur fase kehidupan pernikahan Anda</div>
+            <div style="margin-top:8px;">
+                <button onclick="event.stopPropagation(); runFaseAIAnalysis()" id="faseAIBtn" class="btn" style="font-size:.65rem; padding:3px 10px; background:#e53e8a; color:#fff; border-color:#e53e8a; display:none;">🤖 Analisis AI</button>
+            </div>
+        </div>
         <div class="stat-card" id="cardDanaSalingJaga" style="border-top:3px solid #00875a;">
             <div class="stat-label">🤝 Dana Saling Jaga</div>
             <div class="stat-value" id="fcDanaSalingJaga" style="color:#00875a; font-size:1rem;">Rp 0</div>
@@ -748,6 +757,70 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:8px;">
             <span id="aiAnalysisFooter" style="font-size:.65rem; color:#aaa;"></span>
             <div style="display:flex; gap:8px;"><button id="aiCopyBtn" class="btn btn-secondary" style="display:none;" onclick="copyAIResult()">📋 Salin</button><button class="btn btn-secondary" onclick="closeModal('aiAnalysisModal')">Tutup</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL FASE KEHIDUPAN ===== -->
+<div id="faseKehidupanModal" class="modal" style="z-index:2000;">
+    <div class="modal-content" style="max-width:480px;">
+        <div class="modal-header">
+            <h3>💍 Fase Kehidupan Pernikahan</h3>
+            <button class="modal-close" onclick="closeModal('faseKehidupanModal')">×</button>
+        </div>
+        <div style="padding:0 22px 16px;">
+            <div style="font-size:.72rem; color:#666; margin-bottom:14px; line-height:1.6; background:#fff0f7; border:1px solid #fbb6ce; border-radius:8px; padding:10px 12px;">
+                Atur fase kehidupan pernikahan Anda agar analisis AI bisa memberikan rekomendasi keuangan yang lebih relevan dan personal.
+            </div>
+            <div class="form-group">
+                <label>Fase Kehidupan Saat Ini</label>
+                <select id="faseSelect" class="form-control" onchange="updateFaseDesc()">
+                    <option value="">-- Pilih Fase --</option>
+                    <option value="1">💑 Fase 1 — Bulan Madu (0–2 thn menikah)</option>
+                    <option value="2">🏠 Fase 2 — Penyesuaian & Realita (2–5 thn)</option>
+                    <option value="3">👶 Fase 3 — Pengasuhan Awal (anak pertama lahir)</option>
+                    <option value="4">🎒 Fase 4 — Keluarga Aktif (anak usia sekolah)</option>
+                    <option value="5">🧑‍🎓 Fase 5 — Remaja & Melepas (anak remaja)</option>
+                    <option value="6">🪹 Fase 6 — Sarang Kosong (anak mandiri)</option>
+                    <option value="7">👴👵 Fase 7 — Pensiun & Menua Bersama</option>
+                </select>
+            </div>
+            <div id="faseDescBox" style="font-size:.72rem; color:#555; background:#fafafa; border:1px solid #eee; border-radius:8px; padding:10px 12px; margin-bottom:14px; line-height:1.7; display:none;"></div>
+            <div class="form-group">
+                <label>Jumlah Tanggungan (anak / anggota keluarga non-penghasilan)</label>
+                <input type="number" id="faseTanggungan" class="form-control" placeholder="Contoh: 2" min="0" max="20" step="1">
+            </div>
+            <div class="form-group">
+                <label>Target Keuangan Utama Fase Ini <span style="font-weight:400; color:#888; font-size:.68rem;">(opsional)</span></label>
+                <input type="text" id="faseTarget" class="form-control" placeholder="Contoh: Beli rumah, Dana pendidikan anak, Cicilan KPR...">
+            </div>
+            <div style="display:flex; gap:8px; margin-top:4px;">
+                <button class="btn btn-secondary" style="flex:1;" onclick="closeModal('faseKehidupanModal')">Batal</button>
+                <button class="btn btn-primary" style="flex:2; background:#e53e8a; border-color:#e53e8a;" onclick="saveFaseKehidupan()">💾 Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL AI FASE KEHIDUPAN ===== -->
+<div id="faseAIModal" class="modal" style="z-index:2000;">
+    <div class="modal-content report" style="max-width:620px;">
+        <div class="modal-header">
+            <h3>🤖 Analisis AI — Fase Kehidupan</h3>
+            <button class="modal-close" onclick="closeModal('faseAIModal')">×</button>
+        </div>
+        <div style="padding:0 22px 16px;">
+            <div id="faseAIResult" style="min-height:200px; background:#faf9ff; border:1.5px solid #fbb6ce; border-radius:10px; padding:18px 20px; font-size:.82rem; line-height:1.75; color:#1a1a1a; white-space:pre-wrap; overflow-y:auto; max-height:420px;">
+                <div style="text-align:center; color:#999; padding:40px 0;">Klik <strong>Analisis Sekarang</strong> untuk mulai.</div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:8px;">
+                <span id="faseAIFooter" style="font-size:.65rem; color:#aaa;"></span>
+                <div style="display:flex; gap:8px;">
+                    <button id="faseAICopyBtn" class="btn btn-secondary" style="display:none;" onclick="copyFaseAIResult()">📋 Salin</button>
+                    <button id="faseAIRunBtn" class="btn btn-primary" style="background:#e53e8a; border-color:#e53e8a;" onclick="runFaseAIAnalysis()">✨ Analisis Sekarang</button>
+                    <button class="btn btn-secondary" onclick="closeModal('faseAIModal')">Tutup</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
