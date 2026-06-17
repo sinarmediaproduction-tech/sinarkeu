@@ -71,7 +71,7 @@ window.renderBudget = function() {
             tag.innerText = '📌 Khusus bulan ini';
         } else if (source === 'default' && Object.keys(currentBudget).length > 0) {
             tag.className = 'budget-source-tag default';
-            tag.innerText = '🏠 Anggaran Dasar';
+            tag.innerText = '📋 Anggaran Bulanan';
         } else {
             tag.className = 'budget-source-tag none';
             tag.innerText = 'Tidak ada';
@@ -136,15 +136,15 @@ window.renderBudgetFormFields = function() {
     const infoDiv = document.createElement('div');
     infoDiv.style.cssText = 'font-size:.72rem; color:#666; margin-bottom:12px; padding:8px 12px; border-radius:6px; background:#f5f5f5;';
     if (source === 'default') {
-        infoDiv.innerHTML = '🏠 <b>Menggunakan Anggaran Dasar</b> — Anda dapat mengubahnya di sini untuk membuat versi khusus bulan ini.';
+        infoDiv.innerHTML = '🏠 <b>Menggunakan Anggaran Bulanan</b> — Anda dapat mengubahnya di sini untuk membuat versi khusus bulan ini.';
         infoDiv.style.background = '#e3fcef';
         infoDiv.style.color = '#006644';
     } else if (source === 'custom') {
-        infoDiv.innerHTML = '📌 <b>Anggaran Khusus Bulan Ini</b> — Bulan berikutnya akan kembali ke Anggaran Dasar.';
+        infoDiv.innerHTML = '📌 <b>Anggaran Khusus Bulan Ini</b> — Bulan berikutnya akan kembali ke Anggaran Bulanan.';
         infoDiv.style.background = '#e8f0fe';
         infoDiv.style.color = '#1a56db';
     } else {
-        infoDiv.innerHTML = '⚠️ <b>Belum ada anggaran</b> — Atur anggaran di bawah, atau buat Anggaran Dasar di menu terpisah.';
+        infoDiv.innerHTML = '⚠️ <b>Belum ada anggaran</b> — Atur anggaran di bawah, atau klik kartu Anggaran Bulanan untuk mengaturnya.';
         infoDiv.style.background = '#fff3e0';
         infoDiv.style.color = '#cc7b00';
     }
@@ -199,7 +199,7 @@ window.saveBudget = function() {
     });
     if (!hasAnyValue) {
         delete window.budgets[key];
-        window.showToast('Anggaran bulan ini dihapus, akan menggunakan Anggaran Dasar.', 'info');
+        window.showToast('Anggaran bulan ini dihapus, akan menggunakan Anggaran Bulanan.', 'info');
     } else {
         window.showToast('Anggaran bulanan berhasil diperbarui', 'success');
     }
@@ -211,7 +211,7 @@ window.saveBudget = function() {
 
 // Default Budget Modal
 window.openDefaultBudgetModal = function() {
-    if (!window.requireOnline('mengatur anggaran dasar')) return;
+    if (!window.requireOnline('mengatur anggaran bulanan')) return;
     window.renderDefaultBudgetForm();
     window.openModal('defaultBudgetModal');
 };
@@ -237,11 +237,11 @@ window.updateDefaultBudgetSummary = function() {
     inputs.forEach(input => { total += window.unRp(input.value); });
     const el = document.getElementById('defaultBudgetSummary');
     if (el) {
-        el.innerText = 'Total Template Anggaran Dasar: ' + window.rp(total);
+        el.innerText = 'Total Anggaran Bulanan: ' + window.rp(total);
     }
 };
 window.saveDefaultBudget = function() {
-    if (!window.requireOnline('menyimpan anggaran dasar')) return;
+    if (!window.requireOnline('menyimpan anggaran bulanan')) return;
     const inputs = document.querySelectorAll('.default-budget-input');
     const newBudget = {};
     inputs.forEach(input => {
@@ -251,10 +251,11 @@ window.saveDefaultBudget = function() {
         }
     });
     window.saveDefaultBudgetToLocal(window.currentBookId, newBudget);
-    window.showToast('✅ Anggaran Dasar berhasil disimpan!', 'success');
+    window.showToast('✅ Anggaran Bulanan berhasil disimpan!', 'success');
     window.closeModal('defaultBudgetModal');
     window.renderBudget();
     window.pushSettingBudgets();
+    window.updateFinancialCards && window.updateFinancialCards();
     if (document.getElementById('budgetModal').classList.contains('show')) {
         window.renderBudgetFormFields();
     }
@@ -393,11 +394,4 @@ window.saveAnnualBudget = function() {
     window.showToast('✅ Anggaran Tahunan berhasil disimpan!', 'success');
     window.closeModal('annualBudgetModal');
     window.updateFinancialCards();
-};
-
-// ==================== PATCH: update financial cards setelah simpan Anggaran Dasar ====================
-const _origSaveDefaultBudget = window.saveDefaultBudget;
-window.saveDefaultBudget = function() {
-    _origSaveDefaultBudget();
-    window.updateFinancialCards && window.updateFinancialCards();
 };
