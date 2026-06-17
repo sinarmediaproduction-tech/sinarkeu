@@ -1052,18 +1052,16 @@
     function renderPrList() {
         const list = loadReminders();
         const container = document.getElementById('prList');
-        const emptyMsg = document.getElementById('prEmptyMsg');
         const upcomingAlert = document.getElementById('prUpcomingAlert');
         if (!container) return;
 
         if (list.length === 0) {
-            emptyMsg.style.display = 'block';
-            container.innerHTML = '';
-            container.appendChild(emptyMsg);
-            upcomingAlert.style.display = 'none';
+            // Dibangun ulang sebagai string agar tidak bergantung pada node #prEmptyMsg
+            // yang bisa saja sudah terhapus dari DOM oleh render sebelumnya.
+            container.innerHTML = '<div id="prEmptyMsg" style="font-size:.72rem; color:#aaa; text-align:center; padding:18px 0;">Belum ada jadwal pembayaran. Tambahkan di bawah.</div>';
+            if (upcomingAlert) upcomingAlert.style.display = 'none';
             return;
         }
-        emptyMsg.style.display = 'none';
 
         // Sort by days until next
         const sorted = list.map(item => ({ item, ...getDaysUntilNext(item) }))
