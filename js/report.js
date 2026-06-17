@@ -217,7 +217,7 @@ function exportReportAsPDF() {
         <td class="money expense">${fmtRp(v)}</td>
         <td class="money">${bud > 0 ? fmtRp(bud) : '—'}</td>
         <td class="center">${bud > 0 ? `${pct}%` : '—'}</td>
-        <td style="padding:8px 10px; width:90px;">
+        <td style="padding:5.5px 6px;">
           ${bud > 0 ? `<div style="height:7px;border-radius:4px;background:#eee;">
             <div style="height:7px;border-radius:4px;background:${barColor};width:${pct}%;"></div>
           </div>` : ''}
@@ -233,6 +233,11 @@ function exportReportAsPDF() {
 <meta charset="UTF-8">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 210mm;
+    max-width: 210mm;
+    overflow-x: hidden;
+  }
   body {
     font-family: 'Inter', Arial, sans-serif;
     font-size: 9pt;
@@ -240,6 +245,7 @@ function exportReportAsPDF() {
     background: #fff;
     padding: 0;
   }
+  table { table-layout: fixed; }
 
   /* ── Cover Header ── */
   .doc-header {
@@ -355,24 +361,26 @@ function exportReportAsPDF() {
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 8pt;
+    font-size: 7.5pt;
   }
   th {
     background: #f0f2f5;
-    padding: 7px 9px;
+    padding: 6px 6px;
     font-weight: 700;
-    font-size: 7.5pt;
+    font-size: 7pt;
     text-align: left;
     border-bottom: 2px solid #d0d5dd;
-    white-space: nowrap;
+    word-break: break-word;
   }
   td {
-    padding: 6.5px 9px;
+    padding: 5.5px 6px;
     border-bottom: 1px solid #f0f0f0;
     vertical-align: middle;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
   tr:last-child td { border-bottom: none; }
-  .money { text-align: right; font-family: 'Courier New', monospace; white-space: nowrap; }
+  .money { text-align: right; font-family: 'Courier New', monospace; }
   .income { color: #006644; font-weight: 600; }
   .expense { color: #bf2600; font-weight: 600; }
   .center { text-align: center; }
@@ -469,11 +477,11 @@ function exportReportAsPDF() {
     <table>
       <thead>
         <tr>
-          <th>Kategori</th>
-          <th class="money">Realisasi</th>
-          <th class="money">Anggaran</th>
-          <th class="center">%</th>
-          <th style="width:90px;">Progress</th>
+          <th style="width:32%;">Kategori</th>
+          <th class="money" style="width:20%;">Realisasi</th>
+          <th class="money" style="width:20%;">Anggaran</th>
+          <th class="center" style="width:10%;">%</th>
+          <th style="width:18%;">Progress</th>
         </tr>
       </thead>
       <tbody>${catRows}</tbody>
@@ -494,12 +502,12 @@ function exportReportAsPDF() {
     <table>
       <thead>
         <tr>
-          <th class="center" style="width:28px;">No</th>
-          <th style="width:90px;">Tanggal</th>
-          <th style="width:110px;">Kategori</th>
-          <th>Deskripsi</th>
-          <th class="money" style="width:100px;">Pemasukan</th>
-          <th class="money" style="width:100px;">Pengeluaran</th>
+          <th class="center" style="width:6%;">No</th>
+          <th style="width:14%;">Tanggal</th>
+          <th style="width:18%;">Kategori</th>
+          <th style="width:32%;">Deskripsi</th>
+          <th class="money" style="width:15%;">Pemasukan</th>
+          <th class="money" style="width:15%;">Pengeluaran</th>
         </tr>
       </thead>
       <tbody>${txRows || `<tr><td colspan="6" class="center muted" style="padding:14px;">Tidak ada transaksi bulan ini</td></tr>`}</tbody>
