@@ -293,9 +293,9 @@ window.handleSubmit = async function(e) {
     e.preventDefault();
     if (!window.requireOnline('menambah transaksi')) return;
     let type = document.querySelector('input[name="type"]:checked').value;
-    let nowTx = new Date();
-    nowTx.setMinutes(nowTx.getMinutes() - nowTx.getTimezoneOffset());
-    let date = nowTx.toISOString().slice(0, 16);
+    const nowTx = new Date();
+    const _pad = n => String(n).padStart(2, '0');
+    const date = `${nowTx.getFullYear()}-${_pad(nowTx.getMonth()+1)}-${_pad(nowTx.getDate())}T${_pad(nowTx.getHours())}:${_pad(nowTx.getMinutes())}`;
     document.getElementById('txDate').value = date;
     let category = type === 'expense' ? document.getElementById('txCategory').value : 'Pemasukan';
     let description = document.getElementById('txDesc').value.trim();
