@@ -64,7 +64,8 @@ window.testEmasApiKey = async function() {
     if (!key) { st.style.color = '#de350b'; st.innerText = '❌ Isi API key dulu.'; return; }
     st.style.color = '#cc7b00'; st.innerText = '⏳ Menghubungi server...';
     try {
-        const res = await fetch('https://emas.maulanar.my.id/api/prices/brand/antam?limit=1', {
+        // Gunakan Vercel proxy (/api/emas) untuk menghindari CORS
+        const res = await fetch('/api/emas', {
             headers: { 'X-API-Key': key },
             signal: AbortSignal.timeout(8000)
         });
@@ -112,7 +113,8 @@ window.fetchGoldPrice = async function() {
     const emasApiKey = (localStorage.getItem('sk_emas_api_key') || '').trim();
     if (emasApiKey) {
         try {
-            const res = await fetch('https://emas.maulanar.my.id/api/prices/brand/antam?limit=1', {
+            // Gunakan Vercel proxy (/api/emas) untuk menghindari CORS
+            const res = await fetch('/api/emas', {
                 headers: { 'X-API-Key': emasApiKey },
                 signal: AbortSignal.timeout(8000)
             });
