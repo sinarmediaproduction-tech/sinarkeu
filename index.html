@@ -54,13 +54,14 @@
         </div>
         <div style="overflow-y:auto; max-height:70vh; padding-right:6px; font-size:.82rem; line-height:1.7; color:#1a1a1a;">
             <h4 style="margin-top:0;">Selamat datang di Sinarkeu!</h4>
-            <p>Aplikasi ini adalah buku kas digital yang aman, multi‑akun, dan bisa disinkronkan ke cloud. Semua data Anda dienkripsi dengan password pribadi.</p>
+            <p>Aplikasi ini adalah buku kas digital multi‑akun yang bisa disinkronkan ke database Supabase milik Anda sendiri. Kredensial koneksi dan seluruh data pengaturan (anggaran, konfigurasi Telegram, dll.) dienkripsi dengan password pribadi Anda sebelum dikirim ke cloud.</p>
             <hr style="margin:14px 0;">
 
             <h5>🔐 1. Setup Awal</h5>
             <ul>
                 <li><strong>Supabase URL &amp; Anon Key</strong> – Dapatkan dari dashboard Supabase Anda. Masukkan di form setup pertama kali.</li>
                 <li><strong>Password Enkripsi</strong> – Buat password minimal 6 karakter. <strong>Simpan baik‑baik</strong>, karena tidak bisa dipulihkan. Password ini digunakan untuk membuka kunci aplikasi setiap kali.</li>
+                <li><strong>Apa yang dilindungi password ini?</strong> Password enkripsi melindungi kredensial Supabase Anda dan seluruh data pengaturan (anggaran, Telegram, dll.) saat disimpan maupun dikirim ke cloud. Keamanan data transaksi di database Supabase Anda sendiri ditentukan oleh aturan akses (Row Level Security) yang Anda atur di project Supabase tersebut, bukan oleh password ini.</li>
             </ul>
 
             <h5>👤 2. Manajemen Akun</h5>
