@@ -513,6 +513,8 @@ window.updateFaseCard = function() {
     if (aiBtn) aiBtn.style.display = 'inline-flex';
 };
 
+// Filter
+window.setFilter = function(f) {
     window.currentPage = 1;
     window.currentFilter = f;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
