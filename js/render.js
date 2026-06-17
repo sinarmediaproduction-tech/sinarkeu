@@ -114,6 +114,9 @@ window.updateFinancialCards = function() {
     // Dana Darurat = 12x anggaran bulanan
     const danaDarurat = anggaranBulanan * 12;
 
+    // Kebutuhan Setahun = Dana Darurat + Anggaran Tahunan
+    const kebutuhanSetahun = danaDarurat + anggaranTahunan;
+
     // Dana Saling Jaga = 30% dari (saldo - dana darurat), min 0
     const sisaSetelahDarurat = saldoAkhir - danaDarurat;
     const danaSalingJaga = sisaSetelahDarurat > 0 ? sisaSetelahDarurat * 0.3 : 0;
@@ -123,6 +126,7 @@ window.updateFinancialCards = function() {
     set('fcAnggaranBulanan', anggaranBulanan);
     set('fcAnggaranTahunan', anggaranTahunan);
     set('fcDanaDarurat', danaDarurat);
+    set('fcKebutuhanSetahun', kebutuhanSetahun);
     set('fcDanaSalingJaga', danaSalingJaga);
 
     // Warna peringatan card Dana Saling Jaga
@@ -139,6 +143,18 @@ window.updateFinancialCards = function() {
             cardDSJ.style.background = '';
             note.innerText = '30% dari saldo setelah dana darurat';
             note.style.color = '#888';
+        }
+    }
+
+    // Warna peringatan card Kebutuhan Setahun
+    const cardKS = document.getElementById('cardKebutuhanSetahun');
+    if (cardKS) {
+        if (saldoAkhir < kebutuhanSetahun) {
+            cardKS.style.borderTopColor = '#de350b';
+            cardKS.style.background = '#fff5f5';
+        } else {
+            cardKS.style.borderTopColor = '#d69e2e';
+            cardKS.style.background = '';
         }
     }
 };
