@@ -224,7 +224,6 @@
         </div>
         <div class="budget-mini-actions">
             <button class="btn-icon" id="anggaranBtn" onclick="openBudgetModal()">📊 Anggarkan</button>
-            <button class="btn-icon" id="anggaranDasarBtn" onclick="openDefaultBudgetModal()">📋 Dasar</button>
             <button class="btn-icon" id="laporanBtn" onclick="openMonthlyReport()">📄 Laporan</button>
             <button class="btn-icon" id="pdfBtn" onclick="generatePDFReport()">📎 PDF</button>
         </div>
@@ -266,10 +265,10 @@
 
     <!-- ===== FINANCIAL PLANNING CARDS ===== -->
     <div class="stats-grid" style="margin-top:10px;">
-        <div class="stat-card" style="border-top:3px solid #1a56db;">
-            <div class="stat-label">📋 Anggaran Bulanan</div>
+        <div class="stat-card" id="cardAnggaranBulanan" style="border-top:3px solid #1a56db; cursor:pointer;" onclick="window.openDefaultBudgetModal()" title="Klik untuk atur anggaran bulanan">
+            <div class="stat-label">📋 Anggaran Bulanan <span style="font-size:.6rem; background:#ebf3ff; color:#1a56db; padding:1px 6px; border-radius:8px; margin-left:4px;">✏️ Atur</span></div>
             <div class="stat-value" id="fcAnggaranBulanan" style="color:#1a56db; font-size:1rem;">Rp 0</div>
-            <div style="font-size:.65rem; color:#888; margin-top:4px;">Dari template Anggaran Dasar</div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;">Template per kategori, berlaku tiap bulan</div>
         </div>
         <div class="stat-card" id="cardAnggaranTahunan" style="border-top:3px solid #6b46c1; cursor:pointer;" onclick="openAnnualBudgetModal()" title="Klik untuk atur anggaran tahunan">
             <div class="stat-label">📅 Anggaran Tahunan <span style="font-size:.6rem; background:#f3e8ff; color:#553c9a; padding:1px 6px; border-radius:8px; margin-left:4px;">✏️ Atur</span></div>
@@ -646,19 +645,19 @@
     </div>
 </div>
 
-<!-- Modal Anggaran Dasar -->
+<!-- Modal Anggaran Bulanan -->
 <div id="defaultBudgetModal" class="modal">
     <div class="modal-content wide">
-        <div class="modal-header"><h3>📋 Anggaran Dasar</h3><button class="modal-close" onclick="closeModal('defaultBudgetModal')">×</button></div>
-        <div style="background:#e3fcef; border:1px solid #b7e6c5; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:#006644;">
-            🏠 <b>Anggaran Dasar</b> adalah template anggaran yang berlaku <b>secara otomatis</b> di setiap bulan
-            yang belum memiliki anggaran khusus. Ubah di sini untuk memperbarui template global buku ini.
+        <div class="modal-header"><h3>📋 Anggaran Bulanan</h3><button class="modal-close" onclick="closeModal('defaultBudgetModal')">×</button></div>
+        <div style="background:#ebf3ff; border:1px solid #c5d8ff; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:#1a56db;">
+            📋 <b>Anggaran Bulanan</b> adalah template per kategori yang berlaku <b>secara otomatis</b> di setiap bulan
+            yang belum memiliki anggaran khusus. Untuk mengatur anggaran bulan tertentu saja, gunakan tombol <b>Anggarkan</b>.
         </div>
         <div id="defaultBudgetCategoriesContainer"></div>
         <div id="defaultBudgetSummary" class="budget-summary-row"></div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="closeModal('defaultBudgetModal')">Tutup</button>
-            <button class="btn btn-primary" onclick="saveDefaultBudget()">💾 Simpan Template</button>
+            <button class="btn btn-primary" onclick="saveDefaultBudget()">💾 Simpan</button>
         </div>
     </div>
 </div>
