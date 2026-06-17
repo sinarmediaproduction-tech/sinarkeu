@@ -35,7 +35,7 @@ window.render = function() {
     if ((window.expenseChartVisible || !window._expenseChartInitialized) && typeof window.renderExpenseChart === 'function') {
         window.renderExpenseChart();
     }
-    let allSorted = [...window.txs].sort((a, b) => new Date(a.date) - new Date(b.date));
+    let allSorted = [...window.txs].sort((a, b) => window.parseTxDate(a.date) - window.parseTxDate(b.date));
     let balanceMap = {};
     let tempBal = balanceOffset;
     allSorted.forEach(t => {
