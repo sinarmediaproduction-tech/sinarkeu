@@ -35,7 +35,7 @@ window.ensureMonthlyBudgetExists = function(year, month, bookId) {
     if (Object.keys(defaultBudget).length > 0) {
         window.budgets[key] = { ...defaultBudget };
         localStorage.setItem('sk_budgets_' + bId, JSON.stringify(window.budgets));
-        window.pushSettingBudgets();
+        window.saveMonthlyBudgetToCloud(bId, window.budgets);
         console.log(`[Budget] Auto-apply default budget untuk ${key} di buku ${bId}`);
     }
 };
@@ -50,7 +50,7 @@ window.checkNewMonthAutoApply = function() {
         if (Object.keys(defaultBudget).length > 0) {
             window.budgets[key] = { ...defaultBudget };
             localStorage.setItem('sk_budgets_' + window.currentBookId, JSON.stringify(window.budgets));
-            window.pushSettingBudgets();
+            window.saveMonthlyBudgetToCloud(window.currentBookId, window.budgets);
             console.log(`[Budget] Auto-apply default budget untuk ${key} (bulan baru)`);
             window.renderBudget();
         }
@@ -206,7 +206,7 @@ window.saveBudget = function() {
     localStorage.setItem('sk_budgets_' + window.currentBookId, JSON.stringify(window.budgets));
     window.closeModal('budgetModal');
     window.renderBudget();
-    window.pushSettingBudgets();
+    window.saveMonthlyBudgetToCloud(window.currentBookId, window.budgets);
 };
 
 // Default Budget Modal
@@ -254,7 +254,7 @@ window.saveDefaultBudget = function() {
     window.showToast('✅ Anggaran Bulanan berhasil disimpan!', 'success');
     window.closeModal('defaultBudgetModal');
     window.renderBudget();
-    window.pushSettingBudgets();
+    window.saveDefaultBudgetToCloud(window.currentBookId, newBudget);
     window.updateFinancialCards && window.updateFinancialCards();
     if (document.getElementById('budgetModal').classList.contains('show')) {
         window.renderBudgetFormFields();
