@@ -1,6 +1,22 @@
 // ==================== TRANSACTIONS ====================
+
+// Parser tanggal "aman timezone": angka jam/menit di string SELALU dibaca
+// sebagai angka jam/menit lokal apa adanya, berapa pun suffix timezone-nya
+// (tanpa suffix, "Z", atau "+00:00" dari Supabase). Ini mencegah bug
+// "tanggal mundur/maju" akibat double timezone conversion saat data
+// ditarik ulang dari cloud. Pakai fungsi ini setiap kali butuh objek Date
+// dari field date transaksi (sorting, perbandingan, format tampilan),
+// JANGAN pakai new Date(t.date) langsung.
+window.parseTxDate = function(str) {
+    if (!str) return new Date(NaN);
+    const m = String(str).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (!m) return new Date(str);
+    const [, y, mo, d, h, mi, s] = m;
+    return new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s || 0));
+};
+
 window.trimAndSaveLocal = function(bookId, data) {
-    const sorted = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const sorted = [...data].sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date));
     const trimmed = sorted.slice(0, 300);
     localStorage.setItem('sk_txs_' + bookId, JSON.stringify(trimmed));
     const remainder = sorted.slice(300);
@@ -39,7 +55,7 @@ window.pullFromCloudSilently = async function() {
                     };
                 }
             });
-            window.txs = Object.values(localMap).sort((a, b) => new Date(b.date) - new Date(a.date));
+            window.txs = Object.values(localMap).sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date));
         } else if (!lastSync) {
             window.txs = cloudData.map(c => ({
                 id: c.id, type: c.type, amount: Number(c.amount),
@@ -181,7 +197,7 @@ window.renderLogs = function(logArray) {
 window.loadTransactions = function() {
     let stored = localStorage.getItem('sk_txs_' + window.currentBookId);
     window.txs = stored ? JSON.parse(stored) : [];
-    window.txs.sort((a, b) => new Date(b.date) - new Date(a.date));
+    window.txs.sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date));
     window.render();
     if (window.isOnline()) window.pullFromCloudSilently();
 };
