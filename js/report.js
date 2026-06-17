@@ -1,161 +1,560 @@
-// ==================== REPORT ====================
-window.openMonthlyReport = function() {
-    let m = document.getElementById('budgetMonth').value;
-    let y = document.getElementById('budgetYear').value;
-    document.getElementById('reportMonth').value = m;
-    document.getElementById('reportYear').value = y;
-    window.openModal('monthlyReportModal');
-    window.generateMonthlyReport();
-};
-window.generateMonthlyReport = function() {
-    let m = parseInt(document.getElementById('reportMonth').value);
-    let y = parseInt(document.getElementById('reportYear').value);
-    let monthsText = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    document.getElementById('reportModalTitle').innerText = `📊 Laporan Bulanan - ${monthsText[m - 1]} ${y}`;
-    const effective = window.getEffectiveBudget(y, m, window.currentBookId);
-    const budgetMap = effective.budget;
-    const source = effective.source;
-    let actualMap = {};
-    window.EXPENSE_CATEGORIES.forEach(c => actualMap[c] = 0);
-    let totalInc = 0, totalExp = 0;
-    window.txs.forEach(t => {
-        let d = new Date(t.date);
-        if ((d.getMonth() + 1) === m && d.getFullYear() === y) {
-            let amt = Number(t.amount) || 0;
-            if (t.type === 'income') totalInc += amt;
-            else {
-                totalExp += amt;
-                if (actualMap[t.category] !== undefined) actualMap[t.category] += amt;
-                else actualMap['Lain-lain'] += amt;
-            }
-        }
-    });
-    let html = `
-        <div class="report-stats">
-            <div class="report-stat-card"><div class="report-stat-label">Pemasukan Bulanan</div><div class="report-stat-value" style="color:#00875a">${window.rp(totalInc)}</div></div>
-            <div class="report-stat-card"><div class="report-stat-label">Pengeluaran Bulanan</div><div class="report-stat-value" style="color:#de350b">${window.rp(totalExp)}</div></div>
-            <div class="report-stat-card"><div class="report-stat-label">Selisih Kas Bulanan</div><div class="report-stat-value">${window.rp(totalInc - totalExp)}</div></div>
-        </div>
-        <div style="font-size:.7rem; color:#666; margin-bottom:12px; padding:6px 12px; background:#f5f5f5; border-radius:6px;">
-            Sumber Anggaran: ${source === 'custom' ? '📌 Khusus bulan ini' : (source === 'default' ? '🏠 Anggaran Dasar' : 'Tidak ada')}
-        </div>
-        <div class="chart-container"><canvas id="reportChartCanvas"></canvas></div>
-        <div class="report-table-wrap">
-        <table class="report-table">
-            <thead><tr><th>Kategori Pengeluaran</th><th>Target Anggaran</th><th>Realisasi</th><th>Sisa / Lebih</th><th>Persentase</th></tr></thead>
-            <tbody>
-    `;
-    let chartLabels = [];
-    let chartTargetData = [];
-    let chartActualData = [];
-    window.EXPENSE_CATEGORIES.forEach(cat => {
-        let tar = budgetMap[cat] || 0;
-        let act = actualMap[cat] || 0;
-        let diff = tar - act;
-        let pct = tar > 0 ? ((act / tar) * 100).toFixed(0) + '%' : (act > 0 ? '100%' : '0%');
-        let diffStyle = diff >= 0 ? 'color:#00875a' : 'color:#de350b';
-        if (tar > 0 || act > 0) {
-            const shortLabel = { 'Makanan & Minuman': 'Makanan', 'Transportasi': 'Transport', 'Belanja': 'Belanja', 'Tagihan': 'Tagihan', 'Hiburan': 'Hiburan', 'Kesehatan': 'Kesehatan', 'Pendidikan': 'Pendidikan', 'Investasi': 'Investasi' };
-            chartLabels.push(shortLabel[cat] || cat);
-            chartTargetData.push(tar);
-            chartActualData.push(act);
-        }
-        html += `<tr><td>${window.escapeHtml(cat)}</td><td>${window.rp(tar)}</td><td>${window.rp(act)}</td><td style="${diffStyle}">${window.rp(diff)}</td><td>${pct}</td></tr>`;
-    });
-    html += `</tbody></table></div>`;
-    document.getElementById('reportContent').innerHTML = html;
-    if (chartLabels.length === 0) { chartLabels = ['Belum ada Anggaran']; chartTargetData = [0]; chartActualData = [0]; }
-    setTimeout(() => {
-        let ctx = document.getElementById('reportChartCanvas').getContext('2d');
-        if (window.reportChart) window.reportChart.destroy();
-        window.reportChart = new Chart(ctx, {
-            type: 'bar',
-            data: { labels: chartLabels, datasets: [{ label: 'Target Anggaran', data: chartTargetData, backgroundColor: '#4a5568' }, { label: 'Realisasi Aktual', data: chartActualData, backgroundColor: '#de350b' }] },
-            options: { responsive: true, scales: { y: { beginAtZero: true } } }
-        });
-    }, 100);
-};
-window.exportReportAsPDF = function() {
-    let element = document.getElementById('reportContent');
-    let titleText = document.getElementById('reportModalTitle').innerText;
-    let opt = { margin: 10, filename: titleText + '.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-    html2pdf().set(opt).from(element).save();
-};
-window.generatePDFReport = function() {
-    let element = document.querySelector('.table-container');
-    let opt = { margin: 10, filename: 'Sinarkeu-Daftar-Transaksi-' + window.currentBookId + '.pdf', image: { type: 'jpeg', quality: 0.95 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
-    html2pdf().set(opt).from(element).save();
-};
+// ============================================================
+// report.js — Sinarkeu: Laporan & Export PDF Profesional
+// ============================================================
 
-// Expense Chart
-window.renderExpenseChart = function() {
-    const body = document.getElementById('expenseChartBody');
-    if (!body) return;
-    let source = window.txs.filter(t => t.type === 'expense');
-    if (window.expenseChartMode === 'month') {
-        const now = new Date();
-        const yy = now.getFullYear();
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const prefix = `${yy}-${mm}`;
-        source = source.filter(t => (t.date || '').startsWith(prefix));
+// ── Helper ──────────────────────────────────────────────────
+function fmtRp(n) {
+  if (n == null || isNaN(n)) return 'Rp 0';
+  const abs = Math.abs(n);
+  const str = 'Rp ' + abs.toLocaleString('id-ID');
+  return n < 0 ? '-' + str : str;
+}
+
+function fmtDate(dateStr) {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+function monthName(m) {
+  const names = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  return names[+m] || '';
+}
+
+function nowStr() {
+  return new Date().toLocaleDateString('id-ID', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
+// ── Generate Laporan (tampilan dalam modal) ──────────────────
+function generateMonthlyReport() {
+  const month = parseInt(document.getElementById('reportMonth').value);
+  const year  = parseInt(document.getElementById('reportYear').value);
+  const key   = `${year}-${String(month).padStart(2, '0')}`;
+
+  const allTx    = (window.transactions || []).filter(t => {
+    const d = new Date(t.date || t.created_at);
+    return d.getFullYear() === year && (d.getMonth() + 1) === month;
+  });
+
+  const income   = allTx.filter(t => t.type === 'income').reduce((s, t) => s + (+t.amount || 0), 0);
+  const expense  = allTx.filter(t => t.type === 'expense').reduce((s, t) => s + (+t.amount || 0), 0);
+  const balance  = income - expense;
+
+  // Pengeluaran per kategori
+  const catMap = {};
+  allTx.filter(t => t.type === 'expense').forEach(t => {
+    const c = t.category || 'Lainnya';
+    catMap[c] = (catMap[c] || 0) + (+t.amount || 0);
+  });
+  const cats = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
+
+  // Anggaran bulan ini
+  const budgets = (window.budgets && window.budgets[key]) ? window.budgets[key] : {};
+  const totalBudget = Object.values(budgets).reduce((s, v) => s + (+v || 0), 0);
+
+  // Buat HTML untuk modal
+  const bookName = (window.currentBook && window.currentBook.name) ? window.currentBook.name : 'Buku Kas';
+  const accName  = document.getElementById('activeAccountLabel')?.textContent || '';
+
+  let catRows = cats.length
+    ? cats.map(([c, v]) => {
+        const budget = budgets[c] || 0;
+        const pct    = budget > 0 ? Math.min(100, Math.round(v / budget * 100)) : null;
+        const bar    = budget > 0
+          ? `<div style="height:6px;border-radius:3px;background:#eee;margin-top:3px;">
+               <div style="height:6px;border-radius:3px;background:${pct >= 100 ? '#de350b' : pct >= 80 ? '#ff991f' : '#00875a'};width:${pct}%;"></div>
+             </div>` : '';
+        return `<tr>
+          <td style="padding:8px 10px;">${c}</td>
+          <td style="padding:8px 10px; text-align:right;">${fmtRp(v)}</td>
+          <td style="padding:8px 10px; text-align:right; color:#888;">${budget > 0 ? fmtRp(budget) : '—'}</td>
+          <td style="padding:8px 10px; width:100px;">${budget > 0 ? `${pct}%${bar}` : '—'}</td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="4" style="padding:16px; text-align:center; color:#aaa;">Tidak ada pengeluaran</td></tr>`;
+
+  document.getElementById('reportContent').innerHTML = `
+    <div style="font-family:'Inter',sans-serif; color:#1a1a1a;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+        <div>
+          <div style="font-size:.75rem; color:#888;">${accName} · ${bookName}</div>
+          <div style="font-size:1.05rem; font-weight:700;">${monthName(month)} ${year}</div>
+        </div>
+        <div style="font-size:.7rem; color:#aaa;">Dibuat: ${nowStr()}</div>
+      </div>
+
+      <!-- Summary cards -->
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px;">
+        <div style="background:#e3fcef; border:1.5px solid #57d9a3; border-radius:10px; padding:14px 16px;">
+          <div style="font-size:.65rem; color:#006644; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Total Pemasukan</div>
+          <div style="font-size:1rem; font-weight:700; color:#006644; margin-top:4px;">${fmtRp(income)}</div>
+        </div>
+        <div style="background:#fff0f0; border:1.5px solid #ff8f73; border-radius:10px; padding:14px 16px;">
+          <div style="font-size:.65rem; color:#bf2600; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Total Pengeluaran</div>
+          <div style="font-size:1rem; font-weight:700; color:#bf2600; margin-top:4px;">${fmtRp(expense)}</div>
+        </div>
+        <div style="background:${balance >= 0 ? '#e8f0fe' : '#fff0f0'}; border:1.5px solid ${balance >= 0 ? '#4a86e8' : '#ff8f73'}; border-radius:10px; padding:14px 16px;">
+          <div style="font-size:.65rem; color:${balance >= 0 ? '#174ea6' : '#bf2600'}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Saldo Bersih</div>
+          <div style="font-size:1rem; font-weight:700; color:${balance >= 0 ? '#174ea6' : '#bf2600'}; margin-top:4px;">${fmtRp(balance)}</div>
+        </div>
+      </div>
+
+      ${totalBudget > 0 ? `
+      <div style="background:#fffbe6; border:1.5px solid #ffe58f; border-radius:10px; padding:12px 16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-size:.65rem; color:#874d00; font-weight:600;">Total Anggaran Bulan Ini</div>
+          <div style="font-size:.95rem; font-weight:700; color:#874d00;">${fmtRp(totalBudget)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:.65rem; color:#874d00; font-weight:600;">Sisa Anggaran</div>
+          <div style="font-size:.95rem; font-weight:700; color:${totalBudget - expense >= 0 ? '#006644' : '#bf2600'};">${fmtRp(totalBudget - expense)}</div>
+        </div>
+      </div>` : ''}
+
+      <!-- Kategori -->
+      <div style="font-size:.78rem; font-weight:700; margin-bottom:8px; color:#555; text-transform:uppercase; letter-spacing:.5px;">Pengeluaran per Kategori</div>
+      <div style="border:1.5px solid #e0e0e0; border-radius:10px; overflow:hidden; margin-bottom:20px;">
+        <table style="width:100%; border-collapse:collapse; font-size:.78rem;">
+          <thead>
+            <tr style="background:#f5f5f5; text-align:left;">
+              <th style="padding:8px 10px; font-weight:600;">Kategori</th>
+              <th style="padding:8px 10px; font-weight:600; text-align:right;">Realisasi</th>
+              <th style="padding:8px 10px; font-weight:600; text-align:right;">Anggaran</th>
+              <th style="padding:8px 10px; font-weight:600;">Progress</th>
+            </tr>
+          </thead>
+          <tbody>${catRows}</tbody>
+        </table>
+      </div>
+
+      <!-- Daftar transaksi -->
+      <div style="font-size:.78rem; font-weight:700; margin-bottom:8px; color:#555; text-transform:uppercase; letter-spacing:.5px;">Daftar Transaksi (${allTx.length} transaksi)</div>
+      <div style="border:1.5px solid #e0e0e0; border-radius:10px; overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse; font-size:.75rem;">
+          <thead>
+            <tr style="background:#f5f5f5;">
+              <th style="padding:8px 10px; text-align:left; font-weight:600;">Tanggal</th>
+              <th style="padding:8px 10px; text-align:left; font-weight:600;">Kategori</th>
+              <th style="padding:8px 10px; text-align:left; font-weight:600;">Deskripsi</th>
+              <th style="padding:8px 10px; text-align:right; font-weight:600;">Jumlah</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${allTx.length
+              ? allTx.slice().sort((a, b) => new Date(a.date || a.created_at) - new Date(b.date || b.created_at))
+                  .map((t, i) => `
+                    <tr style="background:${i % 2 === 0 ? '#fff' : '#fafafa'}; border-top:1px solid #f0f0f0;">
+                      <td style="padding:7px 10px; white-space:nowrap;">${fmtDate(t.date || t.created_at)}</td>
+                      <td style="padding:7px 10px;">${t.category || (t.type === 'income' ? 'Pemasukan' : 'Lainnya')}</td>
+                      <td style="padding:7px 10px; color:#444;">${t.description || t.desc || '-'}</td>
+                      <td style="padding:7px 10px; text-align:right; font-weight:600; color:${t.type === 'income' ? '#006644' : '#bf2600'};">
+                        ${t.type === 'income' ? '+' : '-'}${fmtRp(t.amount)}
+                      </td>
+                    </tr>`)
+                  .join('')
+              : `<tr><td colspan="4" style="padding:16px; text-align:center; color:#aaa;">Tidak ada transaksi</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ── Export PDF Profesional ───────────────────────────────────
+function exportReportAsPDF() {
+  const month    = parseInt(document.getElementById('reportMonth').value);
+  const year     = parseInt(document.getElementById('reportYear').value);
+  const key      = `${year}-${String(month).padStart(2, '0')}`;
+  const bookName = (window.currentBook && window.currentBook.name) ? window.currentBook.name : 'Buku Kas';
+  const accName  = document.getElementById('activeAccountLabel')?.textContent?.trim() || 'Sinarkeu';
+
+  const allTx   = (window.transactions || []).filter(t => {
+    const d = new Date(t.date || t.created_at);
+    return d.getFullYear() === year && (d.getMonth() + 1) === month;
+  });
+
+  const income  = allTx.filter(t => t.type === 'income').reduce((s, t) => s + (+t.amount || 0), 0);
+  const expense = allTx.filter(t => t.type === 'expense').reduce((s, t) => s + (+t.amount || 0), 0);
+  const balance = income - expense;
+
+  const catMap = {};
+  allTx.filter(t => t.type === 'expense').forEach(t => {
+    const c = t.category || 'Lainnya';
+    catMap[c] = (catMap[c] || 0) + (+t.amount || 0);
+  });
+  const cats = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
+  const budgets = (window.budgets && window.budgets[key]) ? window.budgets[key] : {};
+  const totalBudget = Object.values(budgets).reduce((s, v) => s + (+v || 0), 0);
+
+  // ── Sorted transactions ──────────────────────────────────
+  const sorted = allTx.slice().sort((a, b) => new Date(a.date || a.created_at) - new Date(b.date || b.created_at));
+
+  // ── Row helpers ──────────────────────────────────────────
+  const txRows = sorted.map((t, i) => `
+    <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f9f9f9'};">
+      <td class="center">${i + 1}</td>
+      <td>${fmtDate(t.date || t.created_at)}</td>
+      <td>${t.category || (t.type === 'income' ? 'Pemasukan' : 'Lainnya')}</td>
+      <td>${t.description || t.desc || '-'}</td>
+      <td class="money income">${t.type === 'income' ? fmtRp(t.amount) : ''}</td>
+      <td class="money expense">${t.type === 'expense' ? fmtRp(t.amount) : ''}</td>
+    </tr>`).join('');
+
+  const catRows = cats.map(([ c, v ]) => {
+    const bud = budgets[c] || 0;
+    const pct = bud > 0 ? Math.min(100, Math.round(v / bud * 100)) : null;
+    const barColor = pct === null ? '#ccc' : pct >= 100 ? '#de350b' : pct >= 80 ? '#ff991f' : '#00875a';
+    return `
+      <tr>
+        <td>${c}</td>
+        <td class="money expense">${fmtRp(v)}</td>
+        <td class="money">${bud > 0 ? fmtRp(bud) : '—'}</td>
+        <td class="center">${bud > 0 ? `${pct}%` : '—'}</td>
+        <td style="padding:8px 10px; width:90px;">
+          ${bud > 0 ? `<div style="height:7px;border-radius:4px;background:#eee;">
+            <div style="height:7px;border-radius:4px;background:${barColor};width:${pct}%;"></div>
+          </div>` : ''}
+        </td>
+      </tr>`;
+  }).join('') || `<tr><td colspan="5" class="center muted">Tidak ada pengeluaran bulan ini</td></tr>`;
+
+  // ── HTML dokumen PDF ─────────────────────────────────────
+  const html = `
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', Arial, sans-serif;
+    font-size: 9pt;
+    color: #1a1a1a;
+    background: #fff;
+    padding: 0;
+  }
+
+  /* ── Cover Header ── */
+  .doc-header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+    color: #fff;
+    padding: 28px 32px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .doc-header::after {
+    content: '';
+    position: absolute;
+    right: -40px; top: -40px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+  .doc-header .brand {
+    font-size: 9pt;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 6px;
+  }
+  .doc-header h1 {
+    font-size: 20pt;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+  .doc-header .meta {
+    margin-top: 10px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .doc-header .meta span {
+    font-size: 8pt;
+    color: rgba(255,255,255,0.65);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .doc-header .meta span b { color: rgba(255,255,255,0.9); font-weight: 600; }
+
+  /* ── Content ── */
+  .content { padding: 22px 32px 16px; }
+
+  /* ── Section title ── */
+  .section-title {
+    font-size: 7pt;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #666;
+    border-bottom: 1.5px solid #e0e0e0;
+    padding-bottom: 5px;
+    margin: 18px 0 10px;
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  /* ── KPI Cards ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .kpi {
+    border-radius: 8px;
+    padding: 12px 14px;
+    border-left: 3px solid transparent;
+  }
+  .kpi-income { background: #e8f8f0; border-color: #00875a; }
+  .kpi-expense { background: #fff1ee; border-color: #de350b; }
+  .kpi-balance-pos { background: #e8f0fe; border-color: #1a73e8; }
+  .kpi-balance-neg { background: #fff1ee; border-color: #de350b; }
+  .kpi .label {
+    font-size: 6.5pt;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    color: #555;
+  }
+  .kpi .value {
+    font-size: 12pt;
+    font-weight: 700;
+  }
+  .kpi-income .value { color: #006644; }
+  .kpi-expense .value { color: #bf2600; }
+  .kpi-balance-pos .value { color: #1155cc; }
+  .kpi-balance-neg .value { color: #bf2600; }
+
+  /* ── Budget Alert ── */
+  .budget-alert {
+    background: #fffbe6;
+    border: 1px solid #ffe58f;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 10px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 8.5pt;
+  }
+  .budget-alert .ba-label { color: #874d00; font-weight: 600; }
+  .budget-alert .ba-value { font-size: 10pt; font-weight: 700; color: #874d00; }
+  .budget-alert .ba-sisa { text-align: right; }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8pt;
+  }
+  th {
+    background: #f0f2f5;
+    padding: 7px 9px;
+    font-weight: 700;
+    font-size: 7.5pt;
+    text-align: left;
+    border-bottom: 2px solid #d0d5dd;
+    white-space: nowrap;
+  }
+  td {
+    padding: 6.5px 9px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  .money { text-align: right; font-family: 'Courier New', monospace; white-space: nowrap; }
+  .income { color: #006644; font-weight: 600; }
+  .expense { color: #bf2600; font-weight: 600; }
+  .center { text-align: center; }
+  .muted { color: #aaa; }
+
+  /* ── Table wrapper ── */
+  .tbl-wrap {
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  /* ── Summary row ── */
+  .tbl-foot td {
+    background: #f0f2f5;
+    font-weight: 700;
+    border-top: 2px solid #d0d5dd;
+    border-bottom: none;
+    padding: 8px 9px;
+  }
+
+  /* ── Footer ── */
+  .doc-footer {
+    margin: 20px 32px 0;
+    padding: 10px 0 14px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 7pt;
+    color: #aaa;
+  }
+  .doc-footer .watermark {
+    font-weight: 700;
+    color: #ccc;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 7pt;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="doc-header">
+  <div class="brand">Sinarkeu · Laporan Keuangan</div>
+  <h1>${monthName(month)} ${year}</h1>
+  <div class="meta">
+    <span>📁 Buku Kas: <b>${bookName}</b></span>
+    <span>👤 Akun: <b>${accName}</b></span>
+    <span>📅 Dicetak: <b>${nowStr()}</b></span>
+    <span>📊 Total Transaksi: <b>${allTx.length}</b></span>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- ── KPI ── -->
+  <div class="section-title">Ringkasan Keuangan</div>
+  <div class="kpi-grid">
+    <div class="kpi kpi-income">
+      <div class="label">💰 Total Pemasukan</div>
+      <div class="value">${fmtRp(income)}</div>
+    </div>
+    <div class="kpi kpi-expense">
+      <div class="label">💸 Total Pengeluaran</div>
+      <div class="value">${fmtRp(expense)}</div>
+    </div>
+    <div class="kpi ${balance >= 0 ? 'kpi-balance-pos' : 'kpi-balance-neg'}">
+      <div class="label">📈 Saldo Bersih</div>
+      <div class="value">${fmtRp(balance)}</div>
+    </div>
+  </div>
+
+  ${totalBudget > 0 ? `
+  <div class="budget-alert">
+    <div>
+      <div class="ba-label">🎯 Anggaran Bulan Ini</div>
+      <div class="ba-value">${fmtRp(totalBudget)}</div>
+    </div>
+    <div class="ba-sisa">
+      <div class="ba-label">Terpakai</div>
+      <div class="ba-value">${Math.round(expense / totalBudget * 100)}%</div>
+    </div>
+    <div class="ba-sisa">
+      <div class="ba-label">Sisa Anggaran</div>
+      <div class="ba-value" style="color:${totalBudget - expense >= 0 ? '#006644' : '#bf2600'};">${fmtRp(totalBudget - expense)}</div>
+    </div>
+  </div>` : ''}
+
+  <!-- ── KATEGORI ── -->
+  <div class="section-title">Pengeluaran per Kategori</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Kategori</th>
+          <th class="money">Realisasi</th>
+          <th class="money">Anggaran</th>
+          <th class="center">%</th>
+          <th style="width:90px;">Progress</th>
+        </tr>
+      </thead>
+      <tbody>${catRows}</tbody>
+      <tfoot>
+        <tr class="tbl-foot">
+          <td><b>TOTAL PENGELUARAN</b></td>
+          <td class="money expense"><b>${fmtRp(expense)}</b></td>
+          <td class="money"><b>${totalBudget > 0 ? fmtRp(totalBudget) : '—'}</b></td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- ── TRANSAKSI ── -->
+  <div class="section-title" style="margin-top:20px;">Daftar Transaksi</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="center" style="width:28px;">No</th>
+          <th style="width:90px;">Tanggal</th>
+          <th style="width:110px;">Kategori</th>
+          <th>Deskripsi</th>
+          <th class="money" style="width:100px;">Pemasukan</th>
+          <th class="money" style="width:100px;">Pengeluaran</th>
+        </tr>
+      </thead>
+      <tbody>${txRows || `<tr><td colspan="6" class="center muted" style="padding:14px;">Tidak ada transaksi bulan ini</td></tr>`}</tbody>
+      <tfoot>
+        <tr class="tbl-foot">
+          <td colspan="4" style="text-align:right;"><b>TOTAL</b></td>
+          <td class="money income"><b>${fmtRp(income)}</b></td>
+          <td class="money expense"><b>${fmtRp(expense)}</b></td>
+        </tr>
+        <tr class="tbl-foot">
+          <td colspan="4" style="text-align:right;"><b>SALDO BERSIH</b></td>
+          <td colspan="2" class="money" style="color:${balance >= 0 ? '#006644' : '#bf2600'};"><b>${fmtRp(balance)}</b></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+</div><!-- /content -->
+
+<!-- ── FOOTER ── -->
+<div class="doc-footer">
+  <div>Laporan ini dibuat secara otomatis oleh sistem Sinarkeu.<br>Dokumen ini bersifat rahasia dan hanya untuk keperluan internal.</div>
+  <div class="watermark">Sinarkeu</div>
+</div>
+
+</body>
+</html>`;
+
+  // ── Render ke iframe tersembunyi lalu export ─────────────
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:210mm;height:297mm;border:none;';
+  document.body.appendChild(iframe);
+
+  const iDoc = iframe.contentDocument || iframe.contentWindow.document;
+  iDoc.open(); iDoc.write(html); iDoc.close();
+
+  // Tunggu font/gambar load
+  setTimeout(() => {
+    const opt = {
+      margin:      [0, 0, 0, 0],
+      filename:    `Sinarkeu_${bookName.replace(/\s+/g, '_')}_${monthName(month)}_${year}.pdf`,
+      image:       { type: 'jpeg', quality: 0.96 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#fff' },
+      jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak:   { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    if (typeof html2pdf !== 'undefined') {
+      html2pdf()
+        .set(opt)
+        .from(iframe.contentDocument.body)
+        .save()
+        .then(() => document.body.removeChild(iframe));
+    } else {
+      // Fallback: print dialog
+      iframe.contentWindow.print();
+      setTimeout(() => document.body.removeChild(iframe), 2000);
     }
-    const map = {};
-    source.forEach(t => {
-        const cat = t.category || 'Lainnya';
-        map[cat] = (map[cat] || 0) + (Number(t.amount) || 0);
-    });
-    const entries = Object.entries(map).sort((a, b) => b[1] - a[1]);
-    if (entries.length === 0) {
-        if (window.expenseChart) { window.expenseChart.destroy(); window.expenseChart = null; }
-        body.innerHTML = '<div class="expense-chart-empty">Belum ada data pengeluaran' + (window.expenseChartMode === 'month' ? ' bulan ini' : '') + '</div>';
-        return;
-    }
-    const total = entries.reduce((s, e) => s + e[1], 0);
-    const COLORS = ['#de350b','#cc7b00','#0052cc','#00875a','#6554c0','#ff5630','#ff8b00','#36b37e','#00b8d9','#8777d9','#f6c90e','#4a5568','#e84393','#57d9a3','#ff7452'];
-    body.innerHTML = '';
-    const canvasWrap = document.createElement('div');
-    canvasWrap.className = 'expense-chart-canvas-wrap';
-    const canvas = document.createElement('canvas');
-    canvas.id = 'expenseChartCanvas';
-    canvasWrap.appendChild(canvas);
-    body.appendChild(canvasWrap);
-    const legend = document.createElement('div');
-    legend.className = 'expense-chart-legend';
-    entries.forEach(([cat, amt], i) => {
-        const pct = total > 0 ? ((amt / total) * 100).toFixed(1) : 0;
-        const item = document.createElement('div');
-        item.className = 'legend-item';
-        item.innerHTML = `
-            <div class="legend-dot" style="background:${COLORS[i % COLORS.length]}"></div>
-            <span class="legend-label" title="${window.escapeHtml(cat)}">${window.escapeHtml(cat)}</span>
-            <span class="legend-amount">${window.rp(amt)}</span>
-            <span class="legend-pct">${pct}%</span>
-        `;
-        legend.appendChild(item);
-    });
-    body.appendChild(legend);
-    if (window.expenseChart) { window.expenseChart.destroy(); window.expenseChart = null; }
-    const ctx = canvas.getContext('2d');
-    window.expenseChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: { labels: entries.map(e => e[0]), datasets: [{ data: entries.map(e => e[1]), backgroundColor: entries.map((_, i) => COLORS[i % COLORS.length]), borderWidth: 2, borderColor: '#fff' }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => { const val = ctx.parsed; const totalData = ctx.dataset.data.reduce((a, b) => a + b, 0); const pct = totalData > 0 ? ((val / totalData) * 100).toFixed(1) : 0; return ` ${window.rp(val)} (${pct}%)`; } } } } }
-    });
-    window._expenseChartInitialized = true;
-};
-window.toggleExpenseChart = function() {
-    window.expenseChartVisible = !window.expenseChartVisible;
-    const body = document.getElementById('expenseChartBody');
-    const arrow = document.getElementById('expenseChartArrow');
-    const toggleBtns = document.getElementById('expenseChartToggleButtons');
-    body.style.display = window.expenseChartVisible ? 'flex' : 'none';
-    toggleBtns.style.display = window.expenseChartVisible ? 'flex' : 'none';
-    arrow.textContent = window.expenseChartVisible ? '▲ Sembunyikan' : '▼ Tampilkan';
-    if (window.expenseChartVisible) window.renderExpenseChart();
-};
-window.setExpenseChartMode = function(mode) {
-    window.expenseChartMode = mode;
-    document.getElementById('expChartBtnAll').classList.toggle('active', mode === 'all');
-    document.getElementById('expChartBtnMonth').classList.toggle('active', mode === 'month');
-    if (window.expenseChartVisible) window.renderExpenseChart();
-};
+  }, 600);
+}
