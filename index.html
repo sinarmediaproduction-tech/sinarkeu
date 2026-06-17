@@ -617,6 +617,28 @@
             </div>
         </div>
 
+        <!-- ===== MIGRASI DATA KE CLOUD ===== -->
+        <div class="data-management-panel" style="border-color:#6b46c1; background:#faf5ff; margin-top:0;">
+            <div class="panel-title" style="color:#553c9a;">
+                ☁️ Migrasi Data ke Cloud
+            </div>
+            <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
+                Pindahkan semua data (anggaran, jadwal pembayaran) dari Local Storage ke Supabase 
+                agar tersinkronisasi di semua perangkat.
+            </div>
+            <div id="migrationStatus" style="font-size:.72rem; margin-bottom:10px; min-height:16px; color:#888;"></div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-primary" style="background:#6b46c1; border-color:#6b46c1; flex:1;" 
+                        onclick="window.runFullMigration()">
+                    🚀 Migrasi Semua Data
+                </button>
+                <button class="btn btn-secondary" style="flex:1;" 
+                        onclick="window.checkMigrationStatus()">
+                    🔍 Cek Status
+                </button>
+            </div>
+        </div>
+
         <!-- Arsipkan JSON -->
         <div class="data-management-panel" style="border-color:#de350b; background:#fff5f5; margin-top:0;">
             <div class="panel-title" style="color:#de350b;">🗃️ Arsipkan & Kosongkan Database</div>
@@ -951,7 +973,7 @@
                 <div id="prFormStatus" style="font-size:.72rem; color:#de350b; margin-bottom:8px; min-height:16px;"></div>
                 <div style="display:flex; gap:8px;">
                     <button class="btn btn-secondary" style="flex:1;" onclick="cancelPrEdit()">Batal</button>
-                    <button class="btn btn-primary" style="flex:2; background:#d97706; border-color:#d97706;" onclick="savePaymentReminder()">💾 Simpan Jadwal</button>
+                    <button class="btn btn-primary" style="flex:2; background:#d97706; border-color:#d97706;" onclick="savePaymentReminderHandler()">💾 Simpan Jadwal</button>
                 </div>
             </div>
         </div>
@@ -968,6 +990,7 @@
 <script src="js/book.js"></script>
 <script src="js/transaction.js"></script>
 <script src="js/budget.js"></script>
+<script src="js/payment-reminder.js"></script>
 <script src="js/expense-chart.js"></script>
 <script src="js/render.js"></script>
 <script src="js/report.js"></script>
@@ -978,247 +1001,5 @@
 <script src="js/settings.js"></script>
 <script src="js/app.js"></script>
 
-<!-- ===== PAYMENT REMINDER SCRIPT ===== -->
-<script>
-(function() {
-    const PR_KEY_OLD = 'sinarkeu_payment_reminders'; // key lama, global, tidak ter-namespace per akun
-    const PR_KEY = 'sk_payment_reminders'; // prefix sk_ agar otomatis ikut sistem namespace per akun di account.js
-    const ALERT_DAYS = 3;
-
-    // Migrasi sekali jalan: pindahkan data dari key lama (global, dipakai bersama semua akun)
-    // ke key baru yang akan otomatis dipisah per akun oleh _saveOutAccount/_restoreInAccount.
-    (function migrateOldReminderKey() {
-        try {
-            const oldRaw = localStorage.getItem(PR_KEY_OLD);
-            if (oldRaw !== null && localStorage.getItem(PR_KEY) === null) {
-                localStorage.setItem(PR_KEY, oldRaw);
-            }
-            if (oldRaw !== null) localStorage.removeItem(PR_KEY_OLD);
-        } catch(e) { /* abaikan jika localStorage tidak bisa diakses */ }
-    })();
-
-    function loadReminders() {
-        try { return JSON.parse(localStorage.getItem(PR_KEY) || '[]'); } catch(e) { return []; }
-    }
-    function saveReminders(list) {
-        localStorage.setItem(PR_KEY, JSON.stringify(list));
-    }
-    function genId() {
-        return 'pr_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
-    }
-
-    // Jumlah hari valid di sebuah bulan (monthIndex 0-based)
-    function daysInMonth(year, monthIndex) {
-        return new Date(year, monthIndex + 1, 0).getDate();
-    }
-    // Pastikan tanggal tidak "meluber" ke bulan berikutnya kalau bulan tujuan lebih pendek
-    // (misal tanggal 31 di bulan Februari akan di-clamp jadi 28/29, bukan jadi 2/3 Maret)
-    function clampDay(year, monthIndex, day) {
-        return Math.min(day, daysInMonth(year, monthIndex));
-    }
-
-    // Hitung hari tersisa menuju jatuh tempo berikutnya
-    function getDaysUntilNext(item) {
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        let candidate;
-        if (item.recurrence === 'monthly') {
-            let y = today.getFullYear(), m = today.getMonth();
-            candidate = new Date(y, m, clampDay(y, m, item.day));
-            if (candidate < today) {
-                // Bulan depan
-                m += 1;
-                if (m > 11) { m = 0; y += 1; }
-                candidate = new Date(y, m, clampDay(y, m, item.day));
-            }
-        } else {
-            // Tahunan
-            let y = today.getFullYear();
-            candidate = new Date(y, item.month - 1, clampDay(y, item.month - 1, item.day));
-            if (candidate < today) {
-                y += 1;
-                candidate = new Date(y, item.month - 1, clampDay(y, item.month - 1, item.day));
-            }
-        }
-        const diff = Math.round((candidate - today) / (1000 * 60 * 60 * 24));
-        return { days: diff, date: candidate };
-    }
-
-    function formatNextDate(item) {
-        const { date } = getDaysUntilNext(item);
-        return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-    }
-
-    function renderPrList() {
-        const list = loadReminders();
-        const container = document.getElementById('prList');
-        const upcomingAlert = document.getElementById('prUpcomingAlert');
-        if (!container) return;
-
-        if (list.length === 0) {
-            // Dibangun ulang sebagai string agar tidak bergantung pada node #prEmptyMsg
-            // yang bisa saja sudah terhapus dari DOM oleh render sebelumnya.
-            container.innerHTML = '<div id="prEmptyMsg" style="font-size:.72rem; color:#aaa; text-align:center; padding:18px 0;">Belum ada jadwal pembayaran. Tambahkan di bawah.</div>';
-            if (upcomingAlert) upcomingAlert.style.display = 'none';
-            return;
-        }
-
-        // Sort by days until next
-        const sorted = list.map(item => ({ item, ...getDaysUntilNext(item) }))
-                           .sort((a, b) => a.days - b.days);
-
-        // Upcoming alert inside modal
-        const urgent = sorted.filter(s => s.days <= ALERT_DAYS);
-        if (urgent.length > 0) {
-            upcomingAlert.style.display = 'block';
-            upcomingAlert.innerHTML = '⚠️ <strong>Segera jatuh tempo:</strong><br>' +
-                urgent.map(s => {
-                    const label = s.days === 0 ? '🔴 Hari ini!' : `🟡 ${s.days} hari lagi`;
-                    return `• ${s.item.name} — ${formatNextDate(s.item)} <strong>${label}</strong>`;
-                }).join('<br>');
-        } else {
-            upcomingAlert.style.display = 'none';
-        }
-
-        container.innerHTML = '';
-        sorted.forEach(({ item, days }) => {
-            const isUrgent = days <= ALERT_DAYS;
-            const recLabel = item.recurrence === 'monthly'
-                ? `Bulanan — tgl ${item.day}`
-                : `Tahunan — ${['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][item.month-1]} tgl ${item.day}`;
-            const dayLabel = days === 0 ? '🔴 Hari ini!' : days <= ALERT_DAYS ? `🟡 ${days} hari lagi` : `🟢 ${days} hari lagi`;
-
-            const el = document.createElement('div');
-            el.style.cssText = `display:flex; align-items:center; gap:10px; background:${isUrgent ? '#fef3c7' : '#f9fafb'}; border:1.5px solid ${isUrgent ? '#f59e0b' : '#e5e7eb'}; border-radius:8px; padding:10px 12px;`;
-            el.innerHTML = `
-                <div style="flex:1; min-width:0;">
-                    <div style="font-size:.8rem; font-weight:700; color:#1a1a1a;">${item.name}</div>
-                    <div style="font-size:.68rem; color:#666; margin-top:2px;">${recLabel} &nbsp;·&nbsp; Berikutnya: ${formatNextDate(item)}</div>
-                    ${item.note ? `<div style="font-size:.65rem; color:#888; margin-top:2px; font-style:italic;">${item.note}</div>` : ''}
-                </div>
-                <div style="font-size:.68rem; font-weight:700; white-space:nowrap; color:${isUrgent ? '#92400e' : '#374151'};">${dayLabel}</div>
-                <div style="display:flex; gap:4px;">
-                    <button onclick="editPaymentReminder('${item.id}')" style="background:none; border:1px solid #d1d5db; border-radius:5px; padding:3px 7px; cursor:pointer; font-size:.7rem;" title="Edit">✏️</button>
-                    <button onclick="deletePaymentReminder('${item.id}')" style="background:none; border:1px solid #fca5a5; border-radius:5px; padding:3px 7px; cursor:pointer; font-size:.7rem; color:#ef4444;" title="Hapus">🗑️</button>
-                </div>
-            `;
-            container.appendChild(el);
-        });
-    }
-
-    function updateBannerAndBadge() {
-        const list = loadReminders();
-        const urgent = list.map(item => ({ item, ...getDaysUntilNext(item) }))
-                           .filter(s => s.days <= ALERT_DAYS)
-                           .sort((a, b) => a.days - b.days);
-
-        const banner = document.getElementById('paymentReminderBanner');
-        const bannerText = document.getElementById('paymentReminderBannerText');
-        const badge = document.getElementById('reminderBadge');
-        const drawerBadge = document.getElementById('drawerReminderBadge');
-
-        if (urgent.length > 0) {
-            if (banner) {
-                banner.style.display = 'block';
-                bannerText.innerHTML = urgent.map(s => {
-                    const label = s.days === 0 ? '<strong style="color:#ef4444">Hari ini!</strong>' : `<strong>${s.days} hari lagi</strong>`;
-                    return `🔔 <strong>${s.item.name}</strong> — ${formatNextDate(s.item)} · ${label}`;
-                }).join('<br>');
-            }
-            if (badge) { badge.style.display = 'inline-block'; badge.textContent = urgent.length; }
-            if (drawerBadge) { drawerBadge.style.display = 'inline-block'; drawerBadge.textContent = urgent.length + ' mendesak'; }
-        } else {
-            if (banner) banner.style.display = 'none';
-            if (badge) badge.style.display = 'none';
-            if (drawerBadge) drawerBadge.style.display = 'none';
-        }
-    }
-
-    window.openPaymentReminderModal = function() {
-        renderPrList();
-        cancelPrEdit();
-        openModal('paymentReminderModal');
-    };
-
-    window.togglePrMonthField = function() {
-        const rec = document.getElementById('prRecurrence').value;
-        const mg = document.getElementById('prMonthGroup');
-        if (mg) mg.style.display = rec === 'yearly' ? 'block' : 'none';
-    };
-
-    window.savePaymentReminder = function() {
-        const name = (document.getElementById('prName').value || '').trim();
-        const day = parseInt(document.getElementById('prDay').value);
-        const recurrence = document.getElementById('prRecurrence').value;
-        const month = parseInt(document.getElementById('prMonth').value) || 1;
-        const note = (document.getElementById('prNote').value || '').trim();
-        const editId = document.getElementById('prEditId').value;
-        const statusEl = document.getElementById('prFormStatus');
-
-        if (!name) { statusEl.textContent = 'Isi jenis pembayaran.'; return; }
-        if (!day || day < 1 || day > 31) { statusEl.textContent = 'Tanggal harus antara 1–31.'; return; }
-        statusEl.textContent = '';
-
-        let list = loadReminders();
-        if (editId) {
-            list = list.map(item => item.id === editId ? { ...item, name, day, recurrence, month, note } : item);
-        } else {
-            list.push({ id: genId(), name, day, recurrence, month, note, createdAt: new Date().toISOString() });
-        }
-        saveReminders(list);
-        renderPrList();
-        updateBannerAndBadge();
-        cancelPrEdit();
-        if (typeof showToast === 'function') showToast('✅', 'Jadwal pembayaran disimpan!');
-    };
-
-    window.editPaymentReminder = function(id) {
-        const list = loadReminders();
-        const item = list.find(r => r.id === id);
-        if (!item) return;
-        document.getElementById('prEditId').value = item.id;
-        document.getElementById('prName').value = item.name;
-        document.getElementById('prDay').value = item.day;
-        document.getElementById('prRecurrence').value = item.recurrence;
-        document.getElementById('prMonth').value = item.month || 1;
-        document.getElementById('prNote').value = item.note || '';
-        document.getElementById('prFormTitle').textContent = '✏️ Edit Jadwal';
-        document.getElementById('prFormStatus').textContent = '';
-        window.togglePrMonthField();
-    };
-
-    window.deletePaymentReminder = function(id) {
-        if (!confirm('Hapus jadwal pembayaran ini?')) return;
-        let list = loadReminders().filter(r => r.id !== id);
-        saveReminders(list);
-        renderPrList();
-        updateBannerAndBadge();
-        if (typeof showToast === 'function') showToast('🗑️', 'Jadwal dihapus.');
-    };
-
-    window.cancelPrEdit = function() {
-        document.getElementById('prEditId').value = '';
-        document.getElementById('prName').value = '';
-        document.getElementById('prDay').value = '';
-        document.getElementById('prRecurrence').value = 'monthly';
-        document.getElementById('prMonth').value = '1';
-        document.getElementById('prNote').value = '';
-        document.getElementById('prFormTitle').textContent = '＋ Tambah Jadwal Baru';
-        document.getElementById('prFormStatus').textContent = '';
-        const mg = document.getElementById('prMonthGroup');
-        if (mg) mg.style.display = 'none';
-    };
-
-    // Init on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        // Slight delay to let app initialize first
-        setTimeout(updateBannerAndBadge, 1200);
-        // Check every hour
-        setInterval(updateBannerAndBadge, 60 * 60 * 1000);
-    });
-    // Also run now in case DOM is already ready
-    if (document.readyState !== 'loading') setTimeout(updateBannerAndBadge, 1200);
-})();
-</script>
 </body>
 </html>
