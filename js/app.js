@@ -126,6 +126,19 @@ window.continueAppInit = async function() {
             window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
             window.updateTgStatusBadge();
             await window.pullAllBooksFromCloud();
+            // Pull fase kehidupan dari cloud
+            if (window.isOnline()) {
+                try {
+                    const fasCloud = await window.pullSetting('fase_kehidupan', window.currentBookId);
+                    if (fasCloud) {
+                        const localRaw = localStorage.getItem('sk_fase_kehidupan_' + window.currentBookId);
+                        const localFase = localRaw ? JSON.parse(localRaw) : null;
+                        if (!localFase || new Date(fasCloud.updatedAt) > new Date(localFase.updatedAt || 0)) {
+                            localStorage.setItem('sk_fase_kehidupan_' + window.currentBookId, JSON.stringify(fasCloud));
+                        }
+                    }
+                } catch(e) { /* fase belum tersimpan di cloud */ }
+            }
             window._lastSyncTime = new Date();
             window.updateSyncTimeBadge();
             setTimeout(window.checkAndRunDailyAutoBackup, 3000);

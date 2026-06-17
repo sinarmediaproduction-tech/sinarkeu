@@ -152,3 +152,114 @@ window.copyAIResult = function() {
     const text = document.getElementById('aiAnalysisResult').innerText;
     navigator.clipboard.writeText(text).then(() => window.showToast('Hasil analisis disalin!', 'success'));
 };
+// ==================== AI ANALISIS FASE KEHIDUPAN ====================
+window.runFaseAIAnalysis = async function() {
+    const WORKER_URL = (localStorage.getItem('sk_ai_worker_url') || '').trim();
+    const fase = window.getFaseKehidupan ? window.getFaseKehidupan() : null;
+
+    window.openModal('faseAIModal');
+
+    const resultEl = document.getElementById('faseAIResult');
+    const footerEl = document.getElementById('faseAIFooter');
+    const runBtn   = document.getElementById('faseAIRunBtn');
+    const copyBtn  = document.getElementById('faseAICopyBtn');
+
+    if (!fase || !fase.fase) {
+        resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">⚠️ Atur fase kehidupan terlebih dahulu.<br><a href="#" onclick="window.closeModal(\'faseAIModal\'); window.openFaseKehidupanModal(); return false;" style="color:#e53e8a; font-weight:600;">💍 Atur Fase Kehidupan</a></div>';
+        return;
+    }
+    if (!WORKER_URL) {
+        resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">⚠️ Worker URL belum dikonfigurasi.<br><a href="#" onclick="window.closeModal(\'faseAIModal\'); window.openSetelanModal(); return false;" style="color:#de350b; font-weight:600;">⚙️ Setelan → Analisis AI</a></div>';
+        return;
+    }
+
+    const faseData = window.FASE_DATA[fase.fase];
+    if (!faseData) return;
+
+    // Hitung data keuangan
+    let totalInc = 0, totalExp = 0;
+    window.txs.forEach(t => {
+        const amt = Number(t.amount) || 0;
+        if (t.type === 'income') totalInc += amt;
+        else totalExp += amt;
+    });
+    const balanceOffset = Number(localStorage.getItem('sk_balance_offset_' + window.currentBookId)) || 0;
+    const saldo = totalInc - totalExp + balanceOffset;
+
+    const defaultBudget = window.getDefaultBudget ? window.getDefaultBudget(window.currentBookId) : {};
+    let anggaranBulanan = 0;
+    if (window.EXPENSE_CATEGORIES) window.EXPENSE_CATEGORIES.forEach(c => { anggaranBulanan += (defaultBudget[c] || 0); });
+    const danaDarurat = anggaranBulanan * 12;
+
+    const annualBudget = window.getAnnualBudget ? window.getAnnualBudget(window.currentBookId) : [];
+    let anggaranTahunan = 0;
+    annualBudget.forEach(i => { anggaranTahunan += (Number(i.amount) || 0); });
+
+    // 3 bulan terakhir
+    const now = new Date();
+    const cutoff = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+    const recent = window.txs.filter(t => new Date(t.date) >= cutoff);
+    const recentExp = recent.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+    const recentInc = recent.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+    const catMap = {};
+    recent.filter(t => t.type === 'expense').forEach(t => {
+        const cat = t.category || 'Lain-lain';
+        catMap[cat] = (catMap[cat] || 0) + Number(t.amount);
+    });
+    const topCat = Object.entries(catMap).sort((a,b) => b[1]-a[1]).slice(0,6).map(([c,a]) => `  - ${c}: Rp ${Number(a).toLocaleString('id-ID')}`).join('\n');
+
+    const prompt = `Kamu adalah perencana keuangan keluarga yang ahli, berempati, dan berbasis data.
+
+FASE KEHIDUPAN PENGGUNA: ${faseData.nama}
+Deskripsi fase: ${faseData.desc}
+Jumlah tanggungan: ${fase.tanggungan || 0} orang
+Target keuangan: ${fase.target || 'Belum ditentukan'}
+
+DATA KEUANGAN SAAT INI:
+- Total Saldo: Rp ${saldo.toLocaleString('id-ID')}
+- Anggaran Bulanan: Rp ${anggaranBulanan.toLocaleString('id-ID')}
+- Dana Darurat Ideal (12× bulanan): Rp ${danaDarurat.toLocaleString('id-ID')}
+- Status Dana Darurat: ${saldo >= danaDarurat ? '✅ Sudah tercapai' : `⚠️ Kurang Rp ${(danaDarurat - saldo).toLocaleString('id-ID')}`}
+- Anggaran Tahunan: Rp ${anggaranTahunan.toLocaleString('id-ID')}
+
+3 BULAN TERAKHIR:
+- Total Pemasukan: Rp ${recentInc.toLocaleString('id-ID')}
+- Total Pengeluaran: Rp ${recentExp.toLocaleString('id-ID')}
+- Pengeluaran per Kategori:
+${topCat || '  (tidak ada data)'}
+
+INSTRUKSI:
+1. Evaluasi kondisi keuangan ini dari sudut pandang fase kehidupan "${faseData.nama}"
+2. Sebutkan 2–3 hal yang sudah baik
+3. Sebutkan 2–3 hal yang perlu diperbaiki / diperhatikan spesifik untuk fase ini
+4. Berikan 3 langkah aksi konkret yang bisa dilakukan bulan ini
+5. Beri estimasi angka / target jika memungkinkan (pakai Rp)
+
+Gunakan bahasa Indonesia yang hangat, to-the-point, dan motivatif. Maksimal 450 kata. Format dengan emoji dan poin-poin.`;
+
+    runBtn.disabled = true;
+    runBtn.innerText = '⏳ Menganalisis...';
+    copyBtn.style.display = 'none';
+    resultEl.innerHTML = '<div style="text-align:center; color:#e53e8a; padding:40px 0;">🤖 AI sedang menganalisis keuangan berdasarkan fase kehidupan Anda...</div>';
+    footerEl.innerText = '';
+
+    try {
+        const res = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) });
+        const json = await res.json();
+        if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`);
+        const text = json?.result || '(Tidak ada respons)';
+        resultEl.innerText = text;
+        footerEl.innerText = `✅ Dianalisis berdasarkan fase: ${faseData.nama} · ${new Date().toLocaleString('id-ID')}`;
+        copyBtn.style.display = 'inline-flex';
+    } catch(e) {
+        resultEl.innerHTML = `<div style="color:#de350b; line-height:1.8;">❌ Gagal: <b>${e.message}</b></div>`;
+    } finally {
+        runBtn.disabled = false;
+        runBtn.innerText = '✨ Analisis Sekarang';
+    }
+};
+
+window.copyFaseAIResult = function() {
+    const text = document.getElementById('faseAIResult').innerText;
+    navigator.clipboard.writeText(text).then(() => window.showToast('Hasil analisis disalin!', 'success'));
+};
