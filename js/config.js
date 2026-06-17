@@ -1,17 +1,22 @@
 // ==================== CONSTANTS ====================
-export const CRYPTO_SALT_KEY  = 'sk_crypto_salt';
-export const CRYPTO_CHECK_KEY = 'sk_crypto_check';
-export const CRYPTO_URL_KEY   = 'sk_enc_supabase_url';
-export const CRYPTO_AKEY_KEY  = 'sk_enc_supabase_key';
-export const SENTINEL_PLAIN   = 'sinarkeu_ok';
-export const MAX_LOCAL_TXS    = 300;
+window.CRYPTO_SALT_KEY  = 'sk_crypto_salt';
+window.CRYPTO_CHECK_KEY = 'sk_crypto_check';
+window.CRYPTO_URL_KEY   = 'sk_enc_supabase_url';
+window.CRYPTO_AKEY_KEY  = 'sk_enc_supabase_key';
+window.SENTINEL_PLAIN   = 'sinarkeu_ok';
+window.MAX_LOCAL_TXS    = 300;
 
-export const ACC_LIST_KEY   = 'sk_accounts';
-export const ACC_ACTIVE_KEY = 'sk_active_account';
-export const ACC_GLOBAL_KEYS = new Set(['sk_accounts', 'sk_active_account', 'sk_device_id']);
+window.ACC_LIST_KEY   = 'sk_accounts';
+window.ACC_ACTIVE_KEY = 'sk_active_account';
+window.ACC_GLOBAL_KEYS = new Set(['sk_accounts', 'sk_active_account', 'sk_device_id']);
 
-export const EXPENSE_CATEGORIES = ['Makanan & Minuman', 'Tagihan', 'Belanja', 'Kesehatan', 'Hiburan', 'Pendidikan', 'Transportasi', 'Investasi', 'Skin & Body Care', 'Kitchen', 'Cleaning', 'Pajak & Iuran', 'Pertanian', 'Sedekah', 'Sumbangan'];
-export const PAGE_SIZE = 21;
+window.EXPENSE_CATEGORIES = [
+    'Makanan & Minuman', 'Tagihan', 'Belanja', 'Kesehatan', 
+    'Hiburan', 'Pendidikan', 'Transportasi', 'Investasi', 
+    'Skin & Body Care', 'Kitchen', 'Cleaning', 'Pajak & Iuran', 
+    'Pertanian', 'Sedekah', 'Sumbangan'
+];
+window.PAGE_SIZE = 21;
 
 // ==================== GLOBAL VARIABLES (shared) ====================
 window.txs = [];
