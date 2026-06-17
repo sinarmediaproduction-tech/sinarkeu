@@ -56,8 +56,13 @@ window.startAutoSync = function() {
             // ── PULL PAYMENT REMINDERS ──
             // payment_reminders pakai tabel Supabase sendiri, bukan tabel `settings`,
             // jadi tidak ter-cover oleh pullAllSettings() di atas.
+            // Cache disimpan per-buku (sk_payment_reminders_{bookId}) agar tidak
+            // menimpa data buku lain saat multi-buku aktif.
             try {
-                await window.loadPaymentReminders(window.currentBookId);
+                const reminders = await window.loadPaymentReminders(window.currentBookId);
+                if (reminders && reminders.length > 0) {
+                    localStorage.setItem('sk_payment_reminders_' + window.currentBookId, JSON.stringify(reminders));
+                }
                 if (typeof window.renderPaymentReminders === 'function') await window.renderPaymentReminders();
                 if (typeof window.updatePaymentReminderBanner === 'function') window.updatePaymentReminderBanner();
             } catch (e) {
@@ -139,11 +144,13 @@ window.continueAppInit = async function() {
             await window.pullAllBooksFromCloud();
             
             // ── LOAD PAYMENT REMINDERS DARI CLOUD ──
+            // Cache disimpan per-buku (sk_payment_reminders_{bookId}) agar tidak
+            // menimpa data buku lain saat multi-buku aktif.
             if (window.isOnline()) {
                 try {
                     const cloudReminders = await window.loadPaymentReminders(window.currentBookId);
                     if (cloudReminders && cloudReminders.length > 0) {
-                        localStorage.setItem('sk_payment_reminders', JSON.stringify(cloudReminders));
+                        localStorage.setItem('sk_payment_reminders_' + window.currentBookId, JSON.stringify(cloudReminders));
                     } else {
                         await window.migratePaymentReminders(window.currentBookId);
                     }
