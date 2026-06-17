@@ -183,3 +183,67 @@ window.updateSettingsSyncStatus = function(direction) {
     const label = direction === 'pull' ? 'Ditarik dari cloud' : 'Disimpan ke cloud';
     el.innerText = `Terakhir ${label}: ${now}`;
 };
+
+// ============================================================
+// DB.JS - FUNGSI KHUSUS UNTUK PAYMENT REMINDERS
+// ============================================================
+
+// ── PUSH PAYMENT REMINDER KE CLOUD ──
+window.pushPaymentReminderToCloud = async function(bookId, reminderData) {
+    if (!window.isOnline() || !bookId) return false;
+    
+    try {
+        const payload = {
+            ...reminderData,
+            book_id: bookId,
+            updated_at: new Date().toISOString()
+        };
+        
+        const result = await window.callSupabaseAPI('payment_reminders', 'POST', [payload]);
+        return !!result;
+    } catch (e) {
+        console.error('[DB] Gagal push payment reminder:', e);
+        return false;
+    }
+};
+
+// ── PULL PAYMENT REMINDER DARI CLOUD ──
+window.pullPaymentRemindersFromCloud = async function(bookId) {
+    if (!window.isOnline() || !bookId) return null;
+    
+    try {
+        const result = await window.callSupabaseAPI(
+            'payment_reminders',
+            'GET',
+            null,
+            `?book_id=eq.${bookId}&order=created_at.desc`
+        );
+        
+        if (result && Array.isArray(result)) {
+            localStorage.setItem('sk_payment_reminders', JSON.stringify(result));
+            return result;
+        }
+        return null;
+    } catch (e) {
+        console.error('[DB] Gagal pull payment reminders:', e);
+        return null;
+    }
+};
+
+// ── DELETE PAYMENT REMINDER DARI CLOUD ──
+window.deletePaymentReminderFromCloud = async function(reminderId, bookId) {
+    if (!window.isOnline() || !bookId) return false;
+    
+    try {
+        const result = await window.callSupabaseAPI(
+            'payment_reminders',
+            'DELETE',
+            null,
+            `?id=eq.${reminderId}&book_id=eq.${bookId}`
+        );
+        return !!result;
+    } catch (e) {
+        console.error('[DB] Gagal delete payment reminder:', e);
+        return false;
+    }
+};
