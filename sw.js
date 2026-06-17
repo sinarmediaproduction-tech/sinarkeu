@@ -6,7 +6,7 @@
  *   - Supabase & Telegram API → Network Only (data real-time, jangan di-cache)
  */
 
-const CACHE_NAME = 'sinarkeu-v8-cache-v1';
+const CACHE_NAME = 'sinarkeu-v9-cache-v1';
 const STATIC_CDN = [
   'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
@@ -57,9 +57,11 @@ self.addEventListener('fetch', event => {
   }
 
   // 2. File app utama (index.html & aset lokal) → Network First, fallback cache
+  // cache:'no-store' agar tidak terjebak HTTP cache browser saat online,
+  // supaya perubahan kode (mis. JS file) langsung kepakai tanpa stale.
   if (url.origin === self.location.origin) {
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, { cache: 'no-store' })
         .then(response => {
           if (response && response.status === 200) {
             const clone = response.clone();
