@@ -23,6 +23,8 @@ window.switchBook = async function(id) {
     if (id === window.currentBookId) return;
     window.currentBookId = id;
     localStorage.setItem('sk_current_book_id', window.currentBookId);
+
+    // Muat data lokal buku baru terlebih dahulu agar UI tidak kosong
     window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
     const cached = localStorage.getItem('sk_txs_' + window.currentBookId);
     window.txs = cached ? JSON.parse(cached) : [];
@@ -31,7 +33,67 @@ window.switchBook = async function(id) {
     window.updateHeaderTitle();
     if (document.getElementById('bookManagerModal').classList.contains('show')) window.renderBookList();
     window.showToast("Berhasil beralih ke: " + (window.books.find(b => b.id === id)?.name || id));
-    if (window.isOnline()) await window.pullFromCloudSilently();
+
+    if (!window.isOnline()) return;
+
+    // ── PULL SEMUA DATA CLOUD UNTUK BUKU BARU ──
+    try {
+        // 1. Transaksi
+        await window.pullFromCloudSilently();
+
+        // 2. Settings umum (termasuk fase kehidupan dll.)
+        await window.pullAllSettings();
+
+        // 3. Budgets (default, bulanan, tahunan)
+        try {
+            const defaultBudget = await window.loadDefaultBudgetFromCloud(window.currentBookId);
+            if (Object.keys(defaultBudget).length > 0) {
+                window.saveDefaultBudgetToLocal(window.currentBookId, defaultBudget);
+            }
+            const monthlyBudget = await window.loadMonthlyBudgetFromCloud(window.currentBookId);
+            if (Object.keys(monthlyBudget).length > 0) {
+                window.budgets = monthlyBudget;
+                if (typeof window.renderBudget === 'function') window.renderBudget();
+            }
+            const annualBudget = await window.loadAnnualBudgetFromCloud(window.currentBookId);
+            if (annualBudget.length > 0) {
+                window.saveAnnualBudgetToLocal(window.currentBookId, annualBudget);
+            }
+        } catch (e) {
+            console.warn('[switchBook] Gagal pull budgets:', e);
+        }
+
+        // 4. Payment reminders — simpan ke cache per-buku, bukan global
+        try {
+            const reminders = await window.loadPaymentReminders(window.currentBookId);
+            if (reminders && reminders.length > 0) {
+                // Tulis ke cache per-buku agar tidak menimpa buku lain
+                localStorage.setItem('sk_payment_reminders_' + window.currentBookId, JSON.stringify(reminders));
+            }
+            if (typeof window.renderPaymentReminders === 'function') await window.renderPaymentReminders();
+            if (typeof window.updatePaymentReminderBanner === 'function') window.updatePaymentReminderBanner();
+        } catch (e) {
+            console.warn('[switchBook] Gagal pull payment reminders:', e);
+        }
+
+        // 5. Fase kehidupan
+        try {
+            const fasCloud = await window.pullSetting('fase_kehidupan', window.currentBookId);
+            if (fasCloud) {
+                const localRaw = localStorage.getItem('sk_fase_kehidupan_' + window.currentBookId);
+                const localFase = localRaw ? JSON.parse(localRaw) : null;
+                if (!localFase || new Date(fasCloud.updatedAt) > new Date(localFase.updatedAt || 0)) {
+                    localStorage.setItem('sk_fase_kehidupan_' + window.currentBookId, JSON.stringify(fasCloud));
+                }
+            }
+        } catch (e) { /* fase belum tersimpan di cloud */ }
+
+        window._lastSyncTime = new Date();
+        if (typeof window.updateSyncTimeBadge === 'function') window.updateSyncTimeBadge();
+    } catch (e) {
+        console.error('[switchBook] Gagal pull data cloud:', e);
+        window.showToast('Sebagian data cloud gagal dimuat', 'warning');
+    }
 };
 
 window.openBookManager = function() {
