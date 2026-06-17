@@ -306,6 +306,7 @@ window.checkBudgetWarningAfterSave = function(date, category) {
         }
     }
 };
+
 // ==================== ANGGARAN TAHUNAN ====================
 
 window.getAnnualBudget = function(bookId) {
@@ -334,7 +335,6 @@ window.renderAnnualBudgetForm = function() {
     container.innerHTML = '';
     const items = window.getAnnualBudget(window.currentBookId);
     if (items.length === 0) {
-        // Tambah 1 baris kosong default jika belum ada isi
         window._annualBudgetRows = [{ name: '', amount: 0 }];
     } else {
         window._annualBudgetRows = items.map(i => ({ name: i.name, amount: i.amount }));
@@ -373,7 +373,6 @@ window.addAnnualBudgetRow = function() {
 
 window.removeAnnualBudgetRow = function(idx) {
     window._annualBudgetRows.splice(idx, 1);
-    // Re-render semua baris
     const container = document.getElementById('annualBudgetItemsContainer');
     container.innerHTML = '';
     window._annualBudgetRows.forEach((_, i) => window._renderAnnualRow(i));
@@ -394,4 +393,236 @@ window.saveAnnualBudget = function() {
     window.showToast('✅ Anggaran Tahunan berhasil disimpan!', 'success');
     window.closeModal('annualBudgetModal');
     window.updateFinancialCards();
+};
+
+// ============================================================
+// BUDGET.JS - FUNGSI CLOUD UNTUK SINKRONISASI
+// ============================================================
+
+// ── LOAD DEFAULT BUDGET dari Supabase ──
+window.loadDefaultBudgetFromCloud = async function(bookId) {
+    if (!bookId) bookId = window.currentBookId;
+    if (!bookId) return {};
+    
+    if (window.isOnline()) {
+        try {
+            const result = await window.callSupabaseAPI(
+                'settings',
+                'GET',
+                null,
+                `?book_id=eq.${bookId}&key=eq.default_budget&limit=1`
+            );
+            
+            if (result && Array.isArray(result) && result.length > 0) {
+                const decrypted = await window._decryptSettingValue(result[0].value);
+                const parsed = JSON.parse(decrypted);
+                window.saveDefaultBudgetToLocal(bookId, parsed);
+                return parsed;
+            }
+        } catch (e) {
+            console.warn('[Budget] Gagal load default budget dari cloud:', e);
+        }
+    }
+    
+    return window.getDefaultBudget(bookId);
+};
+
+// ── SAVE DEFAULT BUDGET ke Supabase ──
+window.saveDefaultBudgetToCloud = async function(bookId, budgetData) {
+    if (!bookId) bookId = window.currentBookId;
+    if (!bookId) return false;
+    
+    window.saveDefaultBudgetToLocal(bookId, budgetData);
+    
+    if (window.isOnline()) {
+        try {
+            const result = await window.pushSetting('default_budget', budgetData, bookId);
+            return !!result;
+        } catch (e) {
+            console.error('[Budget] Gagal save default budget ke cloud:', e);
+            window.showToast('⚠️ Data tersimpan lokal, gagal sync ke cloud', 'warning');
+            return false;
+        }
+    }
+    
+    return true;
+};
+
+// ── LOAD MONTHLY BUDGET dari Supabase ──
+window.loadMonthlyBudgetFromCloud = async function(bookId) {
+    if (!bookId) bookId = window.currentBookId;
+    if (!bookId) return {};
+    
+    if (window.isOnline()) {
+        try {
+            const result = await window.callSupabaseAPI(
+                'settings',
+                'GET',
+                null,
+                `?book_id=eq.${bookId}&key=eq.budgets&limit=1`
+            );
+            
+            if (result && Array.isArray(result) && result.length > 0) {
+                const decrypted = await window._decryptSettingValue(result[0].value);
+                const parsed = JSON.parse(decrypted);
+                localStorage.setItem('sk_budgets_' + bookId, JSON.stringify(parsed));
+                if (bookId === window.currentBookId) {
+                    window.budgets = parsed;
+                }
+                return parsed;
+            }
+        } catch (e) {
+            console.warn('[Budget] Gagal load monthly budget dari cloud:', e);
+        }
+    }
+    
+    const raw = localStorage.getItem('sk_budgets_' + bookId);
+    if (raw) {
+        try { return JSON.parse(raw); } catch { return {}; }
+    }
+    return {};
+};
+
+// ── SAVE MONTHLY BUDGET ke Supabase ──
+window.saveMonthlyBudgetToCloud = async function(bookId, budgetData) {
+    if (!bookId) bookId = window.currentBookId;
+    if (!bookId) return false;
+    
+    localStorage.setItem('sk_budgets_' + bookId, JSON.stringify(budgetData));
+    if (bookId === window.currentBookId) {
+        window.budgets = budgetData;
+    }
+    
+    if (window.isOnline()) {
+        try {
+            const result = await window.pushSetting('budgets', budgetData, bookId);
+            return !!result;
+        } catch (e) {
+            console.error('[Budget] Gagal save monthly budget ke cloud:', e);
+            window.showToast('⚠️ Data tersimpan lokal, gagal sync ke cloud', 'warning');
+            return false;
+        }
+    }
+    
+    return true;
+};
+
+// ── LOAD ANNUAL BUDGET dari Supabase ──
+window.loadAnnualBudgetFromCloud = async function(bookId) {
+    if (!bookId) bookId = window.currentBookId;
+    if (!bookId) return [];
+    
+    if (window.isOnline()) {
+        try {
+            const result = await window.callSupabaseAPI(
+                'settings',
+                'GET',
+                null,
+                `?book_id=eq.${bookId}&key=eq.annual_budget&limit=1`
+            );
+            
+            if (result && Array.isArray(result) && result.length > 0) {
+                const decrypted = await window._decryptSettingValue(result[0].value);
+                const parsed = JSON.parse(decrypted);
+                window.saveAnnualBudgetToLocal(bookId, parsed);
+                return parsed;
+            }
+        } catch (e) {
+            console.warn('[Budget] Gagal load annual budget dari cloud:', e);
+        }
+    }
+    
+    return window.getAnnualBudget(bookId);
+};
+
+// ── SAVE ANNUAL BUDGET ke Supabase ──
+window.saveAnnualBudgetToCloud = async function(bookId, budgetData) {
+    if (!bookId) bookId = window.currentBookId;
+    if (!bookId) return false;
+    
+    window.saveAnnualBudgetToLocal(bookId, budgetData);
+    
+    if (window.isOnline()) {
+        try {
+            const result = await window.pushSetting('annual_budget', budgetData, bookId);
+            return !!result;
+        } catch (e) {
+            console.error('[Budget] Gagal save annual budget ke cloud:', e);
+            window.showToast('⚠️ Data tersimpan lokal, gagal sync ke cloud', 'warning');
+            return false;
+        }
+    }
+    
+    return true;
+};
+
+// ── SYNC ALL BUDGETS ──
+window.syncAllBudgetsToCloud = async function(bookId) {
+    if (!bookId) bookId = window.currentBookId;
+    if (!bookId || !window.isOnline()) return false;
+    
+    try {
+        const defaultBudget = window.getDefaultBudget(bookId);
+        const monthlyBudget = JSON.parse(localStorage.getItem('sk_budgets_' + bookId) || '{}');
+        const annualBudget = window.getAnnualBudget(bookId);
+        
+        await Promise.all([
+            window.saveDefaultBudgetToCloud(bookId, defaultBudget),
+            window.saveMonthlyBudgetToCloud(bookId, monthlyBudget),
+            window.saveAnnualBudgetToCloud(bookId, annualBudget)
+        ]);
+        
+        console.log('[Budget] Semua budget berhasil disync ke cloud');
+        return true;
+    } catch (e) {
+        console.error('[Budget] Gagal sync all budgets:', e);
+        return false;
+    }
+};
+
+// ── MIGRASI DATA BUDGET ──
+window.migrateAllBudgets = async function(bookId) {
+    if (!bookId) bookId = window.currentBookId;
+    if (!bookId || !window.isOnline()) return;
+    
+    try {
+        const existing = await window.callSupabaseAPI(
+            'settings',
+            'GET',
+            null,
+            `?book_id=eq.${bookId}&key=eq.default_budget&limit=1`
+        );
+        
+        if (existing && Array.isArray(existing) && existing.length > 0) {
+            console.log('[Budget] Data sudah ada di cloud, skip migrasi');
+            return;
+        }
+    } catch (e) {
+        console.warn('[Budget] Gagal cek data existing:', e);
+    }
+    
+    const defaultBudget = window.getDefaultBudget(bookId);
+    const monthlyBudget = JSON.parse(localStorage.getItem('sk_budgets_' + bookId) || '{}');
+    const annualBudget = window.getAnnualBudget(bookId);
+    
+    let migrated = 0;
+    
+    if (Object.keys(defaultBudget).length > 0) {
+        await window.saveDefaultBudgetToCloud(bookId, defaultBudget);
+        migrated++;
+    }
+    
+    if (Object.keys(monthlyBudget).length > 0) {
+        await window.saveMonthlyBudgetToCloud(bookId, monthlyBudget);
+        migrated++;
+    }
+    
+    if (annualBudget.length > 0) {
+        await window.saveAnnualBudgetToCloud(bookId, annualBudget);
+        migrated++;
+    }
+    
+    if (migrated > 0) {
+        window.showToast(`✅ ${migrated} data anggaran berhasil dimigrasi ke cloud`, 'success');
+    }
 };
