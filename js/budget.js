@@ -450,6 +450,7 @@ window.loadDefaultBudgetFromCloud = async function(bookId) {
             
             if (result && Array.isArray(result) && result.length > 0) {
                 const decrypted = await window._decryptSettingValue(result[0].value);
+                if (decrypted === null) throw new Error('Nilai cloud default_budget tidak bisa didekripsi (kunci lama?)');
                 const parsed = JSON.parse(decrypted);
                 window.saveDefaultBudgetToLocal(bookId, parsed);
                 return parsed;
@@ -500,6 +501,7 @@ window.loadMonthlyBudgetFromCloud = async function(bookId) {
             
             if (result && Array.isArray(result) && result.length > 0) {
                 const decrypted = await window._decryptSettingValue(result[0].value);
+                if (decrypted === null) throw new Error('Nilai cloud budgets tidak bisa didekripsi (kunci lama?)');
                 const parsed = JSON.parse(decrypted);
                 localStorage.setItem('sk_budgets_' + bookId, JSON.stringify(parsed));
                 if (bookId === window.currentBookId) {
@@ -563,6 +565,7 @@ window.loadAnnualBudgetFromCloud = async function(bookId) {
             
             if (result && Array.isArray(result) && result.length > 0) {
                 const decrypted = await window._decryptSettingValue(result[0].value);
+                if (decrypted === null) throw new Error('Nilai cloud annual_budget tidak bisa didekripsi (kunci lama?)');
                 const parsed = JSON.parse(decrypted);
                 window.saveAnnualBudgetToLocal(bookId, parsed);
                 return parsed;

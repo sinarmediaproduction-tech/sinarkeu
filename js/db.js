@@ -177,7 +177,16 @@ window._decryptSettingValue = async function(rawValue) {
             console.warn('[Sync] Gagal dekripsi nilai setting, asumsikan data lama (plain text):', e);
         }
     }
-    return rawValue;
+    // Fallback: cek apakah rawValue adalah JSON valid (data lama sebelum enkripsi).
+    // Kalau bukan (masih ciphertext dari kunci lama), return null supaya pemanggil
+    // bisa skip / trigger heal — daripada melempar SyntaxError di JSON.parse().
+    try {
+        JSON.parse(rawValue);
+        return rawValue; // memang plain JSON (data lama, sebelum fitur enkripsi)
+    } catch {
+        console.warn('[Sync] rawValue bukan JSON valid dan gagal didekripsi (kunci lama?), return null.');
+        return null;
+    }
 };
 
 window.pullAllSettings = async function() {

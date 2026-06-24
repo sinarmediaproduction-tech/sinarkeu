@@ -37,6 +37,13 @@ window.switchBook = async function(id) {
 
     if (!window.isOnline()) return;
 
+    // Pastikan session crypto key sudah ada sebelum pull cloud.
+    // Setelah reload, _sessionCryptoKey hilang (in-memory only) —
+    // tanpa ini, _decryptSettingValue() gagal decrypt dan data cloud tidak terbaca.
+    if (!window._sessionCryptoKey) {
+        await window.restoreSessionCryptoKey();
+    }
+
     // ── PULL SEMUA DATA CLOUD UNTUK BUKU BARU ──
     try {
         // 1. Transaksi
