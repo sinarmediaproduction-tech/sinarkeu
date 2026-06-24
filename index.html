@@ -1058,17 +1058,24 @@ function _getSupabase() {
   // Coba ambil client Supabase yang sudah dibuat oleh app utama
   if (window._supabaseClient) return window._supabaseClient;
   if (window.supabaseClient) return window.supabaseClient;
+  // Cache instance buatan patch ini sendiri, supaya tidak membuat
+  // GoTrueClient baru tiap kali _getSupabase() dipanggil (mis. tiap
+  // siklus _autoSync 30 detik), yang memicu warning "Multiple GoTrueClient
+  // instances" dan potensi state auth yang tidak konsisten.
+  if (window._syncPatchSupabaseClient) return window._syncPatchSupabaseClient;
   // Fallback: coba buat dari variabel global app
   try {
     // Prioritas 1: _supabaseUrl + _supabaseKey (variabel internal app)
     if (window._supabaseUrl && window._supabaseKey) {
-      return window.supabase.createClient(window._supabaseUrl, window._supabaseKey);
+      window._syncPatchSupabaseClient = window.supabase.createClient(window._supabaseUrl, window._supabaseKey);
+      return window._syncPatchSupabaseClient;
     }
     // Prioritas 2: getCloudUrl() + globalSupabaseKey (fungsi/variabel publik app)
     const url = (typeof window.getCloudUrl === 'function') ? window.getCloudUrl() : null;
     const key = window.globalSupabaseKey || null;
     if (url && key) {
-      return window.supabase.createClient(url, key);
+      window._syncPatchSupabaseClient = window.supabase.createClient(url, key);
+      return window._syncPatchSupabaseClient;
     }
   } catch(e) {}
   return null;
@@ -1224,13 +1231,23 @@ function _refreshUI() {
 }
 
 // ─── Intercept fungsi simpan ─────────────────────────────────────────────────
+//
+// CATATAN PERBAIKAN: fungsi-fungsi asli (saveBudget, saveDefaultBudget,
+// saveAnnualBudget di budget.js) sekarang berupa `async function` yang benar
+// menunggu hasil push ke cloud sebelum menampilkan status ke user. Wrapper
+// di bawah ini HARUS ikut `await` panggilan ke fungsi asli (bukan hanya
+// `.apply(...)` tanpa await), supaya:
+//   1. Toast status sukses/gagal dari fungsi asli tidak tumpang tindih
+//      dengan proses sync milik patch ini yang berjalan setelahnya.
+//   2. _syncAfterSaveXxx() (yang membaca localStorage hasil simpan) tidak
+//      jalan sebelum fungsi asli benar-benar selesai menulis ke localStorage.
 
 function _interceptSave() {
   // 1. saveBudget (anggaran bulanan khusus per bulan)
   const _origSaveBudget = window.saveBudget;
   if (typeof _origSaveBudget === 'function') {
     window.saveBudget = async function(...args) {
-      const result = _origSaveBudget.apply(this, args);
+      const result = await _origSaveBudget.apply(this, args);
       await _syncAfterSaveBudget();
       return result;
     };
@@ -1241,7 +1258,7 @@ function _interceptSave() {
   const _origSaveDefault = window.saveDefaultBudget;
   if (typeof _origSaveDefault === 'function') {
     window.saveDefaultBudget = async function(...args) {
-      const result = _origSaveDefault.apply(this, args);
+      const result = await _origSaveDefault.apply(this, args);
       await _syncAfterSaveDefaultBudget();
       return result;
     };
@@ -1252,7 +1269,7 @@ function _interceptSave() {
   const _origSaveAnnual = window.saveAnnualBudget;
   if (typeof _origSaveAnnual === 'function') {
     window.saveAnnualBudget = async function(...args) {
-      const result = _origSaveAnnual.apply(this, args);
+      const result = await _origSaveAnnual.apply(this, args);
       await _syncAfterSaveAnnualBudget();
       return result;
     };
@@ -1263,7 +1280,7 @@ function _interceptSave() {
   const _origSavePR = window.savePaymentReminderHandler;
   if (typeof _origSavePR === 'function') {
     window.savePaymentReminderHandler = async function(...args) {
-      const result = _origSavePR.apply(this, args);
+      const result = await _origSavePR.apply(this, args);
       await _syncAfterSavePaymentReminders();
       return result;
     };
@@ -1274,7 +1291,7 @@ function _interceptSave() {
   const _origDelPR = window.deletePaymentReminder;
   if (typeof _origDelPR === 'function') {
     window.deletePaymentReminder = async function(...args) {
-      const result = _origDelPR.apply(this, args);
+      const result = await _origDelPR.apply(this, args);
       await _syncAfterSavePaymentReminders();
       return result;
     };
