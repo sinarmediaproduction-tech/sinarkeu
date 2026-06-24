@@ -181,7 +181,7 @@ window.openBudgetModal = function() {
     window.renderBudgetFormFields();
     window.openModal('budgetModal');
 };
-window.saveBudget = function() {
+window.saveBudget = async function() {
     if (!window.requireOnline('menyimpan anggaran')) return;
     let m = document.getElementById('budgetModalMonth').value;
     let y = document.getElementById('budgetModalYear').value;
@@ -197,16 +197,26 @@ window.saveBudget = function() {
             if (val > 0) hasAnyValue = true;
         }
     });
-    if (!hasAnyValue) {
-        delete window.budgets[key];
-        window.showToast('Anggaran bulan ini dihapus, akan menggunakan Anggaran Bulanan.', 'info');
-    } else {
-        window.showToast('Anggaran bulanan berhasil diperbarui', 'success');
-    }
+    if (!hasAnyValue) delete window.budgets[key];
     localStorage.setItem('sk_budgets_' + window.currentBookId, JSON.stringify(window.budgets));
     window.closeModal('budgetModal');
     window.renderBudget();
-    window.saveMonthlyBudgetToCloud(window.currentBookId, window.budgets);
+    // Ditunggu (await) supaya kita tahu pasti hasil push ke cloud sebelum
+    // memberi tahu pengguna, bukan fire-and-forget seperti sebelumnya.
+    const ok = await window.saveMonthlyBudgetToCloud(window.currentBookId, window.budgets);
+    if (!hasAnyValue) {
+        window.showToast(
+            ok ? 'Anggaran bulan ini dihapus, akan menggunakan Anggaran Bulanan.'
+               : '⚠️ Dihapus lokal, tapi gagal sync ke cloud. Coba simpan lagi.',
+            ok ? 'info' : 'warning'
+        );
+    } else {
+        window.showToast(
+            ok ? 'Anggaran bulanan berhasil diperbarui & disinkron ke cloud'
+               : '⚠️ Tersimpan lokal, tapi GAGAL sync ke cloud. Coba simpan lagi saat online.',
+            ok ? 'success' : 'warning'
+        );
+    }
 };
 
 // Default Budget Modal
@@ -240,7 +250,7 @@ window.updateDefaultBudgetSummary = function() {
         el.innerText = 'Total Anggaran Bulanan: ' + window.rp(total);
     }
 };
-window.saveDefaultBudget = function() {
+window.saveDefaultBudget = async function() {
     if (!window.requireOnline('menyimpan anggaran bulanan')) return;
     const inputs = document.querySelectorAll('.default-budget-input');
     const newBudget = {};
@@ -251,10 +261,16 @@ window.saveDefaultBudget = function() {
         }
     });
     window.saveDefaultBudgetToLocal(window.currentBookId, newBudget);
-    window.showToast('✅ Anggaran Bulanan berhasil disimpan!', 'success');
     window.closeModal('defaultBudgetModal');
     window.renderBudget();
-    window.saveDefaultBudgetToCloud(window.currentBookId, newBudget);
+    // Ditunggu (await) supaya status sukses/gagal sync ke cloud diketahui
+    // pasti sebelum toast ditampilkan, bukan diasumsikan berhasil begitu saja.
+    const ok = await window.saveDefaultBudgetToCloud(window.currentBookId, newBudget);
+    window.showToast(
+        ok ? '✅ Anggaran Bulanan berhasil disimpan & disinkron ke cloud!'
+           : '⚠️ Tersimpan lokal, tapi GAGAL sync ke cloud. Coba simpan lagi saat online.',
+        ok ? 'success' : 'warning'
+    );
     window.updateFinancialCards && window.updateFinancialCards();
     if (document.getElementById('budgetModal').classList.contains('show')) {
         window.renderBudgetFormFields();
@@ -319,9 +335,9 @@ window.saveAnnualBudgetToLocal = function(bookId, items) {
     localStorage.setItem('sk_annual_budget_' + (bookId || window.currentBookId), JSON.stringify(items));
 };
 
-window.pushAnnualBudget = function(bookId) {
+window.pushAnnualBudget = async function(bookId) {
     const items = window.getAnnualBudget(bookId || window.currentBookId);
-    window.pushSetting('annual_budget', items, bookId || window.currentBookId);
+    return await window.pushSetting('annual_budget', items, bookId || window.currentBookId);
 };
 
 window.openAnnualBudgetModal = function() {
@@ -385,14 +401,20 @@ window.updateAnnualBudgetSummary = function() {
     if (el) el.innerText = 'Total Anggaran Tahunan: ' + window.rp(total);
 };
 
-window.saveAnnualBudget = function() {
+window.saveAnnualBudget = async function() {
     if (!window.requireOnline('menyimpan anggaran tahunan')) return;
     const items = (window._annualBudgetRows || []).filter(r => r.name.trim() !== '' || r.amount > 0);
     window.saveAnnualBudgetToLocal(window.currentBookId, items);
-    window.pushAnnualBudget(window.currentBookId);
-    window.showToast('✅ Anggaran Tahunan berhasil disimpan!', 'success');
     window.closeModal('annualBudgetModal');
     window.updateFinancialCards();
+    // Ditunggu (await) supaya status sukses/gagal sync ke cloud diketahui
+    // pasti sebelum toast ditampilkan.
+    const ok = await window.pushAnnualBudget(window.currentBookId);
+    window.showToast(
+        ok ? '✅ Anggaran Tahunan berhasil disimpan & disinkron ke cloud!'
+           : '⚠️ Tersimpan lokal, tapi GAGAL sync ke cloud. Coba simpan lagi saat online.',
+        ok ? 'success' : 'warning'
+    );
 };
 
 // ============================================================

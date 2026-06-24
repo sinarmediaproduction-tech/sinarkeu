@@ -27,11 +27,18 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
 // Semua nilai dienkripsi (AES-GCM) dengan kunci sesi sebelum dikirim ke cloud,
 // supaya isi tabel `settings` di Supabase tidak pernah berupa plain text
 // (sebelumnya hanya kredensial koneksi yang dienkripsi, isi setting tidak).
+//
+// PENTING: fungsi ini SEKARANG mengembalikan true/false sesuai hasil push
+// yang sebenarnya. Sebelumnya fungsi ini tidak pernah `return` apa pun,
+// sehingga semua pemanggil (saveDefaultBudgetToCloud, dst.) selalu menganggap
+// hasilnya gagal (`undefined` -> falsy) walau push-nya sebenarnya sukses.
+// Pemanggil yang melakukan `await window.pushSetting(...)` sekarang bisa
+// mempercayai nilai return-nya untuk menampilkan status yang akurat ke user.
 window.pushSetting = async function(key, value, bookId) {
-    if (!window.isOnline()) return;
+    if (!window.isOnline()) return false;
     if (!window._sessionCryptoKey) {
         console.warn(`[Sync] Crypto key sesi tidak tersedia, push '${key}' dibatalkan (mencegah kebocoran plain text ke cloud).`);
-        return;
+        return false;
     }
     const plainJson = JSON.stringify(value);
     const encryptedValue = await window.encryptStr(window._sessionCryptoKey, plainJson);
@@ -41,7 +48,9 @@ window.pushSetting = async function(key, value, bookId) {
         value: encryptedValue,
         updated_at: new Date().toISOString()
     }];
-    await window.callSupabaseAPI('settings', 'POST', payload);
+    const result = await window.callSupabaseAPI('settings', 'POST', payload);
+    // callSupabaseAPI mengembalikan null kalau request gagal (lihat fungsi di atas).
+    return result !== null;
 };
 
 window.pushSettingBooks = async function() {
