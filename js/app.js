@@ -50,8 +50,12 @@ window.startAutoSync = function() {
             await window.pullAllSettings();
             await window.pullFromCloudSilently();
             window.updateBookSelectDropdown();
+            // Catatan: window.renderBudget() TIDAK dipanggil di sini karena
+            // pullAllSettings() sudah memanggil renderBudget() sendiri apabila
+            // ada perubahan budget dari cloud (budgetUpdated = true di db.js).
+            // Memanggil renderBudget() lagi di sini hanya akan menyebabkan
+            // render ganda yang boros dan bisa menyebabkan flicker UI.
             window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
-            window.renderBudget();
 
             // ── PULL PAYMENT REMINDERS ──
             // payment_reminders pakai tabel Supabase sendiri, bukan tabel `settings`,

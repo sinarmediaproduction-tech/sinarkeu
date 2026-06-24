@@ -25,16 +25,24 @@ window.getEffectiveBudget = function(year, month, bookId) {
         return { budget: defaultBudget, source: 'default', key: 'default' };
     }
 };
+// Flag per-key untuk mencegah double write ke Supabase apabila
+// ensureMonthlyBudgetExists() dan checkNewMonthAutoApply() keduanya
+// terpanggil dalam satu sesi untuk bulan yang sama.
+if (!window._budgetAutoAppliedKeys) window._budgetAutoAppliedKeys = new Set();
+
 window.ensureMonthlyBudgetExists = function(year, month, bookId) {
     const bId = bookId || window.currentBookId;
     const key = `${year}-${month}`;
     if (window.budgets[key] && Object.values(window.budgets[key]).some(v => v > 0)) {
         return;
     }
+    // Sudah ditangani oleh checkNewMonthAutoApply di sesi ini, skip.
+    if (window._budgetAutoAppliedKeys.has(key + '_' + bId)) return;
     const defaultBudget = window.getDefaultBudget(bId);
     if (Object.keys(defaultBudget).length > 0) {
         window.budgets[key] = { ...defaultBudget };
         localStorage.setItem('sk_budgets_' + bId, JSON.stringify(window.budgets));
+        window._budgetAutoAppliedKeys.add(key + '_' + bId);
         window.saveMonthlyBudgetToCloud(bId, window.budgets);
         console.log(`[Budget] Auto-apply default budget untuk ${key} di buku ${bId}`);
     }
@@ -48,8 +56,11 @@ window.checkNewMonthAutoApply = function() {
     if (!hasBudget) {
         const defaultBudget = window.getDefaultBudget(window.currentBookId);
         if (Object.keys(defaultBudget).length > 0) {
+            // Sudah ditangani oleh ensureMonthlyBudgetExists di sesi ini, skip.
+            if (window._budgetAutoAppliedKeys.has(key + '_' + window.currentBookId)) return;
             window.budgets[key] = { ...defaultBudget };
             localStorage.setItem('sk_budgets_' + window.currentBookId, JSON.stringify(window.budgets));
+            window._budgetAutoAppliedKeys.add(key + '_' + window.currentBookId);
             window.saveMonthlyBudgetToCloud(window.currentBookId, window.budgets);
             console.log(`[Budget] Auto-apply default budget untuk ${key} (bulan baru)`);
             // DO NOT call renderBudget() here — renderBudget() already calls
