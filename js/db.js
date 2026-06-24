@@ -203,7 +203,9 @@ window.pullAllSettings = async function() {
             if (row.key === 'crypto_salt' || row.key === 'crypto_check') continue;
             let parsed;
             const decryptedValue = await window._decryptSettingValue(row.value);
+            if (decryptedValue === null) { continue; } // ciphertext dari kunci lama, skip
             try { parsed = JSON.parse(decryptedValue); } catch { continue; }
+            if (parsed === null || typeof parsed === 'undefined') { continue; } // JSON.parse(null) = null, skip
             if (row.key === 'books' && Array.isArray(parsed) && parsed.length > 0) {
                 const cloudIds = new Set(parsed.map(b => b.id));
                 const localIds = new Set(window.books.map(b => b.id));
