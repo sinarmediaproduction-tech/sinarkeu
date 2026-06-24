@@ -456,6 +456,7 @@ window.loadDefaultBudgetFromCloud = async function(bookId) {
             }
         } catch (e) {
             console.warn('[Budget] Gagal load default budget dari cloud:', e);
+            try { window._healStaleCloudSetting('default_budget', bookId, window.getDefaultBudget(bookId)); } catch {}
         }
     }
     
@@ -508,6 +509,10 @@ window.loadMonthlyBudgetFromCloud = async function(bookId) {
             }
         } catch (e) {
             console.warn('[Budget] Gagal load monthly budget dari cloud:', e);
+            const localRaw = localStorage.getItem('sk_budgets_' + bookId);
+            if (localRaw) {
+                try { window._healStaleCloudSetting('budgets', bookId, JSON.parse(localRaw)); } catch {}
+            }
         }
     }
     
@@ -564,6 +569,7 @@ window.loadAnnualBudgetFromCloud = async function(bookId) {
             }
         } catch (e) {
             console.warn('[Budget] Gagal load annual budget dari cloud:', e);
+            try { window._healStaleCloudSetting('annual_budget', bookId, window.getAnnualBudget(bookId)); } catch {}
         }
     }
     

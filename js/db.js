@@ -134,11 +134,34 @@ window.reEncryptAllCloudSettings = async function() {
             await window.pushSetting('budgets', bud, b.id);
             const defBud = window.getDefaultBudget(b.id);
             await window.pushSetting('default_budget', defBud, b.id);
+            const annBud = window.getAnnualBudget(b.id);
+            await window.pushSetting('annual_budget', annBud, b.id);
         }
         await window.pushSettingTelegram();
         console.log('[Sync] Re-enkripsi & push ulang semua setting ke cloud selesai (kunci baru).');
     } catch (e) {
         console.warn('[Sync] Gagal re-enkripsi setting cloud setelah ganti password:', e);
+    }
+};
+
+// ==================== HEAL STALE CLOUD SETTING ====================
+// Dipanggil saat load*FromCloud gagal JSON.parse hasil dekripsi (lihat
+// catatan di reEncryptAllCloudSettings di atas: baris cloud masih
+// terenkripsi kunci sesi LAMA, sehingga _decryptSettingValue() fallback
+// ke ciphertext mentah yang bukan JSON valid). Daripada baris itu macet
+// permanen sampai ada push manual, kita re-push data lokal yang masih
+// utuh (tidak terenkripsi password lama, localStorage selalu plain JSON)
+// ke cloud dengan kunci sesi SAAT INI, supaya percobaan load berikutnya
+// (atau dari device lain) langsung berhasil.
+window._healStaleCloudSetting = async function(key, bookId, localValue) {
+    if (!window.isOnline() || !window._sessionCryptoKey) return;
+    try {
+        const ok = await window.pushSetting(key, localValue, bookId);
+        if (ok) {
+            console.log(`[Sync] Heal: '${key}' (book ${bookId}) berhasil di-push ulang dengan kunci sesi saat ini.`);
+        }
+    } catch (e) {
+        console.warn(`[Sync] Heal gagal untuk '${key}' (book ${bookId}):`, e);
     }
 };
 
