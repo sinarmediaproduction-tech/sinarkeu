@@ -195,7 +195,7 @@ window.continueAppInit = async function() {
     });
 };
 
-window.initApp = function() {
+window.initApp = async function() {
     window.bootstrapMultiAccount();
     window.deviceId = localStorage.getItem('sk_device_id');
     if (!window.deviceId) {
