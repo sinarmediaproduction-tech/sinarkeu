@@ -163,41 +163,14 @@ window.continueAppInit = async function() {
                 }
             }
 
-            // ── LOAD BUDGETS DARI CLOUD ──
-            if (window.isOnline()) {
-                try {
-                    const defaultBudget = await window.loadDefaultBudgetFromCloud(window.currentBookId);
-                    if (Object.keys(defaultBudget).length > 0) {
-                        window.saveDefaultBudgetToLocal(window.currentBookId, defaultBudget);
-                    }
-                    
-                    const monthlyBudget = await window.loadMonthlyBudgetFromCloud(window.currentBookId);
-                    if (Object.keys(monthlyBudget).length > 0) {
-                        window.budgets = monthlyBudget;
-                    }
-                    
-                    const annualBudget = await window.loadAnnualBudgetFromCloud(window.currentBookId);
-                    if (annualBudget.length > 0) {
-                        window.saveAnnualBudgetToLocal(window.currentBookId, annualBudget);
-                    }
-                } catch (e) {
-                    console.warn('[App] Gagal load budgets dari cloud:', e);
-                }
-            }
-            
-            // Pull fase kehidupan dari cloud
-            if (window.isOnline()) {
-                try {
-                    const fasCloud = await window.pullSetting('fase_kehidupan', window.currentBookId);
-                    if (fasCloud) {
-                        const localRaw = localStorage.getItem('sk_fase_kehidupan_' + window.currentBookId);
-                        const localFase = localRaw ? JSON.parse(localRaw) : null;
-                        if (!localFase || new Date(fasCloud.updatedAt) > new Date(localFase.updatedAt || 0)) {
-                            localStorage.setItem('sk_fase_kehidupan_' + window.currentBookId, JSON.stringify(fasCloud));
-                        }
-                    }
-                } catch(e) { /* fase belum tersimpan di cloud */ }
-            }
+            // Catatan: budget (default, monthly, annual) dan fase_kehidupan TIDAK perlu
+            // di-load ulang secara terpisah di sini karena pullAllSettings() di atas
+            // sudah menangani dekripsi dan penyimpanan semua setting dari cloud ke
+            // localStorage — termasuk 'default_budget', 'budgets', 'annual_budget',
+            // dan 'fase_kehidupan'. Memanggil ulang fungsi-fungsi load terpisah di sini
+            // justru menyebabkan error JSON.parse karena nilai terenkripsi diproses
+            // tanpa _sessionCryptoKey yang sudah siap di pullAllSettings().
+            window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
             window._lastSyncTime = new Date();
             window.updateSyncTimeBadge();
             setTimeout(window.checkAndRunDailyAutoBackup, 3000);
