@@ -52,7 +52,9 @@ window.checkNewMonthAutoApply = function() {
             localStorage.setItem('sk_budgets_' + window.currentBookId, JSON.stringify(window.budgets));
             window.saveMonthlyBudgetToCloud(window.currentBookId, window.budgets);
             console.log(`[Budget] Auto-apply default budget untuk ${key} (bulan baru)`);
-            window.renderBudget();
+            // DO NOT call renderBudget() here — renderBudget() already calls
+            // checkNewMonthAutoApply() at its start, so calling it here would
+            // cause infinite mutual recursion.
         }
     }
 };
