@@ -242,7 +242,7 @@ window.doFirstTimeSetup = async function() {
         return;
     }
     st.innerText = '⏳ Mengenkripsi kredensial...';
-    await window.persistBootstrappedCrypto(boot, url, key);
+    await window.persistBootstrappedCrypto(boot, url, key, pwd);
     window.updateSyncStatusBadge();
     
     st.className = 'setup-status success';

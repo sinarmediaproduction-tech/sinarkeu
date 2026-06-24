@@ -107,6 +107,10 @@ window.submitAccountUnlock = async function() {
         if (plain !== 'sinarkeu_ok') throw new Error('wrong');
     } catch { st.innerText = '❌ Password salah. Coba lagi.'; return; }
     sessionStorage.setItem('sk_acc_sess_' + accId, '1');
+    // Simpan password sementara agar bisa di-XOR-obfuscate setelah _doSwitch()
+    // me-restore URL sesi akun baru ke sessionStorage (terjadi setelah reload).
+    // _storeSessionPassword() dipanggil di continueAppInit() menggunakan nilai ini.
+    sessionStorage.setItem('sk_pending_switch_pwd', pwd);
     window.closeModal('accountUnlockModal');
     window.showToast('Membuka akun...', 'info');
     const currentId = window.getActiveAccountId();

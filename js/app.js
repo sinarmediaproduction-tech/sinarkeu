@@ -245,6 +245,23 @@ window.initApp = function() {
         window.globalSupabaseUrl = sessionStorage.getItem('sk_session_url') || '';
         window.globalSupabaseKey = sessionStorage.getItem('sk_session_akey') || '';
     }
+    // Derive ulang _sessionCryptoKey jika hilang setelah location.reload().
+    // Kasus: switch akun -> _doSwitch() -> reload; key in-memory hilang tapi
+    // salt ada di localStorage akun baru & password ada di sk_pending_switch_pwd
+    // atau sk_session_pwd (diset saat unlock terakhir).
+    if (!window._sessionCryptoKey) {
+        // Jika ada password dari switch akun yang baru selesai, konversi ke
+        // sk_session_pwd (XOR-obfuscated) menggunakan URL sesi yang sudah aktif.
+        const pendingPwd = sessionStorage.getItem('sk_pending_switch_pwd');
+        if (pendingPwd) {
+            window._storeSessionPassword(pendingPwd);
+            sessionStorage.removeItem('sk_pending_switch_pwd');
+        }
+        const restored = await window.restoreSessionCryptoKey();
+        if (!restored) {
+            console.warn('[App] Gagal restore session crypto key; push setting akan dinonaktifkan sampai user lock+unlock ulang.');
+        }
+    }
     window.continueAppInit();
 };
 

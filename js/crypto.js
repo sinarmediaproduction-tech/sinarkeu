@@ -55,12 +55,13 @@ window.unlockWithPassword = async function(password) {
     sessionStorage.setItem('sk_session_url', window.globalSupabaseUrl);
     sessionStorage.setItem('sk_session_akey', window.globalSupabaseKey);
     sessionStorage.setItem('sk_session_ts', Date.now().toString());
+    window._storeSessionPassword(password);
     return true;
 };
 
 // Simpan hasil window.bootstrapCryptoForBackend() ke localStorage perangkat
 // ini (sk_crypto_salt + kredensial terenkripsi) dan aktifkan sesi.
-window.persistBootstrappedCrypto = async function(boot, url, apiKey) {
+window.persistBootstrappedCrypto = async function(boot, url, apiKey, password) {
     localStorage.setItem('sk_crypto_salt', boot.saltB64);
     await window.saveEncryptedCredentials(boot.key, url, apiKey);
     window._sessionCryptoKey = boot.key;
@@ -68,6 +69,7 @@ window.persistBootstrappedCrypto = async function(boot, url, apiKey) {
     sessionStorage.setItem('sk_session_url', url);
     sessionStorage.setItem('sk_session_akey', apiKey);
     sessionStorage.setItem('sk_session_ts', Date.now().toString());
+    if (password) window._storeSessionPassword(password);
 };
 
 window.setupNewPassword = async function(password, url, apiKey) {
@@ -144,6 +146,61 @@ window.rotatePasswordKeepingSalt = async function(newPassword, saltB64) {
     const key = await window.deriveKey(newPassword, salt);
     const checkB64 = await window.encryptStr(key, 'sinarkeu_ok');
     return { key, saltB64, checkB64 };
+};
+
+// ==================== SESSION KEY RESTORE SETELAH RELOAD ====================
+// Setelah location.reload() (mis. switch akun), window._sessionCryptoKey
+// hilang karena hanya in-memory. Fungsi ini men-derive ulang AES key dari:
+//   • sk_crypto_salt  — salt PBKDF2 di localStorage (namespace akun aktif)
+//   • sk_session_pwd  — password yang disimpan TERENKRIPSI di sessionStorage
+//                       (dienkripsi dengan XOR-key berbasis sk_session_url agar
+//                        tidak tersimpan sebagai plain text, tapi tetap bisa
+//                        di-recover selama sesi browser hidup)
+//
+// sk_session_pwd di-set oleh unlockWithPassword() dan submitAccountUnlock()
+// saat password berhasil diverifikasi. Ia hanya hidup selama tab browser
+// terbuka (sessionStorage), sehingga tetap memenuhi requirement "lock on close".
+//
+// Mengembalikan true jika berhasil, false jika data sesi tidak lengkap atau
+// verifikasi check-value gagal.
+window.restoreSessionCryptoKey = async function() {
+    if (window._sessionCryptoKey) return true; // sudah ada, skip
+    const saltB64     = localStorage.getItem('sk_crypto_salt');
+    const checkEnc    = localStorage.getItem('sk_crypto_check');
+    const sessUrl     = sessionStorage.getItem('sk_session_url');
+    const encPwdB64   = sessionStorage.getItem('sk_session_pwd');
+    if (!saltB64 || !checkEnc || !sessUrl || !encPwdB64) return false;
+    try {
+        // Pulihkan password: XOR-cipher sederhana dengan bytes UTF-8 dari sessUrl
+        const enc      = new TextEncoder();
+        const encBytes = Uint8Array.from(atob(encPwdB64), c => c.charCodeAt(0));
+        const keyBytes = enc.encode(sessUrl);
+        const pwdBytes = encBytes.map((b, i) => b ^ keyBytes[i % keyBytes.length]);
+        const password = new TextDecoder().decode(pwdBytes);
+
+        const salt         = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+        const candidateKey = await window.deriveKey(password, salt);
+        const plain        = await window.decryptStr(candidateKey, checkEnc);
+        if (plain !== 'sinarkeu_ok') return false;
+
+        window._sessionCryptoKey = candidateKey;
+        console.log('[Crypto] Session key berhasil di-derive ulang setelah reload.');
+        return true;
+    } catch (e) {
+        console.warn('[Crypto] Gagal restore session key setelah reload:', e);
+        return false;
+    }
+};
+
+// Helper internal: simpan password ke sessionStorage dengan XOR-obfuscation
+// berbasis URL sesi. Dipanggil setiap kali password berhasil diverifikasi.
+window._storeSessionPassword = function(password) {
+    const sessUrl = sessionStorage.getItem('sk_session_url') || '';
+    const enc     = new TextEncoder();
+    const pwdBytes  = enc.encode(password);
+    const keyBytes  = enc.encode(sessUrl);
+    const obfuscated = pwdBytes.map((b, i) => b ^ keyBytes[i % keyBytes.length]);
+    sessionStorage.setItem('sk_session_pwd', btoa(String.fromCharCode(...obfuscated)));
 };
 
 window.reEncryptCredentials = async function(url, apiKey) {

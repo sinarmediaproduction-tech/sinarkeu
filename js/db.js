@@ -297,7 +297,7 @@ window.pullPaymentRemindersFromCloud = async function(bookId) {
         );
         
         if (result && Array.isArray(result)) {
-            localStorage.setItem('sk_payment_reminders', JSON.stringify(result));
+            localStorage.setItem('sk_payment_reminders_' + bookId, JSON.stringify(result));
             return result;
         }
         return null;
