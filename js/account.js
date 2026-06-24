@@ -144,6 +144,8 @@ window.editAccount = function(accId) {
     document.getElementById('newAccKey').value = '';
     document.getElementById('newAccPwd').value = '';
     document.getElementById('newAccPwd').placeholder = 'Isi untuk update password / credentials';
+    document.getElementById('newAccPwdConfirm').value = '';
+    document.getElementById('newAccPwdConfirmGroup').style.display = 'none';
     document.getElementById('newAccStatus').innerText = '⚠️ Isi URL, Key, dan Password baru untuk memperbarui koneksi.';
 };
 window.cancelEditAccount = function() {
@@ -153,6 +155,8 @@ window.cancelEditAccount = function() {
     document.getElementById('newAccKey').value = '';
     document.getElementById('newAccPwd').value = '';
     document.getElementById('newAccPwd').placeholder = 'Min. 6 karakter — wajib diingat!';
+    document.getElementById('newAccPwdConfirm').value = '';
+    document.getElementById('newAccPwdConfirmGroup').style.display = '';
     document.getElementById('newAccStatus').innerText = '';
 };
 window.saveNewAccount = async function() {
@@ -161,12 +165,14 @@ window.saveNewAccount = async function() {
     const url    = document.getElementById('newAccUrl').value.trim();
     const key    = document.getElementById('newAccKey').value.trim();
     const pwd    = document.getElementById('newAccPwd').value;
+    const pwd2   = document.getElementById('newAccPwdConfirm').value;
     const st     = document.getElementById('newAccStatus');
     if (!name) { st.style.color='#de350b'; st.innerText='❌ Nama akun wajib diisi!'; return; }
     const isEdit = !!editId;
     const hasCredentials = url && key && pwd;
     if (!isEdit && (!url || !key || !pwd || pwd.length < 6)) { st.style.color='#de350b'; st.innerText='❌ URL, Anon Key, dan Password (min 6 karakter) wajib diisi!'; return; }
     if (isEdit && hasCredentials && pwd.length < 6) { st.style.color='#de350b'; st.innerText='❌ Password minimal 6 karakter!'; return; }
+    if (hasCredentials && pwd !== pwd2) { st.style.color='#de350b'; st.innerText='❌ Konfirmasi password tidak cocok! Pastikan kedua password sama.'; return; }
     let accounts = window.getAllAccounts();
     const accId  = editId || ('acc_' + Date.now());
     if (isEdit) { const idx = accounts.findIndex(a => a.id === editId); if (idx >= 0) accounts[idx].name = name; }
