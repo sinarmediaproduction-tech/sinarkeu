@@ -441,7 +441,17 @@
             </div>
         </div>
         <div id="bookListContainer"></div>
-        <form onsubmit="addNewBook(event)" style="border-top:1px solid #eee; padding-top:16px; margin-bottom:16px"><input type="text" id="newBookName" class="form-control" placeholder="Nama buku baru..." required><button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px">Buat Buku Baru</button></form>
+        <form onsubmit="addNewBook(event)" style="border-top:1px solid #eee; padding-top:16px; margin-bottom:16px">
+            <input type="text" id="newBookName" class="form-control" placeholder="Nama buku baru..." required>
+            <div style="margin-top:8px;">
+                <label style="font-size:.7rem; color:#6b46c1; font-weight:600;">📂 Jadikan anak dari buku (opsional)</label>
+                <select id="newBookParent" class="form-control" style="font-size:.75rem; margin-top:4px;">
+                    <option value="">— Buku mandiri (tidak ada induk) —</option>
+                </select>
+                <div style="font-size:.62rem; color:#888; margin-top:3px; line-height:1.5;">Anak buku bisa ditutup dan ringkasannya dikirim ke buku induk.</div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px">Buat Buku Baru</button>
+        </form>
     </div>
 </div>
 
@@ -1513,6 +1523,30 @@ if (document.readyState === 'complete') {
 
 })();
 </script>
+<!-- ===== MODAL TUTUP ANAK BUKU ===== -->
+<div id="tutupAnakBukuModal" class="modal">
+    <div class="modal-content" style="max-width:480px;">
+        <div class="modal-header">
+            <h3>📤 Tutup & Kirim ke Buku Induk</h3>
+            <button class="modal-close" onclick="closeModal('tutupAnakBukuModal')">×</button>
+        </div>
+        <div id="tutupAnakBukuInfo" style="margin-bottom:14px;"></div>
+        <div class="form-group">
+            <label style="font-size:.75rem; font-weight:600;">Deskripsi transaksi di buku induk</label>
+            <input type="text" id="tutupAnakBukuDesc" class="form-control"
+                   placeholder="Contoh: Ringkasan Renovasi Dapur"
+                   style="margin-top:6px;">
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('tutupAnakBukuModal')">Batal</button>
+            <button class="btn btn-primary" style="background:#6b46c1; border-color:#6b46c1;"
+                    onclick="window.tutupAnakBuku()">
+                📤 Kirim Ringkasan ke Induk
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- ===== AKHIR PATCH SINKRONISASI ===== -->
 
 </body>
