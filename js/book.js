@@ -137,12 +137,31 @@ window.renderBookList = function() {
             </span>
             <div class="book-list-actions">
                 ${!isCurrent ? `<button class="btn-mini" onclick="window.switchBook('${b.id}')">Buka</button>` : ''}
+                <button class="btn-mini" style="background:#f0f4ff; color:#1a56db; border:1px solid #c5d8ff;" onclick="window.renameBook('${b.id}')">✏️ Nama</button>
                 ${b.parentId && isCurrent ? `<button class="btn-mini" style="background:#6b46c1; color:#fff;" onclick="window.closeModal('bookManagerModal'); window.openTutupAnakBuku()">📤 Tutup & Kirim</button>` : ''}
                 ${delBtn}
             </div>
         `;
         container.appendChild(div);
     });
+};
+
+window.renameBook = async function(id) {
+    if (!window.requireOnline('mengganti nama buku')) return;
+    const book = window.books.find(b => b.id === id);
+    if (!book) return;
+    const newName = prompt(`Nama baru untuk buku "${book.name}":`, book.name);
+    if (!newName || !newName.trim()) return;
+    if (newName.trim() === book.name) return;
+    book.name = newName.trim();
+    localStorage.setItem('sk_books', JSON.stringify(window.books));
+    await window.pushSettingBooks();
+    window.renderBookList();
+    window.renderBookParentOptions();
+    window.updateBookSelectDropdown();
+    window.updateHeaderTitle();
+    window.showToast(`✅ Nama buku diubah ke "${book.name}"`, 'success');
+    await window.addCloudLog('SISTEM', `Mengganti nama buku ID ${id} menjadi "${book.name}"`);
 };
 
 window.addNewBook = async function(e) {
