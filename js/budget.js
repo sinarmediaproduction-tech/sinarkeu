@@ -48,6 +48,10 @@ window.ensureMonthlyBudgetExists = function(year, month, bookId) {
     }
 };
 window.checkNewMonthAutoApply = function() {
+    // Guard: window.budgets bisa null kalau data cloud corrupt atau belum siap
+    if (!window.budgets || typeof window.budgets !== 'object') {
+        window.budgets = {};
+    }
     const now = new Date();
     const m = now.getMonth() + 1;
     const y = now.getFullYear();

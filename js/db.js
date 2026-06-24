@@ -252,9 +252,11 @@ window.pullAllSettings = async function() {
                 window.updateTgStatusBadge();
             }
             if (row.key === 'budgets') {
-                localStorage.setItem('sk_budgets_' + row.book_id, JSON.stringify(parsed));
+                // Guard: pastikan parsed adalah object valid, bukan null/primitive
+                const safeParsed = (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+                localStorage.setItem('sk_budgets_' + row.book_id, JSON.stringify(safeParsed));
                 if (row.book_id === window.currentBookId) {
-                    window.budgets = parsed;
+                    window.budgets = safeParsed;
                     budgetUpdated = true;
                 }
             }
