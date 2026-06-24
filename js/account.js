@@ -172,34 +172,70 @@ window.saveNewAccount = async function() {
         const oldUrl = window.globalSupabaseUrl, oldKey = window.globalSupabaseKey;
         window.globalSupabaseUrl = url; window.globalSupabaseKey = key;
         const test = await window.callSupabaseAPI('transactions', 'GET', null, '?limit=1');
-        window.globalSupabaseUrl = oldUrl; window.globalSupabaseKey = oldKey;
-        if (test === null) { st.style.color='#de350b'; st.innerText='❌ Koneksi gagal! Periksa URL dan Anon Key.'; return; }
-        st.innerText = '⏳ Mengenkripsi dan menyimpan...';
-        const salt = crypto.getRandomValues(new Uint8Array(16));
-        const saltB64 = btoa(String.fromCharCode(...salt));
-        const cryptoKey = await window.deriveKey(pwd, salt);
-        const encUrl   = await window.encryptStr(cryptoKey, url);
-        const encAKey  = await window.encryptStr(cryptoKey, key);
-        const encCheck = await window.encryptStr(cryptoKey, 'sinarkeu_ok');
+        if (test === null) {
+            window.globalSupabaseUrl = oldUrl; window.globalSupabaseKey = oldKey;
+            st.style.color='#de350b'; st.innerText='❌ Koneksi gagal! Periksa URL dan Anon Key.'; return;
+        }
+
         const ns = 'sk_a' + accId + '_';
-        if (isEdit && accId === window.getActiveAccountId()) {
+        const isActiveEdit = isEdit && accId === window.getActiveAccountId();
+        let cryptoKey, saltB64, checkB64;
+
+        if (isActiveEdit && localStorage.getItem('sk_crypto_salt')) {
+            // Ini rotasi password untuk akun yang SEDANG aktif -> pertahankan
+            // salt yang sama (lihat window.rotatePasswordKeepingSalt di
+            // crypto.js), supaya perangkat lain yang sudah "join" backend ini
+            // tidak kehilangan kecocokan kunci hanya karena password diganti
+            // lewat form akun ini (bukan lewat menu "Ubah Password").
+            const rotated = await window.rotatePasswordKeepingSalt(pwd, localStorage.getItem('sk_crypto_salt'));
+            cryptoKey = rotated.key; saltB64 = rotated.saltB64; checkB64 = rotated.checkB64;
+        } else {
+            // Akun baru, atau akun yang sedang TIDAK aktif, atau belum ada
+            // salt lokal sama sekali -> backend ini bisa jadi sudah pernah
+            // disetup dari perangkat lain, jadi coba join, atau buat baru
+            // kalau memang belum pernah ada (lihat window.bootstrapCryptoForBackend).
+            try {
+                const boot = await window.bootstrapCryptoForBackend(pwd, url, key);
+                cryptoKey = boot.key; saltB64 = boot.saltB64; checkB64 = boot.checkB64;
+            } catch (e) {
+                window.globalSupabaseUrl = oldUrl; window.globalSupabaseKey = oldKey;
+                st.style.color='#de350b';
+                st.innerText = (e && e.code === 'PASSWORD_MISMATCH')
+                    ? '❌ Backend ini sudah tersambung dari perangkat lain dengan password berbeda. Gunakan password yang sama.'
+                    : '❌ Gagal menyiapkan enkripsi: ' + (e && e.message ? e.message : 'error tidak diketahui');
+                return;
+            }
+        }
+
+        st.innerText = '⏳ Mengenkripsi dan menyimpan...';
+        const encUrl  = await window.encryptStr(cryptoKey, url);
+        const encAKey = await window.encryptStr(cryptoKey, key);
+
+        if (isActiveEdit) {
             localStorage.setItem('sk_crypto_salt', saltB64);
-            localStorage.setItem('sk_crypto_check', encCheck);
+            localStorage.setItem('sk_crypto_check', checkB64);
             localStorage.setItem('sk_enc_supabase_url', encUrl);
             localStorage.setItem('sk_enc_supabase_key', encAKey);
             window.globalSupabaseUrl = url;
             window.globalSupabaseKey = key;
-            await window.setupNewPassword(pwd, url, key);
-            // Salt & kunci sesi baru saja diganti -> baris `settings` lama di cloud
-            // (books/budgets/default_budget/telegram_config) terkunci kunci LAMA dan
-            // akan selalu gagal didekripsi oleh pullAllSettings(). Push ulang supaya
-            // cloud konsisten dengan kunci yang baru. Lihat window.reEncryptAllCloudSettings di db.js.
+            window._sessionCryptoKey = cryptoKey;
+            sessionStorage.setItem('sk_session_unlocked', '1');
+            sessionStorage.setItem('sk_session_url', url);
+            sessionStorage.setItem('sk_session_akey', key);
+            sessionStorage.setItem('sk_session_ts', Date.now().toString());
+            // Pastikan cloud (crypto_check) ikut konsisten dgn kunci ini, lalu
+            // re-enkripsi setting yang sudah ada dengan kunci tersebut.
+            // Lihat window.reEncryptAllCloudSettings di db.js.
+            await window.pushCryptoSaltCheck(saltB64, checkB64);
             if (typeof window.reEncryptAllCloudSettings === 'function') {
                 await window.reEncryptAllCloudSettings();
             }
+        } else {
+            // Bukan akun aktif -> jangan ganggu sesi yang sedang berjalan.
+            window.globalSupabaseUrl = oldUrl; window.globalSupabaseKey = oldKey;
         }
         localStorage.setItem(ns + 'crypto_salt', saltB64);
-        localStorage.setItem(ns + 'crypto_check', encCheck);
+        localStorage.setItem(ns + 'crypto_check', checkB64);
         localStorage.setItem(ns + 'enc_supabase_url', encUrl);
         localStorage.setItem(ns + 'enc_supabase_key', encAKey);
         sessionStorage.setItem('sk_acc_sess_' + accId, '1');

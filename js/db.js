@@ -23,6 +23,36 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
     }
 };
 
+// ==================== MULTI-DEVICE CRYPTO BOOTSTRAP ====================
+// Salt PBKDF2 + nilai "check" terenkripsi disimpan di cloud (tabel `settings`,
+// book_id='global') TANPA dienkripsi ulang oleh sesi (memang tidak perlu:
+// salt bukan rahasia, dan checkB64 sudah berupa ciphertext AES-GCM yang
+// fungsinya sendiri adalah verifikasi password — lihat window.bootstrapCryptoForBackend
+// di crypto.js). Ini yang membuat semua perangkat yang memakai password sama
+// bisa menurunkan AES key yang SAMA, alih-alih masing-masing generate salt
+// acak sendiri (yang menyebabkan setting tidak pernah bisa saling didekripsi
+// lintas perangkat).
+window.pushCryptoSaltCheck = async function(saltB64, checkB64) {
+    if (!window.isOnline()) return false;
+    const now = new Date().toISOString();
+    const payload = [
+        { book_id: 'global', key: 'crypto_salt', value: saltB64, updated_at: now },
+        { book_id: 'global', key: 'crypto_check', value: checkB64, updated_at: now }
+    ];
+    const result = await window.callSupabaseAPI('settings', 'POST', payload);
+    return result !== null;
+};
+
+window.pullCryptoSaltCheck = async function() {
+    if (!window.isOnline()) return null;
+    const rows = await window.callSupabaseAPI('settings', 'GET', null, '?book_id=eq.global&key=in.(crypto_salt,crypto_check)');
+    if (!rows || !Array.isArray(rows) || rows.length === 0) return null;
+    const saltRow = rows.find(r => r.key === 'crypto_salt');
+    const checkRow = rows.find(r => r.key === 'crypto_check');
+    if (!saltRow || !checkRow || !saltRow.value || !checkRow.value) return null;
+    return { salt: saltRow.value, check: checkRow.value };
+};
+
 // ==================== PUSH SETTINGS ====================
 // Semua nilai dienkripsi (AES-GCM) dengan kunci sesi sebelum dikirim ke cloud,
 // supaya isi tabel `settings` di Supabase tidak pernah berupa plain text
@@ -135,6 +165,10 @@ window.pullAllSettings = async function() {
         let telegramUpdated = false;
         let budgetUpdated = false;
         for (const row of allRows) {
+            // crypto_salt & crypto_check bukan setting JSON terenkripsi biasa
+            // (lihat window.pushCryptoSaltCheck) -- jangan diproses di sini,
+            // supaya tidak memicu warning dekripsi & JSON.parse yang sia-sia.
+            if (row.key === 'crypto_salt' || row.key === 'crypto_check') continue;
             let parsed;
             const decryptedValue = await window._decryptSettingValue(row.value);
             try { parsed = JSON.parse(decryptedValue); } catch { continue; }

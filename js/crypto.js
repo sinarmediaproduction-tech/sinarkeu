@@ -58,6 +58,18 @@ window.unlockWithPassword = async function(password) {
     return true;
 };
 
+// Simpan hasil window.bootstrapCryptoForBackend() ke localStorage perangkat
+// ini (sk_crypto_salt + kredensial terenkripsi) dan aktifkan sesi.
+window.persistBootstrappedCrypto = async function(boot, url, apiKey) {
+    localStorage.setItem('sk_crypto_salt', boot.saltB64);
+    await window.saveEncryptedCredentials(boot.key, url, apiKey);
+    window._sessionCryptoKey = boot.key;
+    sessionStorage.setItem('sk_session_unlocked', '1');
+    sessionStorage.setItem('sk_session_url', url);
+    sessionStorage.setItem('sk_session_akey', apiKey);
+    sessionStorage.setItem('sk_session_ts', Date.now().toString());
+};
+
 window.setupNewPassword = async function(password, url, apiKey) {
     const salt = crypto.getRandomValues(new Uint8Array(16));
     localStorage.setItem('sk_crypto_salt', btoa(String.fromCharCode(...salt)));
@@ -68,6 +80,70 @@ window.setupNewPassword = async function(password, url, apiKey) {
     sessionStorage.setItem('sk_session_url', url);
     sessionStorage.setItem('sk_session_akey', apiKey);
     sessionStorage.setItem('sk_session_ts', Date.now().toString());
+};
+
+// ==================== MULTI-DEVICE: JOIN ATAU BUAT KUNCI BARU ====================
+// Dipakai saat menyambungkan SATU backend Supabase tertentu untuk pertama
+// kalinya DI PERANGKAT INI (first-time setup / tambah akun baru). Daripada
+// langsung generate salt acak (yang membuat tiap perangkat punya AES key
+// berbeda walau password sama -- lihat diskusi sebelumnya), fungsi ini:
+//   1. Cek ke cloud (tabel `settings`, key 'crypto_salt' & 'crypto_check')
+//      apakah backend ini SUDAH pernah disetup dari perangkat lain.
+//   2a. Kalau SUDAH ADA -> turunkan key dari password yang diketik + salt
+//       cloud, lalu verifikasi ke 'crypto_check' cloud. Cocok berarti
+//       password yang dimasukkan SAMA dengan yang dipakai perangkat lain,
+//       dan perangkat ini akan memakai AES key yang IDENTIK -> semua isi
+//       `settings` (books, budgets, telegram_config, dst.) langsung bisa
+//       saling terbaca lintas perangkat.
+//       Tidak cocok -> lempar Error dengan .code = 'PASSWORD_MISMATCH'.
+//   2b. Kalau BELUM ADA SAMA SEKALI -> backend baru, generate salt+check
+//       baru lalu push ke cloud supaya perangkat berikutnya yang join bisa
+//       memakai salt yang sama.
+// Mengembalikan { key, saltB64, checkB64, joined } -- pemanggil yang
+// menyimpannya ke localStorage (lihat doFirstTimeSetup di settings.js).
+window.bootstrapCryptoForBackend = async function(password, url, apiKey) {
+    window.globalSupabaseUrl = url;
+    window.globalSupabaseKey = apiKey;
+    const cloud = await window.pullCryptoSaltCheck();
+    if (cloud) {
+        const salt = Uint8Array.from(atob(cloud.salt), c => c.charCodeAt(0));
+        const key = await window.deriveKey(password, salt);
+        let plain = null;
+        try { plain = await window.decryptStr(key, cloud.check); } catch { plain = null; }
+        if (plain !== 'sinarkeu_ok') {
+            const err = new Error('Password tidak cocok dengan akun yang sudah tersambung di backend ini.');
+            err.code = 'PASSWORD_MISMATCH';
+            throw err;
+        }
+        return { key, saltB64: cloud.salt, checkB64: cloud.check, joined: true };
+    }
+    const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+    const saltB64 = btoa(String.fromCharCode(...saltBytes));
+    const key = await window.deriveKey(password, saltBytes);
+    const checkB64 = await window.encryptStr(key, 'sinarkeu_ok');
+    await window.pushCryptoSaltCheck(saltB64, checkB64);
+    return { key, saltB64, checkB64, joined: false };
+};
+
+// ==================== MULTI-DEVICE: GANTI PASSWORD TANPA UBAH SALT ====================
+// changePassword() (settings.js) & edit kredensial akun aktif (account.js)
+// dulu memanggil setupNewPassword(), yang SELALU generate salt baru. Itu
+// memutus perangkat lain yang sudah join: salt mereka jadi tidak relevan
+// lagi, dan baris `settings` lama di cloud terkunci kunci lama selamanya
+// (lihat window.reEncryptAllCloudSettings di db.js, yang menutup separuh
+// masalah ini -- tapi tidak menyelesaikan ketidakcocokan salt antar device).
+//
+// Fungsi ini SENGAJA mempertahankan salt yang sama, hanya menurunkan key
+// baru dari salt lama + password baru, lalu push 'crypto_check' yang baru
+// ke cloud (overwrite). Perangkat lain yang BELUM pernah unlock sejak
+// password diganti tetap memakai cache lokalnya sendiri sampai mereka juga
+// menjalankan "Ubah Password" dengan password lama+baru yang sama -- ini
+// adalah batasan bawaan dari skema tanpa server autentikasi terpusat.
+window.rotatePasswordKeepingSalt = async function(newPassword, saltB64) {
+    const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+    const key = await window.deriveKey(newPassword, salt);
+    const checkB64 = await window.encryptStr(key, 'sinarkeu_ok');
+    return { key, saltB64, checkB64 };
 };
 
 window.reEncryptCredentials = async function(url, apiKey) {

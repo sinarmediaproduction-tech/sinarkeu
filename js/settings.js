@@ -139,13 +139,29 @@ window.changePassword = async function() {
     }
     
     status.innerText = '⏳ Mengenkripsi ulang...';
-    await window.setupNewPassword(newPwd, url, apiKey);
+    // PENTING: salt TIDAK diganti (lihat window.rotatePasswordKeepingSalt di
+    // crypto.js). Salt yang sama dipakai semua perangkat yang sudah join --
+    // kalau diacak ulang di sini, perangkat lain jadi tidak bisa lagi
+    // menurunkan kunci yang sama walau memakai password baru yang sama.
+    const rotated = await window.rotatePasswordKeepingSalt(newPwd, saltB64);
+    await window.saveEncryptedCredentials(rotated.key, url, apiKey);
+    window._sessionCryptoKey = rotated.key;
     
     window.globalSupabaseUrl = url;
     window.globalSupabaseKey = apiKey;
+    sessionStorage.setItem('sk_session_unlocked', '1');
     sessionStorage.setItem('sk_session_url', url);
     sessionStorage.setItem('sk_session_akey', apiKey);
     sessionStorage.setItem('sk_session_ts', Date.now().toString());
+    
+    // Overwrite 'crypto_check' di cloud (salt tetap sama) supaya perangkat
+    // lain yang BELUM join, atau yang setup ulang nanti, memvalidasi ke
+    // password baru. Perangkat yang SUDAH terbuka sebelumnya tetap memakai
+    // cache lokalnya sendiri sampai mereka juga menjalankan "Ubah Password"
+    // ini dengan password lama+baru yang sama -- tidak ada mekanisme push
+    // otomatis ke lock screen perangkat lain tanpa server autentikasi.
+    status.innerText = '⏳ Memperbarui verifikasi password di cloud...';
+    await window.pushCryptoSaltCheck(saltB64, rotated.checkB64);
     
     // Push ulang semua setting (books, budgets, default_budget, telegram_config)
     // dienkripsi dengan kunci yang baru, supaya baris lama di cloud yang masih
@@ -155,7 +171,7 @@ window.changePassword = async function() {
     await window.reEncryptAllCloudSettings();
     
     status.style.color = '#00875a';
-    status.innerText = '✅ Password berhasil diganti & setting cloud disinkronkan ulang!';
+    status.innerText = '✅ Password berhasil diganti & disinkronkan ke cloud! Ganti password yang sama di perangkat lain juga ya.';
     
     document.getElementById('changePwdOld').value = '';
     document.getElementById('changePwdNew').value = '';
@@ -208,12 +224,31 @@ window.doFirstTimeSetup = async function() {
         return;
     }
     
+    st.innerText = '⏳ Mengecek apakah backend ini sudah pernah disambungkan dari perangkat lain...';
+    let boot;
+    try {
+        boot = await window.bootstrapCryptoForBackend(pwd, url, key);
+    } catch (e) {
+        window.globalSupabaseUrl = '';
+        window.globalSupabaseKey = '';
+        btn.disabled = false;
+        btn.innerText = '🔐 Simpan & Mulai';
+        st.className = 'setup-status error';
+        if (e && e.code === 'PASSWORD_MISMATCH') {
+            st.innerText = '❌ Backend ini sudah pernah disetup dari perangkat lain dengan password yang berbeda. Gunakan password yang SAMA dengan perangkat tersebut.';
+        } else {
+            st.innerText = '❌ Gagal menyiapkan enkripsi: ' + (e && e.message ? e.message : 'error tidak diketahui');
+        }
+        return;
+    }
     st.innerText = '⏳ Mengenkripsi kredensial...';
-    await window.setupNewPassword(pwd, url, key);
+    await window.persistBootstrappedCrypto(boot, url, key);
     window.updateSyncStatusBadge();
     
     st.className = 'setup-status success';
-    st.innerText = '✅ Berhasil! Kredensial terenkripsi dengan password Anda.';
+    st.innerText = boot.joined
+        ? '✅ Berhasil! Perangkat ini bergabung memakai kunci yang sama dengan perangkat lain.'
+        : '✅ Berhasil! Kredensial terenkripsi dengan password Anda.';
     btn.innerText = '✅ Tersambung';
     
     setTimeout(async function() {
