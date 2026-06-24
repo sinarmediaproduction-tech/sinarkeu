@@ -146,11 +146,10 @@ window.buildTxNotifMessage = function(action, tx, bookName) {
         if (t.type === 'income') totalInc += amt;
         else totalExp += amt;
     });
+    // Catatan: untuk aksi HAPUS, confirmDelete() sudah menghapus transaksi dari
+    // window.txs SEBELUM memanggil fungsi ini, sehingga saldo di atas sudah
+    // mencerminkan kondisi setelah penghapusan — koreksi manual tidak diperlukan.
     let saldoSekarang = totalInc - totalExp;
-    if (action === 'HAPUS') {
-        if (tx.type === 'income') saldoSekarang -= (Number(tx.amount) || 0);
-        else saldoSekarang += (Number(tx.amount) || 0);
-    }
     let saldoEmoji = saldoSekarang >= 0 ? '🟢' : '🔴';
     return `${emoji} <b>${actionLabel}</b>\n━━━━━━━━━━━━━━━━━━\n📒 <b>${bookName}</b>\n📂 ${typeLabel}${tx.category && tx.category !== 'Pemasukan' ? ' · <i>' + tx.category + '</i>' : ''}\n📝 ${tx.description}\n💵 <b>${window.rp(tx.amount)}</b>\n🕐 ${window.formatDateTime(tx.date)}\n━━━━━━━━━━━━━━━━━━\n${saldoEmoji} <b>Saldo Saat Ini: ${window.rp(saldoSekarang)}</b>`;
 };

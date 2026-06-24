@@ -257,7 +257,7 @@ window.initApp = function() {
     }
     const _sessTs = parseInt(sessionStorage.getItem('sk_session_ts') || '0');
     const _sessAge = Date.now() - _sessTs;
-    const SESSION_TIMEOUT_MS = 60 * 1000;
+    const SESSION_TIMEOUT_MS = 8 * 60 * 60 * 1000; // 8 jam (sebelumnya hanya 60 detik — terlalu singkat)
     if (_sessAge > SESSION_TIMEOUT_MS) {
         sessionStorage.removeItem('sk_session_unlocked');
         sessionStorage.removeItem('sk_session_url');

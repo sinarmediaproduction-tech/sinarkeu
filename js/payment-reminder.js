@@ -245,7 +245,7 @@ window.renderPaymentReminders = async function() {
         upcomingAlert.innerHTML = '⚠️ <strong>Segera jatuh tempo:</strong><br>' +
             urgent.map(s => {
                 const label = s.days === 0 ? '🔴 Hari ini!' : `🟡 ${s.days} hari lagi`;
-                return `• ${s.item.name} — ${window.formatNextDate(s.item)} <strong>${label}</strong>`;
+                return `• ${window.escapeHtml(s.item.name)} — ${window.formatNextDate(s.item)} <strong>${label}</strong>`;
             }).join('<br>');
     } else if (upcomingAlert) {
         upcomingAlert.style.display = 'none';
@@ -263,9 +263,9 @@ window.renderPaymentReminders = async function() {
         el.style.cssText = `display:flex; align-items:center; gap:10px; background:${isUrgent ? '#fef3c7' : '#f9fafb'}; border:1.5px solid ${isUrgent ? '#f59e0b' : '#e5e7eb'}; border-radius:8px; padding:10px 12px;`;
         el.innerHTML = `
             <div style="flex:1; min-width:0;">
-                <div style="font-size:.8rem; font-weight:700; color:#1a1a1a;">${item.name}</div>
+                <div style="font-size:.8rem; font-weight:700; color:#1a1a1a;">${window.escapeHtml(item.name)}</div>
                 <div style="font-size:.68rem; color:#666; margin-top:2px;">${recLabel} &nbsp;·&nbsp; Berikutnya: ${window.formatNextDate(item)}</div>
-                ${item.note ? `<div style="font-size:.65rem; color:#888; margin-top:2px; font-style:italic;">${item.note}</div>` : ''}
+                ${item.note ? `<div style="font-size:.65rem; color:#888; margin-top:2px; font-style:italic;">${window.escapeHtml(item.note)}</div>` : ''}
             </div>
             <div style="font-size:.68rem; font-weight:700; white-space:nowrap; color:${isUrgent ? '#92400e' : '#374151'};">${dayLabel}</div>
             <div style="display:flex; gap:4px;">
@@ -379,7 +379,7 @@ window.updatePaymentReminderBanner = function(list) {
             banner.style.display = 'block';
             bannerText.innerHTML = urgent.map(s => {
                 const label = s.days === 0 ? '<strong style="color:#ef4444">Hari ini!</strong>' : `<strong>${s.days} hari lagi</strong>`;
-                return `🔔 <strong>${s.item.name}</strong> — ${window.formatNextDate(s.item)} · ${label}`;
+                return `🔔 <strong>${window.escapeHtml(s.item.name)}</strong> — ${window.formatNextDate(s.item)} · ${label}`;
             }).join('<br>');
         }
         if (badge) { badge.style.display = 'inline-block'; badge.textContent = urgent.length; }

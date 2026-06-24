@@ -24,13 +24,13 @@ window.getAITransactionData = function() {
     const now = new Date();
     let filtered = [...window.txs];
     if (period === 'thismonth') {
-        filtered = window.txs.filter(t => { const d = new Date(t.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
+        filtered = window.txs.filter(t => { const d = window.parseTxDate(t.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
     } else if (period === 'lastmonth') {
         const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        filtered = window.txs.filter(t => { const d = new Date(t.date); return d.getMonth() === lm.getMonth() && d.getFullYear() === lm.getFullYear(); });
+        filtered = window.txs.filter(t => { const d = window.parseTxDate(t.date); return d.getMonth() === lm.getMonth() && d.getFullYear() === lm.getFullYear(); });
     } else if (period === 'last3months') {
         const cutoff = new Date(now.getFullYear(), now.getMonth() - 3, 1);
-        filtered = window.txs.filter(t => new Date(t.date) >= cutoff);
+        filtered = window.txs.filter(t => window.parseTxDate(t.date) >= cutoff);
     }
     const totalIncome  = filtered.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
     const totalExpense = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
@@ -41,7 +41,7 @@ window.getAITransactionData = function() {
         catMap[cat] = (catMap[cat] || 0) + Number(t.amount);
     });
     const topCategories = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([cat, amt]) => `  - ${cat}: Rp ${Number(amt).toLocaleString('id-ID')}`).join('\n');
-    const recentSample = filtered.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 20).map(t => `  [${t.date}] ${t.type === 'income' ? 'Masuk' : 'Keluar'} | ${t.category || '-'} | ${t.description || '-'} | Rp ${Number(t.amount).toLocaleString('id-ID')}`).join('\n');
+    const recentSample = filtered.sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date)).slice(0, 20).map(t => `  [${t.date}] ${t.type === 'income' ? 'Masuk' : 'Keluar'} | ${t.category || '-'} | ${t.description || '-'} | Rp ${Number(t.amount).toLocaleString('id-ID')}`).join('\n');
     const periodLabel = { all:'Semua Data', thismonth:'Bulan Ini', lastmonth:'Bulan Lalu', last3months:'3 Bulan Terakhir' }[period];
     return { summary: `Periode: ${periodLabel}\nTotal Transaksi: ${filtered.length}\nTotal Pemasukan: Rp ${totalIncome.toLocaleString('id-ID')}\nTotal Pengeluaran: Rp ${totalExpense.toLocaleString('id-ID')}\nSaldo: Rp ${saldo.toLocaleString('id-ID')}`, topCategories, recentSample, count: filtered.length };
 };
@@ -198,7 +198,7 @@ window.runFaseAIAnalysis = async function() {
     // 3 bulan terakhir
     const now = new Date();
     const cutoff = new Date(now.getFullYear(), now.getMonth() - 3, 1);
-    const recent = window.txs.filter(t => new Date(t.date) >= cutoff);
+    const recent = window.txs.filter(t => window.parseTxDate(t.date) >= cutoff);
     const recentExp = recent.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
     const recentInc = recent.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
     const catMap = {};

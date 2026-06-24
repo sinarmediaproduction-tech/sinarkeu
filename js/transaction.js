@@ -106,7 +106,8 @@ window.forceFullSync = async function() {
         window.updateBookSelectDropdown();
         window.updateTgStatusBadge();
         window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
-        window.renderBudget();
+        // Catatan: window.renderBudget() tidak dipanggil di sini karena pullAllSettings()
+        // sudah memanggil renderBudget() sendiri jika ada perubahan budget dari cloud.
         await window.addCloudLog('SISTEM', 'Sinkronisasi penuh manual dari perangkat ' + window.deviceId);
     } catch (e) {
         console.error('[Sync] Gagal sinkronisasi:', e);
