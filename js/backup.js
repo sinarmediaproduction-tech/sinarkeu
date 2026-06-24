@@ -93,7 +93,7 @@ window.checkAndRunDailyAutoBackup = async function() {
         const bookTxs = JSON.parse(localStorage.getItem('sk_txs_' + book.id) || '[]');
         let txsToBackup = bookTxs;
         if (bookTxs.length === 0 && window.isOnline()) {
-            const cloudData = await window.callSupabaseAPI('transactions', 'GET', null, `?book_id=eq.${book.id}&order=date.desc&limit=300`);
+            const cloudData = await window.callSupabaseAPI('transactions', 'GET', null, `?book_id=eq.${book.id}&is_deleted=eq.false&order=date.desc&limit=300`);
             if (cloudData && Array.isArray(cloudData)) {
                 txsToBackup = cloudData.map(c => ({
                     id: c.id, type: c.type, amount: Number(c.amount),

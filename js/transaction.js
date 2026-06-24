@@ -33,7 +33,14 @@ window.trimAndSaveLocal = function(bookId, data) {
 window.pullFromCloudSilently = async function() {
     if (!window.isOnline()) return;
     const lastSync = window._lastFullSyncTime[window.currentBookId];
-    let query = `?book_id=eq.${window.currentBookId}&order=date.desc&limit=300`;
+    // Catatan soft-delete: untuk load awal (tanpa lastSync) kita filter
+    // is_deleted=eq.false langsung di query, karena di sini tidak ada proses
+    // merge — baris terhapus memang tidak boleh pernah masuk ke window.txs.
+    // Untuk query incremental (ada lastSync), JANGAN difilter, karena kita
+    // justru butuh baris tombstone (is_deleted=true) itu untuk tahu transaksi
+    // mana yang baru dihapus di perangkat lain, supaya bisa dibuang dari
+    // cache lokal perangkat ini juga (lihat loop di bawah).
+    let query = `?book_id=eq.${window.currentBookId}&is_deleted=eq.false&order=date.desc&limit=300`;
     if (lastSync) {
         query = `?book_id=eq.${window.currentBookId}&order=updated_at.desc&updated_at=gt.${lastSync}&limit=300`;
     }
@@ -47,12 +54,17 @@ window.pullFromCloudSilently = async function() {
                 const local = localMap[c.id];
                 const localUpdated = local ? (local.updated_at || '1970-01-01T00:00:00.000Z') : '1970-01-01T00:00:00.000Z';
                 if (!local || cloudUpdated >= localUpdated) {
-                    localMap[c.id] = {
-                        id: c.id, type: c.type, amount: Number(c.amount),
-                        category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
-                        description: c.description, date: c.date,
-                        attachment: c.attachment, updated_at: c.updated_at || null
-                    };
+                    if (c.is_deleted) {
+                        // Tombstone dari perangkat lain: buang dari cache lokal ini juga.
+                        delete localMap[c.id];
+                    } else {
+                        localMap[c.id] = {
+                            id: c.id, type: c.type, amount: Number(c.amount),
+                            category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
+                            description: c.description, date: c.date,
+                            attachment: c.attachment, updated_at: c.updated_at || null
+                        };
+                    }
                 }
             });
             window.txs = Object.values(localMap).sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date));
@@ -78,7 +90,7 @@ window.pullAllBooksFromCloud = async function() {
     if (bookIds.length === 0) return;
     for (const bookId of bookIds) {
         let cloudData = await window.callSupabaseAPI('transactions', 'GET', null,
-            `?book_id=eq.${bookId}&order=date.desc&limit=300`);
+            `?book_id=eq.${bookId}&is_deleted=eq.false&order=date.desc&limit=300`);
         if (!cloudData || !Array.isArray(cloudData)) continue;
         const cloudMapped = cloudData.map(c => ({
             id: c.id, type: c.type, amount: Number(c.amount),

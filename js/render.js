@@ -372,7 +372,18 @@ window.confirmDelete = async function(id) {
     let t = window.txs.find(x => x.id === id);
     if (!t) return;
     if (confirm(`Apakah Anda yakin ingin menghapus transaksi "${t.description}"?`)) {
-        if (window.isOnline()) window.callSupabaseAPI('transactions', 'DELETE', null, `?id=eq.${id}`);
+        // SOFT DELETE: jangan DELETE baris cloud, cukup tandai is_deleted=true.
+        // Alasan: pullFromCloudSilently() hanya menarik baris dengan
+        // updated_at > lastSync (incremental). Baris yang benar-benar di-DELETE
+        // tidak akan pernah muncul lagi di hasil query itu, sehingga perangkat
+        // lain yang sudah punya transaksi ini di cache lokal TIDAK akan pernah
+        // tahu bahwa transaksi sudah dihapus — transaksi itu "hidup lagi" di
+        // perangkat tersebut sampai ada full sync manual. Dengan PATCH
+        // is_deleted=true + updated_at baru, baris tombstone ini tetap kebawa
+        // oleh query incremental, sehingga bisa dibuang dari cache perangkat lain.
+        if (window.isOnline()) {
+            window.callSupabaseAPI('transactions', 'PATCH', { is_deleted: true, updated_at: new Date().toISOString() }, `?id=eq.${id}`);
+        }
         window.txs = window.txs.filter(x => x.id !== id);
         window.saveTransactions();
         window.showToast("Transaksi dihapus", "warning");
