@@ -5,7 +5,8 @@ window.updateBookSelectDropdown = function() {
     window.books.forEach(b => {
         let opt = document.createElement('option');
         opt.value = b.id;
-        opt.innerText = b.name;
+        const isChild = !!b.parentId;
+        opt.innerText = isChild ? '  ↳ ' + b.name : b.name;
         if (b.id === window.currentBookId) opt.selected = true;
         sel.appendChild(opt);
     });
@@ -100,7 +101,22 @@ window.openBookManager = function() {
     if (!window.requireOnline('mengelola buku')) return;
     window.openModal('bookManagerModal');
     window.renderBookList();
+    window.renderBookParentOptions();
     window.refreshStorageEstimate();
+};
+
+window.renderBookParentOptions = function() {
+    const sel = document.getElementById('newBookParent');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Buku mandiri (tidak ada induk) —</option>';
+    window.books.forEach(b => {
+        // Hanya tampilkan buku yang bukan anak buku (tidak boleh nested lebih dari 1 level)
+        if (b.parentId) return;
+        const opt = document.createElement('option');
+        opt.value = b.id;
+        opt.textContent = b.name;
+        sel.appendChild(opt);
+    });
 };
 
 window.renderBookList = function() {
@@ -112,10 +128,16 @@ window.renderBookList = function() {
         let isCurrent = b.id === window.currentBookId;
         let delBtn = window.books.length > 1 ? `<button class="btn-mini btn-mini-danger" onclick="window.deleteBook('${b.id}')">Hapus</button>` : '';
         if (isCurrent) delBtn = '<span style="font-size:.65rem; color:#00875a; font-weight:bold;">✨ SEDANG AKTIF</span>';
+        const parentBook = b.parentId ? window.books.find(x => x.id === b.parentId) : null;
+        const parentLabel = parentBook ? `<div style="font-size:.6rem; color:#6b46c1; margin-top:2px;">↳ Anak dari: <b>${window.escapeHtml(parentBook.name)}</b></div>` : '';
         div.innerHTML = `
-            <span class="book-list-name">${window.escapeHtml(b.name)}</span>
+            <span class="book-list-name">
+                ${b.parentId ? '<span style="color:#6b46c1; font-size:.7rem;">📂 </span>' : ''}${window.escapeHtml(b.name)}
+                ${parentLabel}
+            </span>
             <div class="book-list-actions">
                 ${!isCurrent ? `<button class="btn-mini" onclick="window.switchBook('${b.id}')">Buka</button>` : ''}
+                ${b.parentId && isCurrent ? `<button class="btn-mini" style="background:#6b46c1; color:#fff;" onclick="window.closeModal('bookManagerModal'); window.openTutupAnakBuku()">📤 Tutup & Kirim</button>` : ''}
                 ${delBtn}
             </div>
         `;
@@ -129,20 +151,26 @@ window.addNewBook = async function(e) {
     let input = document.getElementById('newBookName');
     let name = input.value.trim();
     if (!name) return;
+    const parentSel = document.getElementById('newBookParent');
+    const parentId = parentSel && parentSel.value ? parentSel.value : null;
     let id = 'b_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
     const newBook = { id, name };
+    if (parentId) newBook.parentId = parentId;
     window.books.push(newBook);
     localStorage.setItem('sk_books', JSON.stringify(window.books));
     input.value = '';
+    if (parentSel) parentSel.value = '';
     await window.pushSettingBooks();
     await new Promise(r => setTimeout(r, 500));
     await window.pullAllSettings();
     window.renderBookList();
     window.updateBookSelectDropdown();
-    window.showToast(`📚 Buku "${name}" berhasil dibuat dan tersinkron ke cloud`, 'success');
-    await window.addCloudLog('SISTEM', `Membuat buku kas baru: "${name}" dengan ID ${id}`);
+    const parentName = parentId ? (window.books.find(b => b.id === parentId)?.name || '') : '';
+    const label = parentId ? `📂 "${name}" (anak dari "${parentName}")` : `📚 "${name}"`;
+    window.showToast(`${label} berhasil dibuat!`, 'success');
+    await window.addCloudLog('SISTEM', `Membuat buku kas baru: "${name}" ${parentId ? '(anak dari ' + parentId + ')' : ''} dengan ID ${id}`);
     const cfg = window.getTgConfig();
-    if (cfg.active) window.sendTelegramNotif(`📚 <b>Buku Baru Dibuat</b>\n\nNama: ${name}\nID: ${id}\nDevice: ${window.deviceId}`);
+    if (cfg.active) window.sendTelegramNotif(`📚 <b>Buku Baru Dibuat</b>\n\nNama: ${name}${parentId ? '\nAnak dari: ' + parentName : ''}\nID: ${id}\nDevice: ${window.deviceId}`);
 };
 
 window.deleteBook = async function(id) {
@@ -309,4 +337,127 @@ window.openTelegramSettings = async function() {
         }
         window.loadTgConfigToForm();
     }
+};
+
+// ==================== TUTUP ANAK BUKU ====================
+
+window.openTutupAnakBuku = function() {
+    const book = window.books.find(b => b.id === window.currentBookId);
+    if (!book || !book.parentId) {
+        window.showToast('Buku ini bukan anak buku.', 'warning');
+        return;
+    }
+    const parentBook = window.books.find(b => b.id === book.parentId);
+    if (!parentBook) {
+        window.showToast('Buku induk tidak ditemukan.', 'error');
+        return;
+    }
+
+    // Hitung total
+    let totalInc = 0, totalExp = 0;
+    window.txs.forEach(t => {
+        const amt = Number(t.amount) || 0;
+        if (t.type === 'income') totalInc += amt;
+        else totalExp += amt;
+    });
+    const balanceOffset = Number(localStorage.getItem('sk_balance_offset_' + window.currentBookId)) || 0;
+    const netTotal = totalInc - totalExp + balanceOffset;
+    const txCount = window.txs.length;
+
+    // Isi modal konfirmasi
+    const el = document.getElementById('tutupAnakBukuInfo');
+    if (el) {
+        el.innerHTML = `
+            <div style="background:#f3e8ff; border:1px solid #d6bcfa; border-radius:8px; padding:12px 14px; font-size:.78rem; line-height:1.8;">
+                <div>📂 <b>Anak Buku:</b> ${window.escapeHtml(book.name)}</div>
+                <div>📚 <b>Kirim ke Induk:</b> ${window.escapeHtml(parentBook.name)}</div>
+                <hr style="margin:8px 0; border-color:#e9d8fd;">
+                <div>📋 Jumlah transaksi: <b>${txCount}</b></div>
+                <div>💰 Total pemasukan: <b style="color:#00875a">${window.rp(totalInc)}</b></div>
+                <div>💸 Total pengeluaran: <b style="color:#de350b">${window.rp(totalExp)}</b></div>
+                <div>📊 <b>Net yang dikirim: <span style="color:${netTotal >= 0 ? '#00875a' : '#de350b'}">${window.rp(Math.abs(netTotal))}</span></b>
+                    ${netTotal < 0 ? ' (pengeluaran)' : ' (pemasukan)'}</div>
+            </div>
+            <div style="margin-top:10px; font-size:.72rem; color:#666;">
+                Satu transaksi ringkasan akan ditambahkan ke buku <b>${window.escapeHtml(parentBook.name)}</b>.<br>
+                Anak buku ini <b>tidak dihapus</b> — tetap bisa dibuka sebagai arsip.
+            </div>
+        `;
+    }
+
+    // Isi default deskripsi
+    const descEl = document.getElementById('tutupAnakBukuDesc');
+    if (descEl) descEl.value = `Ringkasan: ${book.name}`;
+
+    window.openModal('tutupAnakBukuModal');
+};
+
+window.tutupAnakBuku = async function() {
+    if (!window.requireOnline('menutup anak buku')) return;
+
+    const book = window.books.find(b => b.id === window.currentBookId);
+    if (!book || !book.parentId) return;
+    const parentBook = window.books.find(b => b.id === book.parentId);
+    if (!parentBook) return;
+
+    const descEl = document.getElementById('tutupAnakBukuDesc');
+    const deskripsi = (descEl ? descEl.value.trim() : '') || `Ringkasan: ${book.name}`;
+
+    // Hitung net
+    let totalInc = 0, totalExp = 0;
+    window.txs.forEach(t => {
+        const amt = Number(t.amount) || 0;
+        if (t.type === 'income') totalInc += amt;
+        else totalExp += amt;
+    });
+    const balanceOffset = Number(localStorage.getItem('sk_balance_offset_' + window.currentBookId)) || 0;
+    const netTotal = totalInc - totalExp + balanceOffset;
+
+    if (netTotal === 0) {
+        window.showToast('Tidak ada net transaksi untuk dikirim.', 'warning');
+        return;
+    }
+
+    const txType = netTotal >= 0 ? 'income' : 'expense';
+    const txAmount = Math.abs(netTotal);
+    const now = new Date();
+    const dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') +
+        'T' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':00';
+
+    const newTx = {
+        id: 'tx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+        book_id: parentBook.id,
+        device_id: window.deviceId,
+        type: txType,
+        amount: txAmount,
+        category: txType === 'income' ? 'Pemasukan' : 'Lainnya',
+        description: deskripsi,
+        date: dateStr,
+        attachment: null,
+        updated_at: new Date().toISOString()
+    };
+
+    // Push ke Supabase langsung ke buku induk
+    const result = await window.callSupabaseAPI('transactions', 'POST', [newTx]);
+    if (!result) {
+        window.showToast('Gagal mengirim ke buku induk!', 'error');
+        return;
+    }
+
+    // Jika sedang di buku yang sama dengan induk nanti, update lokal
+    const parentCached = JSON.parse(localStorage.getItem('sk_txs_' + parentBook.id) || '[]');
+    parentCached.unshift(newTx);
+    window.trimAndSaveLocal(parentBook.id, parentCached);
+
+    await window.addCloudLog('SISTEM', `Tutup anak buku "${book.name}" → kirim ${window.rp(txAmount)} ke "${parentBook.name}"`);
+
+    window.closeModal('tutupAnakBukuModal');
+    window.showToast(`✅ Ringkasan ${window.rp(txAmount)} berhasil dikirim ke "${parentBook.name}"!`, 'success');
+
+    // Tawarkan pindah ke buku induk
+    setTimeout(() => {
+        if (confirm(`Berhasil! Mau langsung buka buku "${parentBook.name}" untuk melihat hasilnya?`)) {
+            window.switchBook(parentBook.id);
+        }
+    }, 300);
 };
