@@ -147,8 +147,15 @@ window.changePassword = async function() {
     sessionStorage.setItem('sk_session_akey', apiKey);
     sessionStorage.setItem('sk_session_ts', Date.now().toString());
     
+    // Push ulang semua setting (books, budgets, default_budget, telegram_config)
+    // dienkripsi dengan kunci yang baru, supaya baris lama di cloud yang masih
+    // terkunci kunci sebelumnya tidak gagal didekripsi selamanya oleh
+    // pullAllSettings() (lihat window.reEncryptAllCloudSettings di db.js).
+    status.innerText = '⏳ Menyinkronkan ulang setting ke cloud...';
+    await window.reEncryptAllCloudSettings();
+    
     status.style.color = '#00875a';
-    status.innerText = '✅ Password berhasil diganti!';
+    status.innerText = '✅ Password berhasil diganti & setting cloud disinkronkan ulang!';
     
     document.getElementById('changePwdOld').value = '';
     document.getElementById('changePwdNew').value = '';

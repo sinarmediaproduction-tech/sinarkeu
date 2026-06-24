@@ -78,6 +78,40 @@ window.pushSettingTelegram = async function() {
     await window.pushSetting('telegram_config', { token: cfg.token, chatId: cfg.chatId, edgeUrl: cfg.edgeUrl }, 'global');
 };
 
+// ==================== RE-ENCRYPT SETTINGS (setelah ganti password) ====================
+// Dipanggil setelah window.setupNewPassword() mengganti salt + kunci sesi
+// (lihat changePassword() di settings.js dan saveNewAccount() di account.js).
+//
+// MASALAH yang diperbaiki: setupNewPassword() hanya meng-enkripsi-ulang
+// kredensial Supabase lokal. Baris-baris di tabel `settings` cloud (books,
+// budgets, default_budget, telegram_config) yang sudah terlanjur dienkripsi
+// dengan kunci LAMA tidak ikut diperbarui. Akibatnya pullAllSettings() ->
+// _decryptSettingValue() akan selalu gagal (OperationError) untuk baris
+// tersebut selamanya, lalu baris itu dilewati (JSON.parse gagal karena
+// hasil fallback bukan plain text, melainkan ciphertext lama) -> setting
+// itu berhenti tersinkron dari cloud sampai ada push baru di key yang sama.
+//
+// Fungsi ini mem-push ulang semua setting yang diketahui secara lokal,
+// dienkripsi dengan window._sessionCryptoKey yang BARU, supaya cloud
+// langsung konsisten dengan kunci yang baru saja diganti.
+window.reEncryptAllCloudSettings = async function() {
+    if (!window.isOnline() || !window._sessionCryptoKey) return;
+    try {
+        await window.pushSettingBooks();
+        const books = Array.isArray(window.books) ? window.books : [];
+        for (const b of books) {
+            const bud = JSON.parse(localStorage.getItem('sk_budgets_' + b.id) || '{}');
+            await window.pushSetting('budgets', bud, b.id);
+            const defBud = window.getDefaultBudget(b.id);
+            await window.pushSetting('default_budget', defBud, b.id);
+        }
+        await window.pushSettingTelegram();
+        console.log('[Sync] Re-enkripsi & push ulang semua setting ke cloud selesai (kunci baru).');
+    } catch (e) {
+        console.warn('[Sync] Gagal re-enkripsi setting cloud setelah ganti password:', e);
+    }
+};
+
 // ==================== PULL SETTINGS ====================
 // Mencoba dekripsi nilai dari cloud dengan kunci sesi. Jika gagal (data lama
 // dari sebelum migrasi enkripsi, masih plain text), pakai apa adanya sebagai

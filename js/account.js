@@ -190,6 +190,13 @@ window.saveNewAccount = async function() {
             window.globalSupabaseUrl = url;
             window.globalSupabaseKey = key;
             await window.setupNewPassword(pwd, url, key);
+            // Salt & kunci sesi baru saja diganti -> baris `settings` lama di cloud
+            // (books/budgets/default_budget/telegram_config) terkunci kunci LAMA dan
+            // akan selalu gagal didekripsi oleh pullAllSettings(). Push ulang supaya
+            // cloud konsisten dengan kunci yang baru. Lihat window.reEncryptAllCloudSettings di db.js.
+            if (typeof window.reEncryptAllCloudSettings === 'function') {
+                await window.reEncryptAllCloudSettings();
+            }
         }
         localStorage.setItem(ns + 'crypto_salt', saltB64);
         localStorage.setItem(ns + 'crypto_check', encCheck);
