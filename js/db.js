@@ -174,7 +174,7 @@ window._decryptSettingValue = async function(rawValue) {
         try {
             return await window.decryptStr(window._sessionCryptoKey, rawValue);
         } catch (e) {
-            console.warn('[Sync] Gagal dekripsi nilai setting, asumsikan data lama (plain text):', e);
+            console.log('[Sync] Data cloud terenkripsi kunci lama, akan di-heal otomatis.');
         }
     }
     // Fallback: cek apakah rawValue adalah JSON valid (data lama sebelum enkripsi).
@@ -184,7 +184,7 @@ window._decryptSettingValue = async function(rawValue) {
         JSON.parse(rawValue);
         return rawValue; // memang plain JSON (data lama, sebelum fitur enkripsi)
     } catch {
-        console.warn('[Sync] rawValue bukan JSON valid dan gagal didekripsi (kunci lama?), return null.');
+        console.log('[Sync] rawValue kunci lama (bukan JSON valid), return null — akan di-heal.');
         return null;
     }
 };
@@ -196,6 +196,7 @@ window.pullAllSettings = async function() {
         let booksUpdated = false;
         let telegramUpdated = false;
         let budgetUpdated = false;
+        let hasStaleRows = false; // ada baris cloud terenkripsi kunci lama
         for (const row of allRows) {
             // crypto_salt & crypto_check bukan setting JSON terenkripsi biasa
             // (lihat window.pushCryptoSaltCheck) -- jangan diproses di sini,
@@ -203,7 +204,11 @@ window.pullAllSettings = async function() {
             if (row.key === 'crypto_salt' || row.key === 'crypto_check') continue;
             let parsed;
             const decryptedValue = await window._decryptSettingValue(row.value);
-            if (decryptedValue === null) { continue; } // ciphertext dari kunci lama, skip
+            if (decryptedValue === null) {
+                // Baris ini terenkripsi kunci lama — tandai untuk heal setelah loop.
+                hasStaleRows = true;
+                continue;
+            }
             try { parsed = JSON.parse(decryptedValue); } catch { continue; }
             if (parsed === null || typeof parsed === 'undefined') { continue; } // JSON.parse(null) = null, skip
             if (row.key === 'books' && Array.isArray(parsed) && parsed.length > 0) {
@@ -282,6 +287,17 @@ window.pullAllSettings = async function() {
             if (document.getElementById('budgetModal').classList.contains('show')) {
                 window.renderBudgetFormFields();
             }
+        }
+        // Ada baris cloud yang terenkripsi kunci lama dan tidak bisa didekripsi.
+        // Push ulang semua setting dari localStorage ke cloud dengan kunci sesi saat ini,
+        // supaya baris-baris itu tertimpa dan pull berikutnya tidak memicu warning lagi.
+        if (hasStaleRows && window._sessionCryptoKey) {
+            console.log('[Sync] Terdeteksi data cloud kunci lama — memulai re-enkripsi otomatis...');
+            window.reEncryptAllCloudSettings().then(() => {
+                console.log('[Sync] Re-enkripsi otomatis selesai. Pull berikutnya tidak akan ada warning kunci lama.');
+            }).catch(e => {
+                console.warn('[Sync] Re-enkripsi otomatis gagal:', e);
+            });
         }
     }
     window.updateSettingsSyncStatus('pull');
