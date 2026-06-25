@@ -17,7 +17,6 @@ window.fetchForexRate = async function() {
             const rate = api.parse(data);
             if (rate && rate > 1000) {
                 rateEl.textContent = 'Rp ' + Number(rate).toLocaleString('id-ID', { maximumFractionDigits: 0 });
-                srcEl.textContent  = '1 USD · sumber: ' + api.name;
                 return;
             }
         } catch { /* coba berikutnya */ }
@@ -125,8 +124,6 @@ window.fetchGoldPrice = async function() {
                     // Normalisasi ke harga per 1 gram
                     const hargaPerGram = totalHarga / beratGram;
                     priceEl.textContent = 'Rp ' + Math.round(hargaPerGram).toLocaleString('id-ID');
-                    srcEl.textContent   = `Antam ${beratGram}gr (per gram) · emas.maulanar.my.id`;
-                    srcEl.style.color = '#92400e';
                     window.updateGoldValueDisplay(hargaPerGram);
                     return;
                 }
@@ -154,8 +151,6 @@ window.fetchGoldPrice = async function() {
             const idrRate  = parseInt(rateText.replace(/[^0-9]/g, '')) || 16200;
             const pricePerGram = (xauUsd / 31.1035) * idrRate;
             priceEl.textContent = '~Rp ' + Math.round(pricePerGram).toLocaleString('id-ID');
-            srcEl.textContent   = `estimasi spot · ${api.name}`;
-            srcEl.style.color = '#92400e';
             window.updateGoldValueDisplay(Math.round(pricePerGram));
             return;
         } catch { /* coba berikutnya */ }
