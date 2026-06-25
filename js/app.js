@@ -185,6 +185,8 @@ window.continueAppInit = async function() {
     }, 1000);
     window.startAutoSync();
     window.updateUIForOnlineStatus();
+    // Mulai auto-lock: kunci otomatis setelah tidak ada aktivitas
+    if (typeof window.autoLock !== 'undefined') window.autoLock.start();
     window.addEventListener('online', () => { window.updateSyncStatusBadge(); window.updateUIForOnlineStatus(); window.forceFullSync(); });
     window.addEventListener('offline', () => { window.updateSyncStatusBadge(); window.updateUIForOnlineStatus(); });
     document.addEventListener('visibilitychange', () => {

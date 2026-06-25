@@ -336,6 +336,7 @@ window.updateActiveAccountLabel = function() {
     if (el && acc) el.innerText = '👤 ' + acc.name;
 };
 window.logoutToLockScreen = function() {
+    if (typeof window.autoLock !== 'undefined') window.autoLock.stop();
     sessionStorage.removeItem('sk_session_unlocked');
     sessionStorage.removeItem('sk_session_url');
     sessionStorage.removeItem('sk_session_akey');
