@@ -32,55 +32,65 @@ window.trimAndSaveLocal = function(bookId, data) {
 
 window.pullFromCloudSilently = async function() {
     if (!window.isOnline()) return;
-    const lastSync = window._lastFullSyncTime[window.currentBookId];
-    // Catatan soft-delete: untuk load awal (tanpa lastSync) kita filter
-    // is_deleted=eq.false langsung di query, karena di sini tidak ada proses
-    // merge — baris terhapus memang tidak boleh pernah masuk ke window.txs.
-    // Untuk query incremental (ada lastSync), JANGAN difilter, karena kita
-    // justru butuh baris tombstone (is_deleted=true) itu untuk tahu transaksi
-    // mana yang baru dihapus di perangkat lain, supaya bisa dibuang dari
-    // cache lokal perangkat ini juga (lihat loop di bawah).
-    let query = `?book_id=eq.${window.currentBookId}&is_deleted=eq.false&order=date.desc&limit=300`;
-    if (lastSync) {
-        query = `?book_id=eq.${window.currentBookId}&order=updated_at.desc&updated_at=gt.${lastSync}&limit=300`;
-    }
-    let cloudData = await window.callSupabaseAPI('transactions', 'GET', null, query);
-    if (cloudData && Array.isArray(cloudData)) {
-        if (lastSync && cloudData.length > 0) {
-            const localMap = {};
-            window.txs.forEach(t => { localMap[t.id] = t; });
-            cloudData.forEach(c => {
-                const cloudUpdated = c.updated_at || '1970-01-01T00:00:00.000Z';
-                const local = localMap[c.id];
-                const localUpdated = local ? (local.updated_at || '1970-01-01T00:00:00.000Z') : '1970-01-01T00:00:00.000Z';
-                if (!local || cloudUpdated >= localUpdated) {
-                    if (c.is_deleted) {
-                        // Tombstone dari perangkat lain: buang dari cache lokal ini juga.
-                        delete localMap[c.id];
-                    } else {
-                        localMap[c.id] = {
-                            id: c.id, type: c.type, amount: Number(c.amount),
-                            category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
-                            description: c.description, date: c.date,
-                            attachment: c.attachment, updated_at: c.updated_at || null
-                        };
-                    }
-                }
-            });
-            window.txs = Object.values(localMap).sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date));
-        } else if (!lastSync) {
-            window.txs = cloudData.map(c => ({
-                id: c.id, type: c.type, amount: Number(c.amount),
-                category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
-                description: c.description, date: c.date,
-                attachment: c.attachment, updated_at: c.updated_at || null
-            }));
+    // [BUG FIX 3] Guard concurrent pull: jika pull sebelumnya masih berjalan
+    // (koneksi lambat / buku banyak), skip — daripada dua proses merge localMap
+    // berjalan bersamaan dan hasilnya tidak deterministik.
+    if (window._isPullingTransactions) return;
+    window._isPullingTransactions = true;
+    try {
+        const lastSync = window._lastFullSyncTime[window.currentBookId];
+        // Catatan soft-delete: untuk load awal (tanpa lastSync) kita filter
+        // is_deleted=eq.false langsung di query, karena di sini tidak ada proses
+        // merge — baris terhapus memang tidak boleh pernah masuk ke window.txs.
+        // Untuk query incremental (ada lastSync), JANGAN difilter, karena kita
+        // justru butuh baris tombstone (is_deleted=true) itu untuk tahu transaksi
+        // mana yang baru dihapus di perangkat lain, supaya bisa dibuang dari
+        // cache lokal perangkat ini juga (lihat loop di bawah).
+        let query = `?book_id=eq.${window.currentBookId}&is_deleted=eq.false&order=date.desc&limit=300`;
+        if (lastSync) {
+            query = `?book_id=eq.${window.currentBookId}&order=updated_at.desc&updated_at=gt.${lastSync}&limit=300`;
         }
-        window.trimAndSaveLocal(window.currentBookId, window.txs);
-        window._lastFullSyncTime[window.currentBookId] = new Date().toISOString();
-        window.render();
-        window._lastSyncTime = new Date();
-        window.updateSyncTimeBadge();
+        let cloudData = await window.callSupabaseAPI('transactions', 'GET', null, query);
+        if (cloudData && Array.isArray(cloudData)) {
+            if (lastSync && cloudData.length > 0) {
+                const localMap = {};
+                window.txs.forEach(t => { localMap[t.id] = t; });
+                cloudData.forEach(c => {
+                    const cloudUpdated = c.updated_at || '1970-01-01T00:00:00.000Z';
+                    const local = localMap[c.id];
+                    const localUpdated = local ? (local.updated_at || '1970-01-01T00:00:00.000Z') : '1970-01-01T00:00:00.000Z';
+                    if (!local || cloudUpdated >= localUpdated) {
+                        if (c.is_deleted) {
+                            // Tombstone dari perangkat lain: buang dari cache lokal ini juga.
+                            delete localMap[c.id];
+                        } else {
+                            localMap[c.id] = {
+                                id: c.id, type: c.type, amount: Number(c.amount),
+                                category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
+                                description: c.description, date: c.date,
+                                attachment: c.attachment, updated_at: c.updated_at || null
+                            };
+                        }
+                    }
+                });
+                window.txs = Object.values(localMap).sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date));
+            } else if (!lastSync) {
+                window.txs = cloudData.map(c => ({
+                    id: c.id, type: c.type, amount: Number(c.amount),
+                    category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
+                    description: c.description, date: c.date,
+                    attachment: c.attachment, updated_at: c.updated_at || null
+                }));
+            }
+            window.trimAndSaveLocal(window.currentBookId, window.txs);
+            window._lastFullSyncTime[window.currentBookId] = new Date().toISOString();
+            window.render();
+            window._lastSyncTime = new Date();
+            window.updateSyncTimeBadge();
+        }
+    } finally {
+        // Pastikan lock selalu dilepas, bahkan jika ada exception tak terduga.
+        window._isPullingTransactions = false;
     }
 };
 
@@ -127,11 +137,16 @@ window.forceFullSync = async function() {
     }
 };
 
-window.pushToCloud = async function() {
+window.pushToCloud = async function(bookId, txs) {
+    // bookId & txs opsional: jika diisi (dari debouncedPushToCloud), pakai snapshot
+    // yang di-capture saat debounce dipanggil — bukan nilai currentBookId/txs saat ini
+    // yang mungkin sudah berubah karena user pindah buku (Bug Fix 2).
     if (!window.isOnline()) return;
-    const payload = window.txs.map(t => ({
+    bookId = bookId || window.currentBookId;
+    txs = txs || window.txs;
+    const payload = txs.map(t => ({
         id: t.id,
-        book_id: window.currentBookId,
+        book_id: bookId,
         device_id: window.deviceId,
         type: t.type,
         amount: parseFloat(t.amount) || 0,
@@ -151,8 +166,16 @@ window.pushToCloud = async function() {
 };
 
 window.debouncedPushToCloud = function() {
+    // [BUG FIX 2] Capture bookId SEKARANG (sebelum delay 1500ms).
+    // Tanpa ini, jika user switchBook dalam 1.5 detik setelah edit transaksi,
+    // pushToCloud() terjadi setelah currentBookId sudah berganti — transaksi
+    // buku lama ter-push dengan book_id buku baru di Supabase.
+    const bookIdSnapshot = window.currentBookId;
+    const txsSnapshot = [...window.txs];
     if (window._pushDebounceTimer) clearTimeout(window._pushDebounceTimer);
-    window._pushDebounceTimer = setTimeout(() => { window.pushToCloud(); }, 1500);
+    window._pushDebounceTimer = setTimeout(() => {
+        window.pushToCloud(bookIdSnapshot, txsSnapshot);
+    }, 1500);
 };
 
 window.addCloudLog = async function(actionType, detailsText) {

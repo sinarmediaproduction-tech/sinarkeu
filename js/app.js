@@ -187,14 +187,21 @@ window.continueAppInit = async function() {
     window.updateUIForOnlineStatus();
     // Mulai auto-lock: kunci otomatis setelah tidak ada aktivitas
     if (typeof window.autoLock !== 'undefined') window.autoLock.start();
-    window.addEventListener('online', () => { window.updateSyncStatusBadge(); window.updateUIForOnlineStatus(); window.forceFullSync(); });
-    window.addEventListener('offline', () => { window.updateSyncStatusBadge(); window.updateUIForOnlineStatus(); });
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && window.isOnline()) {
-            const secondsSinceSync = window._lastSyncTime ? (Date.now() - window._lastSyncTime.getTime()) / 1000 : Infinity;
-            if (secondsSinceSync > 60) window.forceFullSync();
-        }
-    });
+    // [BUG FIX 1] Event listener online/offline/visibilitychange hanya boleh
+    // didaftarkan SEKALI. continueAppInit() bisa dipanggil >1x dalam satu sesi
+    // (misal: auto-lock -> buka password lagi), sehingga tanpa guard ini
+    // listener menumpuk dan forceFullSync() dipanggil berkali-kali.
+    if (!window._globalListenersRegistered) {
+        window._globalListenersRegistered = true;
+        window.addEventListener('online', () => { window.updateSyncStatusBadge(); window.updateUIForOnlineStatus(); window.forceFullSync(); });
+        window.addEventListener('offline', () => { window.updateSyncStatusBadge(); window.updateUIForOnlineStatus(); });
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && window.isOnline()) {
+                const secondsSinceSync = window._lastSyncTime ? (Date.now() - window._lastSyncTime.getTime()) / 1000 : Infinity;
+                if (secondsSinceSync > 60) window.forceFullSync();
+            }
+        });
+    }
 };
 
 window.initApp = async function() {
