@@ -61,7 +61,7 @@ window.switchAccount = function(accId) {
     const sessKey = 'sk_acc_sess_' + accId;
     if (!sessionStorage.getItem(sessKey)) {
         window._pendingUnlockAccId = accId;
-        document.getElementById('accUnlockTitle').innerText = '🔑 Buka "' + acc.name + '"';
+        document.getElementById('accUnlockTitle').innerText = 'Buka "' + acc.name + '"';
         document.getElementById('accUnlockSubtitle').innerText = 'Masukkan password enkripsi untuk akun ' + acc.name;
         document.getElementById('accUnlockPwdInput').value = '';
         document.getElementById('accUnlockStatus').innerText = '';
@@ -92,20 +92,20 @@ window.submitAccountUnlock = async function() {
     const pwd = document.getElementById('accUnlockPwdInput').value;
     const st  = document.getElementById('accUnlockStatus');
     if (!pwd) { st.innerText = 'Masukkan password terlebih dahulu.'; return; }
-    st.innerText = '⏳ Memverifikasi...';
+    st.innerText = 'Memverifikasi...';
     const accId = window._pendingUnlockAccId;
     const nsPrefix = 'sk_a' + accId + '_';
     const saltKey  = nsPrefix + 'crypto_salt';
     const checkKey = nsPrefix + 'crypto_check';
     const saltB64  = localStorage.getItem(saltKey);
     const checkEnc = localStorage.getItem(checkKey);
-    if (!saltB64 || !checkEnc) { st.innerText = '❌ Data enkripsi tidak ditemukan.'; return; }
+    if (!saltB64 || !checkEnc) { st.innerText = 'Data enkripsi tidak ditemukan.'; return; }
     try {
         const salt  = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
         const key   = await window.deriveKey(pwd, salt);
         const plain = await window.decryptStr(key, checkEnc);
         if (plain !== 'sinarkeu_ok') throw new Error('wrong');
-    } catch { st.innerText = '❌ Password salah. Coba lagi.'; return; }
+    } catch { st.innerText = 'Password salah. Coba lagi.'; return; }
     sessionStorage.setItem('sk_acc_sess_' + accId, '1');
     // Simpan password sementara agar bisa di-XOR-obfuscate setelah _doSwitch()
     // me-restore URL sesi akun baru ke sessionStorage (terjadi setelah reload).
@@ -127,10 +127,10 @@ window.renderAccModalList = function(highlightId) {
         const isActive  = acc.id === activeId;
         const hasConfig = window.isAccountConfigured(acc.id);
         const hasSess   = !!sessionStorage.getItem('sk_acc_sess_' + acc.id);
-        const badge = isActive ? '<span class="acc-modal-item-badge acc-badge-active">● Aktif</span>' : (hasSess ? '<span class="acc-modal-item-badge" style="background:#e8f0fe;color:#1a56db;">Terbuka</span>' : (hasConfig ? '<span class="acc-modal-item-badge acc-badge-locked">🔒 Terkunci</span>' : '<span class="acc-modal-item-badge acc-badge-noconn">Belum setup</span>'));
+        const badge = isActive ? '<span class="acc-modal-item-badge acc-badge-active">● Aktif</span>' : (hasSess ? '<span class="acc-modal-item-badge" style="background:#e8f0fe;color:#1a56db;">Terbuka</span>' : (hasConfig ? '<span class="acc-modal-item-badge acc-badge-locked">Terkunci</span>' : '<span class="acc-modal-item-badge acc-badge-noconn">Belum setup</span>'));
         return `<div class="acc-modal-item${isActive ? ' current' : ''}" onclick="window.handleAccModalItemClick('${acc.id}')">
             <div><div class="acc-modal-item-name">${window.escapeHtml(acc.name)}</div></div>
-            <div class="acc-item-actions">${badge}<button class="btn-mini" onclick="event.stopPropagation(); window.editAccount('${acc.id}')">✏️</button>${!isActive ? `<button class="btn-mini btn-mini-danger" onclick="event.stopPropagation(); window.deleteAccount('${acc.id}')">🗑️</button>` : ''}</div>
+            <div class="acc-item-actions">${badge}<button class="btn-mini" onclick="event.stopPropagation(); window.editAccount('${acc.id}')">Edit</button>${!isActive ? `<button class="btn-mini btn-mini-danger" onclick="event.stopPropagation(); window.deleteAccount('${acc.id}')">Hapus</button>` : ''}</div>
         </div>`;
     }).join('');
 };
@@ -146,7 +146,7 @@ window.editAccount = function(accId) {
     document.getElementById('newAccPwd').placeholder = 'Isi untuk update password / credentials';
     document.getElementById('newAccPwdConfirm').value = '';
     document.getElementById('newAccPwdConfirmGroup').style.display = 'none';
-    document.getElementById('newAccStatus').innerText = '⚠️ Isi URL, Key, dan Password baru untuk memperbarui koneksi.';
+    document.getElementById('newAccStatus').innerText = 'Isi URL, Key, dan Password baru untuk memperbarui koneksi.';
 };
 window.cancelEditAccount = function() {
     document.getElementById('editingAccId').value = '';
@@ -167,24 +167,24 @@ window.saveNewAccount = async function() {
     const pwd    = document.getElementById('newAccPwd').value;
     const pwd2   = document.getElementById('newAccPwdConfirm').value;
     const st     = document.getElementById('newAccStatus');
-    if (!name) { st.style.color='#de350b'; st.innerText='❌ Nama akun wajib diisi!'; return; }
+    if (!name) { st.style.color='#de350b'; st.innerText='Nama akun wajib diisi!'; return; }
     const isEdit = !!editId;
     const hasCredentials = url && key && pwd;
-    if (!isEdit && (!url || !key || !pwd || pwd.length < 6)) { st.style.color='#de350b'; st.innerText='❌ URL, Anon Key, dan Password (min 6 karakter) wajib diisi!'; return; }
-    if (isEdit && hasCredentials && pwd.length < 6) { st.style.color='#de350b'; st.innerText='❌ Password minimal 6 karakter!'; return; }
-    if (hasCredentials && pwd !== pwd2) { st.style.color='#de350b'; st.innerText='❌ Konfirmasi password tidak cocok! Pastikan kedua password sama.'; return; }
+    if (!isEdit && (!url || !key || !pwd || pwd.length < 6)) { st.style.color='#de350b'; st.innerText='URL, Anon Key, dan Password (min 6 karakter) wajib diisi!'; return; }
+    if (isEdit && hasCredentials && pwd.length < 6) { st.style.color='#de350b'; st.innerText='Password minimal 6 karakter!'; return; }
+    if (hasCredentials && pwd !== pwd2) { st.style.color='#de350b'; st.innerText='Konfirmasi password tidak cocok! Pastikan kedua password sama.'; return; }
     let accounts = window.getAllAccounts();
     const accId  = editId || ('acc_' + Date.now());
     if (isEdit) { const idx = accounts.findIndex(a => a.id === editId); if (idx >= 0) accounts[idx].name = name; }
     else accounts.push({ id: accId, name });
     if (hasCredentials) {
-        st.style.color='#888'; st.innerText='⏳ Mengetes koneksi ke Supabase...';
+        st.style.color='#888'; st.innerText='Mengetes koneksi ke Supabase...';
         const oldUrl = window.globalSupabaseUrl, oldKey = window.globalSupabaseKey;
         window.globalSupabaseUrl = url; window.globalSupabaseKey = key;
         const test = await window.callSupabaseAPI('transactions', 'GET', null, '?limit=1');
         if (test === null) {
             window.globalSupabaseUrl = oldUrl; window.globalSupabaseKey = oldKey;
-            st.style.color='#de350b'; st.innerText='❌ Koneksi gagal! Periksa URL dan Anon Key.'; return;
+            st.style.color='#de350b'; st.innerText='Koneksi gagal! Periksa URL dan Anon Key.'; return;
         }
 
         const ns = 'sk_a' + accId + '_';
@@ -211,13 +211,13 @@ window.saveNewAccount = async function() {
                 window.globalSupabaseUrl = oldUrl; window.globalSupabaseKey = oldKey;
                 st.style.color='#de350b';
                 st.innerText = (e && e.code === 'PASSWORD_MISMATCH')
-                    ? '❌ Backend ini sudah tersambung dari perangkat lain dengan password berbeda. Gunakan password yang sama.'
-                    : '❌ Gagal menyiapkan enkripsi: ' + (e && e.message ? e.message : 'error tidak diketahui');
+                    ? 'Backend ini sudah tersambung dari perangkat lain dengan password berbeda. Gunakan password yang sama.'
+                    : 'Gagal menyiapkan enkripsi: ' + (e && e.message ? e.message : 'error tidak diketahui');
                 return;
             }
         }
 
-        st.innerText = '⏳ Mengenkripsi dan menyimpan...';
+        st.innerText = 'Mengenkripsi dan menyimpan...';
         const encUrl  = await window.encryptStr(cryptoKey, url);
         const encAKey = await window.encryptStr(cryptoKey, key);
 
@@ -252,7 +252,7 @@ window.saveNewAccount = async function() {
     }
     window.saveAllAccounts(accounts);
     st.style.color='#00875a';
-    st.innerText = isEdit ? '✅ Akun berhasil diperbarui!' : '✅ Akun berhasil ditambahkan!';
+    st.innerText = isEdit ? 'Akun berhasil diperbarui!' : 'Akun berhasil ditambahkan!';
     window.showToast(isEdit ? 'Akun diperbarui!' : 'Akun baru ditambahkan!', 'success');
     window.cancelEditAccount();
     window.renderAccModalList();
@@ -333,7 +333,7 @@ window.updateActiveAccountLabel = function() {
     const activeId = window.getActiveAccountId();
     const acc = accounts.find(a => a.id === activeId);
     const el = document.getElementById('activeAccountLabel');
-    if (el && acc) el.innerText = '👤 ' + acc.name;
+    if (el && acc) el.innerText = '' + acc.name;
 };
 window.logoutToLockScreen = function() {
     if (typeof window.autoLock !== 'undefined') window.autoLock.stop();

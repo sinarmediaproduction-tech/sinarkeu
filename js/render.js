@@ -63,8 +63,8 @@ window.render = function() {
         let incText = t.type === 'income' ? window.rp(amt) : '-';
         let expText = t.type === 'expense' ? window.rp(amt) : '-';
         let badge = t.type === 'income' ? '<span class="type-badge badge-inc">MASUK</span>' : '<span class="type-badge badge-exp">KELUAR</span>';
-        let attCell = '<span class="no-attachment">❌</span>';
-        if (t.attachment) attCell = `<span class="attachment-link" onclick="window.viewAttachment('${t.id}')">🖼️</span>`;
+        let attCell = '<span class="no-attachment">&ndash;</span>';
+        if (t.attachment) attCell = `<span class="attachment-link" onclick="window.viewAttachment('${t.id}')">Lihat</span>`;
         const globalIndex = startIdx + index + 1;
         const actionBtnDisabled = online ? '' : 'disabled';
         tr.innerHTML = `
@@ -136,7 +136,7 @@ window.updateFinancialCards = function() {
         if (sisaSetelahDarurat <= 0) {
             cardDSJ.style.borderTopColor = '#de350b';
             cardDSJ.style.background = '#fff5f5';
-            note.innerText = '⚠️ Saldo belum cukup untuk dana darurat';
+            note.innerText = 'Saldo belum cukup untuk dana darurat';
             note.style.color = '#de350b';
         } else {
             cardDSJ.style.borderTopColor = '#00875a';
@@ -315,7 +315,7 @@ window.handleSubmit = async function(e) {
     window.sendTelegramNotif(window.buildTxNotifMessage('TAMBAH', newTx, window.getCurrentBookName()));
 };
 window.openActionMenu = function(id) {
-    if (!window.isOnline()) { window.showToast('⚠️ Anda harus ONLINE untuk mengedit/menghapus data!', 'warning'); return; }
+    if (!window.isOnline()) { window.showToast('Anda harus ONLINE untuk mengedit/menghapus data!', 'warning'); return; }
     window.actionId = id;
     window.openModal('actionMenuModal');
     document.getElementById('actionEditBtn').onclick = () => { window.closeModal('actionMenuModal'); window.loadEditData(id); };
@@ -414,37 +414,37 @@ window.downloadAttachment = function() {
 window.FASE_DATA = [
     null, // index 0 kosong
     {
-        nama: '💑 Bulan Madu',
+        nama: 'Bulan Madu',
         desc: 'Fokus membangun fondasi keuangan bersama: rekening gabungan, proteksi asuransi dasar, dan menabung untuk rumah pertama.',
         prioritas: ['Dana darurat 6 bulan', 'Asuransi jiwa & kesehatan', 'Tabungan rumah / KPR', 'Investasi reksa dana pemula']
     },
     {
-        nama: '🏠 Penyesuaian & Realita',
+        nama: 'Penyesuaian & Realita',
         desc: 'Pola pengeluaran mulai terlihat. Saatnya mengoptimalkan anggaran, melunasi hutang konsumtif, dan mulai investasi rutin.',
         prioritas: ['Lunasi hutang kartu kredit / konsumtif', 'Investasi rutin SBN / reksa dana', 'Dana darurat diperkuat 9 bulan', 'Perencanaan anak (jika ada)']
     },
     {
-        nama: '👶 Pengasuhan Awal',
+        nama: 'Pengasuhan Awal',
         desc: 'Biaya melonjak dengan hadirnya anak: persalinan, kebutuhan bayi, dan asuransi anak. Proteksi jiwa sangat kritis di fase ini.',
         prioritas: ['Asuransi jiwa uang pertanggungan besar', 'Dana pendidikan anak (mulai sejak dini!)', 'Dana darurat 12 bulan', 'Review pengeluaran rutin — potong yang tidak perlu']
     },
     {
-        nama: '🎒 Keluarga Aktif',
+        nama: 'Keluarga Aktif',
         desc: 'Pengeluaran tinggi: sekolah, les, kesehatan, dan karir menanjak. Imbangi dengan investasi jangka menengah untuk pendidikan.',
         prioritas: ['Dana pendidikan SMA / kuliah', 'KPR / cicilan properti', 'Investasi saham / reksa dana ekuitas', 'Tabungan liburan keluarga tahunan']
     },
     {
-        nama: '🧑‍🎓 Remaja & Melepas',
+        nama: 'Remaja & Melepas',
         desc: 'Biaya kuliah & pernikahan anak di depan mata. Mulai fokus pada persiapan pensiun yang lebih serius.',
         prioritas: ['Dana kuliah anak', 'Persiapan pensiun (DPPK / BPJS TK / DPLK)', 'Investasi properti produktif', 'Proteksi kesehatan pasangan']
     },
     {
-        nama: '🪹 Sarang Kosong',
+        nama: 'Sarang Kosong',
         desc: 'Anak mandiri, beban berkurang. Optimalkan aset, mulai menikmati hasil kerja keras, dan perkuat dana pensiun.',
         prioritas: ['Maksimalkan dana pensiun', 'Diversifikasi investasi (properti, obligasi, emas)', 'Asuransi kesehatan komprehensif', 'Dana warisan / waqaf / wakaf produktif']
     },
     {
-        nama: '👴👵 Pensiun & Menua Bersama',
+        nama: 'Pensiun & Menua Bersama',
         desc: 'Fokus pada arus kas pasif, kesehatan, dan menikmati hidup. Kelola aset agar cukup seumur hidup.',
         prioritas: ['Arus kas dari pensiun / investasi pasif', 'Asuransi kesehatan lansia', 'Dana perawatan jangka panjang', 'Perencanaan warisan & wasiat']
     }
@@ -499,7 +499,7 @@ window.saveFaseKehidupan = function() {
     }
     window.updateFaseCard();
     window.closeModal('faseKehidupanModal');
-    window.showToast('✅ Fase kehidupan berhasil disimpan!', 'success');
+    window.showToast('Fase kehidupan berhasil disimpan!', 'success');
 };
 
 window.updateFaseCard = function() {
@@ -518,8 +518,8 @@ window.updateFaseCard = function() {
     if (!f) return;
     namaEl.innerText = f.nama;
     let desc = f.desc.substring(0, 80) + '...';
-    if (fase.tanggungan > 0) desc = `👨‍👩‍👧 ${fase.tanggungan} tanggungan · ` + desc;
-    if (fase.target) desc = `🎯 ${fase.target} · ` + desc.substring(0, 60) + '...';
+    if (fase.tanggungan > 0) desc = `${fase.tanggungan} tanggungan · ` + desc;
+    if (fase.target) desc = `${fase.target} · ` + desc.substring(0, 60) + '...';
     descEl.innerText = desc;
     if (aiBtn) aiBtn.style.display = 'inline-flex';
 };

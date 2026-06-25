@@ -61,8 +61,8 @@ window.updateGoldValueDisplay = function(pricePerGram) {
 window.testEmasApiKey = async function() {
     const key = (document.getElementById('emasApiKeyInput')?.value || '').trim();
     const st  = document.getElementById('emasApiTestStatus');
-    if (!key) { st.style.color = '#de350b'; st.innerText = '❌ Isi API key dulu.'; return; }
-    st.style.color = '#cc7b00'; st.innerText = '⏳ Menghubungi server...';
+    if (!key) { st.style.color = '#de350b'; st.innerText = 'Isi API key dulu.'; return; }
+    st.style.color = '#cc7b00'; st.innerText = 'Menghubungi server...';
     try {
         const res = await fetch('/api/emas', {
             headers: { 'X-API-Key': key },
@@ -70,26 +70,26 @@ window.testEmasApiKey = async function() {
         });
         if (res.ok) {
             st.style.color = '#00875a';
-            st.innerText = '✅ API key valid! Data Antam berhasil diakses.';
+            st.innerText = 'API key valid! Data Antam berhasil diakses.';
         } else {
             st.style.color = '#de350b';
-            st.innerText = `❌ Server menolak: status ${res.status}. Periksa API key Anda.`;
+            st.innerText = `Server menolak: status ${res.status}. Periksa API key Anda.`;
         }
     } catch (e) {
         st.style.color = '#de350b';
-        st.innerText = `❌ Gagal terhubung: ${e.message}`;
+        st.innerText = `Gagal terhubung: ${e.message}`;
     }
 };
 window.saveEmasApiKey = function() {
     const key  = (document.getElementById('emasApiKeyInput')?.value || '').trim();
     const gram = parseFloat(document.getElementById('emasGramInput')?.value) || 0;
     const st   = document.getElementById('emasApiTestStatus');
-    if (!key) { st.style.color = '#de350b'; st.innerText = '❌ API key tidak boleh kosong!'; return; }
+    if (!key) { st.style.color = '#de350b'; st.innerText = 'API key tidak boleh kosong!'; return; }
     localStorage.setItem('sk_emas_api_key', key);
     if (gram > 0) localStorage.setItem('sk_emas_gram', gram);
     else localStorage.removeItem('sk_emas_gram');
     st.style.color = '#00875a';
-    st.innerText = '✅ Tersimpan! API key & jumlah emas diperbarui.';
+    st.innerText = 'Tersimpan! API key & jumlah emas diperbarui.';
     window.updateEmasApiBadge();
     window.showToast('Setelan emas disimpan!', 'success');
     window.fetchGoldPrice();
@@ -131,11 +131,11 @@ window.fetchGoldPrice = async function() {
                     return;
                 }
             } else {
-                srcEl.textContent = `⚠️ API error (${res.status}), beralih ke estimasi spot`;
+                srcEl.textContent = `API error (${res.status}), beralih ke estimasi spot`;
                 srcEl.style.color = '#cc7b00';
             }
         } catch (e) {
-            srcEl.textContent = `⚠️ Gagal hubungi API (${e.message}), beralih ke estimasi spot`;
+            srcEl.textContent = `Gagal hubungi API (${e.message}), beralih ke estimasi spot`;
             srcEl.style.color = '#cc7b00';
         }
     }

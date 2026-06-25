@@ -1221,12 +1221,6 @@ tr:hover td { background: var(--paper-warm); }
   text-align: center;
 }
 
-.lock-icon {
-  font-size: 2.4rem;
-  margin-bottom: 12px;
-  display: block;
-}
-
 .lock-title {
   font-size: 1rem;
   font-weight: 500;
@@ -1248,7 +1242,7 @@ tr:hover td { background: var(--paper-warm); }
 
 .lock-input {
   width: 100%;
-  padding: 11px 40px 11px 14px;
+  padding: 11px 56px 11px 14px;
   font-size: .85rem;
   font-family: inherit;
   background: var(--paper);
@@ -1280,7 +1274,9 @@ tr:hover td { background: var(--paper-warm); }
   background: none;
   border: none;
   cursor: pointer;
-  font-size: .95rem;
+  font-size: .65rem;
+  font-weight: 600;
+  letter-spacing: .02em;
   color: var(--ink-faint);
   padding: 0;
   line-height: 1;

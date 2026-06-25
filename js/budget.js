@@ -85,10 +85,10 @@ window.renderBudget = function() {
     if (tag) {
         if (source === 'custom') {
             tag.className = 'budget-source-tag custom';
-            tag.innerText = '📌 Khusus bulan ini';
+            tag.innerText = 'Khusus bulan ini';
         } else if (source === 'default' && Object.keys(currentBudget).length > 0) {
             tag.className = 'budget-source-tag default';
-            tag.innerText = '📋 Anggaran Bulanan';
+            tag.innerText = 'Anggaran Bulanan';
         } else {
             tag.className = 'budget-source-tag none';
             tag.innerText = 'Tidak ada';
@@ -153,15 +153,15 @@ window.renderBudgetFormFields = function() {
     const infoDiv = document.createElement('div');
     infoDiv.style.cssText = 'font-size:.72rem; color:#666; margin-bottom:12px; padding:8px 12px; border-radius:6px; background:#f5f5f5;';
     if (source === 'default') {
-        infoDiv.innerHTML = '🏠 <b>Menggunakan Anggaran Bulanan</b> — Anda dapat mengubahnya di sini untuk membuat versi khusus bulan ini.';
+        infoDiv.innerHTML = '<b>Menggunakan Anggaran Bulanan</b> — Anda dapat mengubahnya di sini untuk membuat versi khusus bulan ini.';
         infoDiv.style.background = '#e3fcef';
         infoDiv.style.color = '#006644';
     } else if (source === 'custom') {
-        infoDiv.innerHTML = '📌 <b>Anggaran Khusus Bulan Ini</b> — Bulan berikutnya akan kembali ke Anggaran Bulanan.';
+        infoDiv.innerHTML = '<b>Anggaran Khusus Bulan Ini</b> — Bulan berikutnya akan kembali ke Anggaran Bulanan.';
         infoDiv.style.background = '#e8f0fe';
         infoDiv.style.color = '#1a56db';
     } else {
-        infoDiv.innerHTML = '⚠️ <b>Belum ada anggaran</b> — Atur anggaran di bawah, atau klik kartu Anggaran Bulanan untuk mengaturnya.';
+        infoDiv.innerHTML = '<b>Belum ada anggaran</b> — Atur anggaran di bawah, atau klik kartu Anggaran Bulanan untuk mengaturnya.';
         infoDiv.style.background = '#fff3e0';
         infoDiv.style.color = '#cc7b00';
     }
@@ -224,13 +224,13 @@ window.saveBudget = async function() {
     if (!hasAnyValue) {
         window.showToast(
             ok ? 'Anggaran bulan ini dihapus, akan menggunakan Anggaran Bulanan.'
-               : '⚠️ Dihapus lokal, tapi gagal sync ke cloud. Coba simpan lagi.',
+               : 'Dihapus lokal, tapi gagal sync ke cloud. Coba simpan lagi.',
             ok ? 'info' : 'warning'
         );
     } else {
         window.showToast(
             ok ? 'Anggaran bulanan berhasil diperbarui & disinkron ke cloud'
-               : '⚠️ Tersimpan lokal, tapi GAGAL sync ke cloud. Coba simpan lagi saat online.',
+               : 'Tersimpan lokal, tapi GAGAL sync ke cloud. Coba simpan lagi saat online.',
             ok ? 'success' : 'warning'
         );
     }
@@ -284,8 +284,8 @@ window.saveDefaultBudget = async function() {
     // pasti sebelum toast ditampilkan, bukan diasumsikan berhasil begitu saja.
     const ok = await window.saveDefaultBudgetToCloud(window.currentBookId, newBudget);
     window.showToast(
-        ok ? '✅ Anggaran Bulanan berhasil disimpan & disinkron ke cloud!'
-           : '⚠️ Tersimpan lokal, tapi GAGAL sync ke cloud. Coba simpan lagi saat online.',
+        ok ? 'Anggaran Bulanan berhasil disimpan & disinkron ke cloud!'
+           : 'Tersimpan lokal, tapi GAGAL sync ke cloud. Coba simpan lagi saat online.',
         ok ? 'success' : 'warning'
     );
     window.updateFinancialCards && window.updateFinancialCards();
@@ -319,23 +319,23 @@ window.checkBudgetWarningAfterSave = function(date, category) {
     if (katTarget > 0) {
         let katPct = (totalKat / katTarget) * 100;
         if (katPct >= 100) {
-            setTimeout(() => window.showToast(`🚨 Anggaran "${category}" HABIS! (${Math.round(katPct)}% terpakai)`, 'error'), 500);
-            window.sendTelegramNotif(`🚨 <b>ANGGARAN HABIS!</b>\n\n📒 Buku: <b>${bookName}</b>\n📂 Kategori: <b>${category}</b>\n📅 Periode: <b>${monthNames[m - 1]} ${y}</b>\n\n💸 Terpakai: <b>${window.rp(totalKat)}</b> (${Math.round(katPct)}%)\n🎯 Target: ${window.rp(katTarget)}`);
+            setTimeout(() => window.showToast(`Anggaran "${category}" HABIS! (${Math.round(katPct)}% terpakai)`, 'error'), 500);
+            window.sendTelegramNotif(`<b>ANGGARAN HABIS!</b>\n\nBuku: <b>${bookName}</b>\nKategori: <b>${category}</b>\nPeriode: <b>${monthNames[m - 1]} ${y}</b>\n\nTerpakai: <b>${window.rp(totalKat)}</b> (${Math.round(katPct)}%)\nTarget: ${window.rp(katTarget)}`);
             return;
         } else if (katPct >= 80) {
-            setTimeout(() => window.showToast(`⚠️ Anggaran "${category}" hampir habis (${Math.round(katPct)}%)`, 'warning'), 500);
-            window.sendTelegramNotif(`⚠️ <b>Anggaran Hampir Habis</b>\n\n📒 Buku: <b>${bookName}</b>\n📂 Kategori: <b>${category}</b>\n📅 Periode: <b>${monthNames[m - 1]} ${y}</b>\n\n💸 Terpakai: ${window.rp(totalKat)} (${Math.round(katPct)}%)\n🎯 Target: ${window.rp(katTarget)}`);
+            setTimeout(() => window.showToast(`Anggaran "${category}" hampir habis (${Math.round(katPct)}%)`, 'warning'), 500);
+            window.sendTelegramNotif(`<b>Anggaran Hampir Habis</b>\n\nBuku: <b>${bookName}</b>\nKategori: <b>${category}</b>\nPeriode: <b>${monthNames[m - 1]} ${y}</b>\n\nTerpakai: ${window.rp(totalKat)} (${Math.round(katPct)}%)\nTarget: ${window.rp(katTarget)}`);
             return;
         }
     }
     if (totalTarget > 0) {
         let totalPct = (totalBulan / totalTarget) * 100;
         if (totalPct >= 100) {
-            setTimeout(() => window.showToast(`🚨 Total anggaran bulanan HABIS! (${Math.round(totalPct)}% terpakai)`, 'error'), 500);
-            window.sendTelegramNotif(`🚨 <b>TOTAL ANGGARAN BULANAN HABIS!</b>\n\n📒 Buku: <b>${bookName}</b>\n📅 Periode: <b>${monthNames[m - 1]} ${y}</b>\n\n💸 Total Pengeluaran: <b>${window.rp(totalBulan)}</b> (${Math.round(totalPct)}%)\n🎯 Total Anggaran: ${window.rp(totalTarget)}`);
+            setTimeout(() => window.showToast(`Total anggaran bulanan HABIS! (${Math.round(totalPct)}% terpakai)`, 'error'), 500);
+            window.sendTelegramNotif(`<b>TOTAL ANGGARAN BULANAN HABIS!</b>\n\nBuku: <b>${bookName}</b>\nPeriode: <b>${monthNames[m - 1]} ${y}</b>\n\nTotal Pengeluaran: <b>${window.rp(totalBulan)}</b> (${Math.round(totalPct)}%)\nTotal Anggaran: ${window.rp(totalTarget)}`);
         } else if (totalPct >= 80) {
-            setTimeout(() => window.showToast(`⚠️ Total anggaran bulanan hampir habis (${Math.round(totalPct)}%)`, 'warning'), 500);
-            window.sendTelegramNotif(`⚠️ <b>Anggaran Bulanan Hampir Habis</b>\n\n📒 Buku: <b>${bookName}</b>\n📅 Periode: <b>${monthNames[m - 1]} ${y}</b>\n\n💸 Total Pengeluaran: ${window.rp(totalBulan)} (${Math.round(totalPct)}%)\n🎯 Total Anggaran: ${window.rp(totalTarget)}`);
+            setTimeout(() => window.showToast(`Total anggaran bulanan hampir habis (${Math.round(totalPct)}%)`, 'warning'), 500);
+            window.sendTelegramNotif(`<b>Anggaran Bulanan Hampir Habis</b>\n\nBuku: <b>${bookName}</b>\nPeriode: <b>${monthNames[m - 1]} ${y}</b>\n\nTotal Pengeluaran: ${window.rp(totalBulan)} (${Math.round(totalPct)}%)\nTotal Anggaran: ${window.rp(totalTarget)}`);
         }
     }
 };
@@ -391,7 +391,7 @@ window._renderAnnualRow = function(idx) {
             value="${row.amount ? Number(row.amount).toLocaleString('id-ID') : ''}"
             oninput="window.formatRupiah(this); window._annualBudgetRows[${idx}].amount = window.unRp(this.value); window.updateAnnualBudgetSummary();">
         <button onclick="window.removeAnnualBudgetRow(${idx})" 
-            style="background:none; border:1.5px solid #de350b; color:#de350b; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:.85rem; flex-shrink:0;">🗑</button>
+            style="background:none; border:1.5px solid #de350b; color:#de350b; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:.85rem; flex-shrink:0;">Hapus</button>
     `;
     container.appendChild(div);
 };
@@ -428,8 +428,8 @@ window.saveAnnualBudget = async function() {
     // pasti sebelum toast ditampilkan.
     const ok = await window.pushAnnualBudget(window.currentBookId);
     window.showToast(
-        ok ? '✅ Anggaran Tahunan berhasil disimpan & disinkron ke cloud!'
-           : '⚠️ Tersimpan lokal, tapi GAGAL sync ke cloud. Coba simpan lagi saat online.',
+        ok ? 'Anggaran Tahunan berhasil disimpan & disinkron ke cloud!'
+           : 'Tersimpan lokal, tapi GAGAL sync ke cloud. Coba simpan lagi saat online.',
         ok ? 'success' : 'warning'
     );
 };
@@ -481,7 +481,7 @@ window.saveDefaultBudgetToCloud = async function(bookId, budgetData) {
             return !!result;
         } catch (e) {
             console.error('[Budget] Gagal save default budget ke cloud:', e);
-            window.showToast('⚠️ Data tersimpan lokal, gagal sync ke cloud', 'warning');
+            window.showToast('Data tersimpan lokal, gagal sync ke cloud', 'warning');
             return false;
         }
     }
@@ -545,7 +545,7 @@ window.saveMonthlyBudgetToCloud = async function(bookId, budgetData) {
             return !!result;
         } catch (e) {
             console.error('[Budget] Gagal save monthly budget ke cloud:', e);
-            window.showToast('⚠️ Data tersimpan lokal, gagal sync ke cloud', 'warning');
+            window.showToast('Data tersimpan lokal, gagal sync ke cloud', 'warning');
             return false;
         }
     }
@@ -596,7 +596,7 @@ window.saveAnnualBudgetToCloud = async function(bookId, budgetData) {
             return !!result;
         } catch (e) {
             console.error('[Budget] Gagal save annual budget ke cloud:', e);
-            window.showToast('⚠️ Data tersimpan lokal, gagal sync ke cloud', 'warning');
+            window.showToast('Data tersimpan lokal, gagal sync ke cloud', 'warning');
             return false;
         }
     }
@@ -671,6 +671,6 @@ window.migrateAllBudgets = async function(bookId) {
     }
     
     if (migrated > 0) {
-        window.showToast(`✅ ${migrated} data anggaran berhasil dimigrasi ke cloud`, 'success');
+        window.showToast(`${migrated} data anggaran berhasil dimigrasi ke cloud`, 'success');
     }
 };

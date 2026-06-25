@@ -12,7 +12,7 @@ window.saveTelegramConfig = async function() {
     if (!token) { window.showToast('Bot Token wajib diisi!', 'error'); return; }
     await window.saveTelegramConfigEncrypted(token, chatId, '');
     window.updateTgStatusBadge();
-    window.showToast('Konfigurasi Telegram disimpan ✅', 'success');
+    window.showToast('Konfigurasi Telegram disimpan ', 'success');
     window.pushSettingTelegram();
 };
 
@@ -41,7 +41,7 @@ window.updateTgStatusBadge = async function() {
     if (cfg.active) {
         badge.style.background = '#e3fcef';
         badge.style.color = '#006644';
-        badge.innerText = '✅ Aktif';
+        badge.innerText = 'Aktif';
     } else {
         badge.style.background = '#eee';
         badge.style.color = '#666';
@@ -97,8 +97,8 @@ window.testTelegramNotif = async function() {
     // Simpan terenkripsi
     await window.saveTelegramConfigEncrypted(token, chatId, edgeUrl);
     window.updateTgStatusBadge();
-    statusEl.innerHTML = '<span style="color:#cc7b00;">⏳ Mengirim pesan tes...</span>';
-    const testMsg = `🔔 <b>Sinarkeu — Tes Notifikasi</b>\n\nKonfigurasi berhasil! Notifikasi transaksi akan dikirim ke sini.\n\n<i>Chat ID: ${chatId}</i>`;
+    statusEl.innerHTML = '<span style="color:#cc7b00;">Mengirim pesan tes...</span>';
+    const testMsg = `<b>Sinarkeu — Tes Notifikasi</b>\n\nKonfigurasi berhasil! Notifikasi transaksi akan dikirim ke sini.\n\n<i>Chat ID: ${chatId}</i>`;
     try {
         let res, data;
         if (edgeUrl) {
@@ -109,10 +109,10 @@ window.testTelegramNotif = async function() {
             });
             data = await res.json();
             if (data.ok) {
-                statusEl.innerHTML = '<span style="color:#006644;">✅ Berhasil via Edge Function!</span>';
-                window.showToast('Tes Telegram berhasil! ✅', 'success');
+                statusEl.innerHTML = '<span style="color:#006644;">Berhasil via Edge Function!</span>';
+                window.showToast('Tes Telegram berhasil! ', 'success');
             } else {
-                statusEl.innerHTML = `<span style="color:#de350b;">❌ Gagal: ${window.escapeHtml(data.error || JSON.stringify(data))}</span>`;
+                statusEl.innerHTML = `<span style="color:#de350b;">Gagal: ${window.escapeHtml(data.error || JSON.stringify(data))}</span>`;
             }
         } else {
             res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -122,24 +122,23 @@ window.testTelegramNotif = async function() {
             });
             data = await res.json();
             if (data.ok) {
-                statusEl.innerHTML = '<span style="color:#006644;">✅ Berhasil! Cek Telegram kamu.</span>';
-                window.showToast('Tes Telegram berhasil! ✅', 'success');
+                statusEl.innerHTML = '<span style="color:#006644;">Berhasil! Cek Telegram kamu.</span>';
+                window.showToast('Tes Telegram berhasil! ', 'success');
             } else {
                 let errMsg = data.description || JSON.stringify(data);
                 if (errMsg.includes('chat not found')) errMsg = 'Chat ID tidak ditemukan. Pastikan bot sudah di-/start atau ditambah ke grup.';
                 if (errMsg.includes('Unauthorized')) errMsg = 'Bot Token tidak valid. Cek kembali dari @BotFather.';
-                statusEl.innerHTML = `<span style="color:#de350b;">❌ ${window.escapeHtml(errMsg)}</span>`;
+                statusEl.innerHTML = `<span style="color:#de350b;">${window.escapeHtml(errMsg)}</span>`;
             }
         }
     } catch(e) {
-        statusEl.innerHTML = `<span style="color:#de350b;">❌ Error jaringan: ${window.escapeHtml(e.message)}</span>`;
+        statusEl.innerHTML = `<span style="color:#de350b;">Error jaringan: ${window.escapeHtml(e.message)}</span>`;
     }
 };
 
 window.buildTxNotifMessage = function(action, tx, bookName) {
-    let emoji = tx.type === 'income' ? '💰' : '💸';
     let typeLabel = tx.type === 'income' ? 'PEMASUKAN' : 'PENGELUARAN';
-    let actionLabel = action === 'TAMBAH' ? '➕ Transaksi Baru' : action === 'UBAH' ? '✏️ Transaksi Diubah' : '🗑️ Transaksi Dihapus';
+    let actionLabel = action === 'TAMBAH' ? 'Transaksi Baru' : action === 'UBAH' ? 'Transaksi Diubah' : 'Transaksi Dihapus';
     let totalInc = 0, totalExp = 0;
     window.txs.forEach(t => {
         let amt = Number(t.amount) || 0;
@@ -150,8 +149,7 @@ window.buildTxNotifMessage = function(action, tx, bookName) {
     // window.txs SEBELUM memanggil fungsi ini, sehingga saldo di atas sudah
     // mencerminkan kondisi setelah penghapusan — koreksi manual tidak diperlukan.
     let saldoSekarang = totalInc - totalExp;
-    let saldoEmoji = saldoSekarang >= 0 ? '🟢' : '🔴';
-    return `${emoji} <b>${actionLabel}</b>\n━━━━━━━━━━━━━━━━━━\n📒 <b>${bookName}</b>\n📂 ${typeLabel}${tx.category && tx.category !== 'Pemasukan' ? ' · <i>' + tx.category + '</i>' : ''}\n📝 ${tx.description}\n💵 <b>${window.rp(tx.amount)}</b>\n🕐 ${window.formatDateTime(tx.date)}\n━━━━━━━━━━━━━━━━━━\n${saldoEmoji} <b>Saldo Saat Ini: ${window.rp(saldoSekarang)}</b>`;
+    return `<b>${actionLabel}</b>\n━━━━━━━━━━━━━━━━━━\nBuku: <b>${bookName}</b>\nJenis: ${typeLabel}${tx.category && tx.category !== 'Pemasukan' ? ' · <i>' + tx.category + '</i>' : ''}\nCatatan: ${tx.description}\nJumlah: <b>${window.rp(tx.amount)}</b>\nWaktu: ${window.formatDateTime(tx.date)}\n━━━━━━━━━━━━━━━━━━\nSaldo Saat Ini: <b>${window.rp(saldoSekarang)}</b>`;
 };
 
 window.getCurrentBookName = function() {
@@ -194,7 +192,7 @@ window.sendDailySummaryToTelegram = async function() {
         else totalExp += amt;
     });
     let saldo = totalInc - totalExp;
-    let msg = `📅 <b>Ringkasan Harian Sinarkeu</b>\n${today}\n📒 Buku: <b>${window.getCurrentBookName()}</b>\n━━━━━━━━━━━━━━━━━━\n<b>Hari Ini:</b>\n💰 Masuk: ${window.rp(incToday)}\n💸 Keluar: ${window.rp(expToday)}\n📊 Selisih: ${window.rp(incToday - expToday)}\n\n<b>Bulan ${monthNames[m - 1]} ${y}:</b>\n💰 Pemasukan: ${window.rp(incBulan)}\n💸 Pengeluaran: ${window.rp(expBulan)}\n📊 Selisih: ${window.rp(incBulan - expBulan)}\n━━━━━━━━━━━━━━━━━━\n${saldo >= 0 ? '🟢' : '🔴'} <b>Saldo Total: ${window.rp(saldo)}</b>`;
+    let msg = `<b>Ringkasan Harian Sinarkeu</b>\n${today}\nBuku: <b>${window.getCurrentBookName()}</b>\n━━━━━━━━━━━━━━━━━━\n<b>Hari Ini:</b>\nMasuk: ${window.rp(incToday)}\nKeluar: ${window.rp(expToday)}\nSelisih: ${window.rp(incToday - expToday)}\n\n<b>Bulan ${monthNames[m - 1]} ${y}:</b>\nPemasukan: ${window.rp(incBulan)}\nPengeluaran: ${window.rp(expBulan)}\nSelisih: ${window.rp(incBulan - expBulan)}\n━━━━━━━━━━━━━━━━━━\n<b>Saldo Total: ${window.rp(saldo)}</b>`;
     window.sendTelegramNotif(msg);
 };
 

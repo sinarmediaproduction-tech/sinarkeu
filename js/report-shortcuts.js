@@ -1,5 +1,5 @@
 // ==================== MONTHLY REPORT SHORTCUTS ====================
-// openMonthlyReport: dipanggil dari tombol "📄 Laporan" di panel anggaran.
+// openMonthlyReport: dipanggil dari tombol "Laporan" di panel anggaran.
 // Membuka modal laporan bulanan, otomatis diset ke bulan & tahun saat ini,
 // lalu langsung menampilkan laporannya.
 window.openMonthlyReport = function() {
@@ -14,7 +14,7 @@ window.openMonthlyReport = function() {
     }
 };
 
-// generatePDFReport: dipanggil dari tombol pintas "📎 PDF" di panel anggaran.
+// generatePDFReport: dipanggil dari tombol pintas "PDF" di panel anggaran.
 // Langsung men-generate & mengunduh PDF laporan bulan ini tanpa perlu
 // membuka modal laporan terlebih dahulu.
 window.generatePDFReport = function() {
@@ -26,6 +26,6 @@ window.generatePDFReport = function() {
     if (typeof exportReportAsPDF === 'function') {
         exportReportAsPDF();
     } else {
-        window.showToast('❌ Fitur export PDF belum tersedia', 'error');
+        window.showToast('Fitur export PDF belum tersedia', 'error');
     }
 };

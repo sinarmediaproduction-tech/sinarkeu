@@ -134,18 +134,18 @@ window.renderBookList = function() {
         div.className = 'book-list-item';
         let isCurrent = b.id === window.currentBookId;
         let delBtn = window.books.length > 1 ? `<button class="btn-mini btn-mini-danger" onclick="window.deleteBook('${b.id}')">Hapus</button>` : '';
-        if (isCurrent) delBtn = '<span style="font-size:.65rem; color:#00875a; font-weight:bold;">✨ SEDANG AKTIF</span>';
+        if (isCurrent) delBtn = '<span style="font-size:.65rem; color:#00875a; font-weight:bold;">SEDANG AKTIF</span>';
         const parentBook = b.parentId ? window.books.find(x => x.id === b.parentId) : null;
         const parentLabel = parentBook ? `<div style="font-size:.6rem; color:#6b46c1; margin-top:2px;">↳ Anak dari: <b>${window.escapeHtml(parentBook.name)}</b></div>` : '';
         div.innerHTML = `
             <span class="book-list-name">
-                ${b.parentId ? '<span style="color:#6b46c1; font-size:.7rem;">📂 </span>' : ''}${window.escapeHtml(b.name)}
+                ${window.escapeHtml(b.name)}
                 ${parentLabel}
             </span>
             <div class="book-list-actions">
                 ${!isCurrent ? `<button class="btn-mini" onclick="window.switchBook('${b.id}')">Buka</button>` : ''}
-                <button class="btn-mini" style="background:#f0f4ff; color:#1a56db; border:1px solid #c5d8ff;" onclick="window.renameBook('${b.id}')">✏️ Nama</button>
-                ${b.parentId && isCurrent ? `<button class="btn-mini" style="background:#6b46c1; color:#fff;" onclick="window.closeModal('bookManagerModal'); window.openTutupAnakBuku()">📤 Tutup & Kirim</button>` : ''}
+                <button class="btn-mini" style="background:#f0f4ff; color:#1a56db; border:1px solid #c5d8ff;" onclick="window.renameBook('${b.id}')">Nama</button>
+                ${b.parentId && isCurrent ? `<button class="btn-mini" style="background:#6b46c1; color:#fff;" onclick="window.closeModal('bookManagerModal'); window.openTutupAnakBuku()">Tutup & Kirim</button>` : ''}
                 ${delBtn}
             </div>
         `;
@@ -167,7 +167,7 @@ window.renameBook = async function(id) {
     window.renderBookParentOptions();
     window.updateBookSelectDropdown();
     window.updateHeaderTitle();
-    window.showToast(`✅ Nama buku diubah ke "${book.name}"`, 'success');
+    window.showToast(`Nama buku diubah ke "${book.name}"`, 'success');
     await window.addCloudLog('SISTEM', `Mengganti nama buku ID ${id} menjadi "${book.name}"`);
 };
 
@@ -192,11 +192,11 @@ window.addNewBook = async function(e) {
     window.renderBookList();
     window.updateBookSelectDropdown();
     const parentName = parentId ? (window.books.find(b => b.id === parentId)?.name || '') : '';
-    const label = parentId ? `📂 "${name}" (anak dari "${parentName}")` : `📚 "${name}"`;
+    const label = parentId ? `"${name}" (anak dari "${parentName}")` : `"${name}"`;
     window.showToast(`${label} berhasil dibuat!`, 'success');
     await window.addCloudLog('SISTEM', `Membuat buku kas baru: "${name}" ${parentId ? '(anak dari ' + parentId + ')' : ''} dengan ID ${id}`);
     const cfg = window.getTgConfig();
-    if (cfg.active) window.sendTelegramNotif(`📚 <b>Buku Baru Dibuat</b>\n\nNama: ${name}${parentId ? '\nAnak dari: ' + parentName : ''}\nID: ${id}\nDevice: ${window.deviceId}`);
+    if (cfg.active) window.sendTelegramNotif(`<b>Buku Baru Dibuat</b>\n\nNama: ${name}${parentId ? '\nAnak dari: ' + parentName : ''}\nID: ${id}\nDevice: ${window.deviceId}`);
 };
 
 window.deleteBook = async function(id) {
@@ -207,13 +207,13 @@ window.deleteBook = async function(id) {
     }
     let b = window.books.find(x => x.id === id);
     if (!b) { window.showToast('Buku sudah tidak ada (mungkin sudah dihapus device lain)', 'warning'); return; }
-    const confirm1 = confirm(`⚠️ Hapus permanen buku "${b.name}"?\n\nData yang dihapus:\n- Semua transaksi dalam buku ini\n- Anggaran bulanan\n- Anggaran Dasar\n- Log aktivitas\n\nData TIDAK BISA dikembalikan!`);
+    const confirm1 = confirm(`Hapus permanen buku "${b.name}"?\n\nData yang dihapus:\n- Semua transaksi dalam buku ini\n- Anggaran bulanan\n- Anggaran Dasar\n- Log aktivitas\n\nData TIDAK BISA dikembalikan!`);
     if (!confirm1) return;
     const confirm2 = prompt(`Ketik "HAPUS ${b.name}" untuk konfirmasi penghapusan buku ini:`);
     if (confirm2 !== `HAPUS ${b.name}`) { alert('Konfirmasi gagal. Penghapusan dibatalkan.'); return; }
     const cfg = window.getTgConfig();
     if (cfg.active) {
-        window.sendTelegramNotif(`⚠️ <b>Penghapusan Buku</b>\n\nBuku <b>${b.name}</b> akan dihapus oleh device ${window.deviceId}\n\nData akan dihapus dalam 3 detik...`);
+        window.sendTelegramNotif(`<b>Penghapusan Buku</b>\n\nBuku <b>${b.name}</b> akan dihapus oleh device ${window.deviceId}\n\nData akan dihapus dalam 3 detik...`);
         await new Promise(r => setTimeout(r, 2000));
     }
     if (window.isOnline()) {
@@ -245,7 +245,7 @@ window.deleteBook = async function(id) {
     window.updateBookSelectDropdown();
     window.showToast(`Buku "${b.name}" & data cloud dihapus`, "warning");
     await window.pushSettingBooks();
-    if (cfg.active) window.sendTelegramNotif(`✅ <b>Buku Dihapus</b>\n\nBuku <b>${b.name}</b> telah dihapus permanen.\nDevice: ${window.deviceId}`);
+    if (cfg.active) window.sendTelegramNotif(`<b>Buku Dihapus</b>\n\nBuku <b>${b.name}</b> telah dihapus permanen.\nDevice: ${window.deviceId}`);
 };
 
 // Storage Estimasi
@@ -310,31 +310,31 @@ window.refreshStorageEstimate = async function() {
     const el  = document.getElementById('storageEstimContent');
     const btn = document.getElementById('storageRefreshBtn');
     if (!el) return;
-    el.innerHTML = '<div style="font-size:.7rem; color:#888; text-align:center; padding:8px 0;">⏳ Menghitung...</div>';
+    el.innerHTML = '<div style="font-size:.7rem; color:#888; text-align:center; padding:8px 0;">Menghitung...</div>';
     if (btn) btn.disabled = true;
     const data = await window.estimateSupabaseStorage();
     if (btn) btn.disabled = false;
     if (!data) {
-        el.innerHTML = '<div style="font-size:.7rem; color:#de350b; text-align:center; padding:8px 0;">⚠️ Tidak dapat memuat — pastikan koneksi Supabase aktif.</div>';
+        el.innerHTML = '<div style="font-size:.7rem; color:#de350b; text-align:center; padding:8px 0;">Tidak dapat memuat — pastikan koneksi Supabase aktif.</div>';
         return;
     }
     const { txCount, logCount, settCount, estimatedBytes } = data;
     const totalRows = txCount + logCount + settCount;
     const SUPABASE_FREE_DB_BYTES = 500 * 1024 * 1024;
-    const dbBar   = window.renderStorageBar(estimatedBytes, SUPABASE_FREE_DB_BYTES, '🗄️ Database (estimasi)');
+    const dbBar   = window.renderStorageBar(estimatedBytes, SUPABASE_FREE_DB_BYTES, 'Database (estimasi)');
     const pctNum  = Math.min((estimatedBytes / SUPABASE_FREE_DB_BYTES) * 100, 100);
     const statusColor = pctNum >= 90 ? '#de350b' : pctNum >= 70 ? '#cc7b00' : '#006644';
-    const statusText  = pctNum >= 90 ? '🚨 Hampir penuh! Pertimbangkan arsipkan data lama.' :
-                        pctNum >= 70 ? '⚠️ Mendekati batas — pantau secara berkala.' :
-                                       '✅ Kapasitas masih aman.';
+    const statusText  = pctNum >= 90 ? 'Hampir penuh! Pertimbangkan arsipkan data lama.' :
+                        pctNum >= 70 ? 'Mendekati batas — pantau secara berkala.' :
+                                       'Kapasitas masih aman.';
     el.innerHTML = `
         ${dbBar}
         <div style="background:#f5f5f5; border-radius:8px; padding:10px 12px; font-size:.68rem; color:#444; line-height:1.8; margin-bottom:10px;">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px 16px;">
-                <span>📋 Transaksi</span><b>${txCount.toLocaleString('id-ID')} baris</b>
-                <span>📜 Log Aktivitas</span><b>${logCount.toLocaleString('id-ID')} baris</b>
-                <span>⚙️ Setelan</span><b>${settCount.toLocaleString('id-ID')} baris</b>
-                <span>📊 Total Baris</span><b>${totalRows.toLocaleString('id-ID')} baris</b>
+                <span>Transaksi</span><b>${txCount.toLocaleString('id-ID')} baris</b>
+                <span>Log Aktivitas</span><b>${logCount.toLocaleString('id-ID')} baris</b>
+                <span>Setelan</span><b>${settCount.toLocaleString('id-ID')} baris</b>
+                <span>Total Baris</span><b>${totalRows.toLocaleString('id-ID')} baris</b>
             </div>
         </div>
         <div style="font-size:.68rem; color:${statusColor}; font-weight:600; text-align:center; padding:4px 8px; background:${pctNum>=90?'#fff5f5':pctNum>=70?'#fffbeb':'#e3fcef'}; border-radius:6px;">
@@ -395,13 +395,13 @@ window.openTutupAnakBuku = function() {
     if (el) {
         el.innerHTML = `
             <div style="background:#f3e8ff; border:1px solid #d6bcfa; border-radius:8px; padding:12px 14px; font-size:.78rem; line-height:1.8;">
-                <div>📂 <b>Anak Buku:</b> ${window.escapeHtml(book.name)}</div>
-                <div>📚 <b>Kirim ke Induk:</b> ${window.escapeHtml(parentBook.name)}</div>
+                <div><b>Anak Buku:</b> ${window.escapeHtml(book.name)}</div>
+                <div><b>Kirim ke Induk:</b> ${window.escapeHtml(parentBook.name)}</div>
                 <hr style="margin:8px 0; border-color:#e9d8fd;">
-                <div>📋 Jumlah transaksi: <b>${txCount}</b></div>
-                <div>💰 Total pemasukan: <b style="color:#00875a">${window.rp(totalInc)}</b></div>
-                <div>💸 Total pengeluaran: <b style="color:#de350b">${window.rp(totalExp)}</b></div>
-                <div>📊 <b>Net yang dikirim: <span style="color:${netTotal >= 0 ? '#00875a' : '#de350b'}">${window.rp(Math.abs(netTotal))}</span></b>
+                <div>Jumlah transaksi: <b>${txCount}</b></div>
+                <div>Total pemasukan: <b style="color:#00875a">${window.rp(totalInc)}</b></div>
+                <div>Total pengeluaran: <b style="color:#de350b">${window.rp(totalExp)}</b></div>
+                <div><b>Net yang dikirim: <span style="color:${netTotal >= 0 ? '#00875a' : '#de350b'}">${window.rp(Math.abs(netTotal))}</span></b>
                     ${netTotal < 0 ? ' (pengeluaran)' : ' (pemasukan)'}</div>
             </div>
             <div style="margin-top:10px; font-size:.72rem; color:#666;">
@@ -478,7 +478,7 @@ window.tutupAnakBuku = async function() {
     await window.addCloudLog('SISTEM', `Tutup anak buku "${book.name}" → kirim ${window.rp(txAmount)} ke "${parentBook.name}"`);
 
     window.closeModal('tutupAnakBukuModal');
-    window.showToast(`✅ Ringkasan ${window.rp(txAmount)} berhasil dikirim ke "${parentBook.name}"!`, 'success');
+    window.showToast(`Ringkasan ${window.rp(txAmount)} berhasil dikirim ke "${parentBook.name}"!`, 'success');
 
     // Tawarkan pindah ke buku induk
     setTimeout(() => {

@@ -5,13 +5,13 @@ window.updateSyncStatusBadge = function() {
     const online = window.isOnline();
     if (online && window.getCloudUrl() && window.getSupabaseKey()) {
         wrapper.className = 'sync-status-container online';
-        tag.innerHTML = '☁️ SUPABASE ON';
+        tag.innerHTML = 'SUPABASE ON';
     } else if (!navigator.onLine) {
         wrapper.className = 'sync-status-container offline';
-        tag.innerHTML = '📴 MODE BACA SAJA';
+        tag.innerHTML = 'MODE BACA SAJA';
     } else {
         wrapper.className = 'sync-status-container offline';
-        tag.innerHTML = '📴 CLOUD OFF';
+        tag.innerHTML = 'CLOUD OFF';
     }
 };
 window.updateSyncTimeBadge = function() {
@@ -19,10 +19,10 @@ window.updateSyncTimeBadge = function() {
     if (!el) return;
     if (window._lastSyncTime) {
         const timeStr = window._lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        el.innerText = `🕐 ${timeStr}`;
+        el.innerText = `${timeStr}`;
         el.style.color = '#00875a';
     } else {
-        el.innerText = `🕐 --:--:--`;
+        el.innerText = `--:--:--`;
         el.style.color = '#888';
     }
 };
@@ -85,9 +85,9 @@ window.submitLockPassword = async function() {
     const pwd = document.getElementById('lockPasswordInput').value;
     const status = document.getElementById('lockStatus');
     const btn = document.getElementById('lockSubmitBtn');
-    if (!pwd) { status.innerText = '❌ Password tidak boleh kosong'; return; }
+    if (!pwd) { status.innerText = 'Password tidak boleh kosong'; return; }
     btn.disabled = true;
-    btn.innerText = '⏳ Memverifikasi...';
+    btn.innerText = 'Memverifikasi...';
     status.innerText = '';
     const ok = await window.unlockWithPassword(pwd);
     if (ok) {
@@ -95,8 +95,8 @@ window.submitLockPassword = async function() {
         window.continueAppInit();
     } else {
         btn.disabled = false;
-        btn.innerText = '🔓 Buka';
-        status.innerText = '❌ Password salah';
+        btn.innerText = 'Buka';
+        status.innerText = 'Password salah';
         const inp = document.getElementById('lockPasswordInput');
         inp.classList.add('error-shake');
         inp.value = '';

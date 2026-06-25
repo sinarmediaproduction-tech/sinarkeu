@@ -73,18 +73,18 @@ window.runAIAnalysis = async function() {
     const copyBtn  = document.getElementById('aiCopyBtn');
     const WORKER_URL = (localStorage.getItem('sk_ai_worker_url') || '').trim();
     if (!WORKER_URL) {
-        resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">⚠️ Worker URL belum dikonfigurasi. Buka <a href="#" onclick="window.closeModal(\'aiAnalysisModal\'); window.openSetelanModal(); return false;" style="color:#de350b; font-weight:600; text-decoration:underline;">⚙️ Setelan → Analisis AI</a> untuk mengisi URL Cloudflare Worker Anda.</div>';
+        resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">Worker URL belum dikonfigurasi. Buka <a href="#" onclick="window.closeModal(\'aiAnalysisModal\'); window.openSetelanModal(); return false;" style="color:#de350b; font-weight:600; text-decoration:underline;">Setelan → Analisis AI</a> untuk mengisi URL Cloudflare Worker Anda.</div>';
         return;
     }
     const data = window.getAITransactionData();
     if (data.count === 0) { 
-        resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">⚠️ Tidak ada transaksi pada periode yang dipilih.</div>'; 
+        resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">Tidak ada transaksi pada periode yang dipilih.</div>'; 
         return; 
     }
     btn.disabled = true;
-    btn.innerText = '⏳ Menganalisis...';
+    btn.innerText = 'Menganalisis...';
     copyBtn.style.display = 'none';
-    resultEl.innerHTML = '<div style="text-align:center; color:#6b46c1; padding:40px 0;">🤖 Groq AI sedang membaca data keuangan Anda...</div>';
+    resultEl.innerHTML = '<div style="text-align:center; color:#6b46c1; padding:40px 0;">Groq AI sedang membaca data keuangan Anda...</div>';
     footerEl.innerText = '';
     const prompt = window.buildAIPrompt(data);
     try {
@@ -93,12 +93,12 @@ window.runAIAnalysis = async function() {
         if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`);
         const text = json?.result || '(Tidak ada respons)';
         resultEl.innerText = text;
-        footerEl.innerText = `✅ Dianalisis oleh Groq AI (LLaMA 3.3) · ${new Date().toLocaleString('id-ID')} · ${data.count} transaksi`;
+        footerEl.innerText = `Dianalisis oleh Groq AI (LLaMA 3.3) · ${new Date().toLocaleString('id-ID')} · ${data.count} transaksi`;
         copyBtn.style.display = 'inline-flex';
     } catch (e) {
-        resultEl.innerHTML = `<div style="color:#de350b; line-height:1.8;">❌ Gagal: <b>${e.message}</b><br><small>Kemungkinan penyebab:<br>• Worker URL salah atau tidak aktif<br>• Worker belum di-deploy ulang setelah edit<br>• API key tidak valid</small></div>`;
+        resultEl.innerHTML = `<div style="color:#de350b; line-height:1.8;">Gagal: <b>${e.message}</b><br><small>Kemungkinan penyebab:<br>• Worker URL salah atau tidak aktif<br>• Worker belum di-deploy ulang setelah edit<br>• API key tidak valid</small></div>`;
         footerEl.innerText = '';
-    } finally { btn.disabled = false; btn.innerText = '✨ Analisis Sekarang'; }
+    } finally { btn.disabled = false; btn.innerText = 'Analisis Sekarang'; }
 };
 window.updateAiWorkerBadge = function() {
     const badge = document.getElementById('aiWorkerStatusBadge');
@@ -110,11 +110,11 @@ window.updateAiWorkerBadge = function() {
 window.saveAiWorkerUrl = function() {
     const url = (document.getElementById('aiWorkerUrlInput')?.value || '').trim();
     const st  = document.getElementById('aiWorkerTestStatus');
-    if (!url) { st.style.color = '#de350b'; st.innerText = '❌ URL tidak boleh kosong!'; return; }
-    if (!url.startsWith('http')) { st.style.color = '#de350b'; st.innerText = '❌ URL harus diawali https://'; return; }
+    if (!url) { st.style.color = '#de350b'; st.innerText = 'URL tidak boleh kosong!'; return; }
+    if (!url.startsWith('http')) { st.style.color = '#de350b'; st.innerText = 'URL harus diawali https://'; return; }
     localStorage.setItem('sk_ai_worker_url', url);
     st.style.color = '#00875a';
-    st.innerText = '✅ Worker URL berhasil disimpan!';
+    st.innerText = 'Worker URL berhasil disimpan!';
     window.updateAiWorkerBadge();
     window.showToast('Worker URL AI disimpan!', 'success');
 };
@@ -131,21 +131,21 @@ window.clearAiWorkerUrl = function() {
 window.testAiWorkerUrl = async function() {
     const url = (document.getElementById('aiWorkerUrlInput')?.value || '').trim();
     const st  = document.getElementById('aiWorkerTestStatus');
-    if (!url) { st.style.color='#de350b'; st.innerText='❌ Isi URL dulu sebelum tes.'; return; }
+    if (!url) { st.style.color='#de350b'; st.innerText='Isi URL dulu sebelum tes.'; return; }
     st.style.color = '#cc7b00';
-    st.innerText = '⏳ Menghubungi worker...';
+    st.innerText = 'Menghubungi worker...';
     try {
         const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: 'ping' }), signal: AbortSignal.timeout(8000) });
         if (res.ok || res.status === 400 || res.status === 422) {
             st.style.color = '#00875a';
-            st.innerText = '✅ Worker merespons! Koneksi berhasil.';
+            st.innerText = 'Worker merespons! Koneksi berhasil.';
         } else {
             st.style.color = '#de350b';
-            st.innerText = `⚠️ Worker merespons tapi status: ${res.status}. Periksa konfigurasi worker.`;
+            st.innerText = `Worker merespons tapi status: ${res.status}. Periksa konfigurasi worker.`;
         }
     } catch (e) {
         st.style.color = '#de350b';
-        st.innerText = `❌ Gagal terhubung: ${e.message}`;
+        st.innerText = `Gagal terhubung: ${e.message}`;
     }
 };
 window.copyAIResult = function() {
@@ -165,11 +165,11 @@ window.runFaseAIAnalysis = async function() {
     const copyBtn  = document.getElementById('faseAICopyBtn');
 
     if (!fase || !fase.fase) {
-        resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">⚠️ Atur fase kehidupan terlebih dahulu.<br><a href="#" onclick="window.closeModal(\'faseAIModal\'); window.openFaseKehidupanModal(); return false;" style="color:#e53e8a; font-weight:600;">💍 Atur Fase Kehidupan</a></div>';
+        resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">Atur fase kehidupan terlebih dahulu.<br><a href="#" onclick="window.closeModal(\'faseAIModal\'); window.openFaseKehidupanModal(); return false;" style="color:#e53e8a; font-weight:600;">Atur Fase Kehidupan</a></div>';
         return;
     }
     if (!WORKER_URL) {
-        resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">⚠️ Worker URL belum dikonfigurasi.<br><a href="#" onclick="window.closeModal(\'faseAIModal\'); window.openSetelanModal(); return false;" style="color:#de350b; font-weight:600;">⚙️ Setelan → Analisis AI</a></div>';
+        resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">Worker URL belum dikonfigurasi.<br><a href="#" onclick="window.closeModal(\'faseAIModal\'); window.openSetelanModal(); return false;" style="color:#de350b; font-weight:600;">Setelan → Analisis AI</a></div>';
         return;
     }
 
@@ -219,7 +219,7 @@ DATA KEUANGAN SAAT INI:
 - Total Saldo: Rp ${saldo.toLocaleString('id-ID')}
 - Anggaran Bulanan: Rp ${anggaranBulanan.toLocaleString('id-ID')}
 - Dana Darurat Ideal (12× bulanan): Rp ${danaDarurat.toLocaleString('id-ID')}
-- Status Dana Darurat: ${saldo >= danaDarurat ? '✅ Sudah tercapai' : `⚠️ Kurang Rp ${(danaDarurat - saldo).toLocaleString('id-ID')}`}
+- Status Dana Darurat: ${saldo >= danaDarurat ? 'Sudah tercapai' : `Kurang Rp ${(danaDarurat - saldo).toLocaleString('id-ID')}`}
 - Anggaran Tahunan: Rp ${anggaranTahunan.toLocaleString('id-ID')}
 
 3 BULAN TERAKHIR:
@@ -238,9 +238,9 @@ INSTRUKSI:
 Gunakan bahasa Indonesia yang hangat, to-the-point, dan motivatif. Maksimal 450 kata. Format dengan emoji dan poin-poin.`;
 
     runBtn.disabled = true;
-    runBtn.innerText = '⏳ Menganalisis...';
+    runBtn.innerText = 'Menganalisis...';
     copyBtn.style.display = 'none';
-    resultEl.innerHTML = '<div style="text-align:center; color:#e53e8a; padding:40px 0;">🤖 AI sedang menganalisis keuangan berdasarkan fase kehidupan Anda...</div>';
+    resultEl.innerHTML = '<div style="text-align:center; color:#e53e8a; padding:40px 0;">AI sedang menganalisis keuangan berdasarkan fase kehidupan Anda...</div>';
     footerEl.innerText = '';
 
     try {
@@ -249,13 +249,13 @@ Gunakan bahasa Indonesia yang hangat, to-the-point, dan motivatif. Maksimal 450 
         if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`);
         const text = json?.result || '(Tidak ada respons)';
         resultEl.innerText = text;
-        footerEl.innerText = `✅ Dianalisis berdasarkan fase: ${faseData.nama} · ${new Date().toLocaleString('id-ID')}`;
+        footerEl.innerText = `Dianalisis berdasarkan fase: ${faseData.nama} · ${new Date().toLocaleString('id-ID')}`;
         copyBtn.style.display = 'inline-flex';
     } catch(e) {
-        resultEl.innerHTML = `<div style="color:#de350b; line-height:1.8;">❌ Gagal: <b>${e.message}</b></div>`;
+        resultEl.innerHTML = `<div style="color:#de350b; line-height:1.8;">Gagal: <b>${e.message}</b></div>`;
     } finally {
         runBtn.disabled = false;
-        runBtn.innerText = '✨ Analisis Sekarang';
+        runBtn.innerText = 'Analisis Sekarang';
     }
 };
 

@@ -133,7 +133,7 @@ window.forceFullSync = async function() {
         await window.addCloudLog('SISTEM', 'Sinkronisasi penuh manual dari perangkat ' + window.deviceId);
     } catch (e) {
         console.error('[Sync] Gagal sinkronisasi:', e);
-        window.showToast('❌ Gagal sinkronisasi, coba lagi nanti', 'error');
+        window.showToast('Gagal sinkronisasi, coba lagi nanti', 'error');
     }
 };
 

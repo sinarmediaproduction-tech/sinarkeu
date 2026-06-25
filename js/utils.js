@@ -28,10 +28,10 @@ window.showToast = function(msg, type = 'success') {
     const toast = document.getElementById('toastMessage');
     const icon = document.getElementById('toastIcon');
     const text = document.getElementById('toastText');
-    if (type === 'success') { icon.innerHTML = '✅'; toast.style.background = '#00875a'; }
-    else if (type === 'error') { icon.innerHTML = '❌'; toast.style.background = '#de350b'; }
-    else if (type === 'warning') { icon.innerHTML = '⚠️'; toast.style.background = '#cc7b00'; }
-    else { icon.innerHTML = 'ℹ️'; toast.style.background = '#1a1a1a'; }
+    if (type === 'success') { icon.innerHTML = ''; toast.style.background = '#00875a'; }
+    else if (type === 'error') { icon.innerHTML = ''; toast.style.background = '#de350b'; }
+    else if (type === 'warning') { icon.innerHTML = ''; toast.style.background = '#cc7b00'; }
+    else { icon.innerHTML = 'ℹ'; toast.style.background = '#1a1a1a'; }
     text.innerText = msg;
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 3000);
@@ -43,7 +43,7 @@ window.isOnline = function() {
 
 window.requireOnline = function(operationName) {
     if (!window.isOnline()) {
-        window.showToast(`⚠️ Anda harus ONLINE untuk ${operationName}!`, 'warning');
+        window.showToast(`Anda harus ONLINE untuk ${operationName}!`, 'warning');
         return false;
     }
     return true;
@@ -52,7 +52,7 @@ window.requireOnline = function(operationName) {
 // Modal utility (dipanggil dari onclick di HTML)
 window.openModal = function(id) {
     if (!window.isOnline() && (id === 'addModal' || id === 'editModal' || id === 'bookManagerModal')) {
-        window.showToast('⚠️ Anda harus ONLINE untuk operasi ini!', 'warning');
+        window.showToast('Anda harus ONLINE untuk operasi ini!', 'warning');
         return;
     }
     document.getElementById(id).classList.add('show');

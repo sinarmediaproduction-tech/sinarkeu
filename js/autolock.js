@@ -49,7 +49,7 @@
 
     function _showWarn(secsLeft) {
         if (!_warnEl) _createWarnEl();
-        _warnEl.innerHTML = `🔒 Mengunci dalam <b>${secsLeft}</b> detik — <u>klik untuk tetap aktif</u>`;
+        _warnEl.innerHTML = `Mengunci dalam <b>${secsLeft}</b> detik — <u>klik untuk tetap aktif</u>`;
         _warnEl.style.opacity  = '1';
         _warnEl.style.transform = 'translateX(-50%) translateY(0)';
     }

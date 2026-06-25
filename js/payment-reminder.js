@@ -76,7 +76,7 @@ window.savePaymentReminder = async function(bookId, reminderData) {
             }
         } catch (e) {
             console.error('[PaymentReminder] Gagal save ke Supabase:', e);
-            window.showToast('⚠️ Data tersimpan lokal, gagal sync ke cloud', 'warning');
+            window.showToast('Data tersimpan lokal, gagal sync ke cloud', 'warning');
             return false;
         }
     }
@@ -113,7 +113,7 @@ window.deletePaymentReminder = async function(reminderId, bookId) {
             }
         } catch (e) {
             console.error('[PaymentReminder] Gagal hapus dari Supabase:', e);
-            window.showToast('⚠️ Data lokal terhapus, gagal sync ke cloud', 'warning');
+            window.showToast('Data lokal terhapus, gagal sync ke cloud', 'warning');
             return false;
         }
     }
@@ -213,7 +213,7 @@ window.migratePaymentReminders = async function(bookId) {
         }));
         await window.callSupabaseAPI('payment_reminders', 'POST', payload);
         console.log('[PaymentReminder] Migrasi berhasil!');
-        window.showToast(`✅ ${toMigrate.length} jadwal pembayaran berhasil dimigrasi ke cloud`, 'success');
+        window.showToast(`${toMigrate.length} jadwal pembayaran berhasil dimigrasi ke cloud`, 'success');
     } catch (e) {
         console.error('[PaymentReminder] Gagal migrasi:', e);
     }
@@ -242,9 +242,9 @@ window.renderPaymentReminders = async function() {
     const urgent = sorted.filter(s => s.days <= 3);
     if (urgent.length > 0 && upcomingAlert) {
         upcomingAlert.style.display = 'block';
-        upcomingAlert.innerHTML = '⚠️ <strong>Segera jatuh tempo:</strong><br>' +
+        upcomingAlert.innerHTML = '<strong>Segera jatuh tempo:</strong><br>' +
             urgent.map(s => {
-                const label = s.days === 0 ? '🔴 Hari ini!' : `🟡 ${s.days} hari lagi`;
+                const label = s.days === 0 ? 'Hari ini!' : `${s.days} hari lagi`;
                 return `• ${window.escapeHtml(s.item.name)} — ${window.formatNextDate(s.item)} <strong>${label}</strong>`;
             }).join('<br>');
     } else if (upcomingAlert) {
@@ -257,7 +257,7 @@ window.renderPaymentReminders = async function() {
         const recLabel = item.recurrence === 'monthly'
             ? `Bulanan — tgl ${item.day}`
             : `Tahunan — ${['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][item.month-1]} tgl ${item.day}`;
-        const dayLabel = days === 0 ? '🔴 Hari ini!' : days <= 3 ? `🟡 ${days} hari lagi` : `🟢 ${days} hari lagi`;
+        const dayLabel = days === 0 ? 'Hari ini!' : `${days} hari lagi`;
         
         const el = document.createElement('div');
         el.style.cssText = `display:flex; align-items:center; gap:10px; background:${isUrgent ? '#fef3c7' : '#f9fafb'}; border:1.5px solid ${isUrgent ? '#f59e0b' : '#e5e7eb'}; border-radius:8px; padding:10px 12px;`;
@@ -269,8 +269,8 @@ window.renderPaymentReminders = async function() {
             </div>
             <div style="font-size:.68rem; font-weight:700; white-space:nowrap; color:${isUrgent ? '#92400e' : '#374151'};">${dayLabel}</div>
             <div style="display:flex; gap:4px;">
-                <button onclick="window.editPaymentReminder('${item.id}')" style="background:none; border:1px solid #d1d5db; border-radius:5px; padding:3px 7px; cursor:pointer; font-size:.7rem;" title="Edit">✏️</button>
-                <button onclick="window.deletePaymentReminderHandler('${item.id}')" style="background:none; border:1px solid #fca5a5; border-radius:5px; padding:3px 7px; cursor:pointer; font-size:.7rem; color:#ef4444;" title="Hapus">🗑️</button>
+                <button onclick="window.editPaymentReminder('${item.id}')" style="background:none; border:1px solid #d1d5db; border-radius:5px; padding:3px 7px; cursor:pointer; font-size:.7rem;" title="Edit">Edit</button>
+                <button onclick="window.deletePaymentReminderHandler('${item.id}')" style="background:none; border:1px solid #fca5a5; border-radius:5px; padding:3px 7px; cursor:pointer; font-size:.7rem; color:#ef4444;" title="Hapus">Hapus</button>
             </div>
         `;
         container.appendChild(el);
@@ -283,7 +283,7 @@ window.renderPaymentReminders = async function() {
 window.savePaymentReminderHandler = async function() {
     const bookId = window.currentBookId;
     if (!bookId) {
-        window.showToast('❌ Buku tidak ditemukan', 'error');
+        window.showToast('Buku tidak ditemukan', 'error');
         return;
     }
     
@@ -311,12 +311,12 @@ window.savePaymentReminderHandler = async function() {
     
     const success = await window.savePaymentReminder(bookId, reminderData);
     if (success) {
-        window.showToast('✅ Jadwal pembayaran disimpan!', 'success');
+        window.showToast('Jadwal pembayaran disimpan!', 'success');
         window.cancelPrEdit();
         await window.renderPaymentReminders();
         window.updatePaymentReminderBanner();
     } else {
-        window.showToast('❌ Gagal menyimpan jadwal', 'error');
+        window.showToast('Gagal menyimpan jadwal', 'error');
     }
 };
 
@@ -329,11 +329,11 @@ window.deletePaymentReminderHandler = async function(id) {
     
     const success = await window.deletePaymentReminder(id, bookId);
     if (success) {
-        window.showToast('🗑️ Jadwal dihapus', 'success');
+        window.showToast('Jadwal dihapus', 'success');
         await window.renderPaymentReminders();
         window.updatePaymentReminderBanner();
     } else {
-        window.showToast('❌ Gagal menghapus jadwal', 'error');
+        window.showToast('Gagal menghapus jadwal', 'error');
     }
 };
 
@@ -352,7 +352,7 @@ window.editPaymentReminder = async function(id) {
     document.getElementById('prRecurrence').value = item.recurrence;
     document.getElementById('prMonth').value = item.month || 1;
     document.getElementById('prNote').value = item.note || '';
-    document.getElementById('prFormTitle').textContent = '✏️ Edit Jadwal';
+    document.getElementById('prFormTitle').textContent = 'Edit Jadwal';
     document.getElementById('prFormStatus').textContent = '';
     window.togglePrMonthField();
 };
@@ -379,7 +379,7 @@ window.updatePaymentReminderBanner = function(list) {
             banner.style.display = 'block';
             bannerText.innerHTML = urgent.map(s => {
                 const label = s.days === 0 ? '<strong style="color:#ef4444">Hari ini!</strong>' : `<strong>${s.days} hari lagi</strong>`;
-                return `🔔 <strong>${window.escapeHtml(s.item.name)}</strong> — ${window.formatNextDate(s.item)} · ${label}`;
+                return `<strong>${window.escapeHtml(s.item.name)}</strong> — ${window.formatNextDate(s.item)} · ${label}`;
             }).join('<br>');
         }
         if (badge) { badge.style.display = 'inline-block'; badge.textContent = urgent.length; }

@@ -273,8 +273,8 @@ window.clearLockError = function() {
 window.toggleLockEye = function() {
     const inp = document.getElementById('lockPasswordInput');
     const btn = document.getElementById('lockEyeBtn');
-    if (inp.type === 'password') { inp.type = 'text'; btn.innerText = '🙈'; }
-    else { inp.type = 'password'; btn.innerText = '👁'; }
+    if (inp.type === 'password') { inp.type = 'text'; btn.innerText = 'Tutup'; }
+    else { inp.type = 'password'; btn.innerText = 'Lihat'; }
 };
 window.evalSetupPwdStrength = function() {
     const pwd = document.getElementById('setupPwdInput') ? document.getElementById('setupPwdInput').value : '';

@@ -429,10 +429,10 @@ function exportReportAsPDF() {
   <div class="brand">Sinarkeu · Laporan Keuangan</div>
   <h1>${monthName(month)} ${year}</h1>
   <div class="meta">
-    <span>📁 Buku Kas: <b>${bookName}</b></span>
-    <span>👤 Akun: <b>${accName}</b></span>
-    <span>📅 Dicetak: <b>${nowStr()}</b></span>
-    <span>📊 Total Transaksi: <b>${allTx.length}</b></span>
+    <span>Buku Kas: <b>${bookName}</b></span>
+    <span>Akun: <b>${accName}</b></span>
+    <span>Dicetak: <b>${nowStr()}</b></span>
+    <span>Total Transaksi: <b>${allTx.length}</b></span>
   </div>
 </div>
 
@@ -442,15 +442,15 @@ function exportReportAsPDF() {
   <div class="section-title">Ringkasan Keuangan</div>
   <div class="kpi-grid">
     <div class="kpi kpi-income">
-      <div class="label">💰 Total Pemasukan</div>
+      <div class="label">Total Pemasukan</div>
       <div class="value">${fmtRp(income)}</div>
     </div>
     <div class="kpi kpi-expense">
-      <div class="label">💸 Total Pengeluaran</div>
+      <div class="label">Total Pengeluaran</div>
       <div class="value">${fmtRp(expense)}</div>
     </div>
     <div class="kpi ${balance >= 0 ? 'kpi-balance-pos' : 'kpi-balance-neg'}">
-      <div class="label">📈 Saldo Bersih</div>
+      <div class="label">Saldo Bersih</div>
       <div class="value">${fmtRp(balance)}</div>
     </div>
   </div>
@@ -458,7 +458,7 @@ function exportReportAsPDF() {
   ${totalBudget > 0 ? `
   <div class="budget-alert">
     <div>
-      <div class="ba-label">🎯 Anggaran Bulan Ini</div>
+      <div class="ba-label">Anggaran Bulan Ini</div>
       <div class="ba-value">${fmtRp(totalBudget)}</div>
     </div>
     <div class="ba-sisa">

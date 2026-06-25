@@ -25,7 +25,6 @@
 <!-- ===== PASSWORD LOCK SCREEN ===== -->
 <div id="passwordLockScreen">
     <div class="lock-card">
-        <span class="lock-icon">🔒</span>
         <div class="lock-title">Sinarkeu</div>
         <div class="lock-subtitle" id="lockSubtitle">Pilih akun dan masukkan password</div>
         <div class="lock-account-picker" id="lockAccountPicker"></div>
@@ -34,14 +33,14 @@
                    placeholder="Password"
                    onkeydown="if(event.key==='Enter') submitLockPassword()"
                    oninput="clearLockError()">
-            <button class="lock-eye-btn" onclick="toggleLockEye()" id="lockEyeBtn" title="Tampilkan/sembunyikan">👁</button>
+            <button class="lock-eye-btn" onclick="toggleLockEye()" id="lockEyeBtn" title="Tampilkan/sembunyikan">Lihat</button>
         </div>
         <div style="margin-top:14px;">
-            <button class="lock-btn" id="lockSubmitBtn" onclick="submitLockPassword()">🔓 Buka</button>
+            <button class="lock-btn" id="lockSubmitBtn" onclick="submitLockPassword()">Buka</button>
         </div>
         <div class="lock-status" id="lockStatus"></div>
         <button class="lock-add-account" onclick="openAccountManagerFromLock()">＋ Tambah akun baru</button>
-        <button class="lock-manual-btn" onclick="toggleManual()">📖 Panduan Pengguna</button>
+        <button class="lock-manual-btn" onclick="toggleManual()">Panduan Pengguna</button>
     </div>
 </div>
 
@@ -49,7 +48,7 @@
 <div id="manualModal" class="modal" style="z-index:9999;">
     <div class="modal-content report" style="max-width:780px; max-height:90vh; padding:20px;">
         <div class="modal-header">
-            <h3>📖 Panduan Lengkap Sinarkeu</h3>
+            <h3>Panduan Lengkap Sinarkeu</h3>
             <button class="modal-close" onclick="closeModal('manualModal')">×</button>
         </div>
         <div style="overflow-y:auto; max-height:70vh; padding-right:6px; font-size:.82rem; line-height:1.7; color:#1a1a1a;">
@@ -57,30 +56,30 @@
             <p>Aplikasi ini adalah buku kas digital multi‑akun yang bisa disinkronkan ke database Supabase milik Anda sendiri. Kredensial koneksi dan seluruh data pengaturan (anggaran, konfigurasi Telegram, dll.) dienkripsi dengan password pribadi Anda sebelum dikirim ke cloud.</p>
             <hr style="margin:14px 0;">
 
-            <h5>🔐 1. Setup Awal</h5>
+            <h5>1. Setup Awal</h5>
             <ul>
                 <li><strong>Supabase URL &amp; Anon Key</strong> – Dapatkan dari dashboard Supabase Anda. Masukkan di form setup pertama kali.</li>
                 <li><strong>Password Enkripsi</strong> – Buat password minimal 6 karakter. <strong>Simpan baik‑baik</strong>, karena tidak bisa dipulihkan. Password ini digunakan untuk membuka kunci aplikasi setiap kali.</li>
                 <li><strong>Apa yang dilindungi password ini?</strong> Password enkripsi melindungi kredensial Supabase Anda dan seluruh data pengaturan (anggaran, Telegram, dll.) saat disimpan maupun dikirim ke cloud. Keamanan data transaksi di database Supabase Anda sendiri ditentukan oleh aturan akses (Row Level Security) yang Anda atur di project Supabase tersebut, bukan oleh password ini.</li>
             </ul>
 
-            <h5>👤 2. Manajemen Akun</h5>
+            <h5>2. Manajemen Akun</h5>
             <ul>
                 <li>Klik tombol <strong>"Ganti Akun"</strong> di pojok kanan atas.</li>
                 <li>Setiap akun terhubung ke <em>database Supabase yang berbeda</em>. Cocok untuk memisahkan keuangan pribadi, bisnis, atau keluarga.</li>
-                <li>Untuk menambah akun, buka <strong>"Manajer Akun"</strong> dari layar kunci atau dari menu <strong>⚙️ Setelan</strong>.</li>
+                <li>Untuk menambah akun, buka <strong>"Manajer Akun"</strong> dari layar kunci atau dari menu <strong>Setelan</strong>.</li>
                 <li>Setiap akun memiliki password enkripsi sendiri – Anda akan diminta saat beralih akun.</li>
             </ul>
 
-            <h5>📚 3. Buku Kas</h5>
+            <h5>3. Buku Kas</h5>
             <ul>
                 <li>Di dalam satu akun, Anda bisa membuat <strong>banyak buku kas</strong> (misal: "Bulanan", "Investasi", "Proyek A").</li>
                 <li>Gunakan dropdown <strong>"BUKU"</strong> di header untuk berpindah buku.</li>
-                <li>Kelola buku (tambah/hapus) melalui tombol <strong>"Kelola"</strong> atau menu <strong>⚙️ Setelan</strong>.</li>
+                <li>Kelola buku (tambah/hapus) melalui tombol <strong>"Kelola"</strong> atau menu <strong>Setelan</strong>.</li>
                 <li>Setiap buku punya anggaran, transaksi, dan lognya sendiri.</li>
             </ul>
 
-            <h5>💰 4. Transaksi</h5>
+            <h5>4. Transaksi</h5>
             <ul>
                 <li>Tekan tombol <strong>"+ Transaksi"</strong> untuk mencatat pemasukan atau pengeluaran.</li>
                 <li>Isi <strong>jenis</strong>, <strong>kategori</strong> (untuk pengeluaran), <strong>deskripsi</strong>, dan <strong>jumlah</strong>.</li>
@@ -89,7 +88,7 @@
                 <li>Gunakan <strong>pencarian</strong>, <strong>filter jenis</strong>, dan <strong>filter tanggal</strong> untuk menemukan transaksi dengan cepat.</li>
             </ul>
 
-            <h5>📊 5. Anggaran</h5>
+            <h5>5. Anggaran</h5>
             <ul>
                 <li><strong>Anggaran Dasar</strong> – Template yang berlaku otomatis untuk setiap bulan baru. Atur melalui tombol <strong>"Dasar"</strong> di panel anggaran.</li>
                 <li><strong>Anggaran Bulanan</strong> – Klik <strong>"Anggarkan"</strong> untuk mengatur anggaran khusus untuk bulan tertentu. Ini akan menimpa Anggaran Dasar hanya untuk bulan itu.</li>
@@ -97,51 +96,51 @@
                 <li>Sistem memberi <strong>peringatan visual</strong> dan <strong>notifikasi Telegram</strong> saat anggaran mencapai 80% dan 100%.</li>
             </ul>
 
-            <h5>📈 6. Laporan &amp; Grafik</h5>
+            <h5>6. Laporan &amp; Grafik</h5>
             <ul>
                 <li>Panel <strong>"Pengeluaran per Kategori"</strong> menampilkan diagram donat – klik judulnya untuk membuka/tutup.</li>
                 <li>Tombol <strong>"Laporan"</strong> membuka laporan bulanan lengkap dengan tabel perbandingan target vs realisasi, serta grafik batang.</li>
                 <li>Laporan bisa diekspor ke <strong>PDF</strong> dengan tombol di dalam modal.</li>
             </ul>
 
-            <h5>🤖 7. Analisis AI</h5>
+            <h5>7. Analisis AI</h5>
             <ul>
                 <li>Fitur ini membutuhkan <strong>URL Cloudflare Worker</strong> yang Anda deploy sendiri (gratis).</li>
-                <li>Masukkan URL di <strong>⚙️ Setelan → Analisis AI</strong>.</li>
+                <li>Masukkan URL di <strong>Setelan → Analisis AI</strong>.</li>
                 <li>Setelah dikonfigurasi, klik <strong>"Analisis AI"</strong> di dashboard, pilih periode dan jenis analisis, lalu dapatkan wawasan dari Groq AI (LLaMA).</li>
             </ul>
 
-            <h5>📲 8. Notifikasi Telegram</h5>
+            <h5>8. Notifikasi Telegram</h5>
             <ul>
-                <li>Buka <strong>⚙️ Setelan → Notifikasi Telegram</strong>.</li>
+                <li>Buka <strong>Setelan → Notifikasi Telegram</strong>.</li>
                 <li>Isi <strong>Bot Token</strong> (dari @BotFather) dan <strong>Chat ID</strong> (dari @userinfobot).</li>
                 <li>Setelah disimpan, Anda akan menerima notifikasi untuk setiap transaksi, peringatan anggaran, dan ringkasan harian otomatis pukul 21:00.</li>
             </ul>
 
-            <h5>💾 9. Backup &amp; Restore</h5>
+            <h5>9. Backup &amp; Restore</h5>
             <ul>
                 <li><strong>Backup Lokal</strong> – Simpan snapshot data ke localStorage browser (maksimal 5 versi).</li>
                 <li><strong>Backup Cloud</strong> – Simpan ke tabel Supabase, bisa di-restore dari perangkat lain.</li>
-                <li><strong>Google Sheets</strong> – Masukkan URL Web App di <strong>⚙️ Setelan</strong> untuk mengirim backup ke spreadsheet Google.</li>
+                <li><strong>Google Sheets</strong> – Masukkan URL Web App di <strong>Setelan</strong> untuk mengirim backup ke spreadsheet Google.</li>
                 <li>Semua backup otomatis berjalan setiap hari (untuk cloud) dan dapat dipicu manual.</li>
             </ul>
 
-            <h5>📦 10. Ekspor &amp; Impor Data</h5>
+            <h5>10. Ekspor &amp; Impor Data</h5>
             <ul>
                 <li>Ekspor ke <strong>CSV</strong> untuk dibuka di Excel, atau <strong>JSON</strong> untuk arsip.</li>
                 <li>Impor data dari file JSON (duplikat ID akan dilewati).</li>
-                <li>Fitur <strong>"Arsipkan JSON &amp; Kosongkan Database"</strong> di <strong>⚙️ Setelan</strong> – berguna untuk membersihkan data lama dan tetap mempertahankan arsip.</li>
+                <li>Fitur <strong>"Arsipkan JSON &amp; Kosongkan Database"</strong> di <strong>Setelan</strong> – berguna untuk membersihkan data lama dan tetap mempertahankan arsip.</li>
             </ul>
 
-            <h5>📊 11. Fitur Pendukung Lainnya</h5>
+            <h5>11. Fitur Pendukung Lainnya</h5>
             <ul>
                 <li><strong>Kurs USD/IDR</strong> – Ditampilkan secara otomatis dari beberapa sumber API.</li>
                 <li><strong>Harga Emas Antam</strong> – Bisa diaktifkan dengan API key dari <em>emas.maulanar.my.id</em> (gratis).</li>
-                <li><strong>Zakat Maal</strong> – Atur persentase di <strong>⚙️ Setelan</strong>, dan kartu zakat akan muncul di dashboard.</li>
+                <li><strong>Zakat Maal</strong> – Atur persentase di <strong>Setelan</strong>, dan kartu zakat akan muncul di dashboard.</li>
                 <li><strong>Log Audit</strong> – Semua aktivitas tercatat dan bisa dilihat di bawah tabel transaksi.</li>
             </ul>
 
-            <h5>📶 12. Mode Offline &amp; Sinkronisasi</h5>
+            <h5>12. Mode Offline &amp; Sinkronisasi</h5>
             <ul>
                 <li>Aplikasi bekerja <strong>offline</strong> dalam mode baca‑saja (tambah/edit/hapus dinonaktifkan).</li>
                 <li>Setiap kali koneksi pulih, sinkronisasi terjadi otomatis setiap 30 detik.</li>
@@ -149,7 +148,7 @@
             </ul>
 
             <hr style="margin:14px 0;">
-            <p><strong>💡 Tips:</strong> Gunakan password yang kuat dan simpan di tempat aman. Manfaatkan fitur notifikasi Telegram agar tidak ketinggalan perubahan.</p>
+            <p><strong>Tips:</strong> Gunakan password yang kuat dan simpan di tempat aman. Manfaatkan fitur notifikasi Telegram agar tidak ketinggalan perubahan.</p>
             <p style="color:#888; font-size:.7rem;">Sinarkeu – v1.0 (Multi Akun &amp; Buku Kas)</p>
         </div>
         <div class="modal-footer" style="border-top:1px solid #eee; padding-top:12px; margin-top:12px;">
@@ -168,23 +167,22 @@
         <div class="book-selector">
             <span id="activeAccountLabel" style="font-size:.7rem;font-weight:700;color:#1a1a1a;padding:4px 10px;background:#e8f0fe;border-radius:6px;"></span>
             <div id="syncStatusWrapper" class="sync-status-container offline">
-                <span id="syncStatusTag" class="sync-status-badge">📴 CLOUD OFF</span>
+                <span id="syncStatusTag" class="sync-status-badge">CLOUD OFF</span>
                 <span id="deviceIdDisplay" class="device-id-badge">------</span>
             </div>
-            <span id="syncTimeBadge" style="font-size:.65rem;color:#666;font-weight:600;">🕐 --:--:--</span>
+            <span id="syncTimeBadge" style="font-size:.65rem;color:#666;font-weight:600;">--:--:--</span>
             <label>BUKU:</label>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
             <button class="manage-books-btn desktop-only" id="kelolaBukuBtn" onclick="openBookManager()">Kelola</button>
-            <button class="manage-books-btn desktop-only" id="manualSyncBtn" style="background:#00875a;" onclick="forceFullSync()">🔄 Sinkronisasi</button>
-            <button class="manage-books-btn desktop-only" id="setelanBtn" onclick="openSetelanModal()" style="background:#4a5568;" title="Setelan">⚙️ Setelan</button>
-            <button class="manage-books-btn desktop-only" id="reminderBtn" onclick="openPaymentReminderModal()" style="background:#d97706; position:relative;" title="Pengingat Pembayaran">🔔 Pengingat <span id="reminderBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:#fff; font-size:.55rem; font-weight:700; border-radius:50%; width:16px; height:16px; line-height:16px; text-align:center;"></span></button>
-            <button class="manage-books-btn desktop-only" onclick="logoutToLockScreen()" title="Ganti Akun" style="background:#e8f0fe; color:#1a56db; border:1px solid #c5d8ff;">🔄 Ganti Akun</button>
-            <button class="mobile-only hamburger-btn" onclick="openMobileDrawer()" title="Menu">☰</button>
+            <button class="manage-books-btn desktop-only" id="manualSyncBtn" style="background:#00875a;" onclick="forceFullSync()">Sinkronisasi</button>
+            <button class="manage-books-btn desktop-only" id="setelanBtn" onclick="openSetelanModal()" style="background:#4a5568;" title="Setelan">Setelan</button>
+            <button class="manage-books-btn desktop-only" id="reminderBtn" onclick="openPaymentReminderModal()" style="background:#d97706; position:relative;" title="Pengingat Pembayaran">Pengingat <span id="reminderBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:#fff; font-size:.55rem; font-weight:700; border-radius:50%; width:16px; height:16px; line-height:16px; text-align:center;"></span></button>
+            <button class="manage-books-btn desktop-only" onclick="logoutToLockScreen()" title="Ganti Akun" style="background:#e8f0fe; color:#1a56db; border:1px solid #c5d8ff;">Ganti Akun</button>
+            <button class="mobile-only hamburger-btn" onclick="openMobileDrawer()" title="Menu">Menu</button>
         </div>
     </div>
 
     <div class="offline-warning-bar" id="offlineWarningBar">
-        <span>⚠️</span>
         <span><strong>Mode Baca Saja</strong> - Anda sedang offline. Untuk menambah/mengedit/menghapus data, sambungkan ke internet.</span>
     </div>
 
@@ -192,7 +190,6 @@
     <div id="paymentReminderBanner" style="display:none; background:#fef3c7; border:1.5px solid #f59e0b; border-radius:10px; padding:12px 16px; margin-bottom:10px;">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
             <div style="display:flex; align-items:center; gap:10px;">
-                <span style="font-size:1.3rem;">🔔</span>
                 <div>
                     <div style="font-size:.78rem; font-weight:700; color:#92400e;">Pengingat Pembayaran</div>
                     <div id="paymentReminderBannerText" style="font-size:.72rem; color:#78350f; line-height:1.6;"></div>
@@ -238,9 +235,9 @@
             <span id="budgetProgressPct2" style="font-size:.78rem; font-weight:700; color:#666; min-width:38px; text-align:right;">0%</span>
         </div>
         <div class="budget-mini-actions">
-            <button class="btn-icon" id="anggaranBtn" onclick="openBudgetModal()">📊 Anggarkan</button>
-            <button class="btn-icon" id="laporanBtn" onclick="openMonthlyReport()">📄 Laporan</button>
-            <button class="btn-icon" id="pdfBtn" onclick="generatePDFReport()">📎 PDF</button>
+            <button class="btn-icon" id="anggaranBtn" onclick="openBudgetModal()">Anggarkan</button>
+            <button class="btn-icon" id="laporanBtn" onclick="openMonthlyReport()">Laporan</button>
+            <button class="btn-icon" id="pdfBtn" onclick="generatePDFReport()">PDF</button>
         </div>
     </div>
 
@@ -259,12 +256,12 @@
         </div>
         <div class="stat-card" id="forexCard" style="border-color:#0052cc;">
             <div class="stat-label" style="color:#0052cc;">Kurs USD/IDR</div>
-            <div class="stat-value" id="forexRate" style="color:#0052cc; font-size:1rem;">⏳ Memuat...</div>
+            <div class="stat-value" id="forexRate" style="color:#0052cc; font-size:1rem;">Memuat...</div>
             <div style="font-size:.6rem; color:#999; margin-top:4px;" id="forexSource"></div>
         </div>
         <div class="stat-card" id="goldCard" style="border-color:#b7791f;">
-            <div class="stat-label" style="color:#b7791f;">⚜️ Emas / gram</div>
-            <div class="stat-value" id="goldPrice" style="color:#b7791f; font-size:1rem;">⏳ Memuat...</div>
+            <div class="stat-label" style="color:#b7791f;">Emas / gram</div>
+            <div class="stat-value" id="goldPrice" style="color:#b7791f; font-size:1rem;">Memuat...</div>
             <div style="font-size:.6rem; color:#999; margin-top:4px;" id="goldSource"></div>
             <div id="goldValueRow" style="display:none; margin-top:6px; padding-top:6px; border-top:1px dashed #e9c46a;">
                 <div style="font-size:.6rem; color:#92400e; font-weight:600;" id="goldValueLabel"></div>
@@ -272,7 +269,7 @@
             </div>
         </div>
         <div class="stat-card" id="zakatCard" style="border-color:#276749; display:none;">
-            <div class="stat-label" style="color:#276749;">🕌 Zakat Maal</div>
+            <div class="stat-label" style="color:#276749;">Zakat Maal</div>
             <div class="stat-value" id="zakatValue" style="color:#276749; font-size:1rem;">Rp 0</div>
             <div style="font-size:.6rem; color:#999; margin-top:4px;" id="zakatSource"></div>
         </div>
@@ -281,37 +278,37 @@
     <!-- ===== FINANCIAL PLANNING CARDS ===== -->
     <div class="stats-grid" style="margin-top:10px;">
         <div class="stat-card" id="cardAnggaranBulanan" style="border-top:3px solid #1a56db; cursor:pointer;" onclick="window.openDefaultBudgetModal()" title="Klik untuk atur anggaran bulanan">
-            <div class="stat-label">📋 Anggaran Bulanan <span style="font-size:.6rem; background:#ebf3ff; color:#1a56db; padding:1px 6px; border-radius:8px; margin-left:4px;">✏️ Atur</span></div>
+            <div class="stat-label">Anggaran Bulanan <span style="font-size:.6rem; background:#ebf3ff; color:#1a56db; padding:1px 6px; border-radius:8px; margin-left:4px;">Atur</span></div>
             <div class="stat-value" id="fcAnggaranBulanan" style="color:#1a56db; font-size:1rem;">Rp 0</div>
             <div style="font-size:.65rem; color:#888; margin-top:4px;">Template per kategori, berlaku tiap bulan</div>
         </div>
         <div class="stat-card" id="cardAnggaranTahunan" style="border-top:3px solid #6b46c1; cursor:pointer;" onclick="openAnnualBudgetModal()" title="Klik untuk atur anggaran tahunan">
-            <div class="stat-label">📅 Anggaran Tahunan <span style="font-size:.6rem; background:#f3e8ff; color:#553c9a; padding:1px 6px; border-radius:8px; margin-left:4px;">✏️ Atur</span></div>
+            <div class="stat-label">Anggaran Tahunan <span style="font-size:.6rem; background:#f3e8ff; color:#553c9a; padding:1px 6px; border-radius:8px; margin-left:4px;">Atur</span></div>
             <div class="stat-value" id="fcAnggaranTahunan" style="color:#6b46c1; font-size:1rem;">Rp 0</div>
             <div style="font-size:.65rem; color:#888; margin-top:4px;">Biaya tahunan: hari raya, pajak, dll</div>
         </div>
         <div class="stat-card" style="border-top:3px solid #cc7b00;">
-            <div class="stat-label">🛡️ Dana Darurat</div>
+            <div class="stat-label">Dana Darurat</div>
             <div class="stat-value" id="fcDanaDarurat" style="color:#cc7b00; font-size:1rem;">Rp 0</div>
             <div style="font-size:.65rem; color:#888; margin-top:4px;">12× anggaran bulanan (target ideal)</div>
         </div>
         <!-- ===== CARD KEBUTUHAN SETAHUN ===== -->
         <div class="stat-card" id="cardKebutuhanSetahun" style="border-top:3px solid #d69e2e;">
-            <div class="stat-label">📆 Kebutuhan Setahun</div>
+            <div class="stat-label">Kebutuhan Setahun</div>
             <div class="stat-value" id="fcKebutuhanSetahun" style="color:#d69e2e; font-size:1rem;">Rp 0</div>
             <div style="font-size:.65rem; color:#888; margin-top:4px;">Dana darurat + anggaran tahunan</div>
         </div>
         <!-- ===== CARD FASE KEHIDUPAN ===== -->
         <div class="stat-card" id="cardFaseKehidupan" style="border-top:3px solid #e53e8a; cursor:pointer;" onclick="window.openFaseKehidupanModal()" title="Klik untuk atur fase kehidupan">
-            <div class="stat-label">💍 Fase Kehidupan <span style="font-size:.6rem; background:#fff0f7; color:#e53e8a; padding:1px 6px; border-radius:8px; margin-left:4px;">✏️ Atur</span></div>
+            <div class="stat-label">Fase Kehidupan <span style="font-size:.6rem; background:#fff0f7; color:#e53e8a; padding:1px 6px; border-radius:8px; margin-left:4px;">Atur</span></div>
             <div style="font-size:.88rem; font-weight:700; color:#e53e8a; margin-top:4px; min-height:20px;" id="fcFaseNama">Belum diatur</div>
             <div style="font-size:.62rem; color:#888; margin-top:4px; line-height:1.5;" id="fcFaseDesc">Klik untuk mengatur fase kehidupan pernikahan Anda</div>
             <div style="margin-top:8px;">
-                <button onclick="event.stopPropagation(); window.runFaseAIAnalysis()" id="faseAIBtn" class="btn" style="font-size:.65rem; padding:3px 10px; background:#e53e8a; color:#fff; border-color:#e53e8a; display:none;">🤖 Analisis AI</button>
+                <button onclick="event.stopPropagation(); window.runFaseAIAnalysis()" id="faseAIBtn" class="btn" style="font-size:.65rem; padding:3px 10px; background:#e53e8a; color:#fff; border-color:#e53e8a; display:none;">Analisis AI</button>
             </div>
         </div>
         <div class="stat-card" id="cardDanaSalingJaga" style="border-top:3px solid #00875a;">
-            <div class="stat-label">🤝 Dana Saling Jaga</div>
+            <div class="stat-label">Dana Saling Jaga</div>
             <div class="stat-value" id="fcDanaSalingJaga" style="color:#00875a; font-size:1rem;">Rp 0</div>
             <div style="font-size:.65rem; color:#888; margin-top:4px;" id="fcDSJNote">30% dari saldo setelah dana darurat</div>
         </div>
@@ -348,7 +345,7 @@
         </div>
         <div class="actions">
             <button class="btn btn-primary" id="tambahTransaksiBtn" onclick="openModal('addModal')">+ Transaksi</button>
-            <button class="btn" style="background:#6b46c1; color:#fff; border-color:#6b46c1;" onclick="openAIAnalysis()">🤖 Analisis AI</button>
+            <button class="btn" style="background:#6b46c1; color:#fff; border-color:#6b46c1;" onclick="openAIAnalysis()">Analisis AI</button>
         </div>
     </div>
 
@@ -362,12 +359,12 @@
     </div>
 
     <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; justify-content:flex-end;">
-        <button class="btn" id="backupBtn" onclick="openBackupManager()">💾 Kelola Backup</button>
-        <button class="btn" onclick="toggleAuditLogInline()">📋 Log Audit <span id="auditLogInlineArrow">▼</span></button>
+        <button class="btn" id="backupBtn" onclick="openBackupManager()">Kelola Backup</button>
+        <button class="btn" onclick="toggleAuditLogInline()">Log Audit <span id="auditLogInlineArrow">▼</span></button>
     </div>
     <div id="auditLogInlineBody" style="display:none; padding:10px 14px; border:1.5px solid #1a1a1a; border-radius:8px; margin-bottom:12px; background:#fff;">
         <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
-            <button class="btn" style="padding:4px 12px; font-size:.7rem;" onclick="refreshLogsFromCloud()">🔄 Refresh</button>
+            <button class="btn" style="padding:4px 12px; font-size:.7rem;" onclick="refreshLogsFromCloud()">Refresh</button>
         </div>
         <div id="logSummaryArea" class="log-container-box">Memuat log...</div>
     </div>
@@ -384,7 +381,7 @@
     <div id="auditLogSection" style="display:none;"></div>
 </div>
 
-<div id="toastMessage" class="toast-message"><span id="toastIcon">✅</span><span id="toastText"></span></div>
+<div id="toastMessage" class="toast-message"><span id="toastIcon"></span><span id="toastText"></span></div>
 
 <!-- Add Modal -->
 <div id="addModal" class="modal">
@@ -393,7 +390,7 @@
         <form id="addForm" onsubmit="handleSubmit(event)">
             <div class="form-group"><label>Jenis</label><div class="radio-group"><label class="radio-label"><input type="radio" name="type" value="income" checked onchange="toggleCategoryField()"> Pemasukan</label><label class="radio-label"><input type="radio" name="type" value="expense" onchange="toggleCategoryField()"> Pengeluaran</label></div></div>
             <div class="form-group" style="display:none"><label>Tanggal & Waktu</label><input type="datetime-local" id="txDate" class="form-control"></div>
-            <div class="form-group" id="categoryGroup"><label>Kategori</label><select id="txCategory" class="form-control"><option value="">-- Pilih Kategori --</option><option value="Makanan & Minuman">🍽️ Makanan & Minuman</option><option value="Tagihan">💡 Tagihan</option><option value="Belanja">🛍️ Belanja</option><option value="Kesehatan">🏥 Kesehatan</option><option value="Hiburan">🎉 Hiburan</option><option value="Pendidikan">📚 Pendidikan</option><option value="Transportasi">🚗 Transportasi</option><option value="Investasi">📈 Investasi</option><option value="Skin & Body Care">🧴 Skin & Body Care</option><option value="Kitchen">🍳 Kitchen</option><option value="Cleaning">🧹 Cleaning</option><option value="Pajak & Iuran">🧾 Pajak & Iuran</option><option value="Pertanian">🌾 Pertanian</option><option value="Sedekah">🤲 Sedekah</option><option value="Sumbangan">❤️ Sumbangan</option></select></div>
+            <div class="form-group" id="categoryGroup"><label>Kategori</label><select id="txCategory" class="form-control"><option value="">-- Pilih Kategori --</option><option value="Makanan & Minuman">Makanan & Minuman</option><option value="Tagihan">Tagihan</option><option value="Belanja">Belanja</option><option value="Kesehatan">Kesehatan</option><option value="Hiburan">Hiburan</option><option value="Pendidikan">Pendidikan</option><option value="Transportasi">Transportasi</option><option value="Investasi">Investasi</option><option value="Skin & Body Care">Skin & Body Care</option><option value="Kitchen">Kitchen</option><option value="Cleaning">Cleaning</option><option value="Pajak & Iuran">Pajak & Iuran</option><option value="Pertanian">Pertanian</option><option value="Sedekah">Sedekah</option><option value="Sumbangan">Sumbangan</option></select></div>
             <div class="form-group"><label>Deskripsi</label><input type="text" id="txDesc" class="form-control" required></div>
             <div class="form-group"><label>Jumlah (Rp)</label><input type="text" id="txAmount" class="form-control" oninput="formatRupiah(this)" required></div>
             <div class="form-group"><label>Lampiran Nota</label><input type="file" id="txAttachment" accept="image/*" class="form-control" onchange="previewAttachment(this)"><img id="attachmentPreview" class="attachment-preview"></div>
@@ -410,7 +407,7 @@
             <input type="hidden" id="editId">
             <div class="form-group"><label>Jenis</label><div class="radio-group"><label class="radio-label"><input type="radio" name="editType" value="income" id="editTypeIncome" onchange="toggleEditCategoryField()"> Pemasukan</label><label class="radio-label"><input type="radio" name="editType" value="expense" id="editTypeExpense" onchange="toggleEditCategoryField()"> Pengeluaran</label></div></div>
             <div class="form-group" style="display:none"><label>Tanggal & Waktu</label><input type="datetime-local" id="editTxDate" class="form-control"></div>
-            <div class="form-group" id="editCategoryGroup"><label>Kategori</label><select id="editTxCategory" class="form-control"><option value="">-- Pilih Kategori --</option><option value="Makanan & Minuman">🍽️ Makanan & Minuman</option><option value="Tagihan">💡 Tagihan</option><option value="Belanja">🛍️ Belanja</option><option value="Kesehatan">🏥 Kesehatan</option><option value="Hiburan">🎉 Hiburan</option><option value="Pendidikan">📚 Pendidikan</option><option value="Transportasi">🚗 Transportasi</option><option value="Investasi">📈 Investasi</option><option value="Skin & Body Care">🧴 Skin & Body Care</option><option value="Kitchen">🍳 Kitchen</option><option value="Cleaning">🧹 Cleaning</option><option value="Pajak & Iuran">🧾 Pajak & Iuran</option><option value="Pertanian">🌾 Pertanian</option><option value="Sedekah">🤲 Sedekah</option><option value="Sumbangan">❤️ Sumbangan</option></select></div>
+            <div class="form-group" id="editCategoryGroup"><label>Kategori</label><select id="editTxCategory" class="form-control"><option value="">-- Pilih Kategori --</option><option value="Makanan & Minuman">Makanan & Minuman</option><option value="Tagihan">Tagihan</option><option value="Belanja">Belanja</option><option value="Kesehatan">Kesehatan</option><option value="Hiburan">Hiburan</option><option value="Pendidikan">Pendidikan</option><option value="Transportasi">Transportasi</option><option value="Investasi">Investasi</option><option value="Skin & Body Care">Skin & Body Care</option><option value="Kitchen">Kitchen</option><option value="Cleaning">Cleaning</option><option value="Pajak & Iuran">Pajak & Iuran</option><option value="Pertanian">Pertanian</option><option value="Sedekah">Sedekah</option><option value="Sumbangan">Sumbangan</option></select></div>
             <div class="form-group"><label>Deskripsi</label><input type="text" id="editTxDesc" class="form-control" required></div>
             <div class="form-group"><label>Jumlah (Rp)</label><input type="text" id="editTxAmount" class="form-control" oninput="formatRupiah(this)" required></div>
             <div class="form-group"><label>Lampiran Nota</label><input type="file" id="editTxAttachment" accept="image/*" class="form-control" onchange="previewEditAttachment(this)"><div id="editAttachmentInfo" style="font-size:.65rem; color:#666; margin-top:4px;"></div><img id="editAttachmentPreview" class="attachment-preview"></div>
@@ -423,7 +420,7 @@
 <div id="actionMenuModal" class="modal">
     <div class="modal-content" style="max-width:260px">
         <div class="modal-header"><h3>Pilihan Aksi</h3><button class="modal-close" onclick="closeModal('actionMenuModal')">×</button></div>
-        <ul style="list-style:none"><li style="margin-bottom:10px"><button id="actionEditBtn" style="width:100%; padding:10px; text-align:left; background:none; border:none; cursor:pointer; border-radius:6px; transition:background 0.2s;">✏️ Ubah Data</button></li><li><button id="actionDeleteBtn" style="width:100%; padding:10px; text-align:left; background:none; border:none; cursor:pointer; color:#de350b; border-radius:6px; transition:background 0.2s;">🗑️ Hapus Transaksi</button></li></ul>
+        <ul style="list-style:none"><li style="margin-bottom:10px"><button id="actionEditBtn" style="width:100%; padding:10px; text-align:left; background:none; border:none; cursor:pointer; border-radius:6px; transition:background 0.2s;">Ubah Data</button></li><li><button id="actionDeleteBtn" style="width:100%; padding:10px; text-align:left; background:none; border:none; cursor:pointer; color:#de350b; border-radius:6px; transition:background 0.2s;">Hapus Transaksi</button></li></ul>
     </div>
 </div>
 
@@ -433,8 +430,8 @@
         <div class="modal-header"><h3>Kelola Buku Kas</h3><button class="modal-close" onclick="closeModal('bookManagerModal')">×</button></div>
         <div id="storageEstimPanel" style="background:#f0f8ff; border:1px solid #c5d8ff; border-radius:10px; padding:14px 16px; margin-bottom:16px;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                <span style="font-size:.75rem; font-weight:700; color:#1a56db;">☁️ Estimasi Storage Supabase</span>
-                <button onclick="refreshStorageEstimate()" id="storageRefreshBtn" style="font-size:.65rem; padding:2px 10px; border:1px solid #c5d8ff; border-radius:6px; background:#e8f0fe; color:#1a56db; cursor:pointer; font-weight:600;">🔄 Refresh</button>
+                <span style="font-size:.75rem; font-weight:700; color:#1a56db;">Estimasi Storage Supabase</span>
+                <button onclick="refreshStorageEstimate()" id="storageRefreshBtn" style="font-size:.65rem; padding:2px 10px; border:1px solid #c5d8ff; border-radius:6px; background:#e8f0fe; color:#1a56db; cursor:pointer; font-weight:600;">Refresh</button>
             </div>
             <div id="storageEstimContent">
                 <div style="font-size:.7rem; color:#888; text-align:center; padding:8px 0;">Memuat estimasi storage...</div>
@@ -444,7 +441,7 @@
         <form onsubmit="addNewBook(event)" style="border-top:1px solid #eee; padding-top:16px; margin-bottom:16px">
             <input type="text" id="newBookName" class="form-control" placeholder="Nama buku baru..." required>
             <div style="margin-top:8px;">
-                <label style="font-size:.7rem; color:#6b46c1; font-weight:600;">📂 Jadikan anak dari buku (opsional)</label>
+                <label style="font-size:.7rem; color:#6b46c1; font-weight:600;">Jadikan anak dari buku (opsional)</label>
                 <select id="newBookParent" class="form-control" style="font-size:.75rem; margin-top:4px;">
                     <option value="">— Buku mandiri (tidak ada induk) —</option>
                 </select>
@@ -458,7 +455,7 @@
 <!-- Telegram Settings Modal -->
 <div id="telegramSettingsModal" class="modal">
     <div class="modal-content">
-        <div class="modal-header"><h3>📲 Notifikasi Telegram</h3><button class="modal-close" onclick="closeModal('telegramSettingsModal')">×</button></div>
+        <div class="modal-header"><h3>Notifikasi Telegram</h3><button class="modal-close" onclick="closeModal('telegramSettingsModal')">×</button></div>
         <div class="form-group"><label style="display:flex; align-items:center; gap:8px;">Status <span id="tgStatusBadge" style="font-size:.6rem; padding:2px 8px; border-radius:10px; background:#eee; color:#666;">Belum dikonfigurasi</span></label></div>
         <div style="background:#f9f9f9; border:1px solid #e0e0e0; border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:.72rem; line-height:1.8; color:#444;">
             <b>Cara setup (3 langkah):</b><br>
@@ -471,16 +468,16 @@
         <input type="hidden" id="tgEdgeUrlInput" value="">
         <div id="tgTestStatus" style="font-size:.72rem; margin-bottom:12px; min-height:20px; padding: 0 2px;"></div>
         <div class="modal-footer" style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn btn-secondary" onclick="testTelegramNotif()" style="flex:1">📤 Tes Kirim</button>
-            <button class="btn btn-secondary" onclick="sendDailySummaryToTelegram()" style="flex:1; background:#0088cc; color:#fff; border-color:#0088cc;">📊 Kirim Ringkasan</button>
-            <button class="btn btn-danger" onclick="clearTelegramConfig()" style="flex:1">🗑️ Hapus</button>
-            <button class="btn btn-primary" onclick="saveTelegramConfig()" style="flex:1">💾 Simpan</button>
+            <button class="btn btn-secondary" onclick="testTelegramNotif()" style="flex:1">Tes Kirim</button>
+            <button class="btn btn-secondary" onclick="sendDailySummaryToTelegram()" style="flex:1; background:#0088cc; color:#fff; border-color:#0088cc;">Kirim Ringkasan</button>
+            <button class="btn btn-danger" onclick="clearTelegramConfig()" style="flex:1">Hapus</button>
+            <button class="btn btn-primary" onclick="saveTelegramConfig()" style="flex:1">Simpan</button>
         </div>
         <div style="background:#f0f8ff; border:1px solid #cce0ff; border-radius:8px; padding:10px 12px; margin-top:12px; font-size:.68rem; color:#0055aa; line-height:1.8;">
-            <b>🔔 Notifikasi yang dikirim otomatis:</b><br>
-            ➕ Transaksi baru · ✏️ Transaksi diubah · 🗑️ Transaksi dihapus<br>
-            ⚠️ Peringatan anggaran 80% & 🚨 anggaran habis<br>
-            📅 Ringkasan harian otomatis pukul <b>21:00</b>
+            <b>Notifikasi yang dikirim otomatis:</b><br>
+            Transaksi baru · Transaksi diubah · Transaksi dihapus<br>
+            Peringatan anggaran 80% & anggaran habis<br>
+            Ringkasan harian otomatis pukul <b>21:00</b>
         </div>
     </div>
 </div>
@@ -488,12 +485,12 @@
 <!-- ===== MODAL SETELAN ===== -->
 <div id="setelanModal" class="modal">
     <div class="modal-content" style="max-width:540px;">
-        <div class="modal-header"><h3>⚙️ Setelan</h3><button class="modal-close" onclick="closeModal('setelanModal')">×</button></div>
+        <div class="modal-header"><h3>Setelan</h3><button class="modal-close" onclick="closeModal('setelanModal')">×</button></div>
 
         <!-- Analisis AI -->
         <div class="data-management-panel" style="border-color:#6b46c1; background:#faf5ff; margin-top:0;">
             <div class="panel-title" style="color:#553c9a; display:flex; align-items:center; gap:8px;">
-                🤖 Analisis AI
+                Analisis AI
                 <span id="aiWorkerStatusBadge" style="font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:10px; background:#eee; color:#666;">Belum dikonfigurasi</span>
             </div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
@@ -505,16 +502,16 @@
             </div>
             <div id="aiWorkerTestStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
             <div style="display:flex; gap:8px;">
-                <button class="btn btn-secondary" style="flex:1;" onclick="testAiWorkerUrl()">📡 Tes Koneksi</button>
-                <button class="btn btn-danger" style="flex:1;" onclick="clearAiWorkerUrl()">🗑️ Hapus</button>
-                <button class="btn btn-primary" style="flex:2; background:#6b46c1; border-color:#6b46c1;" onclick="saveAiWorkerUrl()">💾 Simpan</button>
+                <button class="btn btn-secondary" style="flex:1;" onclick="testAiWorkerUrl()">Tes Koneksi</button>
+                <button class="btn btn-danger" style="flex:1;" onclick="clearAiWorkerUrl()">Hapus</button>
+                <button class="btn btn-primary" style="flex:2; background:#6b46c1; border-color:#6b46c1;" onclick="saveAiWorkerUrl()">Simpan</button>
             </div>
         </div>
 
         <!-- Harga Emas Antam -->
         <div class="data-management-panel" style="border-color:#b7791f; background:#fffbeb; margin-top:0;">
             <div class="panel-title" style="color:#92400e; display:flex; align-items:center; gap:8px;">
-                ⚜️ Harga Emas Antam
+                Harga Emas Antam
                 <span id="emasApiStatusBadge" style="font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:10px; background:#eee; color:#666;">Belum dikonfigurasi</span>
             </div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
@@ -531,15 +528,15 @@
             </div>
             <div id="emasApiTestStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
             <div style="display:flex; gap:8px;">
-                <button class="btn btn-secondary" style="flex:1;" onclick="testEmasApiKey()">📡 Tes</button>
-                <button class="btn btn-danger" style="flex:1;" onclick="clearEmasApiKey()">🗑️ Hapus</button>
-                <button class="btn btn-primary" style="flex:2; background:#b7791f; border-color:#b7791f;" onclick="saveEmasApiKey()">💾 Simpan</button>
+                <button class="btn btn-secondary" style="flex:1;" onclick="testEmasApiKey()">Tes</button>
+                <button class="btn btn-danger" style="flex:1;" onclick="clearEmasApiKey()">Hapus</button>
+                <button class="btn btn-primary" style="flex:2; background:#b7791f; border-color:#b7791f;" onclick="saveEmasApiKey()">Simpan</button>
             </div>
         </div>
 
         <!-- Zakat Maal -->
         <div class="data-management-panel" style="border-color:#276749; background:#f0fff4; margin-top:0;">
-            <div class="panel-title" style="color:#276749;">🕌 Zakat Maal</div>
+            <div class="panel-title" style="color:#276749;">Zakat Maal</div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
                 Estimasi zakat maal dihitung dari <strong>total saldo akhir</strong>. Nisab zakat maal umumnya 2,5% dari harta yang telah mencapai haul (1 tahun).
             </div>
@@ -549,25 +546,25 @@
                 <div id="zakatPreview" style="font-size:.7rem; color:#276749; margin-top:5px; min-height:16px;"></div>
             </div>
             <div style="display:flex; gap:8px;">
-                <button class="btn btn-danger" style="flex:1;" onclick="clearZakatSetting()">🗑️ Hapus</button>
-                <button class="btn btn-primary" style="flex:2; background:#276749; border-color:#276749;" onclick="saveZakatSetting()">💾 Simpan</button>
+                <button class="btn btn-danger" style="flex:1;" onclick="clearZakatSetting()">Hapus</button>
+                <button class="btn btn-primary" style="flex:2; background:#276749; border-color:#276749;" onclick="saveZakatSetting()">Simpan</button>
             </div>
         </div>
 
         <!-- Telegram -->
         <div class="data-management-panel" style="border-color:#0088cc; background:#f0f8ff; margin-top:0;">
-            <div class="panel-title" style="color:#0055aa; display:flex; align-items:center; gap:8px;">📲 Notifikasi Telegram</div>
+            <div class="panel-title" style="color:#0055aa; display:flex; align-items:center; gap:8px;">Notifikasi Telegram</div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
                 Kirim notifikasi transaksi, peringatan anggaran, dan ringkasan harian lewat Telegram Bot.
             </div>
-            <button class="btn btn-primary" style="background:#0088cc; border-color:#0088cc;" onclick="closeModal('setelanModal'); openTelegramSettings()">📲 Atur Notifikasi Telegram</button>
+            <button class="btn btn-primary" style="background:#0088cc; border-color:#0088cc;" onclick="closeModal('setelanModal'); openTelegramSettings()">Atur Notifikasi Telegram</button>
         </div>
 
         <!-- Koneksi Supabase -->
         <div class="data-management-panel" style="margin-top:0;">
             <div class="form-group" style="margin-bottom:0;">
                 <div style="font-size:.72rem; font-weight:700; color:#1a1a1a; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
-                    ☁️ Koneksi Supabase
+                    Koneksi Supabase
                     <span style="font-size:.6rem; background:#e3fcef; color:#006644; padding:2px 8px; border-radius:10px; font-weight:600;">Berlaku untuk semua buku</span>
                 </div>
                 <label>Supabase URL Connection</label>
@@ -583,7 +580,7 @@
 
         <!-- Ganti Password -->
         <div class="data-management-panel" style="border-color:#1a1a1a; background:#fafafa; margin-top:0;">
-            <div class="panel-title">🔐 Ganti Password Keamanan</div>
+            <div class="panel-title">Ganti Password Keamanan</div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
                 Ganti password yang digunakan untuk mengenkripsi koneksi Supabase Anda.
             </div>
@@ -591,13 +588,13 @@
             <input type="password" id="changePwdNew" class="form-control" placeholder="Password baru (min. 6 karakter)" style="margin-bottom:8px;">
             <input type="password" id="changePwdNew2" class="form-control" placeholder="Konfirmasi password baru" style="margin-bottom:10px;">
             <div id="changePwdStatus" style="font-size:.7rem; min-height:16px; margin-bottom:8px;"></div>
-            <button class="btn btn-primary" style="width:100%;" onclick="changePassword()">🔐 Ganti Password</button>
+            <button class="btn btn-primary" style="width:100%;" onclick="changePassword()">Ganti Password</button>
         </div>
 
         <!-- Sinkronisasi Setelan -->
         <div class="data-management-panel" style="border-color:#0088cc; background:#f0f8ff; margin-top:0;">
             <div class="panel-title" style="color:#0055aa; display:flex; align-items:center; gap:8px;">
-                ☁️ Sinkronisasi Setelan
+                Sinkronisasi Setelan
                 <span id="settingsSyncBadge" style="font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:10px; background:#e3fcef; color:#006644;">Otomatis</span>
             </div>
             <div style="font-size:.7rem; color:#555; line-height:1.6;">
@@ -608,19 +605,19 @@
 
         <!-- Cadangan Data -->
         <div class="data-management-panel" style="margin-top:0;">
-            <div class="panel-title">💾 Cadangan Data</div>
+            <div class="panel-title">Cadangan Data</div>
             <div class="panel-actions-row">
-                <button class="btn btn-secondary" onclick="exportToCSV()">📥 CSV</button>
-                <button class="btn btn-secondary" onclick="exportToJSON()">📦 JSON</button>
-                <button class="btn btn-secondary" onclick="triggerJsonImport()">📤 Impor</button>
+                <button class="btn btn-secondary" onclick="exportToCSV()">CSV</button>
+                <button class="btn btn-secondary" onclick="exportToJSON()">JSON</button>
+                <button class="btn btn-secondary" onclick="triggerJsonImport()">Impor</button>
             </div>
             <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)">
             <div style="margin-top:16px; border-top:1px dashed #ddd; padding-top:14px;">
-                <label style="font-size:.7rem; font-weight:600; color:#666; display:block; margin-bottom:6px;">📊 Google Sheets Web App URL</label>
+                <label style="font-size:.7rem; font-weight:600; color:#666; display:block; margin-bottom:6px;">Google Sheets Web App URL</label>
                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
                     <input type="text" id="googleSheetsUrlInput" class="form-control" style="flex:2; min-width:200px;" placeholder="https://script.google.com/macros/s/.../exec">
                     <button class="btn btn-secondary" onclick="saveGoogleSheetsUrl()" style="flex:0 0 auto;">Simpan URL</button>
-                    <button class="btn btn-success" onclick="backupToGoogleSheets()" style="flex:0 0 auto; background:#0f9d58; border-color:#0f9d58;">📊 Backup ke Google Sheets</button>
+                    <button class="btn btn-success" onclick="backupToGoogleSheets()" style="flex:0 0 auto; background:#0f9d58; border-color:#0f9d58;">Backup ke Google Sheets</button>
                 </div>
                 <div id="googleSheetsStatus" style="font-size:.7rem; margin-top:6px; min-height:16px;"></div>
                 <div id="googleSheetsLastBackup" style="font-size:.65rem; color:#888; margin-top:3px;"></div>
@@ -630,7 +627,7 @@
         <!-- ===== MIGRASI DATA KE CLOUD ===== -->
         <div class="data-management-panel" style="border-color:#6b46c1; background:#faf5ff; margin-top:0;">
             <div class="panel-title" style="color:#553c9a;">
-                ☁️ Migrasi Data ke Cloud
+                Migrasi Data ke Cloud
             </div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
                 Pindahkan semua data (anggaran, jadwal pembayaran) dari Local Storage ke Supabase 
@@ -640,39 +637,39 @@
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
                 <button class="btn btn-primary" style="background:#6b46c1; border-color:#6b46c1; flex:1;" 
                         onclick="window.runFullMigration()">
-                    🚀 Migrasi Semua Data
+                    Migrasi Semua Data
                 </button>
                 <button class="btn btn-secondary" style="flex:1;" 
                         onclick="window.checkMigrationStatus()">
-                    🔍 Cek Status
+                    Cek Status
                 </button>
             </div>
         </div>
 
         <!-- Reset Aplikasi Total -->
         <div class="data-management-panel" style="border-color:#7b0000; background:#fff0f0; margin-top:0;">
-            <div class="panel-title" style="color:#7b0000;">💣 Reset Total Aplikasi</div>
+            <div class="panel-title" style="color:#7b0000;">Reset Total Aplikasi</div>
             <div style="font-size:.7rem; color:#666; margin-bottom:12px; line-height:1.6;">
                 Hapus <b>semua buku, transaksi, dan setelan</b> baik di Supabase maupun di penyimpanan lokal. Aplikasi akan kembali ke kondisi <b>bersih seperti baru dipasang</b>. Gunakan saat ingin memulai dari awal atau berpindah akun Supabase.
             </div>
             <div id="resetAppStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
-            <button class="btn" style="width:100%; background:#1a56db; border-color:#1a56db; color:#fff; margin-bottom:8px;" onclick="window.exportAllDataOnly()">💾 Ekspor Semua Data (JSON)</button>
+            <button class="btn" style="width:100%; background:#1a56db; border-color:#1a56db; color:#fff; margin-bottom:8px;" onclick="window.exportAllDataOnly()">Ekspor Semua Data (JSON)</button>
             <label class="btn" style="width:100%; background:#006644; border-color:#006644; color:#fff; margin-bottom:8px; cursor:pointer; display:block; text-align:center; box-sizing:border-box;">
-                📥 Import dari File JSON
+                Import dari File JSON
                 <input type="file" id="importJsonFile" accept=".json" style="display:none;" onchange="window.importAllDataFromFile(this)">
             </label>
             <div id="importStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
-            <button class="btn btn-danger" style="width:100%; background:#7b0000; border-color:#7b0000;" onclick="window.resetAllApplication()">💣 Reset Total — Hapus Semua Data</button>
+            <button class="btn btn-danger" style="width:100%; background:#7b0000; border-color:#7b0000;" onclick="window.resetAllApplication()">Reset Total — Hapus Semua Data</button>
         </div>
 
         <!-- Arsipkan JSON -->
         <div class="data-management-panel" style="border-color:#de350b; background:#fff5f5; margin-top:0;">
-            <div class="panel-title" style="color:#de350b;">🗃️ Arsipkan & Kosongkan Database</div>
+            <div class="panel-title" style="color:#de350b;">Arsipkan & Kosongkan Database</div>
             <div style="font-size:.7rem; color:#666; margin-bottom:12px; line-height:1.6;">
                 Export semua transaksi buku ini ke file JSON sebagai arsip, lalu <b>hapus permanen</b> seluruh data dari Supabase dan lokal. Gunakan saat storage hampir penuh.
             </div>
             <div id="archiveStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
-            <button class="btn btn-danger" style="width:100%;" onclick="archiveAndClearData()">🗃️ Arsipkan JSON & Kosongkan Database</button>
+            <button class="btn btn-danger" style="width:100%;" onclick="archiveAndClearData()">Arsipkan JSON & Kosongkan Database</button>
         </div>
     </div>
 </div>
@@ -680,14 +677,14 @@
 <!-- Backup Modal -->
 <div id="backupModal" class="modal">
     <div class="modal-content">
-        <div class="modal-header"><h3>🔒 Manajer Cadangan</h3><button class="modal-close" onclick="closeModal('backupModal')">×</button></div>
+        <div class="modal-header"><h3>Manajer Cadangan</h3><button class="modal-close" onclick="closeModal('backupModal')">×</button></div>
         <div class="form-group"><label>Auto-Backup Terakhir</label><div id="lastBackupInfo" style="background:#f5f5f5; padding:10px; border-radius:8px; font-size:.75rem">Memuat...</div></div>
         <div class="form-group"><label>Cadangan Lokal</label><div id="backupListContainer" style="max-height:130px; overflow-y:auto; border:1px solid #ddd; border-radius:8px; padding:10px"></div></div>
-        <div class="form-group"><label style="display:flex; align-items:center; gap:8px;">☁️ Cadangan Cloud (Supabase) <span id="cloudBackupStatus" style="font-size:.65rem; padding:2px 8px; border-radius:10px; background:#e3fcef; color:#006644;">Otomatis Harian</span></label><div id="cloudBackupListContainer" style="max-height:130px; overflow-y:auto; border:1px solid #ddd; border-radius:8px; padding:10px"><div style="color:#888; font-size:.7rem; text-align:center;">Memuat cadangan cloud...</div></div></div>
+        <div class="form-group"><label style="display:flex; align-items:center; gap:8px;">Cadangan Cloud (Supabase) <span id="cloudBackupStatus" style="font-size:.65rem; padding:2px 8px; border-radius:10px; background:#e3fcef; color:#006644;">Otomatis Harian</span></label><div id="cloudBackupListContainer" style="max-height:130px; overflow-y:auto; border:1px solid #ddd; border-radius:8px; padding:10px"><div style="color:#888; font-size:.7rem; text-align:center;">Memuat cadangan cloud...</div></div></div>
         <div class="panel-actions-row">
             <button class="btn btn-primary" onclick="createBackup()" style="flex:1"> Cadangan Lokal</button>
             <button class="btn btn-success" onclick="createCloudBackup()" style="flex:1"> Cadangan Cloud</button>
-            <button class="btn btn-warning" onclick="restoreFromBackup()" style="flex:1">🔄 Pulihkan</button>
+            <button class="btn btn-warning" onclick="restoreFromBackup()" style="flex:1">Pulihkan</button>
         </div>
         <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('backupModal')">Tutup</button></div>
     </div>
@@ -696,9 +693,9 @@
 <!-- Budget Modal (Bulanan) -->
 <div id="budgetModal" class="modal">
     <div class="modal-content wide">
-        <div class="modal-header"><h3>📊 Anggaran Bulanan</h3><button class="modal-close" onclick="closeModal('budgetModal')">×</button></div>
+        <div class="modal-header"><h3>Anggaran Bulanan</h3><button class="modal-close" onclick="closeModal('budgetModal')">×</button></div>
         <div style="background:#f0f8ff; border:1px solid #cce0ff; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:#0055aa;">
-            ⚡ <b>Otomatis:</b> Anggaran yang disimpan di sini berlaku <b>khusus untuk bulan ini</b>.
+            <b>Otomatis:</b> Anggaran yang disimpan di sini berlaku <b>khusus untuk bulan ini</b>.
             Bulan berikutnya akan kembali ke <b>Anggaran Dasar</b>.
         </div>
         <div class="form-group"><label>Bulan & Tahun</label><div style="display:flex; gap:10px"><select id="budgetModalMonth" class="form-control" style="flex:1"></select><input type="number" id="budgetModalYear" class="form-control" style="flex:1"></div></div>
@@ -711,16 +708,16 @@
 <!-- Modal Anggaran Bulanan -->
 <div id="defaultBudgetModal" class="modal">
     <div class="modal-content wide">
-        <div class="modal-header"><h3>📋 Anggaran Bulanan</h3><button class="modal-close" onclick="closeModal('defaultBudgetModal')">×</button></div>
+        <div class="modal-header"><h3>Anggaran Bulanan</h3><button class="modal-close" onclick="closeModal('defaultBudgetModal')">×</button></div>
         <div style="background:#ebf3ff; border:1px solid #c5d8ff; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:#1a56db;">
-            📋 <b>Anggaran Bulanan</b> adalah template per kategori yang berlaku <b>secara otomatis</b> di setiap bulan
+            <b>Anggaran Bulanan</b> adalah template per kategori yang berlaku <b>secara otomatis</b> di setiap bulan
             yang belum memiliki anggaran khusus. Untuk mengatur anggaran bulan tertentu saja, gunakan tombol <b>Anggarkan</b>.
         </div>
         <div id="defaultBudgetCategoriesContainer"></div>
         <div id="defaultBudgetSummary" class="budget-summary-row"></div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="closeModal('defaultBudgetModal')">Tutup</button>
-            <button class="btn btn-primary" onclick="saveDefaultBudget()">💾 Simpan</button>
+            <button class="btn btn-primary" onclick="saveDefaultBudget()">Simpan</button>
         </div>
     </div>
 </div>
@@ -728,9 +725,9 @@
 <!-- Modal Anggaran Tahunan -->
 <div id="annualBudgetModal" class="modal">
     <div class="modal-content wide">
-        <div class="modal-header"><h3>📅 Anggaran Tahunan</h3><button class="modal-close" onclick="closeModal('annualBudgetModal')">×</button></div>
+        <div class="modal-header"><h3>Anggaran Tahunan</h3><button class="modal-close" onclick="closeModal('annualBudgetModal')">×</button></div>
         <div style="background:#f3e8ff; border:1px solid #d6bcfa; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:#553c9a;">
-            📅 <b>Anggaran Tahunan</b> adalah rencana biaya yang terjadi <b>tidak setiap bulan</b> — seperti hari raya, pajak, servis kendaraan, liburan, dll. Total anggaran ini membantu menghitung kebutuhan cadangan dana Anda.
+            <b>Anggaran Tahunan</b> adalah rencana biaya yang terjadi <b>tidak setiap bulan</b> — seperti hari raya, pajak, servis kendaraan, liburan, dll. Total anggaran ini membantu menghitung kebutuhan cadangan dana Anda.
         </div>
         <div id="annualBudgetItemsContainer"></div>
         <div style="margin:10px 0;">
@@ -739,7 +736,7 @@
         <div id="annualBudgetSummary" class="budget-summary-row"></div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="closeModal('annualBudgetModal')">Tutup</button>
-            <button class="btn btn-primary" onclick="saveAnnualBudget()">💾 Simpan</button>
+            <button class="btn btn-primary" onclick="saveAnnualBudget()">Simpan</button>
         </div>
     </div>
 </div>
@@ -747,7 +744,7 @@
 <!-- Monthly Report Modal -->
 <div id="monthlyReportModal" class="modal">
     <div class="modal-content report">
-        <div class="modal-header"><h3 id="reportModalTitle">📊 Laporan Bulanan</h3><button class="modal-close" onclick="closeModal('monthlyReportModal')">×</button></div>
+        <div class="modal-header"><h3 id="reportModalTitle">Laporan Bulanan</h3><button class="modal-close" onclick="closeModal('monthlyReportModal')">×</button></div>
         <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
             <select id="reportMonth" class="form-control" style="width: auto; flex: 1;">
                 <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
@@ -757,7 +754,7 @@
             </select>
             <input type="number" id="reportYear" class="form-control" style="width: 100px;" value="2026">
             <button class="btn btn-primary" onclick="generateMonthlyReport()">Tampilkan</button>
-            <button class="btn btn-secondary" onclick="exportReportAsPDF()">📄 Export PDF</button>
+            <button class="btn btn-secondary" onclick="exportReportAsPDF()">Export PDF</button>
         </div>
         <div id="reportContent"><div style="text-align: center; padding: 50px;">Pilih bulan dan tahun, lalu klik Tampilkan</div></div>
     </div>
@@ -766,9 +763,9 @@
 <!-- View Attachment Modal -->
 <div id="viewAttachmentModal" class="modal">
     <div class="modal-content" style="max-width:600px; text-align:center">
-        <div class="modal-header"><h3>📎 Lampiran Nota</h3><button class="modal-close" onclick="closeModal('viewAttachmentModal')">×</button></div>
+        <div class="modal-header"><h3>Lampiran Nota</h3><button class="modal-close" onclick="closeModal('viewAttachmentModal')">×</button></div>
         <img id="fullAttachmentImage" style="max-width:100%; max-height:60vh; border-radius:8px"><br><br>
-        <button class="btn btn-secondary" onclick="downloadAttachment()">💾 Unduh Gambar</button>
+        <button class="btn btn-secondary" onclick="downloadAttachment()">Unduh Gambar</button>
     </div>
 </div>
 
@@ -776,27 +773,27 @@
 <div id="firstTimeSetupModal" class="modal" style="z-index:2000;">
     <div class="modal-content" style="max-width:460px;">
         <div style="text-align:center; margin-bottom:24px;">
-            <div style="font-size:2.5rem; margin-bottom:8px;">☁️</div>
+            <div style="font-size:2.5rem; margin-bottom:8px;"></div>
             <div style="font-size:1rem; font-weight:700; margin-bottom:4px;">Setup Sinarkeu</div>
             <div style="font-size:.75rem; color:#888;">Masukkan kredensial Supabase dan buat password keamanan</div>
         </div>
         <div class="form-group"><label>Supabase Project URL</label><input type="text" id="setupUrlInput" class="form-control" placeholder="https://xxxxxxxx.supabase.co"></div>
         <div class="form-group"><label>Supabase Anon Key</label><input type="password" id="setupKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."><div style="display:flex; align-items:center; gap:6px; margin-top:6px;"><input type="checkbox" id="showKeyToggle" onchange="document.getElementById('setupKeyInput').type = this.checked ? 'text' : 'password'"><label for="showKeyToggle" style="font-size:.7rem; color:#888; cursor:pointer; text-transform:none; letter-spacing:0;">Tampilkan key</label></div></div>
         <div style="border-top:1px dashed #ddd; margin: 16px 0;"></div>
-        <div class="form-group"><label>🔐 Buat Password Keamanan</label><div style="position:relative; margin-bottom:8px;"><input type="password" id="setupPwdInput" class="form-control" placeholder="Buat password (min. 6 karakter)" oninput="evalSetupPwdStrength()"></div><div class="pwd-strength"><div class="pwd-strength-fill" id="setupPwdStrengthFill"></div></div><div style="font-size:.65rem; color:#888; margin-top:4px;" id="setupPwdStrengthLabel"></div></div>
+        <div class="form-group"><label>Buat Password Keamanan</label><div style="position:relative; margin-bottom:8px;"><input type="password" id="setupPwdInput" class="form-control" placeholder="Buat password (min. 6 karakter)" oninput="evalSetupPwdStrength()"></div><div class="pwd-strength"><div class="pwd-strength-fill" id="setupPwdStrengthFill"></div></div><div style="font-size:.65rem; color:#888; margin-top:4px;" id="setupPwdStrengthLabel"></div></div>
         <div class="form-group"><label>Konfirmasi Password</label><input type="password" id="setupPwdConfirm" class="form-control" placeholder="Ulangi password"></div>
-        <div style="background:#fff3e0; border:1px solid #ffab00; border-radius:8px; padding:10px 12px; font-size:.7rem; color:#7a4f00; margin-bottom:16px; line-height:1.6;">⚠️ Password ini <strong>tidak bisa dipulihkan</strong>. Jika lupa, seluruh data akan terhapus. Simpan di tempat yang aman.</div>
+        <div style="background:#fff3e0; border:1px solid #ffab00; border-radius:8px; padding:10px 12px; font-size:.7rem; color:#7a4f00; margin-bottom:16px; line-height:1.6;">Password ini <strong>tidak bisa dipulihkan</strong>. Jika lupa, seluruh data akan terhapus. Simpan di tempat yang aman.</div>
         <div id="setupStatusMsg" class="setup-status"></div>
-        <button id="setupConnectBtn" class="btn btn-primary" style="width:100%; margin-bottom:16px;" onclick="doFirstTimeSetup()">🔐 Simpan & Mulai</button>
+        <button id="setupConnectBtn" class="btn btn-primary" style="width:100%; margin-bottom:16px;" onclick="doFirstTimeSetup()">Simpan & Mulai</button>
     </div>
 </div>
 
 <!-- AI Analysis Modal -->
 <div id="aiAnalysisModal" class="modal">
     <div class="modal-content wide" style="max-width:680px; max-height:90vh;">
-        <div class="modal-header"><h3>🤖 Analisis Keuangan</h3><button class="modal-close" onclick="closeModal('aiAnalysisModal')">×</button></div>
+        <div class="modal-header"><h3>Analisis Keuangan</h3><button class="modal-close" onclick="closeModal('aiAnalysisModal')">×</button></div>
         <div id="aiWorkerWarning" style="display:none; background:#fff3e0; border:1px solid #ffab00; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:.75rem; color:#7a4f00; line-height:1.6;">
-            ⚠️ <strong>Worker URL belum dikonfigurasi.</strong> Buka <a href="#" onclick="closeModal('aiAnalysisModal'); openSetelanModal(); return false;" style="color:#cc7b00; font-weight:600;">⚙️ Setelan → Analisis AI</a> untuk mengisi URL Cloudflare Worker Anda.
+            <strong>Worker URL belum dikonfigurasi.</strong> Buka <a href="#" onclick="closeModal('aiAnalysisModal'); openSetelanModal(); return false;" style="color:#cc7b00; font-weight:600;">Setelan → Analisis AI</a> untuk mengisi URL Cloudflare Worker Anda.
         </div>
         <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
             <select id="aiAnalysisPeriod" class="budget-select" style="flex:1; min-width:140px;">
@@ -811,14 +808,14 @@
                 <option value="saving">Tips Hemat & Menabung</option>
                 <option value="cashflow">Arus Kas & Tren</option>
             </select>
-            <button id="aiAnalysisRunBtn" class="btn btn-primary" style="background:#6b46c1; border-color:#6b46c1;" onclick="runAIAnalysis()">✨ Analisis Sekarang</button>
+            <button id="aiAnalysisRunBtn" class="btn btn-primary" style="background:#6b46c1; border-color:#6b46c1;" onclick="runAIAnalysis()">Analisis Sekarang</button>
         </div>
         <div id="aiAnalysisResult" style="min-height:200px; background:#faf9ff; border:1.5px solid #e9e3ff; border-radius:10px; padding:18px 20px; font-size:.82rem; line-height:1.75; color:#1a1a1a; white-space:pre-wrap; overflow-y:auto; max-height:420px;">
             <div style="text-align:center; color:#999; padding:40px 0;">Pilih periode dan jenis analisis, lalu klik <strong>Analisis Sekarang</strong>.</div>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:8px;">
             <span id="aiAnalysisFooter" style="font-size:.65rem; color:#aaa;"></span>
-            <div style="display:flex; gap:8px;"><button id="aiCopyBtn" class="btn btn-secondary" style="display:none;" onclick="copyAIResult()">📋 Salin</button><button class="btn btn-secondary" onclick="closeModal('aiAnalysisModal')">Tutup</button></div>
+            <div style="display:flex; gap:8px;"><button id="aiCopyBtn" class="btn btn-secondary" style="display:none;" onclick="copyAIResult()">Salin</button><button class="btn btn-secondary" onclick="closeModal('aiAnalysisModal')">Tutup</button></div>
         </div>
     </div>
 </div>
@@ -827,7 +824,7 @@
 <div id="faseKehidupanModal" class="modal" style="z-index:2000;">
     <div class="modal-content" style="max-width:480px;">
         <div class="modal-header">
-            <h3>💍 Fase Kehidupan Pernikahan</h3>
+            <h3>Fase Kehidupan Pernikahan</h3>
             <button class="modal-close" onclick="window.closeModal('faseKehidupanModal')">×</button>
         </div>
         <div style="padding:0 22px 16px;">
@@ -838,13 +835,13 @@
                 <label>Fase Kehidupan Saat Ini</label>
                 <select id="faseSelect" class="form-control" onchange="window.updateFaseDesc()">
                     <option value="">-- Pilih Fase --</option>
-                    <option value="1">💑 Fase 1 — Bulan Madu (0–2 thn menikah)</option>
-                    <option value="2">🏠 Fase 2 — Penyesuaian & Realita (2–5 thn)</option>
-                    <option value="3">👶 Fase 3 — Pengasuhan Awal (anak pertama lahir)</option>
-                    <option value="4">🎒 Fase 4 — Keluarga Aktif (anak usia sekolah)</option>
-                    <option value="5">🧑‍🎓 Fase 5 — Remaja & Melepas (anak remaja)</option>
-                    <option value="6">🪹 Fase 6 — Sarang Kosong (anak mandiri)</option>
-                    <option value="7">👴👵 Fase 7 — Pensiun & Menua Bersama</option>
+                    <option value="1">Fase 1 — Bulan Madu (0–2 thn menikah)</option>
+                    <option value="2">Fase 2 — Penyesuaian & Realita (2–5 thn)</option>
+                    <option value="3">Fase 3 — Pengasuhan Awal (anak pertama lahir)</option>
+                    <option value="4">Fase 4 — Keluarga Aktif (anak usia sekolah)</option>
+                    <option value="5">Fase 5 — Remaja & Melepas (anak remaja)</option>
+                    <option value="6">Fase 6 — Sarang Kosong (anak mandiri)</option>
+                    <option value="7">Fase 7 — Pensiun & Menua Bersama</option>
                 </select>
             </div>
             <div id="faseDescBox" style="font-size:.72rem; color:#555; background:#fafafa; border:1px solid #eee; border-radius:8px; padding:10px 12px; margin-bottom:14px; line-height:1.7; display:none;"></div>
@@ -858,7 +855,7 @@
             </div>
             <div style="display:flex; gap:8px; margin-top:4px;">
                 <button class="btn btn-secondary" style="flex:1;" onclick="window.closeModal('faseKehidupanModal')">Batal</button>
-                <button class="btn btn-primary" style="flex:2; background:#e53e8a; border-color:#e53e8a;" onclick="window.saveFaseKehidupan()">💾 Simpan</button>
+                <button class="btn btn-primary" style="flex:2; background:#e53e8a; border-color:#e53e8a;" onclick="window.saveFaseKehidupan()">Simpan</button>
             </div>
         </div>
     </div>
@@ -868,7 +865,7 @@
 <div id="faseAIModal" class="modal" style="z-index:2000;">
     <div class="modal-content report" style="max-width:620px;">
         <div class="modal-header">
-            <h3>🤖 Analisis AI — Fase Kehidupan</h3>
+            <h3>Analisis AI — Fase Kehidupan</h3>
             <button class="modal-close" onclick="window.closeModal('faseAIModal')">×</button>
         </div>
         <div style="padding:0 22px 16px;">
@@ -878,8 +875,8 @@
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:8px;">
                 <span id="faseAIFooter" style="font-size:.65rem; color:#aaa;"></span>
                 <div style="display:flex; gap:8px;">
-                    <button id="faseAICopyBtn" class="btn btn-secondary" style="display:none;" onclick="window.copyFaseAIResult()">📋 Salin</button>
-                    <button id="faseAIRunBtn" class="btn btn-primary" style="background:#e53e8a; border-color:#e53e8a;" onclick="window.runFaseAIAnalysis()">✨ Analisis Sekarang</button>
+                    <button id="faseAICopyBtn" class="btn btn-secondary" style="display:none;" onclick="window.copyFaseAIResult()">Salin</button>
+                    <button id="faseAIRunBtn" class="btn btn-primary" style="background:#e53e8a; border-color:#e53e8a;" onclick="window.runFaseAIAnalysis()">Analisis Sekarang</button>
                     <button class="btn btn-secondary" onclick="window.closeModal('faseAIModal')">Tutup</button>
                 </div>
             </div>
@@ -890,7 +887,7 @@
 <!-- Account Manager Modal -->
 <div id="accountManagerModal" class="modal" style="z-index:2100;">
     <div class="modal-content" style="max-width:500px;">
-        <div class="modal-header"><h3>👤 Manajer Akun</h3><button class="modal-close" onclick="closeModal('accountManagerModal')">×</button></div>
+        <div class="modal-header"><h3>Manajer Akun</h3><button class="modal-close" onclick="closeModal('accountManagerModal')">×</button></div>
         <div style="padding:0 22px 16px;">
             <div style="font-size:.72rem; color:#666; margin-bottom:14px; line-height:1.6;">Setiap akun terhubung ke database Supabase yang berbeda. Beralih akun akan memuat data dari database tersebut.</div>
             <div id="accModalList" class="acc-modal-list"></div>
@@ -903,7 +900,7 @@
                 <div class="form-group" id="newAccPwdConfirmGroup"><label>Konfirmasi Password</label><input type="password" id="newAccPwdConfirm" class="form-control" placeholder="Ulangi password enkripsi"><div style="font-size:.65rem; color:#888; margin-top:4px;">Pastikan password yang dimasukkan sama persis.</div></div>
                 <input type="hidden" id="editingAccId" value="">
                 <div id="newAccStatus" style="font-size:.72rem; margin-bottom:10px; min-height:16px;"></div>
-                <div style="display:flex; gap:8px;"><button class="btn btn-secondary" style="flex:1;" onclick="cancelEditAccount()">Batal</button><button class="btn btn-primary" style="flex:2;" onclick="saveNewAccount()">💾 Simpan Akun</button></div>
+                <div style="display:flex; gap:8px;"><button class="btn btn-secondary" style="flex:1;" onclick="cancelEditAccount()">Batal</button><button class="btn btn-primary" style="flex:2;" onclick="saveNewAccount()">Simpan Akun</button></div>
             </div>
         </div>
     </div>
@@ -912,12 +909,12 @@
 <!-- Account Unlock Modal -->
 <div id="accountUnlockModal" class="modal" style="z-index:2200;">
     <div class="modal-content" style="max-width:360px; text-align:center;">
-        <div class="modal-header"><h3 id="accUnlockTitle">🔑 Buka Akun</h3><button class="modal-close" onclick="closeModal('accountUnlockModal')">×</button></div>
+        <div class="modal-header"><h3 id="accUnlockTitle">Buka Akun</h3><button class="modal-close" onclick="closeModal('accountUnlockModal')">×</button></div>
         <div style="padding:20px 22px 22px;">
             <div style="font-size:.75rem; color:#666; margin-bottom:16px;" id="accUnlockSubtitle">Masukkan password untuk akun ini</div>
             <div style="position:relative; margin-bottom:14px;"><input type="password" id="accUnlockPwdInput" class="form-control" placeholder="Password akun" onkeydown="if(event.key==='Enter') submitAccountUnlock()"></div>
             <div id="accUnlockStatus" style="font-size:.72rem; color:#de350b; margin-bottom:12px; min-height:16px;"></div>
-            <button class="btn btn-primary" style="width:100%;" onclick="submitAccountUnlock()">🔓 Buka & Beralih</button>
+            <button class="btn btn-primary" style="width:100%;" onclick="submitAccountUnlock()">Buka & Beralih</button>
         </div>
     </div>
 </div>
@@ -926,7 +923,7 @@
 <div id="mobileDrawerOverlay" onclick="closeMobileDrawer()" style="position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:3000; backdrop-filter:blur(2px); opacity:0; pointer-events:none; transition:opacity 0.25s;"></div>
 <div id="mobileDrawer" style="position:fixed; top:0; right:0; height:100%; width:82%; max-width:300px; background:#fff; z-index:3001; box-shadow:-4px 0 24px rgba(0,0,0,0.18); border-left:2px solid #1a1a1a; overflow-y:auto; transform:translateX(100%); transition:transform 0.25s cubic-bezier(.4,0,.2,1); display:flex; flex-direction:column;">
     <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 18px 14px; border-bottom:1.5px solid #1a1a1a; background:#1a1a1a;">
-        <span style="font-size:.9rem; font-weight:700; color:#fff;">☰ Menu</span>
+        <span style="font-size:.9rem; font-weight:700; color:#fff;">Menu</span>
         <button onclick="closeMobileDrawer()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:#fff; line-height:1;">×</button>
     </div>
     <div style="padding:14px 18px; background:#e8f0fe; border-bottom:1px solid #c5d8ff;">
@@ -934,12 +931,12 @@
         <div id="drawerAccountLabel" style="font-size:.8rem; font-weight:700; color:#1a1a1a;">—</div>
     </div>
     <div style="padding:16px 18px; display:flex; flex-direction:column; gap:10px; flex:1;">
-        <button onclick="drawerAction(openBookManager)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#1a1a1a; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">📚 Kelola Buku</button>
-        <button onclick="drawerAction(forceFullSync)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#00875a; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">🔄 Sinkronisasi</button>
-        <button onclick="drawerAction(openSetelanModal)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#4a5568; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">⚙️ Setelan</button>
-        <button onclick="drawerAction(openPaymentReminderModal)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#d97706; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px; position:relative;">🔔 Pengingat Pembayaran <span id="drawerReminderBadge" style="display:none; background:#ef4444; color:#fff; font-size:.6rem; font-weight:700; border-radius:10px; padding:1px 6px; margin-left:auto;"></span></button>
+        <button onclick="drawerAction(openBookManager)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#1a1a1a; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">Kelola Buku</button>
+        <button onclick="drawerAction(forceFullSync)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#00875a; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">Sinkronisasi</button>
+        <button onclick="drawerAction(openSetelanModal)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#4a5568; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">Setelan</button>
+        <button onclick="drawerAction(openPaymentReminderModal)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#d97706; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px; position:relative;">Pengingat Pembayaran <span id="drawerReminderBadge" style="display:none; background:#ef4444; color:#fff; font-size:.6rem; font-weight:700; border-radius:10px; padding:1px 6px; margin-left:auto;"></span></button>
         <div style="height:1px; background:#eee; margin:4px 0;"></div>
-        <button onclick="drawerAction(logoutToLockScreen)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#f5f5f5; color:#1a1a1a; border:1.5px solid #ddd; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">🔄 Ganti Akun</button>
+        <button onclick="drawerAction(logoutToLockScreen)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#f5f5f5; color:#1a1a1a; border:1.5px solid #ddd; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">Ganti Akun</button>
     </div>
 </div>
 
@@ -947,7 +944,7 @@
 <div id="paymentReminderModal" class="modal" style="z-index:2000;">
     <div class="modal-content" style="max-width:560px;">
         <div class="modal-header">
-            <h3>🔔 Jadwal Pembayaran</h3>
+            <h3>Jadwal Pembayaran</h3>
             <button class="modal-close" onclick="closeModal('paymentReminderModal')">×</button>
         </div>
         <div style="padding:0 22px 16px;">
@@ -979,8 +976,8 @@
                     <div class="form-group" style="flex:1; min-width:120px; margin-bottom:10px;">
                         <label>Pengulangan</label>
                         <select id="prRecurrence" class="form-control" onchange="togglePrMonthField()">
-                            <option value="monthly">📅 Bulanan</option>
-                            <option value="yearly">📆 Tahunan</option>
+                            <option value="monthly">Bulanan</option>
+                            <option value="yearly">Tahunan</option>
                         </select>
                     </div>
                     <div class="form-group" id="prMonthGroup" style="flex:1; min-width:120px; margin-bottom:10px; display:none;">
@@ -1000,7 +997,7 @@
                 <div id="prFormStatus" style="font-size:.72rem; color:#de350b; margin-bottom:8px; min-height:16px;"></div>
                 <div style="display:flex; gap:8px;">
                     <button class="btn btn-secondary" style="flex:1;" onclick="cancelPrEdit()">Batal</button>
-                    <button class="btn btn-primary" style="flex:2; background:#d97706; border-color:#d97706;" onclick="savePaymentReminderHandler()">💾 Simpan Jadwal</button>
+                    <button class="btn btn-primary" style="flex:2; background:#d97706; border-color:#d97706;" onclick="savePaymentReminderHandler()">Simpan Jadwal</button>
                 </div>
             </div>
         </div>
@@ -1403,17 +1400,17 @@ window.runFullMigration = async function() {
   const bookId = _getCurrentBookId();
 
   if (!bookId) {
-    if (statusEl) statusEl.textContent = '❌ Tidak ada buku aktif. Pilih buku dulu.';
+    if (statusEl) statusEl.textContent = 'Tidak ada buku aktif. Pilih buku dulu.';
     return;
   }
 
   const sb = _getSupabase();
   if (!sb) {
-    if (statusEl) statusEl.textContent = '❌ Tidak terhubung ke Supabase. Pastikan koneksi aktif.';
+    if (statusEl) statusEl.textContent = 'Tidak terhubung ke Supabase. Pastikan koneksi aktif.';
     return;
   }
 
-  if (statusEl) statusEl.innerHTML = '⏳ Sedang migrasi data...';
+  if (statusEl) statusEl.innerHTML = 'Sedang migrasi data...';
   let pushed = 0;
 
   // Push defaultBudget
@@ -1465,7 +1462,7 @@ window.runFullMigration = async function() {
     }
   }
 
-  if (statusEl) statusEl.innerHTML = `✅ Migrasi selesai: ${pushed} data berhasil dikirim ke cloud.`;
+  if (statusEl) statusEl.innerHTML = `Migrasi selesai: ${pushed} data berhasil dikirim ke cloud.`;
   _log(`Migrasi selesai: ${pushed} item`);
 };
 
@@ -1473,15 +1470,15 @@ window.checkMigrationStatus = async function() {
   const statusEl = document.getElementById('migrationStatus');
   const bookId = _getCurrentBookId();
   if (!bookId) {
-    if (statusEl) statusEl.textContent = '❌ Tidak ada buku aktif.';
+    if (statusEl) statusEl.textContent = 'Tidak ada buku aktif.';
     return;
   }
   const sb = _getSupabase();
   if (!sb) {
-    if (statusEl) statusEl.textContent = '❌ Tidak terhubung ke Supabase.';
+    if (statusEl) statusEl.textContent = 'Tidak terhubung ke Supabase.';
     return;
   }
-  if (statusEl) statusEl.textContent = '⏳ Memeriksa...';
+  if (statusEl) statusEl.textContent = 'Memeriksa...';
   try {
     const { data, error } = await sb
       .from('settings_sync')
@@ -1489,18 +1486,18 @@ window.checkMigrationStatus = async function() {
       .eq('book_id', bookId);
     if (error) throw error;
     if (!data || data.length === 0) {
-      if (statusEl) statusEl.innerHTML = '⚠️ Belum ada data di cloud. Klik <b>Migrasi Semua Data</b> untuk memulai.';
+      if (statusEl) statusEl.innerHTML = 'Belum ada data di cloud. Klik <b>Migrasi Semua Data</b> untuk memulai.';
       return;
     }
     const lines = data.map(r => {
       const d = new Date(r.updated_at);
       const dStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
       const isMe = r.device_id === _getDeviceId() ? ' (perangkat ini)' : '';
-      return `✅ ${r.setting_key} — ${dStr}${isMe}`;
+      return `${r.setting_key} — ${dStr}${isMe}`;
     });
     if (statusEl) statusEl.innerHTML = `<b>${data.length} data tersinkron:</b><br>${lines.join('<br>')}`;
   } catch(e) {
-    if (statusEl) statusEl.textContent = `❌ Gagal cek: ${e.message}`;
+    if (statusEl) statusEl.textContent = `Gagal cek: ${e.message}`;
   }
 };
 
@@ -1541,7 +1538,7 @@ function _init() {
   }, 2500);
 
   _patchReady = true;
-  _log('Patch aktif ✅');
+  _log('Patch aktif ');
 
   // Expose untuk debugging
   window._syncPatch = {
@@ -1566,7 +1563,7 @@ if (document.readyState === 'complete') {
 <div id="tutupAnakBukuModal" class="modal">
     <div class="modal-content" style="max-width:480px;">
         <div class="modal-header">
-            <h3>📤 Tutup & Kirim ke Buku Induk</h3>
+            <h3>Tutup & Kirim ke Buku Induk</h3>
             <button class="modal-close" onclick="closeModal('tutupAnakBukuModal')">×</button>
         </div>
         <div id="tutupAnakBukuInfo" style="margin-bottom:14px;"></div>
@@ -1580,7 +1577,7 @@ if (document.readyState === 'complete') {
             <button class="btn btn-secondary" onclick="closeModal('tutupAnakBukuModal')">Batal</button>
             <button class="btn btn-primary" style="background:#6b46c1; border-color:#6b46c1;"
                     onclick="window.tutupAnakBuku()">
-                📤 Kirim Ringkasan ke Induk
+                Kirim Ringkasan ke Induk
             </button>
         </div>
     </div>
