@@ -379,6 +379,7 @@ window.renderAnnualBudgetForm = function() {
 window._renderAnnualRow = function(idx) {
     const container = document.getElementById('annualBudgetItemsContainer');
     const row = window._annualBudgetRows[idx];
+    const isOnlyRow = window._annualBudgetRows.length <= 1;
     const div = document.createElement('div');
     div.className = 'budget-cat-row';
     div.id = 'annual-row-' + idx;
@@ -390,22 +391,32 @@ window._renderAnnualRow = function(idx) {
         <input type="text" class="form-control" style="flex:1;" placeholder="Rp 0"
             value="${row.amount ? Number(row.amount).toLocaleString('id-ID') : ''}"
             oninput="window.formatRupiah(this); window._annualBudgetRows[${idx}].amount = window.unRp(this.value); window.updateAnnualBudgetSummary();">
-        <button onclick="window.removeAnnualBudgetRow(${idx})" 
-            style="background:none; border:1.5px solid #de350b; color:#de350b; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:.85rem; flex-shrink:0;">Hapus</button>
+        ${isOnlyRow ? '' : `<button onclick="window.removeAnnualBudgetRow(${idx})" 
+            style="background:none; border:1.5px solid #de350b; color:#de350b; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:.85rem; flex-shrink:0;">Hapus</button>`}
     `;
     container.appendChild(div);
 };
 
 window.addAnnualBudgetRow = function() {
     if (!window._annualBudgetRows) window._annualBudgetRows = [];
-    const idx = window._annualBudgetRows.length;
     window._annualBudgetRows.push({ name: '', amount: 0 });
-    window._renderAnnualRow(idx);
+    // Render ulang semua baris (bukan cuma baris baru) karena baris pertama
+    // mungkin baru saja kehilangan/mendapat kembali tombol "Hapus"-nya.
+    const container = document.getElementById('annualBudgetItemsContainer');
+    container.innerHTML = '';
+    window._annualBudgetRows.forEach((_, i) => window._renderAnnualRow(i));
     window.updateAnnualBudgetSummary();
 };
 
 window.removeAnnualBudgetRow = function(idx) {
-    window._annualBudgetRows.splice(idx, 1);
+    // Baris terakhir tidak boleh benar-benar hilang dari form - kalau dipaksa
+    // (lewat panggilan lain), cukup dikosongkan supaya form tidak pernah
+    // berada dalam keadaan 0 baris yang lalu bisa "disimpan" begitu saja.
+    if (window._annualBudgetRows.length <= 1) {
+        window._annualBudgetRows[0] = { name: '', amount: 0 };
+    } else {
+        window._annualBudgetRows.splice(idx, 1);
+    }
     const container = document.getElementById('annualBudgetItemsContainer');
     container.innerHTML = '';
     window._annualBudgetRows.forEach((_, i) => window._renderAnnualRow(i));
