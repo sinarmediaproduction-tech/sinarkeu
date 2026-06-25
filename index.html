@@ -649,6 +649,16 @@
             </div>
         </div>
 
+        <!-- Reset Aplikasi Total -->
+        <div class="data-management-panel" style="border-color:#7b0000; background:#fff0f0; margin-top:0;">
+            <div class="panel-title" style="color:#7b0000;">💣 Reset Total Aplikasi</div>
+            <div style="font-size:.7rem; color:#666; margin-bottom:12px; line-height:1.6;">
+                Hapus <b>semua buku, transaksi, dan setelan</b> baik di Supabase maupun di penyimpanan lokal. Aplikasi akan kembali ke kondisi <b>bersih seperti baru dipasang</b>. Gunakan saat ingin memulai dari awal atau berpindah akun Supabase.
+            </div>
+            <div id="resetAppStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
+            <button class="btn btn-danger" style="width:100%; background:#7b0000; border-color:#7b0000;" onclick="window.resetAllApplication()">💣 Reset Total — Hapus Semua Data</button>
+        </div>
+
         <!-- Arsipkan JSON -->
         <div class="data-management-panel" style="border-color:#de350b; background:#fff5f5; margin-top:0;">
             <div class="panel-title" style="color:#de350b;">🗃️ Arsipkan & Kosongkan Database</div>

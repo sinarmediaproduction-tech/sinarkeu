@@ -371,3 +371,98 @@ window.backupToGoogleSheets = async function() {
         console.error('[BackupGSheets]', e);
     }
 };
+
+// ==================== RESET APLIKASI TOTAL ====================
+// Menghapus SEMUA buku, transaksi, settings di Supabase DAN localStorage
+// Aplikasi kembali ke kondisi fresh install (kosong)
+window.resetAllApplication = async function() {
+    // Konfirmasi 1
+    const confirm1 = confirm(
+        '⚠️ RESET TOTAL APLIKASI ⚠️\n\n' +
+        'Tindakan ini akan menghapus SEMUA data secara permanen:\n' +
+        '• Semua buku keuangan\n' +
+        '• Semua transaksi\n' +
+        '• Semua anggaran & setelan\n' +
+        '• Data Supabase (cloud)\n' +
+        '• Data lokal (localStorage)\n\n' +
+        '⚠️ TIDAK DAPAT DIBATALKAN!\n\n' +
+        'Klik OK untuk lanjut ke konfirmasi berikutnya.'
+    );
+    if (!confirm1) return;
+
+    // Konfirmasi 2 — ketik kata kunci
+    const userInput = prompt('Ketik kata "RESET" (huruf kapital semua) untuk mengonfirmasi penghapusan total:');
+    if (userInput !== 'RESET') {
+        alert('❌ Konfirmasi tidak cocok. Reset dibatalkan.');
+        return;
+    }
+
+    // Konfirmasi 3 — final
+    const confirm3 = confirm(
+        '💀 KONFIRMASI FINAL 💀\n\n' +
+        'Anda BENAR-BENAR yakin ingin mereset aplikasi?\n\n' +
+        'Seluruh data akan TERHAPUS PERMANEN.\n' +
+        'Klik OK untuk eksekusi reset.'
+    );
+    if (!confirm3) return;
+
+    // Tampilkan status
+    const st = document.getElementById('resetAppStatus');
+    const show = (color, bg, msg) => {
+        if (!st) return;
+        st.style.display = 'block';
+        st.style.color = color;
+        st.style.background = bg;
+        st.innerText = msg;
+    };
+    show('#cc7b00', '#fff3e0', '⏳ Memulai reset...');
+
+    try {
+        // ── Hapus Supabase (semua tabel, tanpa filter book_id) ──
+        if (window.isOnline() && window.getCloudUrl() && window.getSupabaseKey()) {
+            show('#cc7b00', '#fff3e0', '⏳ Menghapus transaksi dari Supabase...');
+            await window.callSupabaseAPI('transactions', 'DELETE', null, '?id=neq.00000000-0000-0000-0000-000000000000');
+
+            show('#cc7b00', '#fff3e0', '⏳ Menghapus log audit dari Supabase...');
+            await window.callSupabaseAPI('audit_logs', 'DELETE', null, '?id=neq.00000000-0000-0000-0000-000000000000');
+
+            show('#cc7b00', '#fff3e0', '⏳ Menghapus settings dari Supabase...');
+            await window.callSupabaseAPI('settings', 'DELETE', null, '?key=neq.__placeholder__');
+
+            show('#cc7b00', '#fff3e0', '⏳ Menghapus pengingat pembayaran dari Supabase...');
+            await window.callSupabaseAPI('payment_reminders', 'DELETE', null, '?id=neq.00000000-0000-0000-0000-000000000000');
+
+            show('#cc7b00', '#fff3e0', '⏳ Menghapus cadangan cloud dari Supabase...');
+            await window.callSupabaseAPI('backups', 'DELETE', null, '?id=neq.00000000-0000-0000-0000-000000000000');
+        } else {
+            show('#cc7b00', '#fff8e1', '⚠️ Offline — Supabase tidak dibersihkan, hanya localStorage yang direset.');
+            await new Promise(r => setTimeout(r, 1500));
+        }
+
+        // ── Hapus SEMUA localStorage dengan prefix sk_ ──
+        show('#cc7b00', '#fff3e0', '⏳ Menghapus data lokal...');
+        const keysToDelete = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('sk_')) keysToDelete.push(k);
+        }
+        keysToDelete.forEach(k => localStorage.removeItem(k));
+
+        // ── Reset state in-memory ──
+        window.txs = [];
+        window.books = [];
+        window.currentBookId = null;
+        window.budgets = {};
+
+        show('#006644', '#e3fcef', '✅ Reset selesai! Aplikasi akan dimuat ulang...');
+        window.showToast('✅ Aplikasi berhasil direset', 'success');
+
+        // Reload setelah jeda singkat agar pesan terbaca
+        setTimeout(() => { location.reload(); }, 2000);
+
+    } catch (e) {
+        console.error('[ResetApp]', e);
+        show('#de350b', '#fff5f5', '❌ Gagal: ' + e.message + '\n\nCoba hapus manual via Supabase dashboard.');
+        window.showToast('❌ Reset gagal: ' + e.message, 'error');
+    }
+};
