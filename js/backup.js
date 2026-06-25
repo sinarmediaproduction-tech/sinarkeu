@@ -375,8 +375,73 @@ window.backupToGoogleSheets = async function() {
 // ==================== RESET APLIKASI TOTAL ====================
 // Menghapus SEMUA buku, transaksi, settings di Supabase DAN localStorage
 // Aplikasi kembali ke kondisi fresh install (kosong)
+// ── Helper: kumpulkan semua data lokal semua buku jadi satu objek ekspor ──
+window._collectAllDataForExport = function() {
+    const books = JSON.parse(localStorage.getItem('sk_books') || '[]');
+    const exportData = {
+        exportedAt: new Date().toISOString(),
+        exportedBy: localStorage.getItem('sk_device_id') || 'unknown',
+        appVersion: 'sinarkeu',
+        books: [],
+    };
+    books.forEach(book => {
+        const txs      = JSON.parse(localStorage.getItem('sk_txs_'             + book.id) || '[]');
+        const budgets  = JSON.parse(localStorage.getItem('sk_budgets_'         + book.id) || '{}');
+        const defBudget= JSON.parse(localStorage.getItem('sk_default_budget_'  + book.id) || '{}');
+        const annBudget= JSON.parse(localStorage.getItem('sk_annual_budget_'   + book.id) || '{}');
+        const reminders= JSON.parse(localStorage.getItem('sk_payment_reminders_' + book.id) || '[]');
+        const logs     = JSON.parse(localStorage.getItem('sk_logs_'            + book.id) || '[]');
+        exportData.books.push({
+            id: book.id, name: book.name,
+            transactions: txs,
+            budgets, defaultBudget: defBudget, annualBudget: annBudget,
+            paymentReminders: reminders,
+            auditLogs: logs,
+        });
+    });
+    return exportData;
+};
+
+// ── Helper: trigger download file JSON ──
+window._downloadJSON = function(data, filename) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+};
+
 window.resetAllApplication = async function() {
-    // Konfirmasi 1
+    // Konfirmasi 1 — tawarkan opsi export sebelum reset
+    const wantExport = confirm(
+        '💾 EKSPOR DATA SEBELUM RESET?\n\n' +
+        'Sebelum menghapus semua data, apakah Anda ingin\n' +
+        'mengunduh backup JSON semua buku terlebih dahulu?\n\n' +
+        'Klik OK  → ekspor dulu, lalu lanjut ke reset\n' +
+        'Klik Batal → lanjut reset TANPA ekspor'
+    );
+
+    if (wantExport) {
+        const st = document.getElementById('resetAppStatus');
+        if (st) { st.style.display='block'; st.style.color='#cc7b00'; st.style.background='#fff3e0'; st.innerText='⏳ Menyiapkan file ekspor...'; }
+        try {
+            const exportData = window._collectAllDataForExport();
+            const totalTx = exportData.books.reduce((s, b) => s + b.transactions.length, 0);
+            const fileName = `Sinarkeu-Backup-Sebelum-Reset-${new Date().toISOString().slice(0,10)}.json`;
+            window._downloadJSON(exportData, fileName);
+            await new Promise(r => setTimeout(r, 1200)); // beri jeda agar browser mulai download
+            if (st) { st.innerText = `✅ File "${fileName}" sedang diunduh (${totalTx} transaksi dari ${exportData.books.length} buku). Lanjutkan reset di bawah...`; }
+            await new Promise(r => setTimeout(r, 800));
+        } catch (e) {
+            if (st) { st.innerText = ''; st.style.display = 'none'; }
+            alert('❌ Gagal mengekspor data: ' + e.message + '\nReset dibatalkan untuk keamanan.');
+            return;
+        }
+    }
+
+    // Konfirmasi 2 — peringatan hapus
     const confirm1 = confirm(
         '⚠️ RESET TOTAL APLIKASI ⚠️\n\n' +
         'Tindakan ini akan menghapus SEMUA data secara permanen:\n' +
@@ -385,19 +450,20 @@ window.resetAllApplication = async function() {
         '• Semua anggaran & setelan\n' +
         '• Data Supabase (cloud)\n' +
         '• Data lokal (localStorage)\n\n' +
+        (wantExport ? '✅ Backup sudah diunduh.\n\n' : '') +
         '⚠️ TIDAK DAPAT DIBATALKAN!\n\n' +
         'Klik OK untuk lanjut ke konfirmasi berikutnya.'
     );
     if (!confirm1) return;
 
-    // Konfirmasi 2 — ketik kata kunci
+    // Konfirmasi 3 — ketik kata kunci
     const userInput = prompt('Ketik kata "RESET" (huruf kapital semua) untuk mengonfirmasi penghapusan total:');
     if (userInput !== 'RESET') {
         alert('❌ Konfirmasi tidak cocok. Reset dibatalkan.');
         return;
     }
 
-    // Konfirmasi 3 — final
+    // Konfirmasi 4 — final
     const confirm3 = confirm(
         '💀 KONFIRMASI FINAL 💀\n\n' +
         'Anda BENAR-BENAR yakin ingin mereset aplikasi?\n\n' +
@@ -464,5 +530,210 @@ window.resetAllApplication = async function() {
         console.error('[ResetApp]', e);
         show('#de350b', '#fff5f5', '❌ Gagal: ' + e.message + '\n\nCoba hapus manual via Supabase dashboard.');
         window.showToast('❌ Reset gagal: ' + e.message, 'error');
+    }
+};
+
+// ── Export semua data tanpa reset (tombol biru di panel Reset) ──
+window.exportAllDataOnly = async function() {
+    const st = document.getElementById('resetAppStatus');
+    const show = (color, bg, msg) => {
+        if (!st) return;
+        st.style.display = 'block';
+        st.style.color = color;
+        st.style.background = bg;
+        st.innerText = msg;
+    };
+    try {
+        show('#cc7b00', '#fff3e0', '⏳ Menyiapkan ekspor...');
+        const exportData = window._collectAllDataForExport();
+        const totalTx = exportData.books.reduce((s, b) => s + b.transactions.length, 0);
+        const fileName = `Sinarkeu-Export-${new Date().toISOString().slice(0, 10)}.json`;
+        window._downloadJSON(exportData, fileName);
+        show('#006644', '#e3fcef', `✅ "${fileName}" sedang diunduh — ${totalTx} transaksi dari ${exportData.books.length} buku.`);
+        window.showToast('✅ Ekspor berhasil', 'success');
+        setTimeout(() => { if (st) st.style.display = 'none'; }, 5000);
+    } catch (e) {
+        show('#de350b', '#fff5f5', '❌ Gagal ekspor: ' + e.message);
+    }
+};
+
+// ==================== IMPORT DATA DARI FILE JSON ====================
+window.importAllDataFromFile = async function(input) {
+    const file = input.files[0];
+    if (!file) return;
+    // Reset input agar file yang sama bisa dipilih lagi nanti
+    input.value = '';
+
+    const st = document.getElementById('importStatus');
+    const show = (color, bg, msg) => {
+        if (!st) return;
+        st.style.display = 'block';
+        st.style.color = color;
+        st.style.background = bg;
+        st.innerText = msg;
+    };
+
+    // ── Baca & validasi file ──
+    let importData;
+    try {
+        show('#cc7b00', '#fff3e0', '⏳ Membaca file...');
+        const text = await file.text();
+        importData = JSON.parse(text);
+    } catch (e) {
+        show('#de350b', '#fff5f5', '❌ File tidak valid atau bukan JSON: ' + e.message);
+        return;
+    }
+
+    // Validasi struktur minimal
+    if (!importData.books || !Array.isArray(importData.books)) {
+        show('#de350b', '#fff5f5', '❌ Format file tidak dikenali. Pastikan file berasal dari fitur Ekspor Sinarkeu.');
+        return;
+    }
+
+    const totalBuku = importData.books.length;
+    const totalTx   = importData.books.reduce((s, b) => s + (b.transactions?.length || 0), 0);
+
+    // ── Konfirmasi user ──
+    const ok = confirm(
+        `📥 IMPORT DATA\n\n` +
+        `File: ${file.name}\n` +
+        `Diekspor: ${importData.exportedAt ? new Date(importData.exportedAt).toLocaleString('id-ID') : 'tidak diketahui'}\n\n` +
+        `Berisi:\n` +
+        `• ${totalBuku} buku keuangan\n` +
+        `• ${totalTx} transaksi\n\n` +
+        `Data yang sudah ada di aplikasi TIDAK akan dihapus.\n` +
+        `Buku baru akan ditambahkan, buku yang sama (ID sama) akan digabung.\n\n` +
+        `Lanjutkan import?`
+    );
+    if (!ok) {
+        if (st) st.style.display = 'none';
+        return;
+    }
+
+    show('#cc7b00', '#fff3e0', '⏳ Memulai import...');
+
+    let importedBooks = 0, importedTx = 0, skippedTx = 0, errors = [];
+
+    try {
+        // ── Ambil daftar buku yang sudah ada ──
+        let currentBooks = JSON.parse(localStorage.getItem('sk_books') || '[]');
+
+        for (const bookData of importData.books) {
+            if (!bookData.id || !bookData.name) { errors.push(`Buku tanpa ID/nama dilewati.`); continue; }
+
+            show('#cc7b00', '#fff3e0', `⏳ Mengimpor buku "${bookData.name}"...`);
+
+            // ── Tambahkan buku jika belum ada ──
+            const bookExists = currentBooks.find(b => b.id === bookData.id);
+            if (!bookExists) {
+                currentBooks.push({ id: bookData.id, name: bookData.name });
+            }
+
+            // ── Transaksi: merge dengan yang sudah ada (skip duplikat by id) ──
+            const existingTxsRaw = localStorage.getItem('sk_txs_' + bookData.id);
+            const existingTxs    = existingTxsRaw ? JSON.parse(existingTxsRaw) : [];
+            const existingIds    = new Set(existingTxs.map(t => t.id));
+
+            const newTxs = (bookData.transactions || []).filter(t => {
+                if (!t.id) { skippedTx++; return false; }
+                if (existingIds.has(t.id)) { skippedTx++; return false; }
+                return true;
+            });
+
+            const mergedTxs = [...existingTxs, ...newTxs]
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            window.trimAndSaveLocal(bookData.id, mergedTxs);
+            importedTx += newTxs.length;
+
+            // ── Anggaran: hanya tulis jika lokal kosong (jangan timpa data ada) ──
+            if (bookData.budgets && Object.keys(bookData.budgets).length > 0) {
+                const localBudget = localStorage.getItem('sk_budgets_' + bookData.id);
+                if (!localBudget || localBudget === '{}') {
+                    localStorage.setItem('sk_budgets_' + bookData.id, JSON.stringify(bookData.budgets));
+                }
+            }
+            if (bookData.defaultBudget && Object.keys(bookData.defaultBudget).length > 0) {
+                const localDef = localStorage.getItem('sk_default_budget_' + bookData.id);
+                if (!localDef || localDef === '{}') {
+                    window.saveDefaultBudgetToLocal(bookData.id, bookData.defaultBudget);
+                }
+            }
+            if (bookData.annualBudget && Object.keys(bookData.annualBudget).length > 0) {
+                const localAnn = localStorage.getItem('sk_annual_budget_' + bookData.id);
+                if (!localAnn || localAnn === '{}') {
+                    window.saveAnnualBudgetToLocal(bookData.id, bookData.annualBudget);
+                }
+            }
+
+            // ── Payment reminders: merge by id ──
+            if (Array.isArray(bookData.paymentReminders) && bookData.paymentReminders.length > 0) {
+                const existingRem    = JSON.parse(localStorage.getItem('sk_payment_reminders_' + bookData.id) || '[]');
+                const existingRemIds = new Set(existingRem.map(r => r.id));
+                const newRem         = bookData.paymentReminders.filter(r => r.id && !existingRemIds.has(r.id));
+                if (newRem.length > 0) {
+                    localStorage.setItem('sk_payment_reminders_' + bookData.id, JSON.stringify([...existingRem, ...newRem]));
+                }
+            }
+
+            // ── Push transaksi baru ke Supabase ──
+            if (newTxs.length > 0 && window.isOnline() && window.getCloudUrl() && window.getSupabaseKey()) {
+                show('#cc7b00', '#fff3e0', `⏳ Upload ${newTxs.length} transaksi buku "${bookData.name}" ke Supabase...`);
+                const payload = newTxs.map(t => ({
+                    id: t.id,
+                    book_id: bookData.id,
+                    device_id: window.deviceId,
+                    type: t.type,
+                    amount: parseFloat(t.amount) || 0,
+                    category: t.category || '',
+                    description: t.description || '',
+                    date: t.date,
+                    attachment: t.attachment || null,
+                    updated_at: t.updated_at || new Date().toISOString(),
+                    is_deleted: false,
+                }));
+                // Upload per-batch 50 agar tidak melebihi limit payload
+                for (let i = 0; i < payload.length; i += 50) {
+                    await window.callSupabaseAPI('transactions', 'POST', payload.slice(i, i + 50));
+                }
+            }
+
+            // ── Push anggaran ke Supabase ──
+            if (window.isOnline() && window._sessionCryptoKey) {
+                await window.pushSetting('budgets', bookData.budgets || {}, bookData.id);
+                await window.pushSetting('default_budget', bookData.defaultBudget || {}, bookData.id);
+                if (bookData.annualBudget) await window.pushSetting('annual_budget', bookData.annualBudget, bookData.id);
+            }
+
+            importedBooks++;
+        }
+
+        // ── Simpan daftar buku yang sudah digabung ──
+        localStorage.setItem('sk_books', JSON.stringify(currentBooks));
+        window.books = currentBooks;
+
+        // ── Perbarui UI ──
+        window.updateBookSelectDropdown();
+        if (window.books.find(b => b.id === window.currentBookId)) {
+            window.loadTransactions();
+        }
+        if (window.isOnline() && window._sessionCryptoKey) {
+            await window.pushSettingBooks();
+        }
+
+        // ── Ringkasan ──
+        const warningLine = errors.length > 0 ? `\n⚠️ ${errors.length} item dilewati: ${errors[0]}` : '';
+        show('#006644', '#e3fcef',
+            `✅ Import selesai!\n` +
+            `${importedBooks} buku, ${importedTx} transaksi baru ditambahkan` +
+            (skippedTx > 0 ? `, ${skippedTx} duplikat dilewati` : '') +
+            warningLine
+        );
+        window.showToast(`✅ Import selesai — ${importedTx} transaksi ditambahkan`, 'success');
+
+    } catch (e) {
+        console.error('[Import]', e);
+        show('#de350b', '#fff5f5', '❌ Import gagal: ' + e.message);
+        window.showToast('❌ Import gagal: ' + e.message, 'error');
     }
 };
