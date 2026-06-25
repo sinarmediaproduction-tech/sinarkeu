@@ -1117,6 +1117,7 @@ function _now() {
 // ─── Push ke Supabase ───────────────────────────────────────────────────────
 
 async function pushSettingToCloud(bookId, settingKey, value) {
+  if (!navigator.onLine) return { ok: false, reason: 'offline' };
   const sb = _getSupabase();
   if (!sb) return { ok: false, reason: 'no_client' };
   
@@ -1146,6 +1147,7 @@ async function pushSettingToCloud(bookId, settingKey, value) {
 // ─── Pull dari Supabase ─────────────────────────────────────────────────────
 
 async function pullSettingsFromCloud(bookId) {
+  if (!navigator.onLine) return { ok: false, reason: 'offline' };
   const sb = _getSupabase();
   if (!sb) return { ok: false, reason: 'no_client' };
 
@@ -1498,6 +1500,7 @@ window.checkMigrationStatus = async function() {
 // ─── Auto sync periodik ──────────────────────────────────────────────────────
 
 async function _autoSync() {
+  if (!navigator.onLine) return; // skip saat offline, hindari error di console
   const bookId = _getCurrentBookId();
   if (!bookId) return;
   const result = await pullSettingsFromCloud(bookId);
@@ -1522,6 +1525,7 @@ function _init() {
 
   // Pull data saat pertama load (delay agar app utama selesai init)
   setTimeout(async () => {
+    if (!navigator.onLine) return; // skip pull awal jika offline
     const bookId = _getCurrentBookId();
     if (bookId) {
       _log(`Pull awal untuk buku: ${bookId}`);
