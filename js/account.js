@@ -76,6 +76,9 @@ window._doSwitch = function(fromId, toId) {
     if (fromId) window._saveOutAccount(fromId);
     window._clearActiveKeys();
     window._restoreInAccount(toId);
+    // Reset cache Supabase client milik SyncPatch agar tidak bocor ke akun lain
+    window._syncPatchSupabaseClient = null;
+    window._supabaseClient = null;
     const nsHasBooks = localStorage.getItem('sk_a' + toId + '_books');
     if (!nsHasBooks && !localStorage.getItem('sk_books')) {
         const defaultBook = [{ id: 'b_default', name: 'Buku Utama' }];

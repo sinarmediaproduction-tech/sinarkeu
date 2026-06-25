@@ -1069,28 +1069,28 @@ function _log(msg, ...args) {
 }
 
 function _getSupabase() {
-  // Coba ambil client Supabase yang sudah dibuat oleh app utama
-  if (window._supabaseClient) return window._supabaseClient;
-  if (window.supabaseClient) return window.supabaseClient;
-  // Cache instance buatan patch ini sendiri, supaya tidak membuat
-  // GoTrueClient baru tiap kali _getSupabase() dipanggil (mis. tiap
-  // siklus _autoSync 30 detik), yang memicu warning "Multiple GoTrueClient
-  // instances" dan potensi state auth yang tidak konsisten.
-  if (window._syncPatchSupabaseClient) return window._syncPatchSupabaseClient;
-  // Fallback: coba buat dari variabel global app
+  // Selalu ambil URL & Key dari sesi aktif saat ini (bisa berubah saat ganti akun)
+  const url = (typeof window.getCloudUrl === 'function') ? window.getCloudUrl()
+             : (window._supabaseUrl || null);
+  const key = window.globalSupabaseKey || window._supabaseKey || null;
+  if (!url || !key) return null;
+
+  // Gunakan cache HANYA jika URL-nya masih sama dengan akun aktif.
+  // Saat _doSwitch() dipanggil, window._syncPatchSupabaseClient di-null-kan
+  // sehingga client lama tidak bocor ke akun berikutnya.
+  if (window._syncPatchSupabaseClient && window._syncPatchClientUrl === url) {
+    return window._syncPatchSupabaseClient;
+  }
+
+  // Coba gunakan client yang sudah dibuat oleh app utama (URL cocok)
+  if (window._supabaseClient && window._syncPatchClientUrl === url) return window._supabaseClient;
+  if (window.supabaseClient && window._syncPatchClientUrl === url) return window.supabaseClient;
+
+  // Buat client baru untuk URL/akun aktif
   try {
-    // Prioritas 1: _supabaseUrl + _supabaseKey (variabel internal app)
-    if (window._supabaseUrl && window._supabaseKey) {
-      window._syncPatchSupabaseClient = window.supabase.createClient(window._supabaseUrl, window._supabaseKey);
-      return window._syncPatchSupabaseClient;
-    }
-    // Prioritas 2: getCloudUrl() + globalSupabaseKey (fungsi/variabel publik app)
-    const url = (typeof window.getCloudUrl === 'function') ? window.getCloudUrl() : null;
-    const key = window.globalSupabaseKey || null;
-    if (url && key) {
-      window._syncPatchSupabaseClient = window.supabase.createClient(url, key);
-      return window._syncPatchSupabaseClient;
-    }
+    window._syncPatchSupabaseClient = window.supabase.createClient(url, key);
+    window._syncPatchClientUrl = url;
+    return window._syncPatchSupabaseClient;
   } catch(e) {}
   return null;
 }
