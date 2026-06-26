@@ -136,7 +136,7 @@
             <ul>
                 <li><strong>Kurs USD/IDR</strong> – Ditampilkan secara otomatis dari beberapa sumber API.</li>
                 <li><strong>Harga Emas Antam</strong> – Bisa diaktifkan dengan API key dari <em>emas.maulanar.my.id</em> (gratis).</li>
-                <li><strong>Zakat Maal</strong> – Atur persentase di <strong>Setelan</strong>, dan kartu zakat akan muncul di dashboard.</li>
+                <li><strong>Zakat Maal</strong> – Dihitung otomatis 2,5% dari pemasukan bulan kalender berjalan dan selalu tampil di dashboard.</li>
                 <li><strong>Log Audit</strong> – Semua aktivitas tercatat dan bisa dilihat di bawah tabel transaksi.</li>
             </ul>
 
@@ -537,17 +537,9 @@
         <div class="data-management-panel" style="border-color:#276749; background:#f0fff4; margin-top:0;">
             <div class="panel-title" style="color:#276749;">Zakat Maal</div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
-                Estimasi zakat maal dihitung dari <strong>total saldo akhir</strong>. Nisab zakat maal umumnya 2,5% dari harta yang telah mencapai haul (1 tahun).
+                Zakat maal dihitung otomatis <strong>2,5%</strong> dari total pemasukan bulan kalender berjalan.
             </div>
-            <div class="form-group" style="margin-bottom:10px;">
-                <label>Persentase Zakat (%)</label>
-                <input type="number" id="zakatPersenInput" class="form-control" placeholder="Contoh: 2.5" min="0" max="100" step="0.1" oninput="updateZakatPreview()">
-                <div id="zakatPreview" style="font-size:.7rem; color:#276749; margin-top:5px; min-height:16px;"></div>
-            </div>
-            <div style="display:flex; gap:8px;">
-                <button class="btn btn-danger" style="flex:1;" onclick="clearZakatSetting()">Hapus</button>
-                <button class="btn btn-primary" style="flex:2; background:#276749; border-color:#276749;" onclick="saveZakatSetting()">Simpan</button>
-            </div>
+            <div id="zakatPreview" style="font-size:.7rem; color:#276749; margin-top:5px; min-height:16px;"></div>
         </div>
 
         <!-- Telegram -->
