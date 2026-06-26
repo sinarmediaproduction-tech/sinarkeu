@@ -1845,3 +1845,19 @@ select.form-control option[value=""] {
   color: var(--ink-faint);
   margin-top: 2px;
 }
+
+/* ── Icon-only buttons (sync, setelan, reminder) ── */
+#manualSyncBtn, #setelanBtn, #reminderBtn {
+  background: none !important;
+  border-color: transparent !important;
+  color: var(--ink-faint);
+  opacity: 0.6;
+  transition: opacity 0.15s, color 0.15s, transform 0.15s;
+}
+#manualSyncBtn:hover, #setelanBtn:hover, #reminderBtn:hover {
+  opacity: 1;
+  color: var(--ink);
+  background: none !important;
+  border-color: transparent !important;
+  transform: scale(1.15);
+}
