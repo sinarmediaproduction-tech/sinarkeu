@@ -897,6 +897,35 @@ tr:hover td { background: var(--paper-warm); }
   border-color: var(--ink);
 }
 
+/* ── Styled Select Dropdown ── */
+select.form-control {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6B6B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+select.form-control:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230D0D0D' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
+select.form-control option {
+  background: var(--paper);
+  color: var(--ink);
+  padding: 8px 12px;
+  font-size: .78rem;
+}
+select.form-control option:hover,
+select.form-control option:focus,
+select.form-control option:checked {
+  background: var(--accent-lt);
+  color: var(--accent);
+}
+select.form-control option[value=""] {
+  color: var(--ink-faint);
+}
+
 .radio-group { display: flex; gap: 20px; margin-top: 6px; }
 .radio-label {
   display: flex;
