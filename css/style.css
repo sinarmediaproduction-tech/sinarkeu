@@ -735,6 +735,9 @@ tr:hover td { background: var(--paper-warm); }
   text-decoration: none;
   color: var(--accent);
   transition: opacity 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .attachment-link:hover { opacity: 0.6; }
 .no-attachment { color: var(--rule); }

@@ -64,7 +64,7 @@ window.render = function() {
         let expText = t.type === 'expense' ? window.rp(amt) : '-';
         let badge = t.type === 'income' ? '<span class="type-badge badge-inc">MASUK</span>' : '<span class="type-badge badge-exp">KELUAR</span>';
         let attCell = '<span class="no-attachment">&ndash;</span>';
-        if (t.attachment) attCell = `<span class="attachment-link" onclick="window.viewAttachment('${t.id}')">Lihat</span>`;
+        if (t.attachment) attCell = `<span class="attachment-link" onclick="window.viewAttachment('${t.id}')" title="Lihat Nota"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;pointer-events:none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>`;
         const globalIndex = startIdx + index + 1;
         const actionBtnDisabled = online ? '' : 'disabled';
         tr.innerHTML = `
