@@ -211,6 +211,15 @@ body {
 }
 .manage-books-btn:hover:not(:disabled) { background: #333; border-color: #333; }
 .manage-books-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.manage-books-btn.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  width: 30px;
+  height: 30px;
+}
+.manage-books-btn.icon-btn svg { display: block; }
 
 /* ── Sync Status ── */
 .sync-status-container {
