@@ -149,7 +149,7 @@ window.buildTxNotifMessage = function(action, tx, bookName) {
     // window.txs SEBELUM memanggil fungsi ini, sehingga saldo di atas sudah
     // mencerminkan kondisi setelah penghapusan — koreksi manual tidak diperlukan.
     let saldoSekarang = totalInc - totalExp;
-    return `<b>${actionLabel}</b>\n━━━━━━━━━━━━━━━━━━\nBuku: <b>${bookName}</b>\nJenis: ${typeLabel}${tx.category && tx.category !== 'Pemasukan' ? ' · <i>' + tx.category + '</i>' : ''}\nCatatan: ${tx.description}\nJumlah: <b>${window.rp(tx.amount)}</b>\nWaktu: ${window.formatDateTime(tx.date)}\n━━━━━━━━━━━━━━━━━━\nSaldo Saat Ini: <b>${window.rp(saldoSekarang)}</b>`;
+    return `<b>${actionLabel}</b>\n━━━━━━━━━━━━━━━━━━\nBuku: <b>${bookName}</b>\nJenis: ${typeLabel}${tx.category ? ' · <i>' + tx.category + '</i>' : ''}\nCatatan: ${tx.description}\nJumlah: <b>${window.rp(tx.amount)}</b>\nWaktu: ${window.formatDateTime(tx.date)}\n━━━━━━━━━━━━━━━━━━\nSaldo Saat Ini: <b>${window.rp(saldoSekarang)}</b>`;
 };
 
 window.getCurrentBookName = function() {

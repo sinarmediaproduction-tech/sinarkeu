@@ -16,6 +16,13 @@ window.EXPENSE_CATEGORIES = [
     'Skin & Body Care', 'Kitchen', 'Cleaning', 'Pajak & Iuran', 
     'Pertanian', 'Sedekah', 'Sumbangan'
 ];
+window.INCOME_CATEGORIES = [
+    'Gaji', 'Freelance', 'Bonus', 'THR',
+    'Hasil Investasi', 'Jual Aset', 'Hadiah',
+    'Penjualan', 'Jasa', 'Uang Muka', 'Pelunasan Piutang', 'Komisi',
+    'Pinjaman Diterima', 'Pengembalian Dana', 'Subsidi & Bantuan',
+    'Lainnya'
+];
 window.PAGE_SIZE = 21;
 
 // ==================== GLOBAL VARIABLES (shared) ====================

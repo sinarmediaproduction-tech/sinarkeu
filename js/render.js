@@ -224,15 +224,27 @@ window.goToPage = function(page) {
 // CRUD Operations
 window.toggleCategoryField = function() {
     let type = document.querySelector('input[name="type"]:checked').value;
-    let group = document.getElementById('categoryGroup');
-    if (type === 'income') group.style.display = 'none';
-    else group.style.display = 'block';
+    let groupExpense = document.getElementById('categoryGroup');
+    let groupIncome = document.getElementById('incomeCategoryGroup');
+    if (type === 'income') {
+        groupExpense.style.display = 'none';
+        groupIncome.style.display = 'block';
+    } else {
+        groupExpense.style.display = 'block';
+        groupIncome.style.display = 'none';
+    }
 };
 window.toggleEditCategoryField = function() {
     let type = document.querySelector('input[name="editType"]:checked').value;
-    let group = document.getElementById('editCategoryGroup');
-    if (type === 'income') group.style.display = 'none';
-    else group.style.display = 'block';
+    let groupExpense = document.getElementById('editCategoryGroup');
+    let groupIncome = document.getElementById('editIncomeCategoryGroup');
+    if (type === 'income') {
+        groupExpense.style.display = 'none';
+        groupIncome.style.display = 'block';
+    } else {
+        groupExpense.style.display = 'block';
+        groupIncome.style.display = 'none';
+    }
 };
 window.previewAttachment = function(input) {
     let prev = document.getElementById('attachmentPreview');
@@ -297,10 +309,10 @@ window.handleSubmit = async function(e) {
     const _pad = n => String(n).padStart(2, '0');
     const date = `${nowTx.getFullYear()}-${_pad(nowTx.getMonth()+1)}-${_pad(nowTx.getDate())}T${_pad(nowTx.getHours())}:${_pad(nowTx.getMinutes())}`;
     document.getElementById('txDate').value = date;
-    let category = type === 'expense' ? document.getElementById('txCategory').value : 'Pemasukan';
+    let category = type === 'expense' ? document.getElementById('txCategory').value : document.getElementById('txIncomeCategory').value;
     let description = document.getElementById('txDesc').value.trim();
     let amount = window.unRp(document.getElementById('txAmount').value);
-    if (type === 'expense' && !category) { alert('Harap pilih kategori!'); return; }
+    if (!category) { alert('Harap pilih kategori!'); return; }
     if (amount <= 0) { alert('Jumlah nominal harus lebih dari 0!'); return; }
     const txId = 'tx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
     const attachmentData = await window.resolveAttachment(window.currentAttachmentFile, window.currentAttachmentData, txId);
@@ -330,6 +342,7 @@ window.loadEditData = function(id) {
     window.toggleEditCategoryField();
     document.getElementById('editTxDate').value = t.date;
     if (t.type === 'expense') document.getElementById('editTxCategory').value = t.category;
+    else document.getElementById('editTxIncomeCategory').value = t.category;
     document.getElementById('editTxDesc').value = t.description;
     document.getElementById('editTxAmount').value = Number(t.amount).toLocaleString('id-ID');
     let info = document.getElementById('editAttachmentInfo');
@@ -353,10 +366,10 @@ window.handleEditSubmit = async function(e) {
     if (idx === -1) return;
     let type = document.querySelector('input[name="editType"]:checked').value;
     let date = document.getElementById('editTxDate').value;
-    let category = type === 'expense' ? document.getElementById('editTxCategory').value : 'Pemasukan';
+    let category = type === 'expense' ? document.getElementById('editTxCategory').value : document.getElementById('editTxIncomeCategory').value;
     let description = document.getElementById('editTxDesc').value.trim();
     let amount = window.unRp(document.getElementById('editTxAmount').value);
-    if (type === 'expense' && !category) { alert('Harap pilih kategori!'); return; }
+    if (!category) { alert('Harap pilih kategori!'); return; }
     if (amount <= 0) { alert('Nominal harus valid!'); return; }
     const editAttachment = await window.resolveAttachment(window.currentAttachmentFile, window.currentAttachmentData, id);
     window.txs[idx] = { id, type, date, category, description, amount, attachment: editAttachment, updated_at: new Date().toISOString() };
