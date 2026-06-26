@@ -319,7 +319,10 @@ window.pullAllSettings = async function() {
                 }
             }
         }
-        if (booksUpdated) window.updateBookSelectDropdown();
+        if (booksUpdated) {
+            window.updateBookSelectDropdown();
+            window.updateHeaderTitle();
+        }
         if (budgetUpdated) {
             window.renderBudget();
             window.updateFinancialCards && window.updateFinancialCards();
