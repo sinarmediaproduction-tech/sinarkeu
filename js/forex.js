@@ -185,16 +185,16 @@ window.updateZakatPreview = function() {
     const zakat = Math.round(income * ZAKAT_PERSEN / 100);
     const bln = new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' });
     prev.innerText = income > 0
-        ? `Estimasi zakat bulan ini (${bln}): Rp ${zakat.toLocaleString('id-ID')}`
+        ? `Estimasi sedekah bulan ini (${bln}): Rp ${zakat.toLocaleString('id-ID')}`
         : `Belum ada pemasukan bulan ini`;
 };
 
 window.saveZakatSetting = function() {
-    window.showToast('Zakat maal sudah otomatis 2,5% dari pemasukan bulan ini.', 'info');
+    window.showToast('Sedekah sudah otomatis 2,5% dari pemasukan bulan ini.', 'info');
 };
 
 window.clearZakatSetting = function() {
-    window.showToast('Zakat maal dihitung otomatis, tidak dapat dihapus.', 'info');
+    window.showToast('Sedekah dihitung otomatis, tidak dapat dihapus.', 'info');
 };
 
 window.updateZakatCard = function() {
