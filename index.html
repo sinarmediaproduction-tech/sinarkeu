@@ -849,18 +849,77 @@
             <div style="font-size:.72rem; color:#666; margin-bottom:14px; line-height:1.6; background:#fff0f7; border:1px solid #fbb6ce; border-radius:8px; padding:10px 12px;">
                 Atur fase kehidupan pernikahan Anda agar analisis AI bisa memberikan rekomendasi keuangan yang lebih relevan dan personal.
             </div>
+            <!-- hidden native select for compatibility -->
+            <select id="faseSelect" style="display:none;" onchange="window.updateFaseDesc()">
+                <option value="">-- Pilih Fase --</option>
+                <option value="1">Fase 1 — Bulan Madu</option>
+                <option value="2">Fase 2 — Penyesuaian & Realita</option>
+                <option value="3">Fase 3 — Pengasuhan Awal</option>
+                <option value="4">Fase 4 — Keluarga Aktif</option>
+                <option value="5">Fase 5 — Remaja & Melepas</option>
+                <option value="6">Fase 6 — Sarang Kosong</option>
+                <option value="7">Fase 7 — Pensiun & Menua Bersama</option>
+            </select>
             <div class="form-group">
                 <label>Fase Kehidupan Saat Ini</label>
-                <select id="faseSelect" class="form-control" onchange="window.updateFaseDesc()">
-                    <option value="">-- Pilih Fase --</option>
-                    <option value="1">Fase 1 — Bulan Madu (0–2 thn menikah)</option>
-                    <option value="2">Fase 2 — Penyesuaian & Realita (2–5 thn)</option>
-                    <option value="3">Fase 3 — Pengasuhan Awal (anak pertama lahir)</option>
-                    <option value="4">Fase 4 — Keluarga Aktif (anak usia sekolah)</option>
-                    <option value="5">Fase 5 — Remaja & Melepas (anak remaja)</option>
-                    <option value="6">Fase 6 — Sarang Kosong (anak mandiri)</option>
-                    <option value="7">Fase 7 — Pensiun & Menua Bersama</option>
-                </select>
+                <div class="fase-dropdown" id="faseDropdown">
+                    <div class="fase-dropdown-trigger" id="faseDropdownTrigger" onclick="window.toggleFaseDropdown()">
+                        <span class="fase-trigger-icon" id="faseTriggerIcon">🔍</span>
+                        <span class="fase-trigger-text" id="faseTriggerText">-- Pilih Fase --</span>
+                        <svg class="fase-trigger-arrow" id="faseArrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                    <div class="fase-dropdown-menu" id="faseDropdownMenu">
+                        <div class="fase-option" data-value="1" onclick="window.selectFase(1)">
+                            <span class="fase-opt-icon">💍</span>
+                            <div class="fase-opt-body">
+                                <div class="fase-opt-title">Fase 1 — Bulan Madu</div>
+                                <div class="fase-opt-sub">0–2 tahun menikah</div>
+                            </div>
+                        </div>
+                        <div class="fase-option" data-value="2" onclick="window.selectFase(2)">
+                            <span class="fase-opt-icon">🏠</span>
+                            <div class="fase-opt-body">
+                                <div class="fase-opt-title">Fase 2 — Penyesuaian & Realita</div>
+                                <div class="fase-opt-sub">2–5 tahun menikah</div>
+                            </div>
+                        </div>
+                        <div class="fase-option" data-value="3" onclick="window.selectFase(3)">
+                            <span class="fase-opt-icon">👶</span>
+                            <div class="fase-opt-body">
+                                <div class="fase-opt-title">Fase 3 — Pengasuhan Awal</div>
+                                <div class="fase-opt-sub">Anak pertama lahir</div>
+                            </div>
+                        </div>
+                        <div class="fase-option" data-value="4" onclick="window.selectFase(4)">
+                            <span class="fase-opt-icon">🎒</span>
+                            <div class="fase-opt-body">
+                                <div class="fase-opt-title">Fase 4 — Keluarga Aktif</div>
+                                <div class="fase-opt-sub">Anak usia sekolah</div>
+                            </div>
+                        </div>
+                        <div class="fase-option" data-value="5" onclick="window.selectFase(5)">
+                            <span class="fase-opt-icon">🧑‍🎓</span>
+                            <div class="fase-opt-body">
+                                <div class="fase-opt-title">Fase 5 — Remaja & Melepas</div>
+                                <div class="fase-opt-sub">Anak usia remaja</div>
+                            </div>
+                        </div>
+                        <div class="fase-option" data-value="6" onclick="window.selectFase(6)">
+                            <span class="fase-opt-icon">🕊️</span>
+                            <div class="fase-opt-body">
+                                <div class="fase-opt-title">Fase 6 — Sarang Kosong</div>
+                                <div class="fase-opt-sub">Anak sudah mandiri</div>
+                            </div>
+                        </div>
+                        <div class="fase-option" data-value="7" onclick="window.selectFase(7)">
+                            <span class="fase-opt-icon">🌅</span>
+                            <div class="fase-opt-body">
+                                <div class="fase-opt-title">Fase 7 — Pensiun & Menua Bersama</div>
+                                <div class="fase-opt-sub">Masa tenang berdua</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div id="faseDescBox" style="font-size:.72rem; color:#555; background:#fafafa; border:1px solid #eee; border-radius:8px; padding:10px 12px; margin-bottom:14px; line-height:1.7; display:none;"></div>
             <div class="form-group">
@@ -1664,6 +1723,80 @@ if (document.readyState === 'complete') {
   document.addEventListener('DOMContentLoaded', function() {
     applyPrivacy();
     patchRender();
+  });
+})();
+</script>
+
+<script>
+(function() {
+  var FASE_META = {
+    1: { icon: '💍', label: 'Fase 1 — Bulan Madu',            sub: '0–2 tahun menikah' },
+    2: { icon: '🏠', label: 'Fase 2 — Penyesuaian & Realita', sub: '2–5 tahun menikah' },
+    3: { icon: '👶', label: 'Fase 3 — Pengasuhan Awal',        sub: 'Anak pertama lahir' },
+    4: { icon: '🎒', label: 'Fase 4 — Keluarga Aktif',         sub: 'Anak usia sekolah' },
+    5: { icon: '🧑‍🎓', label: 'Fase 5 — Remaja & Melepas',   sub: 'Anak usia remaja' },
+    6: { icon: '🕊️', label: 'Fase 6 — Sarang Kosong',        sub: 'Anak sudah mandiri' },
+    7: { icon: '🌅', label: 'Fase 7 — Pensiun & Menua Bersama', sub: 'Masa tenang berdua' },
+  };
+
+  window.toggleFaseDropdown = function() {
+    var dd = document.getElementById('faseDropdown');
+    if (dd) dd.classList.toggle('open');
+  };
+
+  window.selectFase = function(val) {
+    // update hidden native select
+    var sel = document.getElementById('faseSelect');
+    if (sel) { sel.value = val; }
+
+    // update trigger display
+    var meta = FASE_META[val];
+    var iconEl = document.getElementById('faseTriggerIcon');
+    var textEl = document.getElementById('faseTriggerText');
+    if (iconEl) iconEl.textContent = meta.icon;
+    if (textEl) { textEl.textContent = meta.label; textEl.classList.remove('placeholder'); }
+
+    // mark selected option
+    document.querySelectorAll('.fase-option').forEach(function(el) {
+      el.classList.toggle('selected', parseInt(el.dataset.value) === val);
+    });
+
+    // close dropdown
+    var dd = document.getElementById('faseDropdown');
+    if (dd) dd.classList.remove('open');
+
+    // trigger desc update
+    if (typeof window.updateFaseDesc === 'function') window.updateFaseDesc();
+  };
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    var dd = document.getElementById('faseDropdown');
+    if (dd && !dd.contains(e.target)) dd.classList.remove('open');
+  });
+
+  // Sync dropdown display when modal opens (e.g. existing saved fase)
+  var _origLoadFase = window.loadFaseKehidupanForm;
+  document.addEventListener('DOMContentLoaded', function() {
+    // Patch loadFaseKehidupanForm to also update custom dropdown
+    var origLoad = window.loadFaseKehidupanForm;
+    window.loadFaseKehidupanForm = function() {
+      if (origLoad) origLoad.apply(this, arguments);
+      // sync after native select is set
+      setTimeout(function() {
+        var sel = document.getElementById('faseSelect');
+        if (sel && sel.value) window.selectFase(parseInt(sel.value));
+        else {
+          var textEl = document.getElementById('faseTriggerText');
+          var iconEl = document.getElementById('faseTriggerIcon');
+          if (textEl) { textEl.textContent = '-- Pilih Fase --'; textEl.classList.add('placeholder'); }
+          if (iconEl) iconEl.textContent = '🔍';
+        }
+      }, 50);
+    };
+    // init placeholder class
+    var textEl = document.getElementById('faseTriggerText');
+    if (textEl) textEl.classList.add('placeholder');
   });
 })();
 </script>
