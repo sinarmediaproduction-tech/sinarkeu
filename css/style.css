@@ -361,7 +361,6 @@ body {
 .forecast-card {
   background: var(--paper);
   border: 1px solid var(--rule);
-  border-top: 3px solid var(--accent);
   padding: 0;
   margin-bottom: 16px;
   overflow: hidden;
