@@ -1718,3 +1718,14 @@ select.form-control option[value=""] {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* ── Balance Privacy Toggle ── */
+#balanceToggleBtn {
+  opacity: 0.45;
+  transition: opacity 0.2s, transform 0.15s;
+  vertical-align: middle;
+}
+#balanceToggleBtn:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}

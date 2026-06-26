@@ -207,7 +207,14 @@
 
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-label">Saldo Akhir</div>
+            <div class="stat-label" style="display:flex;align-items:center;gap:6px;">
+                Saldo Akhir
+                <button id="balanceToggleBtn" onclick="window.toggleBalancePrivacy()" title="Sembunyikan/Tampilkan saldo" style="background:none;border:none;padding:0;cursor:pointer;line-height:1;color:var(--ink-faint);">
+                    <svg id="balanceEyeIcon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+            </div>
             <div class="stat-value" id="statBalance">Rp 0</div>
         </div>
         <div class="stat-card income">
@@ -1604,5 +1611,61 @@ if (document.readyState === 'complete') {
 
 <!-- ===== AKHIR PATCH SINKRONISASI ===== -->
 
+
+<script>
+(function() {
+  var HIDDEN_MASK = '••••••••';
+  var hidden = localStorage.getItem('sk_balance_hidden') === '1';
+
+  var eyeOpen  = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  var eyeClose = '<line x1="1" y1="1" x2="23" y2="23"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 1 12s4 8 11 8a9.74 9.74 0 0 0 5.39-1.61"/><circle cx="12" cy="12" r="3" style="display:none"/>';
+
+  function updateIcon() {
+    var icon = document.getElementById('balanceEyeIcon');
+    if (!icon) return;
+    icon.innerHTML = hidden ? eyeClose : eyeOpen;
+  }
+
+  function applyPrivacy() {
+    var el = document.getElementById('statBalance');
+    if (!el) return;
+    if (hidden) {
+      el.setAttribute('data-real', el.innerText !== HIDDEN_MASK ? el.innerText : (el.getAttribute('data-real') || ''));
+      el.innerText = HIDDEN_MASK;
+      el.style.letterSpacing = '0.1em';
+    } else {
+      var real = el.getAttribute('data-real');
+      if (real) { el.innerText = real; el.style.letterSpacing = ''; }
+    }
+    updateIcon();
+  }
+
+  window.toggleBalancePrivacy = function() {
+    hidden = !hidden;
+    localStorage.setItem('sk_balance_hidden', hidden ? '1' : '0');
+    applyPrivacy();
+  };
+
+  // Patch render agar saldo tetap tersembunyi setelah refresh data
+  var _origSetBalance = null;
+  function patchRender() {
+    var el = document.getElementById('statBalance');
+    if (!el) return;
+    var observer = new MutationObserver(function() {
+      if (hidden && el.innerText !== HIDDEN_MASK) {
+        el.setAttribute('data-real', el.innerText);
+        el.innerText = HIDDEN_MASK;
+        el.style.letterSpacing = '0.1em';
+      }
+    });
+    observer.observe(el, { childList: true, characterData: true, subtree: true });
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    applyPrivacy();
+    patchRender();
+  });
+})();
+</script>
 </body>
 </html>
