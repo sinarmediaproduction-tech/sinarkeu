@@ -161,44 +161,51 @@ window.fetchGoldPrice = async function() {
 };
 
 // Zakat
+const ZAKAT_PERSEN = 2.5;
+
+function _getIncomeThisMonth() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth(); // 0-indexed
+    let total = 0;
+    (window.txs || []).forEach(t => {
+        if (t.type !== 'income') return;
+        const d = window.parseTxDate(t.date);
+        if (d.getFullYear() === y && d.getMonth() === m) {
+            total += Number(t.amount) || 0;
+        }
+    });
+    return total;
+}
+
 window.updateZakatPreview = function() {
-    const persen = parseFloat(document.getElementById('zakatPersenInput')?.value) || 0;
-    const prev   = document.getElementById('zakatPreview');
+    const prev = document.getElementById('zakatPreview');
     if (!prev) return;
-    if (persen <= 0) { prev.innerText = ''; return; }
-    const saldo = window._lastBalance || 0;
-    if (saldo > 0) {
-        const zakat = Math.round(saldo * persen / 100);
-        prev.innerText = `Zakat dari saldo saat ini: Rp ${zakat.toLocaleString('id-ID')}`;
-    } else { prev.innerText = `${persen}% dari total saldo akhir`; }
+    const income = _getIncomeThisMonth();
+    const zakat = Math.round(income * ZAKAT_PERSEN / 100);
+    const bln = new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+    prev.innerText = income > 0
+        ? `Estimasi zakat bulan ini (${bln}): Rp ${zakat.toLocaleString('id-ID')}`
+        : `Belum ada pemasukan bulan ini`;
 };
+
 window.saveZakatSetting = function() {
-    const persen = parseFloat(document.getElementById('zakatPersenInput')?.value) || 0;
-    if (persen <= 0 || persen > 100) { window.showToast('Persentase zakat tidak valid!', 'warning'); return; }
-    localStorage.setItem('sk_zakat_persen', persen);
-    window.showToast('Setelan zakat disimpan!', 'success');
-    window.updateZakatPreview();
-    window.updateZakatCard();
+    window.showToast('Zakat maal sudah otomatis 2,5% dari pemasukan bulan ini.', 'info');
 };
+
 window.clearZakatSetting = function() {
-    if (!confirm('Hapus setelan zakat? Card zakat akan disembunyikan dari dashboard.')) return;
-    localStorage.removeItem('sk_zakat_persen');
-    const inp = document.getElementById('zakatPersenInput');
-    if (inp) inp.value = '';
-    document.getElementById('zakatPreview').innerText = '';
-    window.showToast('Setelan zakat dihapus.', 'info');
-    window.updateZakatCard();
+    window.showToast('Zakat maal dihitung otomatis, tidak dapat dihapus.', 'info');
 };
+
 window.updateZakatCard = function() {
-    const persen = parseFloat(localStorage.getItem('sk_zakat_persen')) || 0;
-    const card   = document.getElementById('zakatCard');
-    const valEl  = document.getElementById('zakatValue');
-    const srcEl  = document.getElementById('zakatSource');
+    const card  = document.getElementById('zakatCard');
+    const valEl = document.getElementById('zakatValue');
+    const srcEl = document.getElementById('zakatSource');
     if (!card) return;
-    if (persen <= 0) { card.style.display = 'none'; return; }
-    const saldo = window._lastBalance || 0;
-    const zakat = Math.round(saldo * persen / 100);
+    const income = _getIncomeThisMonth();
+    const zakat = Math.round(income * ZAKAT_PERSEN / 100);
+    const bln = new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' });
     valEl.innerText = 'Rp ' + zakat.toLocaleString('id-ID');
-    srcEl.innerText = `${persen}% × saldo akhir`;
+    srcEl.innerText = `2,5% × pemasukan ${bln}`;
     card.style.display = 'block';
 };
