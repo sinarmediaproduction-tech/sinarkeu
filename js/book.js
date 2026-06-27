@@ -354,7 +354,9 @@ window.openTelegramSettings = async function() {
     window.openModal('telegramSettingsModal');
     window.loadTgConfigToForm();
     if (window.isOnline()) {
-        const allRows = await window.callSupabaseAPI('settings', 'GET', null, '?key=eq.telegram_config&order=updated_at.desc&limit=1');
+        const _tgTag = window.getAccountTag ? window.getAccountTag() : null;
+        const _tgTagFilter = _tgTag ? `&account_tag=eq.${_tgTag}` : '';
+        const allRows = await window.callSupabaseAPI('settings', 'GET', null, `?key=eq.telegram_config&order=updated_at.desc&limit=1${_tgTagFilter}`);
         if (allRows && Array.isArray(allRows) && allRows.length > 0) {
             try {
                 const parsed = JSON.parse(allRows[0].value);

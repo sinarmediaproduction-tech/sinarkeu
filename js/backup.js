@@ -63,7 +63,8 @@ window.restoreFromBackup = function() {
 
 // Cloud Backup
 window.pushBackupToSupabaseForBook = async function(bookId, bookTxs, backupType) {
-    const payload = [{ book_id: bookId, device_id: window.deviceId, backup_type: backupType, tx_count: bookTxs.length, data: JSON.stringify(bookTxs), created_at: new Date().toISOString() }];
+    const _pbTag = window.getAccountTag ? window.getAccountTag() : null;
+    const payload = [{ book_id: bookId, device_id: window.deviceId, backup_type: backupType, tx_count: bookTxs.length, data: JSON.stringify(bookTxs), created_at: new Date().toISOString(), ...(_pbTag ? { account_tag: _pbTag } : {}) }];
     return await window.callSupabaseAPI('backups', 'POST', payload);
 };
 window.pushBackupToSupabase = async function(backupType) { return await window.pushBackupToSupabaseForBook(window.currentBookId, window.txs, backupType); };
@@ -118,7 +119,9 @@ window.loadCloudBackupList = async function() {
     if (!container) return;
     if (!window.isOnline()) { container.innerHTML = '<div style="color:#888; font-size:.7rem; text-align:center; padding:8px;">Online untuk melihat cadangan cloud</div>'; return; }
     try {
-        const backups = await window.callSupabaseAPI('backups', 'GET', null, `?book_id=eq.${window.currentBookId}&order=created_at.desc&limit=10`);
+        const _blTag = window.getAccountTag ? window.getAccountTag() : null;
+        const _blTagFilter = _blTag ? `&account_tag=eq.${_blTag}` : '';
+        const backups = await window.callSupabaseAPI('backups', 'GET', null, `?book_id=eq.${window.currentBookId}&order=created_at.desc&limit=10${_blTagFilter}`);
         window.renderCloudBackupList(backups || []);
     } catch (e) { container.innerHTML = '<div style="color:#bf2600; font-size:.7rem; text-align:center; padding:8px;">Gagal memuat cadangan cloud</div>'; }
 };
@@ -139,7 +142,9 @@ window.restoreFromCloudBackup = async function(backupId) {
     if (!window.isOnline()) { window.showToast('Anda harus ONLINE untuk restore dari cloud!', 'warning'); return; }
     if (!confirm('Pulihkan data dari cadangan cloud ini? Data saat ini akan diganti.')) return;
     try {
-        const rows = await window.callSupabaseAPI('backups', 'GET', null, `?id=eq.${backupId}&book_id=eq.${window.currentBookId}`);
+        const _brTag = window.getAccountTag ? window.getAccountTag() : null;
+        const _brTagFilter = _brTag ? `&account_tag=eq.${_brTag}` : '';
+        const rows = await window.callSupabaseAPI('backups', 'GET', null, `?id=eq.${backupId}&book_id=eq.${window.currentBookId}${_brTagFilter}`);
         if (!rows || rows.length === 0) { window.showToast('Data backup tidak ditemukan', 'error'); return; }
         window.txs = JSON.parse(rows[0].data);
         window.saveTransactions();

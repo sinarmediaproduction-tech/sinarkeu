@@ -342,11 +342,13 @@ window.checkMigrationStatus = async function() {
     st.innerText = 'Memeriksa status...';
     
     try {
+        var _stTag = window.getAccountTag ? window.getAccountTag() : null;
+        var _stTagFilter = _stTag ? '&account_tag=eq.' + _stTag : '';
         var prResult = await window.callSupabaseAPI(
             'payment_reminders',
             'GET',
             null,
-            '?book_id=eq.' + bookId + '&limit=1'
+            '?book_id=eq.' + bookId + '&limit=1' + _stTagFilter
         );
         var hasPR = prResult && Array.isArray(prResult) && prResult.length > 0;
         
@@ -354,7 +356,7 @@ window.checkMigrationStatus = async function() {
             'settings',
             'GET',
             null,
-            '?book_id=eq.' + bookId + '&key=eq.default_budget&limit=1'
+            '?book_id=eq.' + bookId + '&key=eq.default_budget&limit=1' + _stTagFilter
         );
         var hasBudget = budgetResult && Array.isArray(budgetResult) && budgetResult.length > 0;
         
@@ -362,7 +364,7 @@ window.checkMigrationStatus = async function() {
             'settings',
             'GET',
             null,
-            '?book_id=eq.' + bookId + '&key=eq.annual_budget&limit=1'
+            '?book_id=eq.' + bookId + '&key=eq.annual_budget&limit=1' + _stTagFilter
         );
         var hasAnnual = annualResult && Array.isArray(annualResult) && annualResult.length > 0;
         
@@ -395,11 +397,13 @@ window.pullSetting = async function(key, bookId) {
     if (!bookId) bookId = window.currentBookId;
     
     try {
+        var _psTag = window.getAccountTag ? window.getAccountTag() : null;
+        var _psTagFilter = _psTag ? '&account_tag=eq.' + _psTag : '';
         var result = await window.callSupabaseAPI(
             'settings',
             'GET',
             null,
-            '?book_id=eq.' + bookId + '&key=eq.' + key + '&limit=1'
+            '?book_id=eq.' + bookId + '&key=eq.' + key + '&limit=1' + _psTagFilter
         );
         
         if (result && Array.isArray(result) && result.length > 0) {

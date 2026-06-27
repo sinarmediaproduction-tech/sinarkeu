@@ -419,10 +419,12 @@ window.pushPaymentReminderToCloud = async function(bookId, reminderData) {
     if (!window.isOnline() || !bookId) return false;
     
     try {
+        const tag = window.getAccountTag ? window.getAccountTag() : null;
         const payload = {
             ...reminderData,
             book_id: bookId,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            ...(tag ? { account_tag: tag } : {})
         };
         
         const result = await window.callSupabaseAPI('payment_reminders', 'POST', [payload]);
@@ -442,7 +444,7 @@ window.pullPaymentRemindersFromCloud = async function(bookId) {
             'payment_reminders',
             'GET',
             null,
-            `?book_id=eq.${bookId}&order=created_at.desc`
+            `?book_id=eq.${bookId}&order=created_at.desc${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
         );
         
         if (result && Array.isArray(result)) {
@@ -465,7 +467,7 @@ window.deletePaymentReminderFromCloud = async function(reminderId, bookId) {
             'payment_reminders',
             'DELETE',
             null,
-            `?id=eq.${reminderId}&book_id=eq.${bookId}`
+            `?id=eq.${reminderId}&book_id=eq.${bookId}${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
         );
         return !!result;
     } catch (e) {
