@@ -461,6 +461,10 @@ window.loadDefaultBudgetFromCloud = async function(bookId) {
                 'GET',
                 null,
                 `?book_id=eq.${bookId}&key=eq.default_budget&limit=1${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
+            );
+            
+            if (result && Array.isArray(result) && result.length > 0) {
+                const decrypted = await window._decryptSettingValue(result[0].value);
                 if (decrypted === null) throw new Error('Nilai cloud default_budget tidak bisa didekripsi (kunci lama?)');
                 const parsed = JSON.parse(decrypted);
                 window.saveDefaultBudgetToLocal(bookId, parsed);
