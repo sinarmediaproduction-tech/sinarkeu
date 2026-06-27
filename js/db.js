@@ -77,7 +77,7 @@ window.pullCryptoSaltCheck = async function() {
     // OR filter: ambil baris ber-tag milik akun ini ATAU baris lama tanpa tag.
     // Penting untuk bootstrap multi-device: baris crypto_salt/check lama (NULL)
     // harus bisa dibaca sebelum migrasi men-tag ulang baris tersebut.
-    const tagFilter = tag ? `&or=(account_tag.eq.${tag},account_tag.is.null)` : '';
+    const tagFilter = tag ? `&account_tag=eq.${tag}` : '';
     const rows = await window.callSupabaseAPI('settings', 'GET', null, `?book_id=eq.global&key=in.(crypto_salt,crypto_check)${tagFilter}`);
     if (!rows || !Array.isArray(rows) || rows.length === 0) return null;
     const saltRow = rows.find(r => r.key === 'crypto_salt');
@@ -230,7 +230,7 @@ window.pullAllSettings = async function() {
     // OR filter: baris ber-tag milik akun ini ATAU baris lama tanpa tag (data sebelum
     // fitur account_tag). Setelah migrasi selesai, semua baris sudah punya tag dan
     // baris NULL tidak akan muncul lagi — filter ini aman dipakai permanen.
-    const tagFilter = tag ? `&or=(account_tag.eq.${tag},account_tag.is.null)` : '';
+    const tagFilter = tag ? `&account_tag=eq.${tag}` : '';
     const allRows = await window.callSupabaseAPI('settings', 'GET', null, `?order=updated_at.desc${tagFilter}`);
     if (allRows && Array.isArray(allRows)) {
         let booksUpdated = false;
@@ -345,12 +345,6 @@ window.pullAllSettings = async function() {
             });
         }
 
-        // MIGRASI SATU KALI: jalankan setelah settings berhasil di-pull dan books
-        // sudah terisi. Mencakup settings, transactions, dan audit_logs yang belum
-        // punya account_tag. Flag localStorage mencegah duplikasi eksekusi.
-        if (tag && window._sessionCryptoKey) {
-            window.runOneTimeMigrations();
-        }
     }
     window.updateSettingsSyncStatus('pull');
 };
@@ -365,169 +359,6 @@ window.updateSettingsSyncStatus = function(direction) {
 
 // ==================== MIGRASI ACCOUNT_TAG ====================
 // Dipanggil satu kali saat pertama kali user membuka app setelah update
-// yang menambahkan fitur account_tag. Fungsi ini:
-//   1. Menarik semua baris TANPA account_tag (baris lama) dari Supabase.
-//   2. Membaca hanya baris yang bisa didekripsi dengan kunci sesi akun ini
-//      (baris akun lain akan gagal dekripsi dan dilewati).
-//   3. Mem-push ulang baris tersebut dengan account_tag yang benar.
-// Setelah migrasi, pullAllSettings() berikutnya sudah pakai filter tag.
-window._migrateUntaggedCloudSettings = async function(tag) {
-    if (!window.isOnline() || !window._sessionCryptoKey || !tag) return;
-    try {
-        // Ambil semua baris yang TIDAK punya account_tag (is.null)
-        const oldRows = await window.callSupabaseAPI('settings', 'GET', null, '?account_tag=is.null&order=updated_at.desc');
-        if (!oldRows || !Array.isArray(oldRows) || oldRows.length === 0) {
-            console.log('[Sync] Tidak ada baris lama tanpa account_tag — migrasi tidak diperlukan.');
-            return;
-        }
-        console.log(`[Sync] Ditemukan ${oldRows.length} baris lama tanpa tag. Memulai migrasi...`);
-        let migratedCount = 0;
-        for (const row of oldRows) {
-            if (row.key === 'crypto_salt' || row.key === 'crypto_check') continue;
-            const decrypted = await window._decryptSettingValue(row.value);
-            if (decrypted === null) {
-                // Baris ini terenkripsi kunci akun lain — lewati, jangan disentuh.
-                continue;
-            }
-            // Baris ini milik akun kita (dekripsi berhasil). Push ulang dengan tag.
-            const now = new Date().toISOString();
-            const payload = [{
-                book_id: row.book_id,
-                key: row.key,
-                value: row.value, // nilai sudah terenkripsi, langsung pakai
-                updated_at: now,
-                account_tag: tag
-            }];
-            const ok = await window.callSupabaseAPI('settings', 'POST', payload);
-            if (ok) migratedCount++;
-        }
-        console.log(`[Sync] Migrasi selesai: ${migratedCount} baris diberi account_tag '${tag}'.`);
-    } catch (e) {
-        console.warn('[Sync] _migrateUntaggedCloudSettings error:', e);
-    }
-};
-
-// ==================== MIGRASI TRANSACTIONS & AUDIT_LOGS ====================
-// Fungsi ini dijalankan SATU KALI saat pertama kali app dibuka setelah update
-// yang menambahkan fitur account_tag. Menarget tabel `transactions` dan
-// `audit_logs` yang baris lamanya tidak punya account_tag (NULL).
-//
-// Strategi:
-//   1. Tarik semua baris tanpa tag dari Supabase (account_tag IS NULL).
-//   2. Filter hanya baris dengan book_id yang dimiliki akun ini (window.books).
-//      Kita tidak bisa dekripsi transaksi (tidak terenkripsi), jadi pakai
-//      kepemilikan book_id sebagai proxy "milik akun ini".
-//   3. Push ulang baris tersebut dengan account_tag yang benar.
-//
-// Flag localStorage 'sk_tx_migration_done' dan 'sk_al_migration_done'
-// mencegah fungsi ini dijalankan lebih dari sekali per perangkat.
-window._migrateUntaggedTransactions = async function(tag) {
-    const MIGRATION_KEY = 'sk_tx_migration_done';
-    if (localStorage.getItem(MIGRATION_KEY) === 'true') return;
-    if (!window.isOnline() || !tag) return;
-    try {
-        const myBookIds = new Set((window.books || []).map(b => b.id));
-        if (myBookIds.size === 0) {
-            console.log('[Migrate] Tidak ada buku terdaftar — migrasi transaksi dilewati.');
-            return;
-        }
-        // Tarik baris NULL tanpa batas (ambil semua halaman jika perlu)
-        const oldRows = await window.callSupabaseAPI('transactions', 'GET', null,
-            '?account_tag=is.null&order=date.desc&limit=1000');
-        if (!oldRows || !Array.isArray(oldRows) || oldRows.length === 0) {
-            console.log('[Migrate] Tidak ada transaksi lama tanpa account_tag.');
-            localStorage.setItem(MIGRATION_KEY, 'true');
-            return;
-        }
-        // Filter hanya baris yang book_id-nya milik akun kita
-        const myRows = oldRows.filter(r => myBookIds.has(r.book_id));
-        if (myRows.length === 0) {
-            console.log('[Migrate] Tidak ada transaksi lama yang cocok dengan buku akun ini.');
-            localStorage.setItem(MIGRATION_KEY, 'true');
-            return;
-        }
-        console.log(`[Migrate] Ditemukan ${myRows.length} transaksi lama tanpa tag. Memulai migrasi...`);
-        const now = new Date().toISOString();
-        // Push ulang dalam batch kecil (50 baris) agar tidak melebihi batas request
-        const BATCH = 50;
-        let migratedCount = 0;
-        for (let i = 0; i < myRows.length; i += BATCH) {
-            const batch = myRows.slice(i, i + BATCH).map(r => ({
-                ...r,
-                account_tag: tag,
-                updated_at: r.updated_at || now
-            }));
-            const ok = await window.callSupabaseAPI('transactions', 'POST', batch);
-            if (ok) migratedCount += batch.length;
-        }
-        console.log(`[Migrate] Transaksi: ${migratedCount}/${myRows.length} baris berhasil diberi account_tag '${tag}'.`);
-        localStorage.setItem(MIGRATION_KEY, 'true');
-    } catch (e) {
-        console.warn('[Migrate] _migrateUntaggedTransactions error:', e);
-        // Jangan set flag — biarkan dicoba lagi di sesi berikutnya
-    }
-};
-
-window._migrateUntaggedAuditLogs = async function(tag) {
-    const MIGRATION_KEY = 'sk_al_migration_done';
-    if (localStorage.getItem(MIGRATION_KEY) === 'true') return;
-    if (!window.isOnline() || !tag) return;
-    try {
-        const myBookIds = new Set((window.books || []).map(b => b.id));
-        if (myBookIds.size === 0) {
-            console.log('[Migrate] Tidak ada buku terdaftar — migrasi audit_logs dilewati.');
-            return;
-        }
-        const oldRows = await window.callSupabaseAPI('audit_logs', 'GET', null,
-            '?account_tag=is.null&order=timestamp.desc&limit=500');
-        if (!oldRows || !Array.isArray(oldRows) || oldRows.length === 0) {
-            console.log('[Migrate] Tidak ada audit_log lama tanpa account_tag.');
-            localStorage.setItem(MIGRATION_KEY, 'true');
-            return;
-        }
-        const myRows = oldRows.filter(r => myBookIds.has(r.book_id));
-        if (myRows.length === 0) {
-            console.log('[Migrate] Tidak ada audit_log lama yang cocok dengan buku akun ini.');
-            localStorage.setItem(MIGRATION_KEY, 'true');
-            return;
-        }
-        console.log(`[Migrate] Ditemukan ${myRows.length} audit_log lama tanpa tag. Memulai migrasi...`);
-        const now = new Date().toISOString();
-        const BATCH = 50;
-        let migratedCount = 0;
-        for (let i = 0; i < myRows.length; i += BATCH) {
-            const batch = myRows.slice(i, i + BATCH).map(r => ({
-                ...r,
-                account_tag: tag,
-                timestamp: r.timestamp || now
-            }));
-            const ok = await window.callSupabaseAPI('audit_logs', 'POST', batch);
-            if (ok) migratedCount += batch.length;
-        }
-        console.log(`[Migrate] audit_logs: ${migratedCount}/${myRows.length} baris berhasil diberi account_tag '${tag}'.`);
-        localStorage.setItem(MIGRATION_KEY, 'true');
-    } catch (e) {
-        console.warn('[Migrate] _migrateUntaggedAuditLogs error:', e);
-    }
-};
-
-// Titik masuk tunggal: dipanggil sekali setelah crypto selesai di-bootstrap
-// dan window.books sudah terisi (biasanya setelah pullAllSettings() selesai).
-window.runOneTimeMigrations = async function() {
-    const tag = window.getAccountTag ? window.getAccountTag() : null;
-    if (!tag) return;
-    // Jalankan paralel agar tidak menunda UI
-    Promise.all([
-        window._migrateUntaggedCloudSettings(tag),
-        window._migrateUntaggedTransactions(tag),
-        window._migrateUntaggedAuditLogs(tag)
-    ]).then(() => {
-        console.log('[Migrate] Semua migrasi one-time selesai.');
-    }).catch(e => {
-        console.warn('[Migrate] runOneTimeMigrations error:', e);
-    });
-};
-
 // ============================================================
 // DB.JS - FUNGSI KHUSUS UNTUK PAYMENT REMINDERS
 // ============================================================
@@ -562,7 +393,7 @@ window.pullPaymentRemindersFromCloud = async function(bookId) {
             'payment_reminders',
             'GET',
             null,
-            `?book_id=eq.${bookId}&order=created_at.desc${(window.getAccountTag && window.getAccountTag()) ? '&or=(account_tag.eq.' + window.getAccountTag() + ',account_tag.is.null)' : ''}`
+            `?book_id=eq.${bookId}&order=created_at.desc${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
         );
         
         if (result && Array.isArray(result)) {
@@ -585,7 +416,7 @@ window.deletePaymentReminderFromCloud = async function(reminderId, bookId) {
             'payment_reminders',
             'DELETE',
             null,
-            `?id=eq.${reminderId}&book_id=eq.${bookId}${(window.getAccountTag && window.getAccountTag()) ? '&or=(account_tag.eq.' + window.getAccountTag() + ',account_tag.is.null)' : ''}`
+            `?id=eq.${reminderId}&book_id=eq.${bookId}${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
         );
         return !!result;
     } catch (e) {

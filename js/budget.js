@@ -460,7 +460,7 @@ window.loadDefaultBudgetFromCloud = async function(bookId) {
                 'settings',
                 'GET',
                 null,
-                `?book_id=eq.${bookId}&key=eq.default_budget&limit=1${(window.getAccountTag && window.getAccountTag()) ? '&or=(account_tag.eq.' + window.getAccountTag() + ',account_tag.is.null)' : ''}`
+                `?book_id=eq.${bookId}&key=eq.default_budget&limit=1${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
                 if (decrypted === null) throw new Error('Nilai cloud default_budget tidak bisa didekripsi (kunci lama?)');
                 const parsed = JSON.parse(decrypted);
                 window.saveDefaultBudgetToLocal(bookId, parsed);
@@ -507,7 +507,7 @@ window.loadMonthlyBudgetFromCloud = async function(bookId) {
                 'settings',
                 'GET',
                 null,
-                `?book_id=eq.${bookId}&key=eq.budgets&limit=1${(window.getAccountTag && window.getAccountTag()) ? '&or=(account_tag.eq.' + window.getAccountTag() + ',account_tag.is.null)' : ''}`
+                `?book_id=eq.${bookId}&key=eq.budgets&limit=1${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
             );
             
             if (result && Array.isArray(result) && result.length > 0) {
@@ -571,7 +571,7 @@ window.loadAnnualBudgetFromCloud = async function(bookId) {
                 'settings',
                 'GET',
                 null,
-                `?book_id=eq.${bookId}&key=eq.annual_budget&limit=1${(window.getAccountTag && window.getAccountTag()) ? '&or=(account_tag.eq.' + window.getAccountTag() + ',account_tag.is.null)' : ''}`
+                `?book_id=eq.${bookId}&key=eq.annual_budget&limit=1${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
             );
             
             if (result && Array.isArray(result) && result.length > 0) {
@@ -645,7 +645,7 @@ window.migrateAllBudgets = async function(bookId) {
             'settings',
             'GET',
             null,
-            `?book_id=eq.${bookId}&key=eq.default_budget&limit=1${(window.getAccountTag && window.getAccountTag()) ? '&or=(account_tag.eq.' + window.getAccountTag() + ',account_tag.is.null)' : ''}`
+            `?book_id=eq.${bookId}&key=eq.default_budget&limit=1${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
         );
         
         if (existing && Array.isArray(existing) && existing.length > 0) {
