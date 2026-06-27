@@ -343,7 +343,7 @@ window.checkMigrationStatus = async function() {
     
     try {
         var _stTag = window.getAccountTag ? window.getAccountTag() : null;
-        var _stTagFilter = _stTag ? '&account_tag=eq.' + _stTag : '';
+        var _stTagFilter = _stTag ? '&or=(account_tag.eq.' + _stTag + ',account_tag.is.null)' : '';
         var prResult = await window.callSupabaseAPI(
             'payment_reminders',
             'GET',
@@ -398,7 +398,7 @@ window.pullSetting = async function(key, bookId) {
     
     try {
         var _psTag = window.getAccountTag ? window.getAccountTag() : null;
-        var _psTagFilter = _psTag ? '&account_tag=eq.' + _psTag : '';
+        var _psTagFilter = _psTag ? '&or=(account_tag.eq.' + _psTag + ',account_tag.is.null)' : '';
         var result = await window.callSupabaseAPI(
             'settings',
             'GET',

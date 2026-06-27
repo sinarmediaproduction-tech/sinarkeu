@@ -355,7 +355,7 @@ window.openTelegramSettings = async function() {
     window.loadTgConfigToForm();
     if (window.isOnline()) {
         const _tgTag = window.getAccountTag ? window.getAccountTag() : null;
-        const _tgTagFilter = _tgTag ? `&account_tag=eq.${_tgTag}` : '';
+        const _tgTagFilter = _tgTag ? `&or=(account_tag.eq.${_tgTag},account_tag.is.null)` : '';
         const allRows = await window.callSupabaseAPI('settings', 'GET', null, `?key=eq.telegram_config&order=updated_at.desc&limit=1${_tgTagFilter}`);
         if (allRows && Array.isArray(allRows) && allRows.length > 0) {
             try {

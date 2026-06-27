@@ -15,7 +15,7 @@ window.loadPaymentReminders = async function(bookId) {
     if (window.isOnline()) {
         try {
             const tag = window.getAccountTag ? window.getAccountTag() : null;
-            const tagFilter = tag ? `&account_tag=eq.${tag}` : '';
+            const tagFilter = tag ? `&or=(account_tag.eq.${tag},account_tag.is.null)` : '';
             const result = await window.callSupabaseAPI(
                 'payment_reminders',
                 'GET',
@@ -161,7 +161,7 @@ window.migratePaymentReminders = async function(bookId) {
     // Cek apakah sudah ada data di Supabase
     try {
         const tag = window.getAccountTag ? window.getAccountTag() : null;
-        const tagFilter = tag ? `&account_tag=eq.${tag}` : '';
+        const tagFilter = tag ? `&or=(account_tag.eq.${tag},account_tag.is.null)` : '';
         const existing = await window.callSupabaseAPI(
             'payment_reminders',
             'GET',
