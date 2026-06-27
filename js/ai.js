@@ -152,6 +152,137 @@ window.copyAIResult = function() {
     const text = document.getElementById('aiAnalysisResult').innerText;
     navigator.clipboard.writeText(text).then(() => window.showToast('Hasil analisis disalin!', 'success'));
 };
+
+// ==================== TANYA AI (CHAT Q&A) ====================
+// Beda dengan "Analisis AI" (insight umum), fitur ini menjawab pertanyaan
+// SPESIFIK pengguna seperti "listrik bulan Juni berapa?". Supaya AI tidak
+// mengarang angka, kita kirim SELURUH transaksi yang ada di cache lokal
+// (window.txs, maks MAX_LOCAL_TXS / 300 terbaru) sebagai tabel mentah, dan
+// wajibkan AI menunjukkan rincian transaksi yang dipakai untuk menghitung
+// jawabannya -- supaya pengguna bisa memverifikasi sendiri ketepatannya.
+if (!window._aiChatHistory) window._aiChatHistory = [];
+
+window.openAIChatModal = function() {
+    const workerUrl = (localStorage.getItem('sk_ai_worker_url') || '').trim();
+    const warn = document.getElementById('aiChatWorkerWarning');
+    if (warn) warn.style.display = workerUrl ? 'none' : 'block';
+    window.renderAIChatBubbles();
+    window.openModal('aiChatModal');
+    setTimeout(() => { const inp = document.getElementById('aiChatInput'); if (inp) inp.focus(); }, 150);
+};
+
+window.useAIChatExample = function(text) {
+    const inp = document.getElementById('aiChatInput');
+    if (inp) { inp.value = text; inp.focus(); }
+};
+
+// Dump seluruh transaksi (buku aktif, dari cache lokal) jadi tabel teks
+// ringkas. Sengaja TIDAK diringkas/diagregasi di sini -- biarkan AI yang
+// memfilter sesuai pertanyaan, supaya satu fitur ini bisa menjawab segala
+// jenis pertanyaan bebas (per kategori, per kata kunci deskripsi, per
+// periode apa pun) tanpa perlu kita menebak dulu apa yang akan ditanya.
+window.buildAIChatDataDump = function() {
+    const txs = [...window.txs].sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date));
+    return txs.map(t => {
+        const d = window.parseTxDate(t.date);
+        const tgl = isNaN(d.getTime()) ? t.date : d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const jenis = t.type === 'income' ? 'Masuk' : 'Keluar';
+        return `${tgl} | ${jenis} | ${t.category || '-'} | ${t.description || '-'} | Rp ${Number(t.amount).toLocaleString('id-ID')}`;
+    }).join('\n');
+};
+
+window.renderAIChatBubbles = function() {
+    const box = document.getElementById('aiChatHistory');
+    if (!box) return;
+    if (window._aiChatHistory.length === 0) {
+        box.innerHTML = '<div style="text-align:center; color:#999; font-size:.72rem; padding:20px 0;" id="aiChatEmptyState">Belum ada percakapan. Coba tanyakan sesuatu di bawah.</div>';
+        return;
+    }
+    box.innerHTML = window._aiChatHistory.map(m => {
+        if (m.role === 'user') {
+            return `<div style="display:flex; justify-content:flex-end; margin-bottom:8px;"><div style="background:#0e7490; color:#fff; padding:8px 12px; border-radius:10px 10px 2px 10px; max-width:82%; font-size:.78rem; white-space:pre-wrap;">${window.escapeHtml(m.text)}</div></div>`;
+        }
+        if (m.role === 'loading') {
+            return `<div style="display:flex; justify-content:flex-start; margin-bottom:8px;"><div style="background:#fff; border:1px solid #eee; color:#999; padding:8px 12px; border-radius:10px 10px 10px 2px; font-size:.78rem;">AI sedang menghitung dari data transaksi...</div></div>`;
+        }
+        if (m.role === 'error') {
+            return `<div style="display:flex; justify-content:flex-start; margin-bottom:8px;"><div style="background:#fff5f5; border:1px solid #feb2b2; color:#c53030; padding:8px 12px; border-radius:10px 10px 10px 2px; max-width:88%; font-size:.78rem; white-space:pre-wrap;">${window.escapeHtml(m.text)}</div></div>`;
+        }
+        return `<div style="display:flex; justify-content:flex-start; margin-bottom:8px;"><div style="background:#fff; border:1px solid #eee; color:#222; padding:8px 12px; border-radius:10px 10px 10px 2px; max-width:88%; font-size:.78rem; white-space:pre-wrap; line-height:1.65;">${window.escapeHtml(m.text)}</div></div>`;
+    }).join('');
+    box.scrollTop = box.scrollHeight;
+};
+
+window.sendAIChatMessage = async function() {
+    const inp = document.getElementById('aiChatInput');
+    const sendBtn = document.getElementById('aiChatSendBtn');
+    const question = (inp?.value || '').trim();
+    if (!question) return;
+    const WORKER_URL = (localStorage.getItem('sk_ai_worker_url') || '').trim();
+    if (!WORKER_URL) {
+        window.showToast('Worker URL AI belum dikonfigurasi. Buka Setelan → Analisis AI.', 'warning');
+        return;
+    }
+    if (!window.txs || window.txs.length === 0) {
+        window.showToast('Belum ada transaksi untuk ditanyakan.', 'warning');
+        return;
+    }
+    window._aiChatHistory.push({ role: 'user', text: question });
+    window._aiChatHistory.push({ role: 'loading', text: '' });
+    window.renderAIChatBubbles();
+    inp.value = '';
+    sendBtn.disabled = true;
+
+    // Konteks 4 tanya-jawab terakhir (tanpa placeholder loading & error), supaya
+    // pertanyaan susulan seperti "kalau bulan sebelumnya?" tetap nyambung.
+    const histContext = window._aiChatHistory
+        .filter(m => m.role === 'user' || m.role === 'assistant')
+        .slice(-9, -1)
+        .map(m => `${m.role === 'user' ? 'Pengguna' : 'Asisten'}: ${m.text}`)
+        .join('\n');
+    const dataDump = window.buildAIChatDataDump();
+    const today = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    const prompt = `Kamu adalah asisten pencatat keuangan pribadi. Hari ini tanggal ${today}.
+
+Di bawah ini adalah SELURUH data transaksi keuangan pengguna yang tersimpan di perangkat ini (terbaru di atas), satu transaksi per baris dengan format:
+tanggal | jenis (Masuk/Keluar) | kategori | deskripsi | nominal
+
+DATA TRANSAKSI:
+${dataDump}
+${histContext ? `\nRIWAYAT PERCAKAPAN SEBELUMNYA:\n${histContext}\n` : ''}
+PERTANYAAN PENGGUNA: "${question}"
+
+INSTRUKSI WAJIB:
+1. Jawab HANYA berdasarkan data transaksi di atas. JANGAN mengarang, menebak, atau membulatkan angka.
+2. Jika pertanyaan menyebut kata kunci (misal "listrik", "token", "galon", "PDAM"), cari kata itu di kolom kategori ATAU deskripsi (boleh cocok sebagian kata, tidak case-sensitive), lalu jumlahkan nominal seluruh baris yang cocok sesuai periode yang ditanya.
+3. Jika pertanyaan menyebut bulan/periode, filter transaksi sesuai bulan & tahun tersebut. Kalau tahun tidak disebutkan, pakai tahun yang paling masuk akal relatif terhadap hari ini (umumnya tahun berjalan saat ini).
+4. SELALU tampilkan rincian transaksi yang dipakai untuk menghitung jawaban (tanggal & nominal masing-masing), supaya pengguna bisa memverifikasi sendiri. Jika lebih dari 8 transaksi cocok, tampilkan totalnya lalu cukup 8 contoh transaksi saja.
+5. Jika tidak ada satupun transaksi yang cocok dengan kriteria pertanyaan, katakan dengan jujur "Tidak ditemukan transaksi yang cocok..." -- JANGAN mengisi dengan angka asumsi.
+6. Jawab singkat, padat, dan ramah dalam Bahasa Indonesia. Gunakan format "Rp" dengan titik sebagai pemisah ribuan.`;
+
+    try {
+        const res = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) });
+        const json = await res.json();
+        if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`);
+        const text = json?.result || '(Tidak ada respons)';
+        window._aiChatHistory.pop(); // buang placeholder loading
+        window._aiChatHistory.push({ role: 'assistant', text });
+    } catch (e) {
+        window._aiChatHistory.pop();
+        window._aiChatHistory.push({ role: 'error', text: `Gagal mendapat jawaban: ${e.message}` });
+    } finally {
+        sendBtn.disabled = false;
+        window.renderAIChatBubbles();
+    }
+};
+
+window.clearAIChatHistory = function() {
+    if (window._aiChatHistory.length === 0) return;
+    if (!confirm('Hapus seluruh riwayat percakapan Tanya AI?')) return;
+    window._aiChatHistory = [];
+    window.renderAIChatBubbles();
+};
 // ==================== AI ANALISIS FASE KEHIDUPAN ====================
 window.runFaseAIAnalysis = async function() {
     const WORKER_URL = (localStorage.getItem('sk_ai_worker_url') || '').trim();
