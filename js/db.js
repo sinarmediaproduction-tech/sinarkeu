@@ -312,6 +312,15 @@ window.pullAllSettings = async function() {
                     budgetUpdated = true;
                 }
             }
+            if (row.key === 'emergency_fund_months') {
+                const months = parseInt(parsed);
+                if (!isNaN(months) && months > 0) {
+                    localStorage.setItem('sk_emergency_fund_months_' + row.book_id, String(months));
+                    if (row.book_id === window.currentBookId) {
+                        budgetUpdated = true;
+                    }
+                }
+            }
             if (row.key === 'google_sheets_url') {
                 if (typeof parsed === 'string' && parsed) {
                     localStorage.setItem('sk_google_sheets_url', parsed);

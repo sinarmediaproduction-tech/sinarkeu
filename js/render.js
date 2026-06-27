@@ -112,8 +112,9 @@ window.updateFinancialCards = function() {
     const balanceOffset = Number(localStorage.getItem('sk_balance_offset_' + window.currentBookId)) || 0;
     const saldoAkhir = totalInc - totalExp + balanceOffset;
 
-    // Dana Darurat = 12x anggaran bulanan
-    const danaDarurat = anggaranBulanan * 12;
+    // Dana Darurat = N x anggaran bulanan (N adjustable, default 12)
+    const efMonths = window.getEmergencyFundMonths();
+    const danaDarurat = anggaranBulanan * efMonths;
 
     // Kebutuhan Setahun = Dana Darurat + Anggaran Tahunan
     const kebutuhanSetahun = danaDarurat + anggaranTahunan;
@@ -127,6 +128,8 @@ window.updateFinancialCards = function() {
     set('fcAnggaranBulanan', anggaranBulanan);
     set('fcAnggaranTahunan', anggaranTahunan);
     set('fcDanaDarurat', danaDarurat);
+    const efNote = document.getElementById('fcDanaDaruratNote');
+    if (efNote) efNote.innerText = `${efMonths}× anggaran bulanan (target ideal)`;
     set('fcKebutuhanSetahun', kebutuhanSetahun);
     set('fcDanaSalingJaga', danaSalingJaga);
 
@@ -521,6 +524,37 @@ window.saveFaseKehidupan = function() {
     window.updateFaseCard();
     window.closeModal('faseKehidupanModal');
     window.showToast('Fase kehidupan berhasil disimpan!', 'success');
+};
+
+// ==================== TARGET DANA DARURAT (BULAN) ====================
+// Sebelumnya hardcoded 12x anggaran bulanan. Sekarang adjustable per buku,
+// supaya bisa disesuaikan dengan kondisi ekonomi (misal diturunkan ke 6
+// bulan saat penghasilan belum stabil, atau dinaikkan ke 12+ saat aman).
+window.getEmergencyFundMonths = function(bookId) {
+    const raw = localStorage.getItem('sk_emergency_fund_months_' + (bookId || window.currentBookId));
+    const n = parseInt(raw);
+    return (!isNaN(n) && n > 0) ? n : 12; // default 12 bulan kalau belum pernah diatur
+};
+window.saveEmergencyFundMonthsToLocal = function(months, bookId) {
+    localStorage.setItem('sk_emergency_fund_months_' + (bookId || window.currentBookId), String(months));
+};
+window.openEmergencyFundModal = function() {
+    document.getElementById('efMonthsInput').value = window.getEmergencyFundMonths();
+    window.openModal('emergencyFundModal');
+};
+window.setEfMonthsPreset = function(months) {
+    document.getElementById('efMonthsInput').value = months;
+};
+window.saveEmergencyFundMonths = function() {
+    const months = parseInt(document.getElementById('efMonthsInput').value);
+    if (!months || months < 1 || months > 60) { window.showToast('Masukkan jumlah bulan yang valid (1-60)!', 'warning'); return; }
+    window.saveEmergencyFundMonthsToLocal(months);
+    if (window.isOnline()) {
+        window.pushSetting('emergency_fund_months', months, window.currentBookId);
+    }
+    window.updateFinancialCards();
+    window.closeModal('emergencyFundModal');
+    window.showToast('Target dana darurat disimpan: ' + months + ' bulan', 'success');
 };
 
 window.updateFaseCard = function() {

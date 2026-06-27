@@ -96,6 +96,15 @@ window.switchBook = async function(id) {
             }
         } catch (e) { /* fase belum tersimpan di cloud */ }
 
+        // 6. Target dana darurat (bulan)
+        try {
+            const efCloud = await window.pullSetting('emergency_fund_months', window.currentBookId);
+            const efMonths = parseInt(efCloud);
+            if (!isNaN(efMonths) && efMonths > 0) {
+                localStorage.setItem('sk_emergency_fund_months_' + window.currentBookId, String(efMonths));
+            }
+        } catch (e) { /* target dana darurat belum tersimpan di cloud, pakai default 12 bulan */ }
+
         window._lastSyncTime = new Date();
         if (typeof window.updateSyncTimeBadge === 'function') window.updateSyncTimeBadge();
     } catch (e) {

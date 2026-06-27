@@ -189,7 +189,8 @@ window.runFaseAIAnalysis = async function() {
     const defaultBudget = window.getDefaultBudget ? window.getDefaultBudget(window.currentBookId) : {};
     let anggaranBulanan = 0;
     if (window.EXPENSE_CATEGORIES) window.EXPENSE_CATEGORIES.forEach(c => { anggaranBulanan += (defaultBudget[c] || 0); });
-    const danaDarurat = anggaranBulanan * 12;
+    const danaDaruratBulan = window.getEmergencyFundMonths ? window.getEmergencyFundMonths(window.currentBookId) : 12;
+    const danaDarurat = anggaranBulanan * danaDaruratBulan;
 
     const annualBudget = window.getAnnualBudget ? window.getAnnualBudget(window.currentBookId) : [];
     let anggaranTahunan = 0;
@@ -218,7 +219,7 @@ Target keuangan: ${fase.target || 'Belum ditentukan'}
 DATA KEUANGAN SAAT INI:
 - Total Saldo: Rp ${saldo.toLocaleString('id-ID')}
 - Anggaran Bulanan: Rp ${anggaranBulanan.toLocaleString('id-ID')}
-- Dana Darurat Ideal (12× bulanan): Rp ${danaDarurat.toLocaleString('id-ID')}
+- Dana Darurat Ideal (${danaDaruratBulan}× bulanan): Rp ${danaDarurat.toLocaleString('id-ID')}
 - Status Dana Darurat: ${saldo >= danaDarurat ? 'Sudah tercapai' : `Kurang Rp ${(danaDarurat - saldo).toLocaleString('id-ID')}`}
 - Anggaran Tahunan: Rp ${anggaranTahunan.toLocaleString('id-ID')}
 
