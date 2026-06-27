@@ -110,6 +110,14 @@
                 <li>Setelah dikonfigurasi, klik <strong>"Analisis AI"</strong> di dashboard, pilih periode dan jenis analisis, lalu dapatkan wawasan dari Groq AI (LLaMA).</li>
             </ul>
 
+            <h5>7b. Tanya AI</h5>
+            <ul>
+                <li>Pakai Worker URL yang sama dengan Analisis AI (<strong>Setelan → Analisis AI</strong>).</li>
+                <li>Klik <strong>"Tanya AI"</strong> di dashboard, lalu ketik pertanyaan bebas, misalnya: <i>"Pemasukan bulan Juni berapa?"</i> atau <i>"Listrik bulan lalu berapa?"</i>.</li>
+                <li>AI menjawab berdasarkan transaksi yang tersimpan di perangkat ini (maksimal 300 transaksi terbaru) dan akan menunjukkan rincian transaksi yang dipakai untuk menghitung, supaya bisa Anda cek ulang.</li>
+                <li>Untuk pertanyaan tentang transaksi yang lebih lama dari 300 transaksi terakhir, gunakan fitur Laporan agar datanya pasti lengkap.</li>
+            </ul>
+
             <h5>8. Notifikasi Telegram</h5>
             <ul>
                 <li>Buka <strong>Setelan → Notifikasi Telegram</strong>.</li>
@@ -370,6 +378,7 @@
         <div class="actions">
             <button class="btn btn-primary" id="tambahTransaksiBtn" onclick="openModal('addModal')">+ Transaksi</button>
             <button class="btn" style="background:#6b46c1; color:#fff; border-color:#6b46c1;" onclick="openAIAnalysis()">Analisis AI</button>
+            <button class="btn" style="background:#0e7490; color:#fff; border-color:#0e7490;" onclick="window.openAIChatModal()">Tanya AI</button>
         </div>
     </div>
 
@@ -863,6 +872,35 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:8px;">
             <span id="aiAnalysisFooter" style="font-size:.65rem; color:#aaa;"></span>
             <div style="display:flex; gap:8px;"><button id="aiCopyBtn" class="btn btn-secondary" style="display:none;" onclick="copyAIResult()">Salin</button><button class="btn btn-secondary" onclick="closeModal('aiAnalysisModal')">Tutup</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL TANYA AI ===== -->
+<div id="aiChatModal" class="modal">
+    <div class="modal-content" style="max-width:560px;">
+        <div class="modal-header"><h3>Tanya AI Keuangan</h3><button class="modal-close" onclick="closeModal('aiChatModal')">×</button></div>
+        <div style="padding:0 22px 18px;">
+            <div id="aiChatWorkerWarning" style="display:none; background:#fff5f5; border:1px solid #feb2b2; border-radius:8px; padding:10px 12px; margin-bottom:12px; font-size:.72rem; color:#c53030;">
+                <strong>Worker URL belum dikonfigurasi.</strong> Buka <a href="#" onclick="closeModal('aiChatModal'); openSetelanModal(); return false;" style="color:#c53030; font-weight:600; text-decoration:underline;">Setelan → Analisis AI</a> untuk mengisi URL Cloudflare Worker Anda.
+            </div>
+            <div style="font-size:.68rem; color:#888; margin-bottom:8px;">Tanyakan apa saja soal transaksi Anda, contoh:</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
+                <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.useAIChatExample('Pemasukan bulan ini berapa?')">Pemasukan bulan ini?</button>
+                <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.useAIChatExample('Pengeluaran bulan lalu berapa?')">Pengeluaran bulan lalu?</button>
+                <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.useAIChatExample('Kategori apa yang paling besar pengeluarannya bulan ini?')">Kategori terbesar bulan ini?</button>
+            </div>
+            <div id="aiChatHistory" style="max-height:340px; overflow-y:auto; border:1px solid #eee; border-radius:10px; padding:12px; margin-bottom:10px; background:#fafafa;">
+                <div style="text-align:center; color:#999; font-size:.72rem; padding:20px 0;" id="aiChatEmptyState">Belum ada percakapan. Coba tanyakan sesuatu di bawah.</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="aiChatInput" class="form-control" placeholder="Misal: listrik bulan Juni berapa?" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.sendAIChatMessage();}">
+                <button class="btn btn-primary" id="aiChatSendBtn" style="background:#0e7490; border-color:#0e7490; white-space:nowrap;" onclick="window.sendAIChatMessage()">Tanya</button>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.clearAIChatHistory()">Hapus Riwayat</button>
+                <span style="font-size:.6rem; color:#aaa;">Berdasarkan transaksi tersimpan di perangkat ini (maks. 300 terbaru)</span>
+            </div>
         </div>
     </div>
 </div>
