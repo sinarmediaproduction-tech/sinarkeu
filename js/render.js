@@ -341,7 +341,7 @@ window.loadEditData = function(id) {
     if (t.type === 'income') document.getElementById('editTypeIncome').checked = true;
     else document.getElementById('editTypeExpense').checked = true;
     window.toggleEditCategoryField();
-    document.getElementById('editTxDate').value = t.date;
+    document.getElementById('editTxDate').value = window.toDatetimeLocalValue(t.date);
     if (t.type === 'expense') document.getElementById('editTxCategory').value = t.category;
     else document.getElementById('editTxIncomeCategory').value = t.category;
     document.getElementById('editTxDesc').value = t.description;
@@ -367,6 +367,11 @@ window.handleEditSubmit = async function(e) {
     if (idx === -1) return;
     let type = document.querySelector('input[name="editType"]:checked').value;
     let date = document.getElementById('editTxDate').value;
+    // [BUG FIX] Jaga-jaga: jika field tanggal tersembunyi ini kosong (misal
+    // gagal terisi karena format tanggal sumber tidak valid untuk
+    // datetime-local), JANGAN timpa tanggal asli transaksi dengan string
+    // kosong — itu akan ditolak Supabase (22007) dan merusak data.
+    if (!date) date = window.txs[idx].date;
     let category = type === 'expense' ? document.getElementById('editTxCategory').value : document.getElementById('editTxIncomeCategory').value;
     let description = document.getElementById('editTxDesc').value.trim();
     let amount = window.unRp(document.getElementById('editTxAmount').value);

@@ -12,6 +12,21 @@ window.formatDateTime = function(dtStr) {
     return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 };
 
+// [BUG FIX] Konversi string tanggal apa pun (termasuk format Supabase
+// "YYYY-MM-DDTHH:mm:ss+00:00") ke format ketat "YYYY-MM-DDTHH:mm" yang
+// disyaratkan oleh <input type="datetime-local">. Tanpa ini, mengisi value
+// input datetime-local dengan string yang ber-offset zona waktu akan membuat
+// browser DIAM-DIAM mengosongkan input itu (jadi "") tanpa error apa pun —
+// lalu saat form disubmit, tanggal transaksi tertimpa string kosong, yang
+// ditolak Supabase (kolom timestamptz) dengan error 22007.
+window.toDatetimeLocalValue = function(dtStr) {
+    if (!dtStr) return '';
+    const d = window.parseTxDate(dtStr);
+    if (isNaN(d.getTime())) return '';
+    const _pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${_pad(d.getMonth() + 1)}-${_pad(d.getDate())}T${_pad(d.getHours())}:${_pad(d.getMinutes())}`;
+};
+
 window.formatRupiah = function(el) {
     const selStart = el.selectionStart;
     const selEnd   = el.selectionEnd;
