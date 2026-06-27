@@ -14,11 +14,13 @@ window.loadPaymentReminders = async function(bookId) {
     // Coba dari Supabase dulu
     if (window.isOnline()) {
         try {
+            const tag = window.getAccountTag ? window.getAccountTag() : null;
+            const tagFilter = tag ? `&account_tag=eq.${tag}` : '';
             const result = await window.callSupabaseAPI(
                 'payment_reminders',
                 'GET',
                 null,
-                `?book_id=eq.${bookId}&order=created_at.desc`
+                `?book_id=eq.${bookId}&order=created_at.desc${tagFilter}`
             );
             
             if (result && Array.isArray(result)) {
@@ -63,10 +65,12 @@ window.savePaymentReminder = async function(bookId, reminderData) {
     // Kirim ke Supabase
     if (window.isOnline()) {
         try {
+            const tag = window.getAccountTag ? window.getAccountTag() : null;
             const payload = {
                 ...reminderData,
                 book_id: bookId,
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
+                ...(tag ? { account_tag: tag } : {})
             };
             
             const result = await window.callSupabaseAPI('payment_reminders', 'POST', [payload]);
@@ -101,11 +105,13 @@ window.deletePaymentReminder = async function(reminderId, bookId) {
     // Hapus dari Supabase
     if (window.isOnline()) {
         try {
+            const tag = window.getAccountTag ? window.getAccountTag() : null;
+            const tagFilter = tag ? `&account_tag=eq.${tag}` : '';
             const result = await window.callSupabaseAPI(
                 'payment_reminders',
                 'DELETE',
                 null,
-                `?id=eq.${reminderId}&book_id=eq.${bookId}`
+                `?id=eq.${reminderId}&book_id=eq.${bookId}${tagFilter}`
             );
             if (result) {
                 console.log('[PaymentReminder] Berhasil hapus dari cloud');
@@ -132,9 +138,11 @@ window.syncAllPaymentReminders = async function(bookId) {
         
         if (localReminders.length === 0) return true;
         
+        const tag = window.getAccountTag ? window.getAccountTag() : null;
         const payload = localReminders.map(r => ({
             ...r,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            ...(tag ? { account_tag: tag } : {})
         }));
         
         const result = await window.callSupabaseAPI('payment_reminders', 'POST', payload);
@@ -152,11 +160,13 @@ window.migratePaymentReminders = async function(bookId) {
     
     // Cek apakah sudah ada data di Supabase
     try {
+        const tag = window.getAccountTag ? window.getAccountTag() : null;
+        const tagFilter = tag ? `&account_tag=eq.${tag}` : '';
         const existing = await window.callSupabaseAPI(
             'payment_reminders',
             'GET',
             null,
-            `?book_id=eq.${bookId}&limit=1`
+            `?book_id=eq.${bookId}&limit=1${tagFilter}`
         );
         if (existing && Array.isArray(existing) && existing.length > 0) {
             console.log('[PaymentReminder] Data sudah ada di cloud, skip migrasi');
@@ -207,9 +217,11 @@ window.migratePaymentReminders = async function(bookId) {
     console.log(`[PaymentReminder] Migrasi ${toMigrate.length} data ke cloud...`);
     
     try {
+        const tag = window.getAccountTag ? window.getAccountTag() : null;
         const payload = toMigrate.map(r => ({
             ...r,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            ...(tag ? { account_tag: tag } : {})
         }));
         await window.callSupabaseAPI('payment_reminders', 'POST', payload);
         console.log('[PaymentReminder] Migrasi berhasil!');
