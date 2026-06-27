@@ -240,10 +240,12 @@ window.archiveAndClearData = async function() {
     await new Promise(r => setTimeout(r, 1000));
     st.innerText = 'Menghapus data dari Supabase...';
     if (window.isOnline()) {
-        await window.callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${window.currentBookId}`);
-        await window.callSupabaseAPI('audit_logs', 'DELETE', null, `?book_id=eq.${window.currentBookId}`);
+        const tag_rb = window.getAccountTag ? window.getAccountTag() : null;
+        const tagFilter_rb = tag_rb ? `&account_tag=eq.${tag_rb}` : '';
+        await window.callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${window.currentBookId}${tagFilter_rb}`);
+        await window.callSupabaseAPI('audit_logs', 'DELETE', null, `?book_id=eq.${window.currentBookId}${tagFilter_rb}`);
         // Hapus semua settings buku ini (termasuk budgets & default_budget)
-        await window.callSupabaseAPI('settings', 'DELETE', null, `?book_id=eq.${window.currentBookId}`);
+        await window.callSupabaseAPI('settings', 'DELETE', null, `?book_id=eq.${window.currentBookId}${tagFilter_rb}`);
     }
     window.txs = [];
     localStorage.removeItem('sk_txs_' + window.currentBookId);
@@ -486,20 +488,23 @@ window.resetAllApplication = async function() {
     try {
         // ── Hapus Supabase (semua tabel, tanpa filter book_id) ──
         if (window.isOnline() && window.getCloudUrl() && window.getSupabaseKey()) {
+            const tag_fr = window.getAccountTag ? window.getAccountTag() : null;
+            const tagFilter_fr = tag_fr ? `&account_tag=eq.${tag_fr}` : '';
+
             show('#cc7b00', '#fff3e0', 'Menghapus transaksi dari Supabase...');
-            await window.callSupabaseAPI('transactions', 'DELETE', null, '?id=neq.00000000-0000-0000-0000-000000000000');
+            await window.callSupabaseAPI('transactions', 'DELETE', null, `?id=neq.00000000-0000-0000-0000-000000000000${tagFilter_fr}`);
 
             show('#cc7b00', '#fff3e0', 'Menghapus log audit dari Supabase...');
-            await window.callSupabaseAPI('audit_logs', 'DELETE', null, '?id=neq.00000000-0000-0000-0000-000000000000');
+            await window.callSupabaseAPI('audit_logs', 'DELETE', null, `?id=neq.00000000-0000-0000-0000-000000000000${tagFilter_fr}`);
 
             show('#cc7b00', '#fff3e0', 'Menghapus settings dari Supabase...');
-            await window.callSupabaseAPI('settings', 'DELETE', null, '?key=neq.__placeholder__');
+            await window.callSupabaseAPI('settings', 'DELETE', null, `?key=neq.__placeholder__${tagFilter_fr}`);
 
             show('#cc7b00', '#fff3e0', 'Menghapus pengingat pembayaran dari Supabase...');
-            await window.callSupabaseAPI('payment_reminders', 'DELETE', null, '?id=neq.00000000-0000-0000-0000-000000000000');
+            await window.callSupabaseAPI('payment_reminders', 'DELETE', null, `?id=neq.00000000-0000-0000-0000-000000000000${tagFilter_fr}`);
 
             show('#cc7b00', '#fff3e0', 'Menghapus cadangan cloud dari Supabase...');
-            await window.callSupabaseAPI('backups', 'DELETE', null, '?id=neq.00000000-0000-0000-0000-000000000000');
+            await window.callSupabaseAPI('backups', 'DELETE', null, `?id=neq.00000000-0000-0000-0000-000000000000${tagFilter_fr}`);
         } else {
             show('#cc7b00', '#fff8e1', 'Offline — Supabase tidak dibersihkan, hanya localStorage yang direset.');
             await new Promise(r => setTimeout(r, 1500));

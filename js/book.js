@@ -220,9 +220,11 @@ window.deleteBook = async function(id) {
         const prevBookId = window.currentBookId;
         window.currentBookId = id;
         try {
-            await window.callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${id}`);
-            await window.callSupabaseAPI('audit_logs', 'DELETE', null, `?book_id=eq.${id}`);
-            await window.callSupabaseAPI('settings', 'DELETE', null, `?book_id=eq.${id}`);
+            const tag_del = window.getAccountTag ? window.getAccountTag() : null;
+            const tagFilter_del = tag_del ? `&account_tag=eq.${tag_del}` : '';
+            await window.callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${id}${tagFilter_del}`);
+            await window.callSupabaseAPI('audit_logs', 'DELETE', null, `?book_id=eq.${id}${tagFilter_del}`);
+            await window.callSupabaseAPI('settings', 'DELETE', null, `?book_id=eq.${id}${tagFilter_del}`);
             console.log(`Data cloud buku "${b.name}" berhasil dihapus.`);
         } catch (e) {
             console.error('Gagal hapus data cloud:', e);
