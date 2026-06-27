@@ -46,9 +46,11 @@ window.pullFromCloudSilently = async function() {
         // justru butuh baris tombstone (is_deleted=true) itu untuk tahu transaksi
         // mana yang baru dihapus di perangkat lain, supaya bisa dibuang dari
         // cache lokal perangkat ini juga (lihat loop di bawah).
-        let query = `?book_id=eq.${window.currentBookId}&is_deleted=eq.false&order=date.desc&limit=300`;
+        const _txTag = window.getAccountTag ? window.getAccountTag() : null;
+        const _txTagFilter = _txTag ? `&account_tag=eq.${_txTag}` : '';
+        let query = `?book_id=eq.${window.currentBookId}&is_deleted=eq.false&order=date.desc&limit=300${_txTagFilter}`;
         if (lastSync) {
-            query = `?book_id=eq.${window.currentBookId}&order=updated_at.desc&updated_at=gt.${lastSync}&limit=300`;
+            query = `?book_id=eq.${window.currentBookId}&order=updated_at.desc&updated_at=gt.${lastSync}&limit=300${_txTagFilter}`;
         }
         let cloudData = await window.callSupabaseAPI('transactions', 'GET', null, query);
         if (cloudData && Array.isArray(cloudData)) {
@@ -99,8 +101,10 @@ window.pullAllBooksFromCloud = async function() {
     const bookIds = window.books.map(b => b.id);
     if (bookIds.length === 0) return;
     for (const bookId of bookIds) {
+        const _fxTag = window.getAccountTag ? window.getAccountTag() : null;
+        const _fxTagFilter = _fxTag ? `&account_tag=eq.${_fxTag}` : '';
         let cloudData = await window.callSupabaseAPI('transactions', 'GET', null,
-            `?book_id=eq.${bookId}&is_deleted=eq.false&order=date.desc&limit=300`);
+            `?book_id=eq.${bookId}&is_deleted=eq.false&order=date.desc&limit=300${_fxTagFilter}`);
         if (!cloudData || !Array.isArray(cloudData)) continue;
         const cloudMapped = cloudData.map(c => ({
             id: c.id, type: c.type, amount: Number(c.amount),
@@ -144,6 +148,7 @@ window.pushToCloud = async function(bookId, txs) {
     if (!window.isOnline()) return;
     bookId = bookId || window.currentBookId;
     txs = txs || window.txs;
+    const _ptTag = window.getAccountTag ? window.getAccountTag() : null;
     const payload = txs.map(t => ({
         id: t.id,
         book_id: bookId,
@@ -154,7 +159,8 @@ window.pushToCloud = async function(bookId, txs) {
         description: t.description || '',
         date: t.date,
         attachment: t.attachment || null,
-        updated_at: t.updated_at || new Date().toISOString()
+        updated_at: t.updated_at || new Date().toISOString(),
+        ...(_ptTag ? { account_tag: _ptTag } : {})
     }));
     if (payload.length === 0) return;
     let res = await window.callSupabaseAPI('transactions', 'POST', payload);
@@ -186,12 +192,14 @@ window.addCloudLog = async function(actionType, detailsText) {
     localStorage.setItem('sk_logs_' + window.currentBookId, JSON.stringify(localLogs));
     window.renderLogs(localLogs);
     if (!window.isOnline()) return;
+    const _alTag = window.getAccountTag ? window.getAccountTag() : null;
     const logPayload = [{
         book_id: window.currentBookId,
         device_id: window.deviceId,
         action: actionType,
         details: detailsText,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        ...(_alTag ? { account_tag: _alTag } : {})
     }];
     await window.callSupabaseAPI('audit_logs', 'POST', logPayload);
 };
@@ -200,7 +208,9 @@ window.refreshLogsFromCloud = async function() {
     let area = document.getElementById('logSummaryArea');
     if (!window.isOnline()) { window.refreshLogsLocal(); return; }
     area.innerText = "Memuat log dari cloud...";
-    let cloudLogs = await window.callSupabaseAPI('audit_logs', 'GET', null, `?book_id=eq.${window.currentBookId}&order=timestamp.desc&limit=30`);
+    const _glTag = window.getAccountTag ? window.getAccountTag() : null;
+    const _glTagFilter = _glTag ? `&account_tag=eq.${_glTag}` : '';
+    let cloudLogs = await window.callSupabaseAPI('audit_logs', 'GET', null, `?book_id=eq.${window.currentBookId}&order=timestamp.desc&limit=30${_glTagFilter}`);
     if (cloudLogs && Array.isArray(cloudLogs)) {
         window.renderLogs(cloudLogs);
     } else {

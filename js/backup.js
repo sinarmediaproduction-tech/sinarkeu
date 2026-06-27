@@ -94,7 +94,9 @@ window.checkAndRunDailyAutoBackup = async function() {
         const bookTxs = JSON.parse(localStorage.getItem('sk_txs_' + book.id) || '[]');
         let txsToBackup = bookTxs;
         if (bookTxs.length === 0 && window.isOnline()) {
-            const cloudData = await window.callSupabaseAPI('transactions', 'GET', null, `?book_id=eq.${book.id}&is_deleted=eq.false&order=date.desc&limit=300`);
+            const _abTag = window.getAccountTag ? window.getAccountTag() : null;
+            const _abTagFilter = _abTag ? `&account_tag=eq.${_abTag}` : '';
+            const cloudData = await window.callSupabaseAPI('transactions', 'GET', null, `?book_id=eq.${book.id}&is_deleted=eq.false&order=date.desc&limit=300${_abTagFilter}`);
             if (cloudData && Array.isArray(cloudData)) {
                 txsToBackup = cloudData.map(c => ({
                     id: c.id, type: c.type, amount: Number(c.amount),
@@ -689,6 +691,7 @@ window.importAllDataFromFile = async function(input) {
             // ── Push transaksi baru ke Supabase ──
             if (newTxs.length > 0 && window.isOnline() && window.getCloudUrl() && window.getSupabaseKey()) {
                 show('#cc7b00', '#fff3e0', `Upload ${newTxs.length} transaksi buku "${bookData.name}" ke Supabase...`);
+                const _rtTag = window.getAccountTag ? window.getAccountTag() : null;
                 const payload = newTxs.map(t => ({
                     id: t.id,
                     book_id: bookData.id,
@@ -701,6 +704,7 @@ window.importAllDataFromFile = async function(input) {
                     attachment: t.attachment || null,
                     updated_at: t.updated_at || new Date().toISOString(),
                     is_deleted: false,
+                    ...(_rtTag ? { account_tag: _rtTag } : {})
                 }));
                 // Upload per-batch 50 agar tidak melebihi limit payload
                 for (let i = 0; i < payload.length; i += 50) {

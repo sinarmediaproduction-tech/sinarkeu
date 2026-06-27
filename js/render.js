@@ -396,7 +396,9 @@ window.confirmDelete = async function(id) {
         // is_deleted=true + updated_at baru, baris tombstone ini tetap kebawa
         // oleh query incremental, sehingga bisa dibuang dari cache perangkat lain.
         if (window.isOnline()) {
-            window.callSupabaseAPI('transactions', 'PATCH', { is_deleted: true, updated_at: new Date().toISOString() }, `?id=eq.${id}`);
+            const _sdTag = window.getAccountTag ? window.getAccountTag() : null;
+            const _sdTagFilter = _sdTag ? `&account_tag=eq.${_sdTag}` : '';
+            window.callSupabaseAPI('transactions', 'PATCH', { is_deleted: true, updated_at: new Date().toISOString() }, `?id=eq.${id}${_sdTagFilter}`);
         }
         window.txs = window.txs.filter(x => x.id !== id);
         window.saveTransactions();

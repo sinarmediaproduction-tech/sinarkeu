@@ -454,6 +454,7 @@ window.tutupAnakBuku = async function() {
     const dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') +
         'T' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':00';
 
+    const _ntTag = window.getAccountTag ? window.getAccountTag() : null;
     const newTx = {
         id: 'tx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
         book_id: parentBook.id,
@@ -464,7 +465,8 @@ window.tutupAnakBuku = async function() {
         description: deskripsi,
         date: dateStr,
         attachment: null,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        ...(_ntTag ? { account_tag: _ntTag } : {})
     };
 
     // Push ke Supabase langsung ke buku induk
