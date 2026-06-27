@@ -74,7 +74,10 @@ window.pushCryptoSaltCheck = async function(saltB64, checkB64) {
 window.pullCryptoSaltCheck = async function() {
     if (!window.isOnline()) return null;
     const tag = window.getAccountTag();
-    const tagFilter = tag ? `&account_tag=eq.${tag}` : '';
+    // OR filter: ambil baris ber-tag milik akun ini ATAU baris lama tanpa tag.
+    // Penting untuk bootstrap multi-device: baris crypto_salt/check lama (NULL)
+    // harus bisa dibaca sebelum migrasi men-tag ulang baris tersebut.
+    const tagFilter = tag ? `&or=(account_tag.eq.${tag},account_tag.is.null)` : '';
     const rows = await window.callSupabaseAPI('settings', 'GET', null, `?book_id=eq.global&key=in.(crypto_salt,crypto_check)${tagFilter}`);
     if (!rows || !Array.isArray(rows) || rows.length === 0) return null;
     const saltRow = rows.find(r => r.key === 'crypto_salt');
@@ -224,10 +227,10 @@ window._decryptSettingValue = async function(rawValue) {
 window.pullAllSettings = async function() {
     if (!window.isOnline()) return;
     const tag = window.getAccountTag();
-    // Kalau sudah punya tag (salt sudah ada), filter ketat hanya baris milik
-    // akun ini. Kalau belum punya tag (setup awal), ambil semua — ini hanya
-    // terjadi sebelum crypto selesai di-bootstrap.
-    const tagFilter = tag ? `&account_tag=eq.${tag}` : '';
+    // OR filter: baris ber-tag milik akun ini ATAU baris lama tanpa tag (data sebelum
+    // fitur account_tag). Setelah migrasi selesai, semua baris sudah punya tag dan
+    // baris NULL tidak akan muncul lagi — filter ini aman dipakai permanen.
+    const tagFilter = tag ? `&or=(account_tag.eq.${tag},account_tag.is.null)` : '';
     const allRows = await window.callSupabaseAPI('settings', 'GET', null, `?order=updated_at.desc${tagFilter}`);
     if (allRows && Array.isArray(allRows)) {
         let booksUpdated = false;
@@ -342,17 +345,11 @@ window.pullAllSettings = async function() {
             });
         }
 
-        // MIGRASI: kalau pull berhasil tapi tidak ada baris yang relevan (semua
-        // dilewati karena crypto_salt/check), cek apakah ada baris LAMA tanpa
-        // account_tag yang bisa dimigrasikan.
-        const relevantRows = allRows.filter(r => r.key !== 'crypto_salt' && r.key !== 'crypto_check');
-        if (relevantRows.length === 0 && tag && window._sessionCryptoKey) {
-            console.log('[Sync] Tidak ada baris ber-tag — coba migrasi baris lama tanpa account_tag...');
-            window._migrateUntaggedCloudSettings(tag).then(() => {
-                console.log('[Sync] Migrasi account_tag selesai.');
-            }).catch(e => {
-                console.warn('[Sync] Migrasi account_tag gagal:', e);
-            });
+        // MIGRASI SATU KALI: jalankan setelah settings berhasil di-pull dan books
+        // sudah terisi. Mencakup settings, transactions, dan audit_logs yang belum
+        // punya account_tag. Flag localStorage mencegah duplikasi eksekusi.
+        if (tag && window._sessionCryptoKey) {
+            window.runOneTimeMigrations();
         }
     }
     window.updateSettingsSyncStatus('pull');
@@ -410,6 +407,127 @@ window._migrateUntaggedCloudSettings = async function(tag) {
     }
 };
 
+// ==================== MIGRASI TRANSACTIONS & AUDIT_LOGS ====================
+// Fungsi ini dijalankan SATU KALI saat pertama kali app dibuka setelah update
+// yang menambahkan fitur account_tag. Menarget tabel `transactions` dan
+// `audit_logs` yang baris lamanya tidak punya account_tag (NULL).
+//
+// Strategi:
+//   1. Tarik semua baris tanpa tag dari Supabase (account_tag IS NULL).
+//   2. Filter hanya baris dengan book_id yang dimiliki akun ini (window.books).
+//      Kita tidak bisa dekripsi transaksi (tidak terenkripsi), jadi pakai
+//      kepemilikan book_id sebagai proxy "milik akun ini".
+//   3. Push ulang baris tersebut dengan account_tag yang benar.
+//
+// Flag localStorage 'sk_tx_migration_done' dan 'sk_al_migration_done'
+// mencegah fungsi ini dijalankan lebih dari sekali per perangkat.
+window._migrateUntaggedTransactions = async function(tag) {
+    const MIGRATION_KEY = 'sk_tx_migration_done';
+    if (localStorage.getItem(MIGRATION_KEY) === 'true') return;
+    if (!window.isOnline() || !tag) return;
+    try {
+        const myBookIds = new Set((window.books || []).map(b => b.id));
+        if (myBookIds.size === 0) {
+            console.log('[Migrate] Tidak ada buku terdaftar — migrasi transaksi dilewati.');
+            return;
+        }
+        // Tarik baris NULL tanpa batas (ambil semua halaman jika perlu)
+        const oldRows = await window.callSupabaseAPI('transactions', 'GET', null,
+            '?account_tag=is.null&order=date.desc&limit=1000');
+        if (!oldRows || !Array.isArray(oldRows) || oldRows.length === 0) {
+            console.log('[Migrate] Tidak ada transaksi lama tanpa account_tag.');
+            localStorage.setItem(MIGRATION_KEY, 'true');
+            return;
+        }
+        // Filter hanya baris yang book_id-nya milik akun kita
+        const myRows = oldRows.filter(r => myBookIds.has(r.book_id));
+        if (myRows.length === 0) {
+            console.log('[Migrate] Tidak ada transaksi lama yang cocok dengan buku akun ini.');
+            localStorage.setItem(MIGRATION_KEY, 'true');
+            return;
+        }
+        console.log(`[Migrate] Ditemukan ${myRows.length} transaksi lama tanpa tag. Memulai migrasi...`);
+        const now = new Date().toISOString();
+        // Push ulang dalam batch kecil (50 baris) agar tidak melebihi batas request
+        const BATCH = 50;
+        let migratedCount = 0;
+        for (let i = 0; i < myRows.length; i += BATCH) {
+            const batch = myRows.slice(i, i + BATCH).map(r => ({
+                ...r,
+                account_tag: tag,
+                updated_at: r.updated_at || now
+            }));
+            const ok = await window.callSupabaseAPI('transactions', 'POST', batch);
+            if (ok) migratedCount += batch.length;
+        }
+        console.log(`[Migrate] Transaksi: ${migratedCount}/${myRows.length} baris berhasil diberi account_tag '${tag}'.`);
+        localStorage.setItem(MIGRATION_KEY, 'true');
+    } catch (e) {
+        console.warn('[Migrate] _migrateUntaggedTransactions error:', e);
+        // Jangan set flag — biarkan dicoba lagi di sesi berikutnya
+    }
+};
+
+window._migrateUntaggedAuditLogs = async function(tag) {
+    const MIGRATION_KEY = 'sk_al_migration_done';
+    if (localStorage.getItem(MIGRATION_KEY) === 'true') return;
+    if (!window.isOnline() || !tag) return;
+    try {
+        const myBookIds = new Set((window.books || []).map(b => b.id));
+        if (myBookIds.size === 0) {
+            console.log('[Migrate] Tidak ada buku terdaftar — migrasi audit_logs dilewati.');
+            return;
+        }
+        const oldRows = await window.callSupabaseAPI('audit_logs', 'GET', null,
+            '?account_tag=is.null&order=timestamp.desc&limit=500');
+        if (!oldRows || !Array.isArray(oldRows) || oldRows.length === 0) {
+            console.log('[Migrate] Tidak ada audit_log lama tanpa account_tag.');
+            localStorage.setItem(MIGRATION_KEY, 'true');
+            return;
+        }
+        const myRows = oldRows.filter(r => myBookIds.has(r.book_id));
+        if (myRows.length === 0) {
+            console.log('[Migrate] Tidak ada audit_log lama yang cocok dengan buku akun ini.');
+            localStorage.setItem(MIGRATION_KEY, 'true');
+            return;
+        }
+        console.log(`[Migrate] Ditemukan ${myRows.length} audit_log lama tanpa tag. Memulai migrasi...`);
+        const now = new Date().toISOString();
+        const BATCH = 50;
+        let migratedCount = 0;
+        for (let i = 0; i < myRows.length; i += BATCH) {
+            const batch = myRows.slice(i, i + BATCH).map(r => ({
+                ...r,
+                account_tag: tag,
+                timestamp: r.timestamp || now
+            }));
+            const ok = await window.callSupabaseAPI('audit_logs', 'POST', batch);
+            if (ok) migratedCount += batch.length;
+        }
+        console.log(`[Migrate] audit_logs: ${migratedCount}/${myRows.length} baris berhasil diberi account_tag '${tag}'.`);
+        localStorage.setItem(MIGRATION_KEY, 'true');
+    } catch (e) {
+        console.warn('[Migrate] _migrateUntaggedAuditLogs error:', e);
+    }
+};
+
+// Titik masuk tunggal: dipanggil sekali setelah crypto selesai di-bootstrap
+// dan window.books sudah terisi (biasanya setelah pullAllSettings() selesai).
+window.runOneTimeMigrations = async function() {
+    const tag = window.getAccountTag ? window.getAccountTag() : null;
+    if (!tag) return;
+    // Jalankan paralel agar tidak menunda UI
+    Promise.all([
+        window._migrateUntaggedCloudSettings(tag),
+        window._migrateUntaggedTransactions(tag),
+        window._migrateUntaggedAuditLogs(tag)
+    ]).then(() => {
+        console.log('[Migrate] Semua migrasi one-time selesai.');
+    }).catch(e => {
+        console.warn('[Migrate] runOneTimeMigrations error:', e);
+    });
+};
+
 // ============================================================
 // DB.JS - FUNGSI KHUSUS UNTUK PAYMENT REMINDERS
 // ============================================================
@@ -444,7 +562,7 @@ window.pullPaymentRemindersFromCloud = async function(bookId) {
             'payment_reminders',
             'GET',
             null,
-            `?book_id=eq.${bookId}&order=created_at.desc${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
+            `?book_id=eq.${bookId}&order=created_at.desc${(window.getAccountTag && window.getAccountTag()) ? '&or=(account_tag.eq.' + window.getAccountTag() + ',account_tag.is.null)' : ''}`
         );
         
         if (result && Array.isArray(result)) {
@@ -467,7 +585,7 @@ window.deletePaymentReminderFromCloud = async function(reminderId, bookId) {
             'payment_reminders',
             'DELETE',
             null,
-            `?id=eq.${reminderId}&book_id=eq.${bookId}${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
+            `?id=eq.${reminderId}&book_id=eq.${bookId}${(window.getAccountTag && window.getAccountTag()) ? '&or=(account_tag.eq.' + window.getAccountTag() + ',account_tag.is.null)' : ''}`
         );
         return !!result;
     } catch (e) {

@@ -47,7 +47,10 @@ window.pullFromCloudSilently = async function() {
         // mana yang baru dihapus di perangkat lain, supaya bisa dibuang dari
         // cache lokal perangkat ini juga (lihat loop di bawah).
         const _txTag = window.getAccountTag ? window.getAccountTag() : null;
-        const _txTagFilter = _txTag ? `&account_tag=eq.${_txTag}` : '';
+        // OR filter: ambil baris ber-tag milik akun ini ATAU baris lama tanpa tag (NULL).
+        // Baris NULL adalah data sebelum fitur account_tag ditambahkan; harus tetap terbaca
+        // sampai migrasi selesai men-tag ulang semua baris tersebut.
+        const _txTagFilter = _txTag ? `&or=(account_tag.eq.${_txTag},account_tag.is.null)` : '';
         let query = `?book_id=eq.${window.currentBookId}&is_deleted=eq.false&order=date.desc&limit=300${_txTagFilter}`;
         if (lastSync) {
             query = `?book_id=eq.${window.currentBookId}&order=updated_at.desc&updated_at=gt.${lastSync}&limit=300${_txTagFilter}`;
@@ -102,7 +105,8 @@ window.pullAllBooksFromCloud = async function() {
     if (bookIds.length === 0) return;
     for (const bookId of bookIds) {
         const _fxTag = window.getAccountTag ? window.getAccountTag() : null;
-        const _fxTagFilter = _fxTag ? `&account_tag=eq.${_fxTag}` : '';
+        // OR filter: baris ber-tag akun ini ATAU baris lama tanpa tag (data sebelum migrasi).
+        const _fxTagFilter = _fxTag ? `&or=(account_tag.eq.${_fxTag},account_tag.is.null)` : '';
         let cloudData = await window.callSupabaseAPI('transactions', 'GET', null,
             `?book_id=eq.${bookId}&is_deleted=eq.false&order=date.desc&limit=300${_fxTagFilter}`);
         if (!cloudData || !Array.isArray(cloudData)) continue;
@@ -209,7 +213,8 @@ window.refreshLogsFromCloud = async function() {
     if (!window.isOnline()) { window.refreshLogsLocal(); return; }
     area.innerText = "Memuat log dari cloud...";
     const _glTag = window.getAccountTag ? window.getAccountTag() : null;
-    const _glTagFilter = _glTag ? `&account_tag=eq.${_glTag}` : '';
+    // OR filter: log ber-tag akun ini ATAU log lama tanpa tag.
+    const _glTagFilter = _glTag ? `&or=(account_tag.eq.${_glTag},account_tag.is.null)` : '';
     let cloudLogs = await window.callSupabaseAPI('audit_logs', 'GET', null, `?book_id=eq.${window.currentBookId}&order=timestamp.desc&limit=30${_glTagFilter}`);
     if (cloudLogs && Array.isArray(cloudLogs)) {
         window.renderLogs(cloudLogs);
