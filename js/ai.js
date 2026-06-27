@@ -395,3 +395,21 @@ window.copyFaseAIResult = function() {
     const text = document.getElementById('faseAIResult').innerText;
     navigator.clipboard.writeText(text).then(() => window.showToast('Hasil analisis disalin!', 'success'));
 };
+
+// ── Header AI Bar ─────────────────────────────────────────────────────────────
+window.submitHeaderAI = function() {
+    const bar   = document.getElementById('headerAIInput');
+    const text  = (bar ? bar.value : '').trim();
+    window.openAIChatModal();
+    if (text) {
+        // Isi input modal dengan teks dari header bar, lalu langsung kirim
+        setTimeout(() => {
+            const inp = document.getElementById('aiChatInput');
+            if (inp) {
+                inp.value = text;
+                window.sendAIChatMessage();
+                if (bar) bar.value = '';
+            }
+        }, 200);
+    }
+};

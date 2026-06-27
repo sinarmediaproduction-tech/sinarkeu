@@ -173,6 +173,11 @@
         </div>
         <div class="book-selector">
             <span id="activeAccountLabel" style="font-size:.7rem;font-weight:700;color:#1a1a1a;padding:4px 10px;background:#e8f0fe;border-radius:6px;"></span>
+            <div id="headerAIBar" class="header-ai-bar desktop-only">
+                <span class="header-ai-icon">✦</span>
+                <input type="text" id="headerAIInput" class="header-ai-input" placeholder="Tanya AI keuangan..." onkeydown="if(event.key==='Enter'){event.preventDefault(); window.submitHeaderAI();}" autocomplete="off">
+                <button class="header-ai-btn" onclick="window.submitHeaderAI()" title="Kirim">→</button>
+            </div>
             <div id="syncStatusWrapper" class="sync-status-container offline">
                 <span id="syncStatusTag" class="sync-status-badge">CLOUD OFF</span>
                 <span id="deviceIdDisplay" class="device-id-badge">------</span>
