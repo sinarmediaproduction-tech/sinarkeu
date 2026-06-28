@@ -1,6 +1,41 @@
 // ==================== SETTINGS ====================
 
-window.openSetelanModal = function() {
+window.switchSetelanTab = function(tabId) {
+    var tabs = document.querySelectorAll('#setelanTabs .setelan-tab-btn');
+    var panels = document.querySelectorAll('#setelanTabContent .setelan-tab-panel');
+    var found = false;
+
+    panels.forEach(function(panel) {
+        if (panel.getAttribute('data-tab-panel') === tabId) {
+            panel.classList.add('active');
+            found = true;
+        } else {
+            panel.classList.remove('active');
+        }
+    });
+
+    // Fallback: jika tabId tidak valid, tetap tampilkan tab pertama
+    if (!found && panels.length) {
+        panels[0].classList.add('active');
+        tabId = panels[0].getAttribute('data-tab-panel');
+    }
+
+    tabs.forEach(function(btn) {
+        if (btn.getAttribute('data-tab') === tabId) {
+            btn.classList.add('active');
+            if (typeof btn.scrollIntoView === 'function') {
+                btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    var contentEl = document.getElementById('setelanTabContent');
+    if (contentEl) contentEl.scrollTop = 0;
+};
+
+window.openSetelanModal = function(initialTab) {
     var urlEl = document.getElementById('supabaseUrlInput');
     var keyEl = document.getElementById('supabaseKeyInput');
     var statusEl = document.getElementById('connectionStatus');
@@ -46,6 +81,7 @@ window.openSetelanModal = function() {
     if (gsStatus) gsStatus.innerText = '';
     
     window.openModal('setelanModal');
+    window.switchSetelanTab(initialTab || 'lang');
 };
 
 window.testCloudConnection = async function() {

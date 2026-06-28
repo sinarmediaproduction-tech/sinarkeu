@@ -73,7 +73,7 @@ window.runAIAnalysis = async function() {
     const copyBtn  = document.getElementById('aiCopyBtn');
     const WORKER_URL = (localStorage.getItem('sk_ai_worker_url') || '').trim();
     if (!WORKER_URL) {
-        resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">Worker URL belum dikonfigurasi. Buka <a href="#" onclick="window.closeModal(\'aiAnalysisModal\'); window.openSetelanModal(); return false;" style="color:#de350b; font-weight:600; text-decoration:underline;">Setelan → Analisis AI</a> untuk mengisi URL Cloudflare Worker Anda.</div>';
+        resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">Worker URL belum dikonfigurasi. Buka <a href="#" onclick="window.closeModal(\'aiAnalysisModal\'); window.openSetelanModal(\'ai\'); return false;" style="color:#de350b; font-weight:600; text-decoration:underline;">Setelan → Analisis AI</a> untuk mengisi URL Cloudflare Worker Anda.</div>';
         return;
     }
     const data = window.getAITransactionData();
@@ -300,7 +300,7 @@ window.runFaseAIAnalysis = async function() {
         return;
     }
     if (!WORKER_URL) {
-        resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">Worker URL belum dikonfigurasi.<br><a href="#" onclick="window.closeModal(\'faseAIModal\'); window.openSetelanModal(); return false;" style="color:#de350b; font-weight:600;">Setelan → Analisis AI</a></div>';
+        resultEl.innerHTML = '<div style="text-align:center; color:#de350b; padding:40px 0;">Worker URL belum dikonfigurasi.<br><a href="#" onclick="window.closeModal(\'faseAIModal\'); window.openSetelanModal(\'ai\'); return false;" style="color:#de350b; font-weight:600;">Setelan → Analisis AI</a></div>';
         return;
     }
 

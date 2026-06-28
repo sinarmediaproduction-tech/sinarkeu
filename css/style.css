@@ -981,6 +981,63 @@ tr:hover td { background: var(--paper-warm); }
 .modal-content.report    { max-width: 960px; max-height: 90vh; }
 .modal-content.extra-wide{ max-width: 740px; }
 
+/* ── Setelan (Settings) Modal: taller + tabbed ── */
+.setelan-modal-content {
+  max-height: 92vh;
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+}
+.setelan-modal-content .modal-header { flex: 0 0 auto; }
+
+.setelan-tabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 2px 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+  scrollbar-width: thin;
+}
+.setelan-tabs::-webkit-scrollbar { height: 4px; }
+.setelan-tabs::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 4px; }
+
+.setelan-tab-btn {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: .68rem;
+  font-weight: 600;
+  font-family: inherit;
+  white-space: nowrap;
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+  border-radius: 20px;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.setelan-tab-icon { font-size: .8rem; line-height: 1; }
+.setelan-tab-btn:hover { background: var(--accent-lt); color: var(--accent); border-color: var(--accent-lt); }
+.setelan-tab-btn.active {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.setelan-tab-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.setelan-tab-panel { display: none; }
+.setelan-tab-panel.active { display: block; }
+
 .modal-header {
   display: flex;
   justify-content: space-between;

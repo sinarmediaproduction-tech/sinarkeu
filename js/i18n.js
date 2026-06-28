@@ -193,6 +193,8 @@
             reset_app_desc: 'Hapus semua buku, transaksi, dan setelan baik di Supabase maupun di penyimpanan lokal. Aplikasi akan kembali ke kondisi bersih seperti baru dipasang.',
             export_all_json: 'Ekspor Semua Data (JSON)',
 
+            archive_section: 'Arsipkan & Kosongkan Database',
+
             language_section: 'Bahasa / Language',
             language_desc: 'Pilih bahasa tampilan aplikasi.',
             lang_id: '🇮🇩 Bahasa Indonesia',
@@ -504,6 +506,8 @@
             reset_app_section: 'Full App Reset',
             reset_app_desc: 'Delete all books, transactions, and settings from both Supabase and local storage. The app will return to a clean state as if newly installed.',
             export_all_json: 'Export All Data (JSON)',
+
+            archive_section: 'Archive & Clear Database',
 
             language_section: 'Bahasa / Language',
             language_desc: 'Choose the display language of the app.',
