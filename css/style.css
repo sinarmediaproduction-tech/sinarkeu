@@ -23,6 +23,8 @@
   --danger-lt:  #FAECE7;
   --warning:    #854F0B;
   --warning-lt: #FAEEDA;
+  --purple:     #5B3A8E;
+  --purple-lt:  #F1EAFB;
 }
 
 /* ── Base ── */
@@ -1158,6 +1160,58 @@ select.form-control option[value=""] {
   flex-wrap: wrap;
 }
 
+/* ===================================================
+   MODAL SETELAN — helper class theme-aware
+   (pengganti inline style agar ikut dark mode)
+=================================================== */
+.setelan-tab-panel { margin-top: 0; }
+
+.setelan-desc {
+  font-size: .7rem;
+  color: var(--ink-muted);
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+.setelan-desc--tight { font-size: .7rem; color: var(--ink-muted); line-height: 1.6; }
+.setelan-hint        { font-size: .65rem; color: var(--ink-faint); margin-top: 4px; }
+.setelan-status-text { font-size: .7rem;  color: var(--ink-faint); margin-top: 8px; }
+.setelan-status-row  { font-size: .7rem;  min-height: 16px; }
+.setelan-status-row--margin { font-size: .7rem; min-height: 16px; margin-bottom: 8px; }
+.setelan-test-status  { font-size: .72rem; margin-bottom: 10px; min-height: 18px; }
+
+.setelan-divider { border-top: 1px dashed var(--rule); margin: 14px 0; }
+
+/* Judul tiap tab — warna kategori, otomatis ikut tema */
+.setelan-title          { color: var(--ink); display: flex; align-items: center; gap: 8px; }
+.setelan-title--purple  { color: var(--purple); display: flex; align-items: center; gap: 8px; }
+.setelan-title--amber   { color: var(--warning); display: flex; align-items: center; gap: 8px; }
+.setelan-title--green   { color: var(--success); }
+.setelan-title--blue    { color: var(--accent); display: flex; align-items: center; gap: 8px; }
+.setelan-title--red     { color: var(--danger); }
+
+/* Badge kecil di sebelah judul tab */
+.setelan-badge { font-size: .6rem; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+.setelan-badge--neutral { background: var(--rule); color: var(--ink-muted); }
+.setelan-badge--success { background: var(--success-lt); color: var(--success); }
+
+/* Teks preview/hasil hitung kecil di bawah input */
+.setelan-preview { font-size: .7rem; margin-top: 5px; min-height: 16px; }
+.setelan-preview--amber { font-size: .7rem; color: var(--warning); margin-top: 5px; min-height: 16px; }
+.setelan-preview--green { font-size: .7rem; color: var(--success); margin-top: 5px; min-height: 16px; }
+
+/* Label kecil tebal (di atas input device name dll) */
+.setelan-label-strong { font-size: .7rem; font-weight: 600; color: var(--ink); margin-bottom: 6px; display: block; }
+.setelan-info-row     { font-size: .72rem; font-weight: 700; color: var(--ink); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+
+/* Baris flex umum di dalam tab setelan */
+.setelan-row       { display: flex; gap: 8px; }
+.setelan-row--wrap { display: flex; gap: 8px; flex-wrap: wrap; }
+.setelan-row--center { display: flex; gap: 8px; align-items: center; }
+
+/* Tombol pilih bahasa */
+.btn-lang-active   { flex: 1; background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+.btn-lang-inactive { flex: 1; background: var(--rule); color: var(--ink); border-color: var(--ink-faint); font-weight: 600; }
+
 /* ── Book List ── */
 .book-list-item {
   display: flex;
@@ -1983,6 +2037,8 @@ select.form-control option[value=""] {
   --danger-lt:  #2A1210;
   --warning:    #D4914A;
   --warning-lt: #2A1E0A;
+  --purple:     #B794F4;
+  --purple-lt:  #241433;
 }
 
 [data-theme="dark"] body {
