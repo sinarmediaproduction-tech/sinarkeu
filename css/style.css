@@ -2316,12 +2316,19 @@ select.form-control option[value=""] {
 }
 
 /* Versi compact untuk header (pilih buku) */
+.cs-wrapper.compact {
+  width: auto;
+}
 .cs-wrapper.compact .cs-trigger {
   font-size: .72rem;
   min-height: 30px;
   padding: 5px 9px 5px 10px;
-  min-width: 140px;
+  min-width: 120px;
   max-width: 200px;
+}
+.cs-wrapper.compact .cs-dropdown {
+  min-width: 180px;
+  max-width: 260px;
 }
 
 /* Versi form (kategori dalam modal) */
