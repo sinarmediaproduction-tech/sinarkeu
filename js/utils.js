@@ -73,6 +73,11 @@ window.openModal = function(id) {
     document.getElementById(id).classList.add('show');
     if (id === 'addModal') {
         document.getElementById('addForm').reset();
+        // Sync custom selects setelah form.reset()
+        ['txCategory', 'txIncomeCategory'].forEach(function(sid) {
+            var sel = document.getElementById(sid);
+            if (sel) sel.dispatchEvent(new Event('change'));
+        });
         document.getElementById('attachmentPreview').style.display = 'none';
         window.currentAttachmentData = null;
         window.currentAttachmentFile = null;

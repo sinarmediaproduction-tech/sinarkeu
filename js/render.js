@@ -348,6 +348,11 @@ window.loadEditData = function(id) {
     document.getElementById('editTxDate').value = window.toDatetimeLocalValue(t.date);
     if (t.type === 'expense') document.getElementById('editTxCategory').value = t.category;
     else document.getElementById('editTxIncomeCategory').value = t.category;
+    // Sync custom select display
+    ['editTxCategory', 'editTxIncomeCategory'].forEach(function(sid) {
+        var sel = document.getElementById(sid);
+        if (sel) sel.dispatchEvent(new Event('change'));
+    });
     document.getElementById('editTxDesc').value = t.description;
     document.getElementById('editTxAmount').value = Number(t.amount).toLocaleString('id-ID');
     let info = document.getElementById('editAttachmentInfo');
