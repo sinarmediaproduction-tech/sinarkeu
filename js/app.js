@@ -290,6 +290,11 @@ window.openMobileDrawer = function() {
     const src = document.getElementById('activeAccountLabel');
     const dst = document.getElementById('drawerAccountLabel');
     if (src && dst) dst.textContent = src.textContent;
+    // Sync dark mode label
+    var drawerLabel = document.getElementById('drawerDarkLabel');
+    if (drawerLabel) {
+        drawerLabel.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️ Mode Terang' : '🌙 Mode Gelap';
+    }
     document.getElementById("mobileDrawerOverlay").style.opacity = "1";
     document.getElementById("mobileDrawerOverlay").style.pointerEvents = "auto";
     document.getElementById("mobileDrawer").style.transform = "translateX(0)";
@@ -319,7 +324,45 @@ window.toggleAuditLogInline = function() {
 
 // ==================== START APP ====================
 window.addEventListener('DOMContentLoaded', () => {
+    // Sync dark mode icon state setelah DOM ready
+    var savedDark = localStorage.getItem('sk_dark_mode') === '1';
+    window.applyTheme(savedDark);
+
     window.initApp();
     window.fetchForexRate();
     setTimeout(window.fetchGoldPrice, 1500);
 });
+
+// ==================== DARK MODE ====================
+
+window.applyTheme = function(dark) {
+    if (dark) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+    }
+    var icon = document.getElementById('darkModeIcon');
+    if (icon) {
+        // Sun icon for dark mode (click to go light), moon icon for light mode
+        if (dark) {
+            icon.innerHTML = '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>';
+        } else {
+            icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+        }
+    }
+};
+
+window.toggleDarkMode = function() {
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    var newDark = !isDark;
+    localStorage.setItem('sk_dark_mode', newDark ? '1' : '0');
+    window.applyTheme(newDark);
+};
+
+// Apply on load (sebelum render apapun untuk menghindari flash)
+(function() {
+    var saved = localStorage.getItem('sk_dark_mode');
+    if (saved === '1') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+})();

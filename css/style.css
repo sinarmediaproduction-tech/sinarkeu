@@ -1915,3 +1915,190 @@ select.form-control option[value=""] {
   border-color: transparent !important;
   transform: scale(1.15);
 }
+
+/* ======================================================
+   DARK MODE — [data-theme="dark"]
+====================================================== */
+[data-theme="dark"] {
+  --ink:        #E8E8E5;
+  --ink-muted:  #9A9A96;
+  --ink-faint:  #5A5A56;
+  --paper:      #161616;
+  --paper-warm: #1E1E1C;
+  --rule:       #2C2C2A;
+  --accent:     #5B9BD5;
+  --accent-lt:  #1A2A3A;
+  --success:    #3DB884;
+  --success-lt: #0D2820;
+  --danger:     #E06B50;
+  --danger-lt:  #2A1210;
+  --warning:    #D4914A;
+  --warning-lt: #2A1E0A;
+}
+
+[data-theme="dark"] body {
+  background: var(--paper-warm);
+  color: var(--ink);
+}
+
+/* Account bar stays dark — tetap solid, hanya border disesuaikan */
+[data-theme="dark"] .account-bar {
+  background: #0A0A0A;
+  border-bottom-color: #1A1A18;
+}
+[data-theme="dark"] .account-tab { border-right-color: #1A1A18; }
+[data-theme="dark"] .account-bar-add { border-left-color: #1A1A18; }
+[data-theme="dark"] .account-tab:hover { background: rgba(255,255,255,0.06); }
+[data-theme="dark"] .account-tab.active { background: rgba(255,255,255,0.08); }
+
+/* Inputs & selects */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--rule);
+}
+[data-theme="dark"] input::placeholder { color: var(--ink-faint); }
+[data-theme="dark"] .form-control { background: var(--paper); color: var(--ink); border-color: var(--rule); }
+[data-theme="dark"] .form-control:focus { border-color: var(--ink); }
+
+/* Modal */
+[data-theme="dark"] .modal { background: rgba(0,0,0,0.7); }
+[data-theme="dark"] .modal-content { background: var(--paper); border-color: var(--rule); }
+
+/* Buttons */
+[data-theme="dark"] button,
+[data-theme="dark"] .btn,
+[data-theme="dark"] .btn-secondary {
+  background: var(--paper);
+  border-color: var(--rule);
+  color: var(--ink-muted);
+}
+[data-theme="dark"] button:hover:not(:disabled),
+[data-theme="dark"] .btn:hover:not(:disabled) {
+  background: var(--paper-warm);
+  border-color: var(--ink-faint);
+  color: var(--ink);
+}
+[data-theme="dark"] .btn-primary {
+  background: #E8E8E5;
+  color: #161616;
+  border-color: #E8E8E5;
+}
+[data-theme="dark"] .btn-primary:hover:not(:disabled) { background: #C8C8C5; border-color: #C8C8C5; }
+[data-theme="dark"] .manage-books-btn {
+  background: #E8E8E5;
+  color: #161616;
+  border-color: #E8E8E5;
+}
+[data-theme="dark"] .manage-books-btn:hover:not(:disabled) { background: #C8C8C5; }
+[data-theme="dark"] .hamburger-btn { background: #E8E8E5; color: #161616; }
+
+/* Table */
+[data-theme="dark"] th { background: var(--paper-warm); color: var(--ink-faint); }
+[data-theme="dark"] td { color: var(--ink); border-color: var(--rule); }
+[data-theme="dark"] tr:hover td { background: var(--paper-warm); }
+[data-theme="dark"] .table-container { background: var(--paper); border-color: var(--rule); }
+
+/* Cards / panels */
+[data-theme="dark"] .stat-card { background: var(--paper); }
+[data-theme="dark"] .stat-card:hover { background: var(--paper-warm); }
+[data-theme="dark"] .expense-chart-section,
+[data-theme="dark"] .forecast-card,
+[data-theme="dark"] .budget-mini,
+[data-theme="dark"] .log-section,
+[data-theme="dark"] .data-management-panel { background: var(--paper); border-color: var(--rule); }
+[data-theme="dark"] .fc-header { background: var(--paper-warm); }
+[data-theme="dark"] .fc-cats { border-top-color: var(--rule); }
+[data-theme="dark"] .fc-tag { background: var(--paper-warm); border-color: var(--rule); }
+[data-theme="dark"] .budget-mini-progress { background: var(--rule); }
+[data-theme="dark"] .log-container-box { background: var(--paper-warm); border-color: var(--rule); }
+[data-theme="dark"] .category-badge { background: var(--paper-warm); border-color: var(--rule); color: var(--ink-muted); }
+
+/* Header AI bar */
+[data-theme="dark"] .header-ai-bar {
+  background: var(--paper);
+  border-color: #2A3A5A;
+}
+[data-theme="dark"] .header-ai-btn:hover { background: #1A1A2E; }
+
+/* Book select & filter */
+[data-theme="dark"] .book-select { background: var(--paper); border-color: var(--rule); color: var(--ink); }
+[data-theme="dark"] .search-input { background: var(--paper); border-color: var(--rule); color: var(--ink); }
+[data-theme="dark"] .filter-btn { background: var(--paper); border-color: var(--rule); color: var(--ink-muted); }
+[data-theme="dark"] .filter-btn.active { background: #E8E8E5; color: #161616; border-color: #E8E8E5; }
+[data-theme="dark"] .date-filter-box { background: var(--paper); border-color: var(--rule); }
+[data-theme="dark"] .date-filter-box input { color: var(--ink); }
+
+/* Pagination */
+[data-theme="dark"] .page-btn { background: var(--paper); border-color: var(--rule); color: var(--ink-muted); }
+[data-theme="dark"] .page-btn:hover:not(:disabled) { background: var(--paper-warm); border-color: var(--ink-faint); }
+[data-theme="dark"] .page-btn.active { background: #E8E8E5; color: #161616; border-color: #E8E8E5; }
+
+/* Toast */
+[data-theme="dark"] .toast-message { background: #E8E8E5; color: #161616; }
+
+/* Lock screen */
+[data-theme="dark"] #passwordLockScreen { background: var(--paper-warm); }
+[data-theme="dark"] .lock-card { background: var(--paper); border-color: var(--rule); }
+[data-theme="dark"] .lock-input { background: var(--paper); border-color: var(--rule); color: var(--ink); }
+[data-theme="dark"] .lock-btn { background: #E8E8E5; color: #161616; }
+[data-theme="dark"] .lock-btn:hover { background: #C8C8C5; }
+[data-theme="dark"] .lock-account-item { background: var(--paper); border-color: var(--rule); }
+[data-theme="dark"] .lock-account-item:hover,
+[data-theme="dark"] .lock-account-item.selected { background: var(--paper-warm); }
+[data-theme="dark"] .lock-account-avatar { background: #E8E8E5; color: #161616; }
+
+/* Sync badge */
+[data-theme="dark"] .device-id-badge { background: #E8E8E5; color: #161616; }
+
+/* Scrollbar */
+[data-theme="dark"] ::-webkit-scrollbar-track { background: var(--paper); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: var(--rule); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
+
+/* Select arrow untuk dark mode */
+[data-theme="dark"] select.form-control {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239A9A96' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
+[data-theme="dark"] select.form-control option { background: #1E1E1C; color: #E8E8E5; }
+
+/* Fase dropdown */
+[data-theme="dark"] .fase-dropdown-trigger { background: var(--paper); border-color: var(--rule); }
+[data-theme="dark"] .fase-dropdown-menu { background: var(--paper); border-color: #e53e8a; }
+[data-theme="dark"] .fase-option:hover { background: #2A1020; }
+[data-theme="dark"] .fase-option.selected { background: #2A1020; }
+
+/* Budget select */
+[data-theme="dark"] .budget-select { background: var(--paper); border-color: var(--rule); color: var(--ink); }
+
+/* Offline warning */
+[data-theme="dark"] .offline-warning-bar { background: var(--warning-lt); border-color: #6A3F0E; }
+
+/* Setelan panel overrides — undo inline light colors */
+[data-theme="dark"] .data-management-panel[style*="background:#faf5ff"],
+[data-theme="dark"] .data-management-panel[style*="background:#fffbeb"],
+[data-theme="dark"] .data-management-panel[style*="background:#f0fff4"],
+[data-theme="dark"] .data-management-panel[style*="background:#f0f8ff"],
+[data-theme="dark"] .data-management-panel[style*="background:#fafafa"] {
+  background: var(--paper) !important;
+}
+
+/* ── Dark Mode Toggle Button ── */
+#darkModeToggle {
+  background: none !important;
+  border-color: transparent !important;
+  color: var(--ink-faint);
+  opacity: 0.6;
+  transition: opacity 0.15s, color 0.15s, transform 0.15s;
+  font-size: .85rem;
+  padding: 5px 8px;
+}
+#darkModeToggle:hover {
+  opacity: 1;
+  color: var(--ink);
+  background: none !important;
+  border-color: transparent !important;
+  transform: scale(1.15);
+}
