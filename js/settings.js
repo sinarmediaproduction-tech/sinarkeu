@@ -80,6 +80,12 @@ window.openSetelanModal = function(initialTab) {
     var gsStatus = document.getElementById('googleSheetsStatus');
     if (gsStatus) gsStatus.innerText = '';
     
+    // Load nama perangkat
+    var deviceNameInp = document.getElementById('deviceNameInput');
+    var deviceNameSt = document.getElementById('deviceNameStatus');
+    if (deviceNameInp) deviceNameInp.value = localStorage.getItem('sk_device_id') || '';
+    if (deviceNameSt) deviceNameSt.innerText = '';
+    
     window.openModal('setelanModal');
     window.switchSetelanTab(initialTab || 'lang');
 };
@@ -221,6 +227,7 @@ window.doFirstTimeSetup = async function() {
     var key = document.getElementById('setupKeyInput').value.trim();
     var pwd = document.getElementById('setupPwdInput').value;
     var pwd2 = document.getElementById('setupPwdConfirm').value;
+    var deviceNameRaw = (document.getElementById('setupDeviceNameInput').value || '').trim();
     var st = document.getElementById('setupStatusMsg');
     var btn = document.getElementById('setupConnectBtn');
     
@@ -279,6 +286,18 @@ window.doFirstTimeSetup = async function() {
     }
     st.innerText = window.t('encrypting_credentials');
     await window.persistBootstrappedCrypto(boot, url, key, pwd);
+    
+    // Simpan nama perangkat jika diisi
+    if (deviceNameRaw) {
+        var sanitized = deviceNameRaw.replace(/[^a-zA-Z0-9\u00C0-\u024F\s\-_]/g, '').trim().substring(0, 24);
+        if (sanitized) {
+            window.deviceId = sanitized;
+            localStorage.setItem('sk_device_id', sanitized);
+            var badge = document.getElementById('deviceIdDisplay');
+            if (badge) badge.innerText = sanitized;
+        }
+    }
+    
     window.updateSyncStatusBadge();
     
     st.className = 'setup-status success';
@@ -338,4 +357,33 @@ window.openSetupModal = function() {
             btn.innerText = window.t('save_start');
         }
     }
+};
+
+// ── NAMA PERANGKAT ──
+window.saveDeviceName = function() {
+    var inp = document.getElementById('deviceNameInput');
+    var st = document.getElementById('deviceNameStatus');
+    var raw = (inp ? inp.value : '').trim();
+
+    var newId;
+    if (raw) {
+        // Bersihkan karakter aneh, maks 24 karakter
+        var sanitized = raw.replace(/[^a-zA-Z0-9\u00C0-\u024F\s\-_]/g, '').trim().substring(0, 24);
+        if (!sanitized) {
+            if (st) { st.style.color = '#c0392b'; st.innerText = 'Nama tidak valid. Gunakan huruf, angka, spasi, atau tanda hubung.'; }
+            return;
+        }
+        newId = sanitized;
+    } else {
+        // Kosong = reset ke ID acak
+        newId = 'DEV-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        if (inp) inp.value = newId;
+    }
+
+    window.deviceId = newId;
+    localStorage.setItem('sk_device_id', newId);
+    var badge = document.getElementById('deviceIdDisplay');
+    if (badge) badge.innerText = newId;
+    if (st) { st.style.color = '#00875a'; st.innerText = 'Tersimpan: ' + newId; }
+    window.showToast('Nama perangkat diperbarui!', 'success');
 };

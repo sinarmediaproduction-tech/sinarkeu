@@ -641,6 +641,14 @@
                     <button class="btn btn-primary" style="width:100%" onclick="testCloudConnection()" data-i18n="connect_sync">Hubungkan & Sinkronkan Semua Buku</button>
                 </div>
                 <div id="connectionStatus" style="margin-top:8px"></div>
+                <div style="border-top:1px dashed #e0e0e0; margin:14px 0;"></div>
+                <label style="font-size:.7rem; font-weight:600; color:#1a1a1a; margin-bottom:6px; display:block;">Nama Perangkat Ini</label>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="text" id="deviceNameInput" class="form-control" placeholder="cth: HP Saya, Laptop Kantor" maxlength="24" autocomplete="off" style="flex:1;">
+                    <button class="btn btn-secondary" onclick="window.saveDeviceName()" style="white-space:nowrap;">Simpan</button>
+                </div>
+                <div style="font-size:.65rem; color:#aaa; margin-top:5px;">Tampil di log sinkronisasi &amp; notifikasi Telegram. Kosongkan dan simpan untuk reset ke ID acak.</div>
+                <div id="deviceNameStatus" style="font-size:.7rem; min-height:16px; margin-top:6px;"></div>
             </div>
         </div>
 
@@ -875,6 +883,8 @@
         </div>
         <div class="form-group"><label>Supabase Project URL</label><input type="text" id="setupUrlInput" class="form-control" placeholder="https://xxxxxxxx.supabase.co"></div>
         <div class="form-group"><label data-i18n="supabase_key_label">Supabase Anon Key</label><input type="password" id="setupKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."><div style="display:flex; align-items:center; gap:6px; margin-top:6px;"><input type="checkbox" id="showKeyToggle" onchange="document.getElementById('setupKeyInput').type = this.checked ? 'text' : 'password'"><label for="showKeyToggle" style="font-size:.7rem; color:#888; cursor:pointer; text-transform:none; letter-spacing:0;">Tampilkan key</label></div></div>
+        <div style="border-top:1px dashed #ddd; margin: 16px 0;"></div>
+        <div class="form-group"><label>Nama Perangkat Ini <span style="font-weight:400; color:#aaa; font-size:.7rem;">(opsional)</span></label><input type="text" id="setupDeviceNameInput" class="form-control" placeholder="cth: HP Saya, Laptop Kantor" maxlength="24" autocomplete="off"><div style="font-size:.65rem; color:#aaa; margin-top:4px;">Tampil di log sinkronisasi &amp; notifikasi Telegram. Maks 24 karakter.</div></div>
         <div style="border-top:1px dashed #ddd; margin: 16px 0;"></div>
         <div class="form-group"><label>Buat Password Keamanan</label><div style="position:relative; margin-bottom:8px;"><input type="password" id="setupPwdInput" class="form-control" placeholder="Buat password (min. 6 karakter)" oninput="evalSetupPwdStrength()"></div><div class="pwd-strength"><div class="pwd-strength-fill" id="setupPwdStrengthFill"></div></div><div style="font-size:.65rem; color:#888; margin-top:4px;" id="setupPwdStrengthLabel"></div></div>
         <div class="form-group"><label>Konfirmasi Password</label><input type="password" id="setupPwdConfirm" class="form-control" placeholder="Ulangi password"></div>
