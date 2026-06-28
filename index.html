@@ -540,18 +540,18 @@
 
         <!-- Tab navigation -->
         <div class="setelan-tabs" id="setelanTabs">
-            <button type="button" class="setelan-tab-btn active" data-tab="lang" onclick="window.switchSetelanTab('lang')"><span class="setelan-tab-icon">🌐</span><span data-i18n="language_section">Bahasa / Language</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="ai" onclick="window.switchSetelanTab('ai')"><span class="setelan-tab-icon">🤖</span><span data-i18n="ai_analysis_section">Analisis AI</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="gold" onclick="window.switchSetelanTab('gold')"><span class="setelan-tab-icon">🪙</span><span data-i18n="gold_price_section">Harga Emas Antam</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="charity" onclick="window.switchSetelanTab('charity')"><span class="setelan-tab-icon">🤲</span><span data-i18n="charity_section">Sedekah</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="telegram" onclick="window.switchSetelanTab('telegram')"><span class="setelan-tab-icon">📨</span><span data-i18n="telegram_section">Notifikasi Telegram</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="supabase" onclick="window.switchSetelanTab('supabase')"><span class="setelan-tab-icon">☁️</span><span data-i18n="supabase_section">Koneksi Supabase</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="password" onclick="window.switchSetelanTab('password')"><span class="setelan-tab-icon">🔒</span><span data-i18n="change_password_section">Ganti Password Keamanan</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="sync" onclick="window.switchSetelanTab('sync')"><span class="setelan-tab-icon">🔄</span><span data-i18n="settings_sync_section">Sinkronisasi Setelan</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="backup" onclick="window.switchSetelanTab('backup')"><span class="setelan-tab-icon">💾</span><span data-i18n="data_backup_section">Cadangan Data</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="migration" onclick="window.switchSetelanTab('migration')"><span class="setelan-tab-icon">📦</span><span data-i18n="migration_section">Migrasi Data ke Cloud</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="reset" onclick="window.switchSetelanTab('reset')"><span class="setelan-tab-icon">⚠️</span><span data-i18n="reset_app_section">Reset Total Aplikasi</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="archive" onclick="window.switchSetelanTab('archive')"><span class="setelan-tab-icon">🗄️</span><span data-i18n="archive_section">Arsipkan & Kosongkan Database</span></button>
+            <button type="button" class="setelan-tab-btn active" data-tab="lang" onclick="window.switchSetelanTab('lang')"><span data-i18n="language_section">Bahasa / Language</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="ai" onclick="window.switchSetelanTab('ai')"><span data-i18n="ai_analysis_section">Analisis AI</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="gold" onclick="window.switchSetelanTab('gold')"><span data-i18n="gold_price_section">Harga Emas Antam</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="charity" onclick="window.switchSetelanTab('charity')"><span data-i18n="charity_section">Sedekah</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="telegram" onclick="window.switchSetelanTab('telegram')"><span data-i18n="telegram_section">Notifikasi Telegram</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="supabase" onclick="window.switchSetelanTab('supabase')"><span data-i18n="supabase_section">Koneksi Supabase</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="password" onclick="window.switchSetelanTab('password')"><span data-i18n="change_password_section">Ganti Password Keamanan</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="sync" onclick="window.switchSetelanTab('sync')"><span data-i18n="settings_sync_section">Sinkronisasi Setelan</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="backup" onclick="window.switchSetelanTab('backup')"><span data-i18n="data_backup_section">Cadangan Data</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="migration" onclick="window.switchSetelanTab('migration')"><span data-i18n="migration_section">Migrasi Data ke Cloud</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="reset" onclick="window.switchSetelanTab('reset')"><span data-i18n="reset_app_section">Reset Total Aplikasi</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="archive" onclick="window.switchSetelanTab('archive')"><span data-i18n="archive_section">Arsipkan & Kosongkan Database</span></button>
         </div>
 
         <div class="setelan-tab-content" id="setelanTabContent">
@@ -561,8 +561,8 @@
             <div class="panel-title" style="color:#334155; display:flex; align-items:center; gap:8px;" data-i18n="language_section">Bahasa / Language</div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;" data-i18n="language_desc">Pilih bahasa tampilan aplikasi.</div>
             <div style="display:flex; gap:8px;">
-                <button id="langBtnId" class="btn" style="flex:1; background:#1a56db; color:#fff; border-color:#1a56db; font-weight:600;" onclick="window.setLang('id')">🇮🇩 Bahasa Indonesia</button>
-                <button id="langBtnEn" class="btn" style="flex:1; background:#eee; color:#333; border-color:#ccc; font-weight:600;" onclick="window.setLang('en')">🇬🇧 English</button>
+                <button id="langBtnId" class="btn" style="flex:1; background:#1a56db; color:#fff; border-color:#1a56db; font-weight:600;" onclick="window.setLang('id')">Bahasa Indonesia</button>
+                <button id="langBtnEn" class="btn" style="flex:1; background:#eee; color:#333; border-color:#ccc; font-weight:600;" onclick="window.setLang('en')">English</button>
             </div>
         </div>
         <div class="data-management-panel setelan-tab-panel" data-tab-panel="ai" style="border-color:#6b46c1; background:#faf5ff; margin-top:0;">

@@ -1021,7 +1021,6 @@ tr:hover td { background: var(--paper-warm); }
   cursor: pointer;
   transition: background .15s, color .15s, border-color .15s;
 }
-.setelan-tab-icon { font-size: .8rem; line-height: 1; }
 .setelan-tab-btn:hover { background: var(--accent-lt); color: var(--accent); border-color: var(--accent-lt); }
 .setelan-tab-btn.active {
   background: var(--ink);
