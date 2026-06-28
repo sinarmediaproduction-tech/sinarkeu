@@ -321,6 +321,18 @@ window.pullAllSettings = async function() {
                     }
                 }
             }
+            if (row.key === 'fase_kehidupan') {
+                if (parsed && typeof parsed === 'object') {
+                    const localRaw = localStorage.getItem('sk_fase_kehidupan_' + row.book_id);
+                    const localFase = localRaw ? JSON.parse(localRaw) : null;
+                    if (!localFase || new Date(parsed.updatedAt) > new Date(localFase.updatedAt || 0)) {
+                        localStorage.setItem('sk_fase_kehidupan_' + row.book_id, JSON.stringify(parsed));
+                        if (row.book_id === window.currentBookId) {
+                            budgetUpdated = true;
+                        }
+                    }
+                }
+            }
             if (row.key === 'google_sheets_url') {
                 if (typeof parsed === 'string' && parsed) {
                     localStorage.setItem('sk_google_sheets_url', parsed);
@@ -337,6 +349,8 @@ window.pullAllSettings = async function() {
         if (budgetUpdated) {
             window.renderBudget();
             window.updateFinancialCards && window.updateFinancialCards();
+            if (typeof window.updateFaseCard === 'function') window.updateFaseCard();
+            if (typeof window.renderForecastCard === 'function') window.renderForecastCard();
             if (document.getElementById('budgetModal').classList.contains('show')) {
                 window.renderBudgetFormFields();
             }
