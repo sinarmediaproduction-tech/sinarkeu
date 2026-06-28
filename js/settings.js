@@ -93,25 +93,25 @@ window.changePassword = async function() {
     status.style.color = '#de350b';
     
     if (!oldPwd || !newPwd || !newPwd2) {
-        status.innerText = 'Semua field wajib diisi.';
+        status.innerText = window.t('all_fields_required');
         return;
     }
     if (newPwd.length < 6) {
-        status.innerText = 'Password baru minimal 6 karakter.';
+        status.innerText = window.t('pwd_min_6');
         return;
     }
     if (newPwd !== newPwd2) {
-        status.innerText = 'Konfirmasi tidak cocok.';
+        status.innerText = window.t('confirm_mismatch');
         return;
     }
     
     status.style.color = '#cc7b00';
-    status.innerText = 'Memverifikasi...';
+    status.innerText = window.t('verifying');
     
     var saltB64 = localStorage.getItem('sk_crypto_salt');
     if (!saltB64) {
         status.style.color = '#de350b';
-        status.innerText = 'Data enkripsi tidak ditemukan.';
+        status.innerText = window.t('encryption_data_not_found');
         return;
     }
     
@@ -124,7 +124,7 @@ window.changePassword = async function() {
         if (plain !== 'sinarkeu_ok') throw new Error('wrong');
     } catch (e) {
         status.style.color = '#de350b';
-        status.innerText = 'Password lama salah.';
+        status.innerText = window.t('old_pwd_wrong');
         return;
     }
     
@@ -134,11 +134,11 @@ window.changePassword = async function() {
         apiKey = await window.decryptStr(oldKey, localStorage.getItem('sk_enc_supabase_key'));
     } catch (e) {
         status.style.color = '#de350b';
-        status.innerText = 'Gagal membaca data terenkripsi.';
+        status.innerText = window.t('failed_read_encrypted');
         return;
     }
     
-    status.innerText = 'Mengenkripsi ulang...';
+    status.innerText = window.t('re_encrypting');
     // PENTING: salt TIDAK diganti (lihat window.rotatePasswordKeepingSalt di
     // crypto.js). Salt yang sama dipakai semua perangkat yang sudah join --
     // kalau diacak ulang di sini, perangkat lain jadi tidak bisa lagi
@@ -160,18 +160,18 @@ window.changePassword = async function() {
     // cache lokalnya sendiri sampai mereka juga menjalankan "Ubah Password"
     // ini dengan password lama+baru yang sama -- tidak ada mekanisme push
     // otomatis ke lock screen perangkat lain tanpa server autentikasi.
-    status.innerText = 'Memperbarui verifikasi password di cloud...';
+    status.innerText = window.t('updating_cloud_pwd');
     await window.pushCryptoSaltCheck(saltB64, rotated.checkB64);
     
     // Push ulang semua setting (books, budgets, default_budget, telegram_config)
     // dienkripsi dengan kunci yang baru, supaya baris lama di cloud yang masih
     // terkunci kunci sebelumnya tidak gagal didekripsi selamanya oleh
     // pullAllSettings() (lihat window.reEncryptAllCloudSettings di db.js).
-    status.innerText = 'Menyinkronkan ulang setting ke cloud...';
+    status.innerText = window.t('re_syncing_settings');
     await window.reEncryptAllCloudSettings();
     
     status.style.color = '#00875a';
-    status.innerText = 'Password berhasil diganti & disinkronkan ke cloud! Ganti password yang sama di perangkat lain juga ya.';
+    status.innerText = window.t('pwd_changed_success');
     
     document.getElementById('changePwdOld').value = '';
     document.getElementById('changePwdNew').value = '';
@@ -190,24 +190,24 @@ window.doFirstTimeSetup = async function() {
     
     if (!url || !key) {
         st.className = 'setup-status error';
-        st.innerText = 'Supabase URL dan Anon Key wajib diisi!';
+        st.innerText = window.t('supabase_url_key_required');
         return;
     }
     if (!pwd || pwd.length < 6) {
         st.className = 'setup-status error';
-        st.innerText = 'Password minimal 6 karakter!';
+        st.innerText = window.t('pwd_min_6_short');
         return;
     }
     if (pwd !== pwd2) {
         st.className = 'setup-status error';
-        st.innerText = 'Konfirmasi password tidak cocok!';
+        st.innerText = window.t('confirm_pwd_mismatch');
         return;
     }
     
     btn.disabled = true;
-    btn.innerText = 'Mengetes koneksi...';
+    btn.innerText = window.t('testing_connection');
     st.className = 'setup-status warning';
-    st.innerText = 'Menghubungkan ke Supabase...';
+    st.innerText = window.t('connecting_supabase');
     
     window.globalSupabaseUrl = url;
     window.globalSupabaseKey = key;
@@ -218,13 +218,13 @@ window.doFirstTimeSetup = async function() {
         window.globalSupabaseUrl = '';
         window.globalSupabaseKey = '';
         btn.disabled = false;
-        btn.innerText = 'Simpan & Mulai';
+        btn.innerText = window.t('save_start');
         st.className = 'setup-status error';
-        st.innerText = 'Koneksi gagal! Periksa kembali URL dan Anon Key Anda.';
+        st.innerText = window.t('connection_failed');
         return;
     }
     
-    st.innerText = 'Mengecek apakah backend ini sudah pernah disambungkan dari perangkat lain...';
+    st.innerText = window.t('checking_backend');
     let boot;
     try {
         boot = await window.bootstrapCryptoForBackend(pwd, url, key);
@@ -232,16 +232,16 @@ window.doFirstTimeSetup = async function() {
         window.globalSupabaseUrl = '';
         window.globalSupabaseKey = '';
         btn.disabled = false;
-        btn.innerText = 'Simpan & Mulai';
+        btn.innerText = window.t('save_start');
         st.className = 'setup-status error';
         if (e && e.code === 'PASSWORD_MISMATCH') {
-            st.innerText = 'Backend ini sudah pernah disetup dari perangkat lain dengan password yang berbeda. Gunakan password yang SAMA dengan perangkat tersebut.';
+            st.innerText = window.t('backend_diff_password');
         } else {
             st.innerText = 'Gagal menyiapkan enkripsi: ' + (e && e.message ? e.message : 'error tidak diketahui');
         }
         return;
     }
-    st.innerText = 'Mengenkripsi kredensial...';
+    st.innerText = window.t('encrypting_credentials');
     await window.persistBootstrappedCrypto(boot, url, key, pwd);
     window.updateSyncStatusBadge();
     
@@ -249,7 +249,7 @@ window.doFirstTimeSetup = async function() {
     st.innerText = boot.joined
         ? 'Berhasil! Perangkat ini bergabung memakai kunci yang sama dengan perangkat lain.'
         : 'Berhasil! Kredensial terenkripsi dengan password Anda.';
-    btn.innerText = 'Tersambung';
+    btn.innerText = window.t('connected');
     
     setTimeout(async function() {
         window.closeModal('firstTimeSetupModal');
@@ -273,29 +273,29 @@ window.runFullMigration = async function() {
     
     if (!window.isOnline()) {
         st.style.color = '#de350b';
-        st.innerText = 'Anda harus ONLINE untuk migrasi!';
+        st.innerText = window.t('must_be_online');
         return;
     }
     
     st.style.color = '#cc7b00';
-    st.innerText = 'Memulai migrasi data...';
+    st.innerText = window.t('starting_migration');
     
     try {
-        st.innerText = 'Migrasi jadwal pembayaran...';
+        st.innerText = window.t('migrating_payment');
         if (typeof window.migratePaymentReminders === 'function') {
             await window.migratePaymentReminders(bookId);
         } else {
             console.warn('[Migration] Fungsi migratePaymentReminders belum tersedia');
         }
         
-        st.innerText = 'Migrasi anggaran...';
+        st.innerText = window.t('migrating_budget');
         if (typeof window.migrateAllBudgets === 'function') {
             await window.migrateAllBudgets(bookId);
         } else {
             console.warn('[Migration] Fungsi migrateAllBudgets belum tersedia');
         }
         
-        st.innerText = 'Sinkronisasi akhir...';
+        st.innerText = window.t('final_sync');
         if (typeof window.syncAllPaymentReminders === 'function') {
             await window.syncAllPaymentReminders(bookId);
         }
@@ -304,7 +304,7 @@ window.runFullMigration = async function() {
         }
         
         st.style.color = '#00875a';
-        st.innerText = 'Migrasi selesai! Semua data tersinkronisasi ke cloud.';
+        st.innerText = window.t('migration_done');
         window.showToast('Migrasi data berhasil!', 'success');
         
         await window.pullAllSettings();
@@ -318,7 +318,7 @@ window.runFullMigration = async function() {
         
     } catch (e) {
         st.style.color = '#de350b';
-        st.innerText = 'Gagal migrasi: ' + e.message;
+        st.innerText = window.t('migration_failed') + e.message;
         console.error('[Migration] Error:', e);
     }
 };
@@ -334,12 +334,12 @@ window.checkMigrationStatus = async function() {
     
     if (!window.isOnline()) {
         st.style.color = '#de350b';
-        st.innerText = 'Anda harus ONLINE untuk cek status!';
+        st.innerText = window.t('must_be_online_check');
         return;
     }
     
     st.style.color = '#cc7b00';
-    st.innerText = 'Memeriksa status...';
+    st.innerText = window.t('checking_status');
     
     try {
         var _stTag = window.getAccountTag ? window.getAccountTag() : null;
@@ -387,7 +387,7 @@ window.checkMigrationStatus = async function() {
         
     } catch (e) {
         st.style.color = '#de350b';
-        st.innerText = 'Gagal cek status: ' + e.message;
+        st.innerText = window.t('migration_failed_check') + e.message;
     }
 };
 
@@ -431,7 +431,7 @@ window.openSetupModal = function() {
         var btn = document.getElementById('setupConnectBtn');
         if (btn) {
             btn.disabled = false;
-            btn.innerText = 'Simpan & Mulai';
+            btn.innerText = window.t('save_start');
         }
     }
 };

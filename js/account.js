@@ -94,21 +94,21 @@ window._doSwitch = function(fromId, toId) {
 window.submitAccountUnlock = async function() {
     const pwd = document.getElementById('accUnlockPwdInput').value;
     const st  = document.getElementById('accUnlockStatus');
-    if (!pwd) { st.innerText = 'Masukkan password terlebih dahulu.'; return; }
-    st.innerText = 'Memverifikasi...';
+    if (!pwd) { st.innerText = window.t('enter_pwd_first'); return; }
+    st.innerText = window.t('verifying');
     const accId = window._pendingUnlockAccId;
     const nsPrefix = 'sk_a' + accId + '_';
     const saltKey  = nsPrefix + 'crypto_salt';
     const checkKey = nsPrefix + 'crypto_check';
     const saltB64  = localStorage.getItem(saltKey);
     const checkEnc = localStorage.getItem(checkKey);
-    if (!saltB64 || !checkEnc) { st.innerText = 'Data enkripsi tidak ditemukan.'; return; }
+    if (!saltB64 || !checkEnc) { st.innerText = window.t('encryption_data_not_found'); return; }
     try {
         const salt  = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
         const key   = await window.deriveKey(pwd, salt);
         const plain = await window.decryptStr(key, checkEnc);
         if (plain !== 'sinarkeu_ok') throw new Error('wrong');
-    } catch { st.innerText = 'Password salah. Coba lagi.'; return; }
+    } catch { st.innerText = window.t('lock_wrong_pwd') + ' Coba lagi.'; return; }
     sessionStorage.setItem('sk_acc_sess_' + accId, '1');
     // Simpan password sementara agar bisa di-XOR-obfuscate setelah _doSwitch()
     // me-restore URL sesi akun baru ke sessionStorage (terjadi setelah reload).
@@ -170,7 +170,7 @@ window.saveNewAccount = async function() {
     const pwd    = document.getElementById('newAccPwd').value;
     const pwd2   = document.getElementById('newAccPwdConfirm').value;
     const st     = document.getElementById('newAccStatus');
-    if (!name) { st.style.color='#de350b'; st.innerText='Nama akun wajib diisi!'; return; }
+    if (!name) { st.style.color='#de350b'; st.innerText=window.t('acc_name_required'); return; }
     const isEdit = !!editId;
     const hasCredentials = url && key && pwd;
     if (!isEdit && (!url || !key || !pwd || pwd.length < 6)) { st.style.color='#de350b'; st.innerText='URL, Anon Key, dan Password (min 6 karakter) wajib diisi!'; return; }
@@ -181,13 +181,13 @@ window.saveNewAccount = async function() {
     if (isEdit) { const idx = accounts.findIndex(a => a.id === editId); if (idx >= 0) accounts[idx].name = name; }
     else accounts.push({ id: accId, name });
     if (hasCredentials) {
-        st.style.color='#888'; st.innerText='Mengetes koneksi ke Supabase...';
+        st.style.color='#888'; st.innerText=window.t('testing_supabase');
         const oldUrl = window.globalSupabaseUrl, oldKey = window.globalSupabaseKey;
         window.globalSupabaseUrl = url; window.globalSupabaseKey = key;
         const test = await window.callSupabaseAPI('transactions', 'GET', null, '?limit=1');
         if (test === null) {
             window.globalSupabaseUrl = oldUrl; window.globalSupabaseKey = oldKey;
-            st.style.color='#de350b'; st.innerText='Koneksi gagal! Periksa URL dan Anon Key.'; return;
+            st.style.color='#de350b'; st.innerText=window.t('acc_connection_failed'); return;
         }
 
         const ns = 'sk_a' + accId + '_';
@@ -220,7 +220,7 @@ window.saveNewAccount = async function() {
             }
         }
 
-        st.innerText = 'Mengenkripsi dan menyimpan...';
+        st.innerText = window.t('acc_encrypting_saving');
         const encUrl  = await window.encryptStr(cryptoKey, url);
         const encAKey = await window.encryptStr(cryptoKey, key);
 
@@ -255,7 +255,7 @@ window.saveNewAccount = async function() {
     }
     window.saveAllAccounts(accounts);
     st.style.color='#00875a';
-    st.innerText = isEdit ? 'Akun berhasil diperbarui!' : 'Akun berhasil ditambahkan!';
+    st.innerText = isEdit ? window.t('acc_updated') : window.t('acc_added');
     window.showToast(isEdit ? 'Akun diperbarui!' : 'Akun baru ditambahkan!', 'success');
     window.cancelEditAccount();
     window.renderAccModalList();

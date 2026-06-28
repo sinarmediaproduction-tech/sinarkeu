@@ -183,7 +183,7 @@
             <span id="activeAccountLabel" style="font-size:.7rem;font-weight:700;color:#1a1a1a;padding:4px 10px;background:#e8f0fe;border-radius:6px;"></span>
             <div id="headerAIBar" class="header-ai-bar desktop-only">
                 <span class="header-ai-icon">✦</span>
-                <input type="text" id="headerAIInput" class="header-ai-input" placeholder="Tanya AI keuangan..." onkeydown="if(event.key==='Enter'){event.preventDefault(); window.submitHeaderAI();}" autocomplete="off">
+                <input type="text" id="headerAIInput" class="header-ai-input" placeholder="Tanya AI keuangan..." data-i18n="ai_placeholder" data-i18n-attr="placeholder" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.submitHeaderAI();}" autocomplete="off">
                 <button class="header-ai-btn" onclick="window.submitHeaderAI()" title="Kirim">→</button>
             </div>
             <div id="syncStatusWrapper" class="sync-status-container offline">
@@ -191,9 +191,9 @@
                 <span id="deviceIdDisplay" class="device-id-badge">------</span>
             </div>
             <span id="syncTimeBadge" style="font-size:.65rem;color:#666;font-weight:600;">--:--:--</span>
-            <label>BUKU:</label>
+            <label data-i18n="book_label">BUKU:</label>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
-            <button class="manage-books-btn desktop-only" id="kelolaBukuBtn" onclick="openBookManager()">Kelola</button>
+            <button class="manage-books-btn desktop-only" id="kelolaBukuBtn" onclick="openBookManager()" data-i18n="manage_book">Kelola</button>
             <button class="manage-books-btn desktop-only icon-btn" id="manualSyncBtn" style="background:none; border-color:transparent; color:var(--ink-faint);" onclick="forceFullSync()" title="Sinkronisasi" aria-label="Sinkronisasi">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path></svg>
             </button>
@@ -207,13 +207,13 @@
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                 <span id="reminderBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:#fff; font-size:.55rem; font-weight:700; border-radius:50%; width:16px; height:16px; line-height:16px; text-align:center;"></span>
             </button>
-            <button class="manage-books-btn desktop-only" onclick="logoutToLockScreen()" title="Ganti Akun" style="background:#e8f0fe; color:#1a56db; border:1px solid #c5d8ff;">Ganti Akun</button>
-            <button class="mobile-only hamburger-btn" onclick="openMobileDrawer()" title="Menu">Menu</button>
+            <button class="manage-books-btn desktop-only" onclick="logoutToLockScreen()" title="Ganti Akun" style="background:#e8f0fe; color:#1a56db; border:1px solid #c5d8ff;" data-i18n="switch_account">Ganti Akun</button>
+            <button class="mobile-only hamburger-btn" onclick="openMobileDrawer()" title="Menu" data-i18n="menu">Menu</button>
         </div>
     </div>
 
     <div class="offline-warning-bar" id="offlineWarningBar">
-        <span><strong>Mode Baca Saja</strong> - Anda sedang offline. Untuk menambah/mengedit/menghapus data, sambungkan ke internet.</span>
+        <span><strong data-i18n="offline_mode">Mode Baca Saja</strong> - <span data-i18n="offline_desc">Anda sedang offline. Untuk menambah/mengedit/menghapus data, sambungkan ke internet.</span></span>
     </div>
 
     <!-- ===== PAYMENT REMINDER NOTIFICATION BANNER ===== -->
@@ -221,18 +221,18 @@
         <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
             <div style="display:flex; align-items:center; gap:10px;">
                 <div>
-                    <div style="font-size:.78rem; font-weight:700; color:#92400e;">Pengingat Pembayaran</div>
+                    <div style="font-size:.78rem; font-weight:700; color:#92400e;" data-i18n="payment_reminder_banner">Pengingat Pembayaran</div>
                     <div id="paymentReminderBannerText" style="font-size:.72rem; color:#78350f; line-height:1.6;"></div>
                 </div>
             </div>
-            <button onclick="openPaymentReminderModal()" style="font-size:.7rem; padding:5px 12px; background:#d97706; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; white-space:nowrap;">Lihat Semua</button>
+            <button onclick="openPaymentReminderModal()" style="font-size:.7rem; padding:5px 12px; background:#d97706; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; white-space:nowrap;" data-i18n="see_all">Lihat Semua</button>
         </div>
     </div>
 
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-label" style="display:flex;align-items:center;gap:6px;">
-                Saldo Akhir
+                <span data-i18n="final_balance">Saldo Akhir</span>
                 <button id="balanceToggleBtn" onclick="window.toggleBalancePrivacy()" title="Sembunyikan/Tampilkan saldo" style="background:none;border:none;padding:0;cursor:pointer;line-height:1;color:var(--ink-faint);">
                     <svg id="balanceEyeIcon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
@@ -242,20 +242,20 @@
             <div class="stat-value" id="statBalance">Rp 0</div>
         </div>
         <div class="stat-card income">
-            <div class="stat-label">Total Pemasukan</div>
+            <div class="stat-label" data-i18n="total_income">Total Pemasukan</div>
             <div class="stat-value" id="statIncome">Rp 0</div>
         </div>
         <div class="stat-card expense">
-            <div class="stat-label">Total Pengeluaran</div>
+            <div class="stat-label" data-i18n="total_expense">Total Pengeluaran</div>
             <div class="stat-value" id="statExpense">Rp 0</div>
         </div>
         <div class="stat-card" id="forexCard" style="border-color:#0052cc;">
-            <div class="stat-label" style="color:#0052cc;">Kurs USD/IDR</div>
+            <div class="stat-label" style="color:#0052cc;" data-i18n="usd_rate">Kurs USD/IDR</div>
             <div class="stat-value" id="forexRate" style="color:#0052cc; font-size:1.333rem;">Memuat...</div>
             <div style="font-size:.6rem; color:#999; margin-top:4px;" id="forexSource"></div>
         </div>
         <div class="stat-card" id="goldCard" style="border-color:#b7791f;">
-            <div class="stat-label" style="color:#b7791f;">Emas / gram</div>
+            <div class="stat-label" style="color:#b7791f;" data-i18n="gold_per_gram">Emas / gram</div>
             <div class="stat-value" id="goldPrice" style="color:#b7791f; font-size:1.333rem;">Memuat...</div>
             <div style="font-size:.6rem; color:#999; margin-top:4px;" id="goldSource"></div>
             <div id="goldValueRow" style="display:none; margin-top:6px; padding-top:6px; border-top:1px dashed #e9c46a;">
@@ -264,7 +264,7 @@
             </div>
         </div>
         <div class="stat-card" id="zakatCard" style="border-color:#276749; display:none;">
-            <div class="stat-label" style="color:#276749;">Dana Sedekah</div>
+            <div class="stat-label" style="color:#276749;" data-i18n="charity_fund">Dana Sedekah</div>
             <div class="stat-value" id="zakatValue" style="color:#276749; font-size:1.333rem;">Rp 0</div>
             <div style="font-size:.6rem; color:#999; margin-top:4px;" id="zakatSource"></div>
         </div>
@@ -273,39 +273,39 @@
     <!-- ===== FINANCIAL PLANNING CARDS ===== -->
     <div class="stats-grid" style="margin-top:10px;">
         <div class="stat-card" id="cardAnggaranBulanan" style="border-top:3px solid #1a56db; cursor:pointer;" onclick="window.openDefaultBudgetModal()" title="Klik untuk atur anggaran bulanan">
-            <div class="stat-label">Anggaran Bulanan <span style="font-size:.6rem; background:#ebf3ff; color:#1a56db; padding:1px 6px; border-radius:8px; margin-left:4px;">Atur</span></div>
+            <div class="stat-label"><span data-i18n="monthly_budget">Anggaran Bulanan</span> <span style="font-size:.6rem; background:#ebf3ff; color:#1a56db; padding:1px 6px; border-radius:8px; margin-left:4px;" data-i18n="set">Atur</span></div>
             <div class="stat-value" id="fcAnggaranBulanan" style="color:#1a56db; font-size:1rem;">Rp 0</div>
-            <div style="font-size:.65rem; color:#888; margin-top:4px;">Template per kategori, berlaku tiap bulan</div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;" data-i18n="monthly_template">Template per kategori, berlaku tiap bulan</div>
         </div>
         <div class="stat-card" id="cardAnggaranTahunan" style="border-top:3px solid #6b46c1; cursor:pointer;" onclick="openAnnualBudgetModal()" title="Klik untuk atur anggaran tahunan">
-            <div class="stat-label">Anggaran Tahunan <span style="font-size:.6rem; background:#f3e8ff; color:#553c9a; padding:1px 6px; border-radius:8px; margin-left:4px;">Atur</span></div>
+            <div class="stat-label"><span data-i18n="annual_budget">Anggaran Tahunan</span> <span style="font-size:.6rem; background:#f3e8ff; color:#553c9a; padding:1px 6px; border-radius:8px; margin-left:4px;" data-i18n="set">Atur</span></div>
             <div class="stat-value" id="fcAnggaranTahunan" style="color:#6b46c1; font-size:1rem;">Rp 0</div>
-            <div style="font-size:.65rem; color:#888; margin-top:4px;">Biaya tahunan: hari raya, pajak, dll</div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;" data-i18n="annual_costs">Biaya tahunan: hari raya, pajak, dll</div>
         </div>
         <div class="stat-card" id="cardDanaDarurat" style="border-top:3px solid #cc7b00; cursor:pointer;" onclick="window.openEmergencyFundModal()" title="Klik untuk atur target dana darurat">
-            <div class="stat-label">Dana Darurat <span style="font-size:.6rem; background:#fff7e6; color:#cc7b00; padding:1px 6px; border-radius:8px; margin-left:4px;">Atur</span></div>
+            <div class="stat-label"><span data-i18n="emergency_fund">Dana Darurat</span> <span style="font-size:.6rem; background:#fff7e6; color:#cc7b00; padding:1px 6px; border-radius:8px; margin-left:4px;" data-i18n="set">Atur</span></div>
             <div class="stat-value" id="fcDanaDarurat" style="color:#cc7b00; font-size:1rem;">Rp 0</div>
-            <div style="font-size:.65rem; color:#888; margin-top:4px;" id="fcDanaDaruratNote">12× anggaran bulanan (target ideal)</div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;" id="fcDanaDaruratNote" data-i18n="emergency_ideal">12× anggaran bulanan (target ideal)</div>
         </div>
         <!-- ===== CARD KEBUTUHAN SETAHUN ===== -->
         <div class="stat-card" id="cardKebutuhanSetahun" style="border-top:3px solid #d69e2e;">
-            <div class="stat-label">Kebutuhan Setahun</div>
+            <div class="stat-label" data-i18n="annual_needs">Kebutuhan Setahun</div>
             <div class="stat-value" id="fcKebutuhanSetahun" style="color:#d69e2e; font-size:1rem;">Rp 0</div>
-            <div style="font-size:.65rem; color:#888; margin-top:4px;">Dana darurat + anggaran tahunan</div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;" data-i18n="annual_need_desc">Dana darurat + anggaran tahunan</div>
         </div>
         <!-- ===== CARD FASE KEHIDUPAN ===== -->
         <div class="stat-card" id="cardFaseKehidupan" style="border-top:3px solid #e53e8a; cursor:pointer;" onclick="window.openFaseKehidupanModal()" title="Klik untuk atur fase kehidupan">
-            <div class="stat-label">Fase Kehidupan <span style="font-size:.6rem; background:#fff0f7; color:#e53e8a; padding:1px 6px; border-radius:8px; margin-left:4px;">Atur</span></div>
-            <div style="font-size:.88rem; font-weight:700; color:#e53e8a; margin-top:4px; min-height:20px;" id="fcFaseNama">Belum diatur</div>
-            <div style="font-size:.62rem; color:#888; margin-top:4px; line-height:1.5;" id="fcFaseDesc">Klik untuk mengatur fase kehidupan pernikahan Anda</div>
+            <div class="stat-label"><span data-i18n="life_phase">Fase Kehidupan</span> <span style="font-size:.6rem; background:#fff0f7; color:#e53e8a; padding:1px 6px; border-radius:8px; margin-left:4px;" data-i18n="set">Atur</span></div>
+            <div style="font-size:.88rem; font-weight:700; color:#e53e8a; margin-top:4px; min-height:20px;" id="fcFaseNama" data-i18n="life_phase_not_set">Belum diatur</div>
+            <div style="font-size:.62rem; color:#888; margin-top:4px; line-height:1.5;" id="fcFaseDesc" data-i18n="life_phase_click">Klik untuk mengatur fase kehidupan pernikahan Anda</div>
             <div style="margin-top:8px;">
                 <button onclick="event.stopPropagation(); window.runFaseAIAnalysis()" id="faseAIBtn" class="btn" style="font-size:.65rem; padding:3px 10px; background:#e53e8a; color:#fff; border-color:#e53e8a; display:none;">Analisis AI</button>
             </div>
         </div>
         <div class="stat-card" id="cardDanaSalingJaga" style="border-top:3px solid #00875a;">
-            <div class="stat-label">Dana Saling Jaga</div>
+            <div class="stat-label" data-i18n="mutual_fund">Dana Saling Jaga</div>
             <div class="stat-value" id="fcDanaSalingJaga" style="color:#00875a; font-size:1rem;">Rp 0</div>
-            <div style="font-size:.65rem; color:#888; margin-top:4px;" id="fcDSJNote">30% dari saldo setelah dana darurat</div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;" id="fcDSJNote" data-i18n="dsj_note">30% dari saldo setelah dana darurat</div>
         </div>
     </div>
 
@@ -321,16 +321,16 @@
                 <select id="budgetYear" class="budget-select" onchange="renderBudget()"></select>
             </div>
             <div class="budget-mini-item">
-                <span class="budget-mini-label">Target:</span>
+                <span class="budget-mini-label" data-i18n="target">Target:</span>
                 <span class="budget-mini-value" id="budgetTargetDisplay">Rp 0</span>
-                <span id="budgetSourceTag" class="budget-source-tag none">Tidak ada</span>
+                <span id="budgetSourceTag" class="budget-source-tag none" data-i18n="no_budget">Tidak ada</span>
             </div>
             <div class="budget-mini-item">
-                <span class="budget-mini-label">Realisasi:</span>
+                <span class="budget-mini-label" data-i18n="actual">Realisasi:</span>
                 <span class="budget-mini-value" id="budgetActualDisplay">Rp 0</span>
             </div>
             <div class="budget-mini-item">
-                <span class="budget-mini-label">Sisa:</span>
+                <span class="budget-mini-label" data-i18n="remaining">Sisa:</span>
                 <span class="budget-mini-value" id="budgetRemainingDisplay">Rp 0</span>
             </div>
             <div class="budget-mini-progress">
@@ -345,9 +345,9 @@
             <span id="budgetProgressPct2" style="font-size:.78rem; font-weight:700; color:#666; min-width:38px; text-align:right;">0%</span>
         </div>
         <div class="budget-mini-actions">
-            <button class="btn-icon" id="anggaranBtn" onclick="openBudgetModal()">Anggarkan</button>
-            <button class="btn-icon" id="laporanBtn" onclick="openMonthlyReport()">Laporan</button>
-            <button class="btn-icon" id="pdfBtn" onclick="generatePDFReport()">PDF</button>
+            <button class="btn-icon" id="anggaranBtn" onclick="openBudgetModal()" data-i18n="budget_btn">Anggarkan</button>
+            <button class="btn-icon" id="laporanBtn" onclick="openMonthlyReport()" data-i18n="report_btn">Laporan</button>
+            <button class="btn-icon" id="pdfBtn" onclick="generatePDFReport()" data-i18n="pdf_btn">PDF</button>
         </div>
     </div>
 
@@ -356,7 +356,7 @@
         <div class="fc-header">
             <div style="display:flex; align-items:center; gap:8px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.6;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                <span>Estimasi Keuangan</span>
+                <span data-i18n="financial_estimate">Estimasi Keuangan</span>
             </div>
         </div>
         <div style="padding:18px 0; text-align:center; color:var(--ink-faint); font-size:.72rem;">Memuat data...</div>
@@ -364,13 +364,13 @@
 
     <div class="expense-chart-section" id="expenseChartSection">
         <div class="expense-chart-header" onclick="toggleExpenseChart()" style="cursor:pointer; user-select:none;">
-            <span class="expense-chart-title"> Pengeluaran per Kategori</span>
+            <span class="expense-chart-title" data-i18n="expense_by_category"> Pengeluaran per Kategori</span>
             <div style="display:flex; align-items:center; gap:10px;">
                 <div class="expense-chart-toggle" id="expenseChartToggleButtons" style="display:none;" onclick="event.stopPropagation()">
-                    <button id="expChartBtnAll" class="active" onclick="setExpenseChartMode('all')">Semua</button>
-                    <button id="expChartBtnMonth" onclick="setExpenseChartMode('month')">Bulan Ini</button>
+                    <button id="expChartBtnAll" class="active" onclick="setExpenseChartMode('all')" data-i18n="chart_all">Semua</button>
+                    <button id="expChartBtnMonth" onclick="setExpenseChartMode('month')" data-i18n="chart_month">Bulan Ini</button>
                 </div>
-                <span id="expenseChartArrow" style="font-size:.8rem; color:#999;">▼ Tampilkan</span>
+                <span id="expenseChartArrow" style="font-size:.8rem; color:#999;" data-i18n="show">▼ Tampilkan</span>
             </div>
         </div>
         <div class="expense-chart-body" id="expenseChartBody" style="display:none;">
@@ -380,10 +380,10 @@
 
     <div class="controls">
         <div class="filters">
-            <input type="text" id="searchInput" class="search-input" placeholder="Cari..." oninput="currentPage=1; render();">
-            <button class="filter-btn active" onclick="setFilter('all')">Semua</button>
-            <button class="filter-btn" onclick="setFilter('income')">Masuk</button>
-            <button class="filter-btn" onclick="setFilter('expense')">Keluar</button>
+            <input type="text" id="searchInput" class="search-input" placeholder="Cari..." data-i18n="search" data-i18n-attr="placeholder" oninput="currentPage=1; render();">
+            <button class="filter-btn active" onclick="setFilter('all')" data-i18n="filter_all">Semua</button>
+            <button class="filter-btn" onclick="setFilter('income')" data-i18n="filter_income">Masuk</button>
+            <button class="filter-btn" onclick="setFilter('expense')" data-i18n="filter_expense">Keluar</button>
             <div class="date-filter-box">
                 <input type="date" id="dateFilterStart" onchange="applyDateFilter()">
                 <span>-</span>
@@ -392,24 +392,24 @@
             </div>
         </div>
         <div class="actions">
-            <button class="btn btn-primary" id="tambahTransaksiBtn" onclick="openModal('addModal')">+ Transaksi</button>
-            <button class="btn" style="background:#6b46c1; color:#fff; border-color:#6b46c1;" onclick="openAIAnalysis()">Analisis AI</button>
-            <button class="btn" style="background:#0e7490; color:#fff; border-color:#0e7490;" onclick="window.openAIChatModal()">Tanya AI</button>
+            <button class="btn btn-primary" id="tambahTransaksiBtn" onclick="openModal('addModal')" data-i18n="add_transaction">+ Transaksi</button>
+            <button class="btn" style="background:#6b46c1; color:#fff; border-color:#6b46c1;" onclick="openAIAnalysis()" data-i18n="ai_analysis">Analisis AI</button>
+            <button class="btn" style="background:#0e7490; color:#fff; border-color:#0e7490;" onclick="window.openAIChatModal()" data-i18n="ask_ai">Tanya AI</button>
         </div>
     </div>
 
     <div class="table-container">
         <table>
             <thead>
-                <tr><th class="col-no">No</th><th>Tanggal</th><th>Kategori</th><th>Deskripsi</th><th>Pemasukan</th><th>Pengeluaran</th><th class="col-saldo">Saldo</th><th class="col-nota">Nota</th><th>Aksi</th></tr>
+                <tr><th class="col-no" data-i18n="col_no">No</th><th data-i18n="col_date">Tanggal</th><th data-i18n="col_category">Kategori</th><th data-i18n="col_description">Deskripsi</th><th data-i18n="col_income">Pemasukan</th><th data-i18n="col_expense">Pengeluaran</th><th class="col-saldo" data-i18n="col_balance">Saldo</th><th class="col-nota" data-i18n="col_receipt">Nota</th><th data-i18n="col_action">Aksi</th></tr>
             </thead>
             <tbody id="transactionTableBody"></tbody>
         </table>
     </div>
 
     <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; justify-content:flex-end;">
-        <button class="btn" id="backupBtn" onclick="openBackupManager()">Kelola Backup</button>
-        <button class="btn" onclick="toggleAuditLogInline()">Log Audit <span id="auditLogInlineArrow">▼</span></button>
+        <button class="btn" id="backupBtn" onclick="openBackupManager()" data-i18n="manage_backup">Kelola Backup</button>
+        <button class="btn" onclick="toggleAuditLogInline()"><span data-i18n="audit_log">Log Audit</span> <span id="auditLogInlineArrow">▼</span></button>
     </div>
     <div id="auditLogInlineBody" style="display:none; padding:10px 14px; border:1.5px solid #1a1a1a; border-radius:8px; margin-bottom:12px; background:#fff;">
         <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
@@ -536,24 +536,32 @@
 <!-- ===== MODAL SETELAN ===== -->
 <div id="setelanModal" class="modal">
     <div class="modal-content" style="max-width:540px;">
-        <div class="modal-header"><h3>Setelan</h3><button class="modal-close" onclick="closeModal('setelanModal')">×</button></div>
+        <div class="modal-header"><h3 data-i18n="settings_title">Setelan</h3><button class="modal-close" onclick="closeModal('setelanModal')">×</button></div>
 
-        <!-- Analisis AI -->
+        <!-- Bahasa / Language -->
+        <div class="data-management-panel" style="border-color:#334155; background:#f8fafc; margin-top:0;">
+            <div class="panel-title" style="color:#334155; display:flex; align-items:center; gap:8px;" data-i18n="language_section">Bahasa / Language</div>
+            <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;" data-i18n="language_desc">Pilih bahasa tampilan aplikasi.</div>
+            <div style="display:flex; gap:8px;">
+                <button id="langBtnId" class="btn" style="flex:1; background:#1a56db; color:#fff; border-color:#1a56db; font-weight:600;" onclick="window.setLang('id')">🇮🇩 Bahasa Indonesia</button>
+                <button id="langBtnEn" class="btn" style="flex:1; background:#eee; color:#333; border-color:#ccc; font-weight:600;" onclick="window.setLang('en')">🇬🇧 English</button>
+            </div>
+        </div>
         <div class="data-management-panel" style="border-color:#6b46c1; background:#faf5ff; margin-top:0;">
             <div class="panel-title" style="color:#553c9a; display:flex; align-items:center; gap:8px;">
-                Analisis AI
+                <span data-i18n="ai_analysis_section">Analisis AI</span>
                 <span id="aiWorkerStatusBadge" style="font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:10px; background:#eee; color:#666;">Belum dikonfigurasi</span>
             </div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
-                Masukkan URL Cloudflare Worker milik Anda untuk mengaktifkan fitur Analisis Keuangan AI.
+                <span data-i18n="ai_desc">Masukkan URL Cloudflare Worker milik Anda untuk mengaktifkan fitur Analisis Keuangan AI.</span>
             </div>
             <div class="form-group" style="margin-bottom:10px;">
-                <label>Worker URL</label>
-                <input type="text" id="aiWorkerUrlInput" class="form-control" placeholder="https://nama-worker-anda.workers.dev" oninput="updateAiWorkerBadge()">
+                <label data-i18n="worker_url">Worker URL</label>
+                <input type="text" id="aiWorkerUrlInput" class="form-control" placeholder="https://nama-worker-anda.workers.dev" data-i18n="worker_placeholder" data-i18n-attr="placeholder" oninput="updateAiWorkerBadge()">
             </div>
             <div id="aiWorkerTestStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
             <div style="display:flex; gap:8px;">
-                <button class="btn btn-secondary" style="flex:1;" onclick="testAiWorkerUrl()">Tes Koneksi</button>
+                <button class="btn btn-secondary" style="flex:1;" onclick="testAiWorkerUrl()" data-i18n="test_connection">Tes Koneksi</button>
                 <button class="btn btn-danger" style="flex:1;" onclick="clearAiWorkerUrl()">Hapus</button>
                 <button class="btn btn-primary" style="flex:2; background:#6b46c1; border-color:#6b46c1;" onclick="saveAiWorkerUrl()">Simpan</button>
             </div>
@@ -562,18 +570,18 @@
         <!-- Harga Emas Antam -->
         <div class="data-management-panel" style="border-color:#b7791f; background:#fffbeb; margin-top:0;">
             <div class="panel-title" style="color:#92400e; display:flex; align-items:center; gap:8px;">
-                Harga Emas Antam
+                <span data-i18n="gold_price_section">Harga Emas Antam</span>
                 <span id="emasApiStatusBadge" style="font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:10px; background:#eee; color:#666;">Belum dikonfigurasi</span>
             </div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
-                Masukkan API key dari <strong>emas.maulanar.my.id</strong> untuk menampilkan harga emas Antam terkini.
+                <span data-i18n="gold_api_desc">Masukkan API key dari <strong>emas.maulanar.my.id</strong> untuk menampilkan harga emas Antam terkini.</span>
             </div>
             <div class="form-group" style="margin-bottom:10px;">
-                <label>API Key</label>
+                <label data-i18n="api_key_label">API Key</label>
                 <input type="text" id="emasApiKeyInput" class="form-control" placeholder="Masukkan API key dari emas.maulanar.my.id" oninput="updateEmasApiBadge()">
             </div>
             <div class="form-group" style="margin-bottom:10px;">
-                <label>Jumlah Emas yang Dimiliki (gram)</label>
+                <label data-i18n="gold_amount_label">Jumlah Emas yang Dimiliki (gram)</label>
                 <input type="number" id="emasGramInput" class="form-control" placeholder="Contoh: 5.5" min="0" step="0.01" oninput="updateEmasGramPreview()">
                 <div id="emasGramPreview" style="font-size:.7rem; color:#92400e; margin-top:5px; min-height:16px;"></div>
             </div>
@@ -587,20 +595,20 @@
 
         <!-- Sedekah -->
         <div class="data-management-panel" style="border-color:#276749; background:#f0fff4; margin-top:0;">
-            <div class="panel-title" style="color:#276749;">Sedekah</div>
+            <div class="panel-title" style="color:#276749;" data-i18n="charity_section">Sedekah</div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
-                Sedekah dihitung otomatis <strong>2,5%</strong> dari total pemasukan bulan kalender berjalan.
+                <span data-i18n="charity_desc">Sedekah dihitung otomatis <strong>2,5%</strong> dari total pemasukan bulan kalender berjalan.</span>
             </div>
             <div id="zakatPreview" style="font-size:.7rem; color:#276749; margin-top:5px; min-height:16px;"></div>
         </div>
 
         <!-- Telegram -->
         <div class="data-management-panel" style="border-color:#0088cc; background:#f0f8ff; margin-top:0;">
-            <div class="panel-title" style="color:#0055aa; display:flex; align-items:center; gap:8px;">Notifikasi Telegram</div>
+            <div class="panel-title" style="color:#0055aa; display:flex; align-items:center; gap:8px;" data-i18n="telegram_section">Notifikasi Telegram</div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
-                Kirim notifikasi transaksi, peringatan anggaran, dan ringkasan harian lewat Telegram Bot.
+                <span data-i18n="telegram_desc">Kirim notifikasi transaksi, peringatan anggaran, dan ringkasan harian lewat Telegram Bot.</span>
             </div>
-            <button class="btn btn-primary" style="background:#0088cc; border-color:#0088cc;" onclick="closeModal('setelanModal'); openTelegramSettings()">Atur Notifikasi Telegram</button>
+            <button class="btn btn-primary" style="background:#0088cc; border-color:#0088cc;" onclick="closeModal('setelanModal'); openTelegramSettings()" data-i18n="telegram_settings_btn">Atur Notifikasi Telegram</button>
         </div>
 
         <!-- Koneksi Supabase -->
@@ -608,14 +616,14 @@
             <div class="form-group" style="margin-bottom:0;">
                 <div style="font-size:.72rem; font-weight:700; color:#1a1a1a; margin-bottom:10px; display:flex; align-items:center; gap:8px;">
                     Koneksi Supabase
-                    <span style="font-size:.6rem; background:#e3fcef; color:#006644; padding:2px 8px; border-radius:10px; font-weight:600;">Berlaku untuk semua buku</span>
+                    <span style="font-size:.6rem; background:#e3fcef; color:#006644; padding:2px 8px; border-radius:10px; font-weight:600;"><span data-i18n="supabase_all_books">Berlaku untuk semua buku</span>
                 </div>
-                <label>Supabase URL Connection</label>
+                <label data-i18n="supabase_url_label">Supabase URL Connection</label>
                 <input type="text" id="supabaseUrlInput" class="form-control" placeholder="https://yourproject.supabase.co" style="margin-bottom: 10px;">
-                <label>Supabase Anon Key</label>
+                <label data-i18n="supabase_key_label">Supabase Anon Key</label>
                 <input type="password" id="supabaseKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
                 <div class="cloud-connect-row">
-                    <button class="btn btn-primary" style="width:100%" onclick="testCloudConnection()">Hubungkan & Sinkronkan Semua Buku</button>
+                    <button class="btn btn-primary" style="width:100%" onclick="testCloudConnection()" data-i18n="connect_sync">Hubungkan & Sinkronkan Semua Buku</button>
                 </div>
                 <div id="connectionStatus" style="margin-top:8px"></div>
             </div>
@@ -623,32 +631,32 @@
 
         <!-- Ganti Password -->
         <div class="data-management-panel" style="border-color:#1a1a1a; background:#fafafa; margin-top:0;">
-            <div class="panel-title">Ganti Password Keamanan</div>
+            <div class="panel-title" data-i18n="change_password_section">Ganti Password Keamanan</div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
-                Ganti password yang digunakan untuk mengenkripsi koneksi Supabase Anda.
+                <span data-i18n="change_pwd_desc">Ganti password yang digunakan untuk mengenkripsi koneksi Supabase Anda.</span>
             </div>
-            <input type="password" id="changePwdOld" class="form-control" placeholder="Password saat ini" style="margin-bottom:8px;">
-            <input type="password" id="changePwdNew" class="form-control" placeholder="Password baru (min. 6 karakter)" style="margin-bottom:8px;">
-            <input type="password" id="changePwdNew2" class="form-control" placeholder="Konfirmasi password baru" style="margin-bottom:10px;">
+            <input type="password" id="changePwdOld" class="form-control" placeholder="Password saat ini" data-i18n="current_pwd" data-i18n-attr="placeholder" style="margin-bottom:8px;">
+            <input type="password" id="changePwdNew" class="form-control" placeholder="Password baru (min. 6 karakter)" data-i18n="new_pwd" data-i18n-attr="placeholder" style="margin-bottom:8px;">
+            <input type="password" id="changePwdNew2" class="form-control" placeholder="Konfirmasi password baru" data-i18n="confirm_pwd" data-i18n-attr="placeholder" style="margin-bottom:10px;">
             <div id="changePwdStatus" style="font-size:.7rem; min-height:16px; margin-bottom:8px;"></div>
-            <button class="btn btn-primary" style="width:100%;" onclick="changePassword()">Ganti Password</button>
+            <button class="btn btn-primary" style="width:100%;" onclick="changePassword()" data-i18n="change_pwd_btn">Ganti Password</button>
         </div>
 
         <!-- Sinkronisasi Setelan -->
         <div class="data-management-panel" style="border-color:#0088cc; background:#f0f8ff; margin-top:0;">
             <div class="panel-title" style="color:#0055aa; display:flex; align-items:center; gap:8px;">
-                Sinkronisasi Setelan
-                <span id="settingsSyncBadge" style="font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:10px; background:#e3fcef; color:#006644;">Otomatis</span>
+                <span data-i18n="settings_sync_section">Sinkronisasi Setelan</span>
+                <span id="settingsSyncBadge" style="font-size:.6rem; font-weight:600; padding:2px 8px; border-radius:10px; background:#e3fcef; color:#006644;" data-i18n="settings_sync_auto">Otomatis</span>
             </div>
             <div style="font-size:.7rem; color:#555; line-height:1.6;">
-                Daftar buku kas, anggaran dasar, anggaran bulanan, dan konfigurasi Telegram tersinkronisasi otomatis ke Supabase setiap kali ada perubahan.
+                <span data-i18n="settings_sync_desc">Daftar buku kas, anggaran dasar, anggaran bulanan, dan konfigurasi Telegram tersinkronisasi otomatis ke Supabase setiap kali ada perubahan.</span>
             </div>
             <div id="settingsSyncStatus" style="font-size:.68rem; color:#888; margin-top:8px;"></div>
         </div>
 
         <!-- Cadangan Data -->
         <div class="data-management-panel" style="margin-top:0;">
-            <div class="panel-title">Cadangan Data</div>
+            <div class="panel-title" data-i18n="data_backup_section">Cadangan Data</div>
             <div class="panel-actions-row">
                 <button class="btn btn-secondary" onclick="exportToCSV()">CSV</button>
                 <button class="btn btn-secondary" onclick="exportToJSON()">JSON</button>
@@ -656,11 +664,11 @@
             </div>
             <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)">
             <div style="margin-top:16px; border-top:1px dashed #ddd; padding-top:14px;">
-                <label style="font-size:.7rem; font-weight:600; color:#666; display:block; margin-bottom:6px;">Google Sheets Web App URL</label>
+                <label style="font-size:.7rem; font-weight:600; color:#666; display:block; margin-bottom:6px;" data-i18n="sheets_url_label">Google Sheets Web App URL</label>
                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
                     <input type="text" id="googleSheetsUrlInput" class="form-control" style="flex:2; min-width:200px;" placeholder="https://script.google.com/macros/s/.../exec">
-                    <button class="btn btn-secondary" onclick="saveGoogleSheetsUrl()" style="flex:0 0 auto;">Simpan URL</button>
-                    <button class="btn btn-success" onclick="backupToGoogleSheets()" style="flex:0 0 auto; background:#0f9d58; border-color:#0f9d58;">Backup ke Google Sheets</button>
+                    <button class="btn btn-secondary" onclick="saveGoogleSheetsUrl()" style="flex:0 0 auto;" data-i18n="save_url">Simpan URL</button>
+                    <button class="btn btn-success" onclick="backupToGoogleSheets()" style="flex:0 0 auto; background:#0f9d58; border-color:#0f9d58;" data-i18n="backup_to_sheets">Backup ke Google Sheets</button>
                 </div>
                 <div id="googleSheetsStatus" style="font-size:.7rem; margin-top:6px; min-height:16px;"></div>
                 <div id="googleSheetsLastBackup" style="font-size:.65rem; color:#888; margin-top:3px;"></div>
@@ -670,20 +678,19 @@
         <!-- ===== MIGRASI DATA KE CLOUD ===== -->
         <div class="data-management-panel" style="border-color:#6b46c1; background:#faf5ff; margin-top:0;">
             <div class="panel-title" style="color:#553c9a;">
-                Migrasi Data ke Cloud
+                <span data-i18n="migration_section">Migrasi Data ke Cloud</span>
             </div>
             <div style="font-size:.7rem; color:#555; margin-bottom:10px; line-height:1.6;">
-                Pindahkan semua data (anggaran, jadwal pembayaran) dari Local Storage ke Supabase 
-                agar tersinkronisasi di semua perangkat.
+                <span data-i18n="migration_desc">Pindahkan semua data (anggaran, jadwal pembayaran) dari Local Storage ke Supabase agar tersinkronisasi di semua perangkat.</span>
             </div>
             <div id="migrationStatus" style="font-size:.72rem; margin-bottom:10px; min-height:16px; color:#888;"></div>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
                 <button class="btn btn-primary" style="background:#6b46c1; border-color:#6b46c1; flex:1;" 
-                        onclick="window.runFullMigration()">
+                        onclick="window.runFullMigration()" data-i18n="migrate_all">
                     Migrasi Semua Data
                 </button>
                 <button class="btn btn-secondary" style="flex:1;" 
-                        onclick="window.checkMigrationStatus()">
+                        onclick="window.checkMigrationStatus()" data-i18n="check_status">
                     Cek Status
                 </button>
             </div>
@@ -691,12 +698,12 @@
 
         <!-- Reset Aplikasi Total -->
         <div class="data-management-panel" style="border-color:#7b0000; background:#fff0f0; margin-top:0;">
-            <div class="panel-title" style="color:#7b0000;">Reset Total Aplikasi</div>
+            <div class="panel-title" style="color:#7b0000;" data-i18n="reset_app_section">Reset Total Aplikasi</div>
             <div style="font-size:.7rem; color:#666; margin-bottom:12px; line-height:1.6;">
                 Hapus <b>semua buku, transaksi, dan setelan</b> baik di Supabase maupun di penyimpanan lokal. Aplikasi akan kembali ke kondisi <b>bersih seperti baru dipasang</b>. Gunakan saat ingin memulai dari awal atau berpindah akun Supabase.
             </div>
             <div id="resetAppStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
-            <button class="btn" style="width:100%; background:#1a56db; border-color:#1a56db; color:#fff; margin-bottom:8px;" onclick="window.exportAllDataOnly()">Ekspor Semua Data (JSON)</button>
+            <button class="btn" style="width:100%; background:#1a56db; border-color:#1a56db; color:#fff; margin-bottom:8px;" onclick="window.exportAllDataOnly()" data-i18n="export_all_json">Ekspor Semua Data (JSON)</button>
             <label class="btn" style="width:100%; background:#006644; border-color:#006644; color:#fff; margin-bottom:8px; cursor:pointer; display:block; text-align:center; box-sizing:border-box;">
                 Import dari File JSON
                 <input type="file" id="importJsonFile" accept=".json" style="display:none;" onchange="window.importAllDataFromFile(this)">
@@ -850,7 +857,7 @@
             <div style="font-size:.75rem; color:#888;">Masukkan kredensial Supabase dan buat password keamanan</div>
         </div>
         <div class="form-group"><label>Supabase Project URL</label><input type="text" id="setupUrlInput" class="form-control" placeholder="https://xxxxxxxx.supabase.co"></div>
-        <div class="form-group"><label>Supabase Anon Key</label><input type="password" id="setupKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."><div style="display:flex; align-items:center; gap:6px; margin-top:6px;"><input type="checkbox" id="showKeyToggle" onchange="document.getElementById('setupKeyInput').type = this.checked ? 'text' : 'password'"><label for="showKeyToggle" style="font-size:.7rem; color:#888; cursor:pointer; text-transform:none; letter-spacing:0;">Tampilkan key</label></div></div>
+        <div class="form-group"><label data-i18n="supabase_key_label">Supabase Anon Key</label><input type="password" id="setupKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."><div style="display:flex; align-items:center; gap:6px; margin-top:6px;"><input type="checkbox" id="showKeyToggle" onchange="document.getElementById('setupKeyInput').type = this.checked ? 'text' : 'password'"><label for="showKeyToggle" style="font-size:.7rem; color:#888; cursor:pointer; text-transform:none; letter-spacing:0;">Tampilkan key</label></div></div>
         <div style="border-top:1px dashed #ddd; margin: 16px 0;"></div>
         <div class="form-group"><label>Buat Password Keamanan</label><div style="position:relative; margin-bottom:8px;"><input type="password" id="setupPwdInput" class="form-control" placeholder="Buat password (min. 6 karakter)" oninput="evalSetupPwdStrength()"></div><div class="pwd-strength"><div class="pwd-strength-fill" id="setupPwdStrengthFill"></div></div><div style="font-size:.65rem; color:#888; margin-top:4px;" id="setupPwdStrengthLabel"></div></div>
         <div class="form-group"><label>Konfirmasi Password</label><input type="password" id="setupPwdConfirm" class="form-control" placeholder="Ulangi password"></div>
@@ -1055,7 +1062,7 @@
                 <div style="font-size:.75rem; font-weight:700; margin-bottom:12px;">＋ Tambah / Edit Akun</div>
                 <div class="form-group"><label>Nama Akun</label><input type="text" id="newAccName" class="form-control" placeholder="Contoh: Pribadi, Bisnis, Keluarga..."></div>
                 <div class="form-group"><label>Supabase Project URL</label><input type="text" id="newAccUrl" class="form-control" placeholder="https://xxxxxxxx.supabase.co"></div>
-                <div class="form-group"><label>Supabase Anon Key</label><input type="password" id="newAccKey" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."><div style="display:flex; align-items:center; gap:6px; margin-top:5px;"><input type="checkbox" id="newAccShowKey" onchange="document.getElementById('newAccKey').type = this.checked ? 'text' : 'password'"><label for="newAccShowKey" style="font-size:.68rem; color:#888; cursor:pointer; text-transform:none; letter-spacing:0;">Tampilkan key</label></div></div>
+                <div class="form-group"><label data-i18n="supabase_key_label">Supabase Anon Key</label><input type="password" id="newAccKey" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."><div style="display:flex; align-items:center; gap:6px; margin-top:5px;"><input type="checkbox" id="newAccShowKey" onchange="document.getElementById('newAccKey').type = this.checked ? 'text' : 'password'"><label for="newAccShowKey" style="font-size:.68rem; color:#888; cursor:pointer; text-transform:none; letter-spacing:0;">Tampilkan key</label></div></div>
                 <div class="form-group"><label>Password Enkripsi</label><input type="password" id="newAccPwd" class="form-control" placeholder="Min. 6 karakter — wajib diingat!" oninput="(function(){var eg=document.getElementById('editingAccId'),cg=document.getElementById('newAccPwdConfirmGroup');if(eg&&eg.value)cg.style.display=document.getElementById('newAccPwd').value?'':'none';})()"><div style="font-size:.65rem; color:#888; margin-top:4px;">Password digunakan untuk mengenkripsi koneksi akun ini secara terpisah.</div></div>
                 <div class="form-group" id="newAccPwdConfirmGroup"><label>Konfirmasi Password</label><input type="password" id="newAccPwdConfirm" class="form-control" placeholder="Ulangi password enkripsi"><div style="font-size:.65rem; color:#888; margin-top:4px;">Pastikan password yang dimasukkan sama persis.</div></div>
                 <input type="hidden" id="editingAccId" value="">
@@ -1083,7 +1090,7 @@
 <div id="mobileDrawerOverlay" onclick="closeMobileDrawer()" style="position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:3000; backdrop-filter:blur(2px); opacity:0; pointer-events:none; transition:opacity 0.25s;"></div>
 <div id="mobileDrawer" style="position:fixed; top:0; right:0; height:100%; width:82%; max-width:300px; background:#fff; z-index:3001; box-shadow:-4px 0 24px rgba(0,0,0,0.18); border-left:2px solid #1a1a1a; overflow-y:auto; transform:translateX(100%); transition:transform 0.25s cubic-bezier(.4,0,.2,1); display:flex; flex-direction:column;">
     <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 18px 14px; border-bottom:1.5px solid #1a1a1a; background:#1a1a1a;">
-        <span style="font-size:.9rem; font-weight:700; color:#fff;">Menu</span>
+        <span style="font-size:.9rem; font-weight:700; color:#fff;" data-i18n="menu">Menu</span>
         <button onclick="closeMobileDrawer()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:#fff; line-height:1;">×</button>
     </div>
     <div style="padding:14px 18px; background:#e8f0fe; border-bottom:1px solid #c5d8ff;">
@@ -1091,7 +1098,7 @@
         <div id="drawerAccountLabel" style="font-size:.8rem; font-weight:700; color:#1a1a1a;">—</div>
     </div>
     <div style="padding:16px 18px; display:flex; flex-direction:column; gap:10px; flex:1;">
-        <button onclick="drawerAction(openBookManager)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#1a1a1a; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">Kelola Buku</button>
+        <button onclick="drawerAction(openBookManager)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#1a1a1a; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;" data-i18n="manage_book">Kelola Buku</button>
         <button onclick="drawerAction(forceFullSync)" title="Sinkronisasi" aria-label="Sinkronisasi" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#00875a; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:center; display:flex; align-items:center; justify-content:center;">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path></svg>
         </button>
@@ -1103,7 +1110,7 @@
             <span id="drawerReminderBadge" style="display:none; position:absolute; top:8px; right:16px; background:#ef4444; color:#fff; font-size:.6rem; font-weight:700; border-radius:10px; padding:1px 6px;"></span>
         </button>
         <div style="height:1px; background:#eee; margin:4px 0;"></div>
-        <button onclick="drawerAction(logoutToLockScreen)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#f5f5f5; color:#1a1a1a; border:1.5px solid #ddd; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;">Ganti Akun</button>
+        <button onclick="drawerAction(logoutToLockScreen)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#f5f5f5; color:#1a1a1a; border:1.5px solid #ddd; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;" data-i18n="switch_account">Ganti Akun</button>
         <button onclick="window.toggleDarkMode(); document.getElementById('drawerDarkLabel').textContent = document.documentElement.getAttribute('data-theme')==='dark' ? '☀️ Mode Terang' : '🌙 Mode Gelap';" id="drawerDarkBtn" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#f5f5f5; color:#1a1a1a; border:1.5px solid #ddd; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;"><span id="drawerDarkLabel">🌙 Mode Gelap</span></button>
     </div>
 </div>
@@ -1173,6 +1180,7 @@
 </div>
 
 <!-- ===== SKRIP UTAMA ===== -->
+<script src="js/i18n.js"></script>
 <script src="js/config.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/crypto.js"></script>

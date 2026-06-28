@@ -41,11 +41,11 @@ window.updateTgStatusBadge = async function() {
     if (cfg.active) {
         badge.style.background = '#e3fcef';
         badge.style.color = '#006644';
-        badge.innerText = 'Aktif';
+        badge.innerText = window.t('telegram_active');
     } else {
         badge.style.background = '#eee';
         badge.style.color = '#666';
-        badge.innerText = 'Belum dikonfigurasi';
+        badge.innerText = window.t('telegram_not_configured');
     }
 };
 

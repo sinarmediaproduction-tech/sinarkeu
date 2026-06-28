@@ -18,7 +18,7 @@ window.render = function() {
         }
         return true;
     });
-    document.getElementById('transactionCount').innerText = filtered.length + ' transaksi';
+    document.getElementById('transactionCount').innerText = filtered.length + window.t('transaction_count');
     let totalInc = 0, totalExp = 0;
     window.txs.forEach(t => {
         let amt = Number(t.amount) || 0;
@@ -46,7 +46,7 @@ window.render = function() {
         balanceMap[t.id] = tempBal;
     });
     if (filtered.length === 0) {
-        body.innerHTML = '<tr><td colspan="9" class="text-center" style="color:#888; padding:30px;">Tidak ada transaksi ditemukan</td></tr>';
+        body.innerHTML = '<tr><td colspan="9" class="text-center" style="color:#888; padding:30px;">'+window.t('no_transactions')+'</td></tr>';
         document.getElementById('paginationBar').style.display = 'none';
         window.renderBudget();
         return;
@@ -141,12 +141,12 @@ window.updateFinancialCards = function() {
         if (sisaSetelahDarurat <= 0) {
             cardDSJ.style.borderTopColor = '#de350b';
             cardDSJ.style.background = _isDark ? '#2A0A0A' : '#fff5f5';
-            note.innerText = 'Saldo belum cukup untuk dana darurat';
+            note.innerText = window.t('emergency_insufficient');
             note.style.color = '#de350b';
         } else {
             cardDSJ.style.borderTopColor = '#00875a';
             cardDSJ.style.background = _isDark ? '#161616' : '';
-            note.innerText = '50% dari saldo setelah kebutuhan setahun';
+            note.innerText = window.t('emergency_50pct');
             note.style.color = _isDark ? '#5A5A56' : '#888';
         }
     }
@@ -273,7 +273,7 @@ window.previewEditAttachment = function(input) {
             prev.src = e.target.result;
             prev.style.display = 'block';
             window.currentAttachmentData = e.target.result;
-            document.getElementById('editAttachmentInfo').innerText = "Nota baru siap disimpan";
+            document.getElementById('editAttachmentInfo').innerText = window.t('new_receipt');
         };
         r.readAsDataURL(input.files[0]);
     }
@@ -359,11 +359,11 @@ window.loadEditData = function(id) {
     let prev = document.getElementById('editAttachmentPreview');
     window.currentAttachmentData = t.attachment;
     if (t.attachment) {
-        info.innerText = "Sudah memiliki lampiran nota.";
+        info.innerText = window.t('has_attachment');
         prev.src = t.attachment;
         prev.style.display = 'block';
     } else {
-        info.innerText = "Belum ada lampiran.";
+        info.innerText = window.t('no_attachment');
         prev.style.display = 'none';
     }
     window.openModal('editModal');
@@ -570,8 +570,8 @@ window.updateFaseCard = function() {
     const aiBtn  = document.getElementById('faseAIBtn');
     if (!namaEl) return;
     if (!fase || !fase.fase) {
-        namaEl.innerText = 'Belum diatur';
-        descEl.innerText = 'Klik untuk mengatur fase kehidupan pernikahan Anda';
+        namaEl.innerText = window.t('life_phase_not_set');
+        descEl.innerText = window.t('life_phase_click');
         if (aiBtn) aiBtn.style.display = 'none';
         return;
     }

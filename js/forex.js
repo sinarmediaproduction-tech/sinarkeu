@@ -29,8 +29,8 @@ window.updateEmasApiBadge = function() {
     const badge = document.getElementById('emasApiStatusBadge');
     if (!badge) return;
     const val = (document.getElementById('emasApiKeyInput')?.value || '').trim();
-    if (val) { badge.style.background = '#fef3c7'; badge.style.color = '#92400e'; badge.innerText = 'Terkonfigurasi'; }
-    else { badge.style.background = '#eee'; badge.style.color = '#666'; badge.innerText = 'Belum dikonfigurasi'; }
+    if (val) { badge.style.background = '#fef3c7'; badge.style.color = '#92400e'; badge.innerText = window.t('forex_configured'); }
+    else { badge.style.background = '#eee'; badge.style.color = '#666'; badge.innerText = window.t('forex_not_configured'); }
 };
 window.updateEmasGramPreview = function() {
     const gram = parseFloat(document.getElementById('emasGramInput')?.value) || 0;

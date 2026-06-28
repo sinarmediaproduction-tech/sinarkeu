@@ -85,9 +85,9 @@ window.submitLockPassword = async function() {
     const pwd = document.getElementById('lockPasswordInput').value;
     const status = document.getElementById('lockStatus');
     const btn = document.getElementById('lockSubmitBtn');
-    if (!pwd) { status.innerText = 'Password tidak boleh kosong'; return; }
+    if (!pwd) { status.innerText = window.t('lock_pwd_empty'); return; }
     btn.disabled = true;
-    btn.innerText = 'Memverifikasi...';
+    btn.innerText = window.t('lock_verifying');
     status.innerText = '';
     const ok = await window.unlockWithPassword(pwd);
     if (ok) {
@@ -95,8 +95,8 @@ window.submitLockPassword = async function() {
         window.continueAppInit();
     } else {
         btn.disabled = false;
-        btn.innerText = 'Buka';
-        status.innerText = 'Password salah';
+        btn.innerText = window.t('lock_open');
+        status.innerText = window.t('lock_wrong_pwd');
         const inp = document.getElementById('lockPasswordInput');
         inp.classList.add('error-shake');
         inp.value = '';

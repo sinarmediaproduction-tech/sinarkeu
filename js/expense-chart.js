@@ -12,12 +12,12 @@ window.toggleExpenseChart = function() {
     window.expenseChartVisible = body.style.display === 'none';
     if (window.expenseChartVisible) {
         body.style.display = 'flex';
-        arrow.textContent = '▲ Sembunyikan';
+        arrow.textContent = window.t('hide');
         toggleBtns.style.display = 'flex';
         window.renderExpenseChart();
     } else {
         body.style.display = 'none';
-        arrow.textContent = '▼ Tampilkan';
+        arrow.textContent = window.t('show');
         toggleBtns.style.display = 'none';
     }
 };
@@ -52,7 +52,7 @@ window.renderExpenseChart = function() {
     const total = entries.reduce((s, [, v]) => s + v, 0);
 
     if (entries.length === 0 || total <= 0) {
-        body.innerHTML = '<div class="expense-chart-empty">Belum ada data pengeluaran</div>';
+        body.innerHTML = '<div class="expense-chart-empty">'+window.t('no_expense_data')+'</div>';
         if (window.expenseChart) { window.expenseChart.destroy(); window.expenseChart = null; }
         return;
     }

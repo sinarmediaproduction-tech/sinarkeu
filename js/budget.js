@@ -85,13 +85,13 @@ window.renderBudget = function() {
     if (tag) {
         if (source === 'custom') {
             tag.className = 'budget-source-tag custom';
-            tag.innerText = 'Khusus bulan ini';
+            tag.innerText = window.t('this_month_only');
         } else if (source === 'default' && Object.keys(currentBudget).length > 0) {
             tag.className = 'budget-source-tag default';
-            tag.innerText = 'Anggaran Bulanan';
+            tag.innerText = window.t('monthly_budget');
         } else {
             tag.className = 'budget-source-tag none';
-            tag.innerText = 'Tidak ada';
+            tag.innerText = window.t('no_budget');
         }
     }
     let totalTarget = 0;
@@ -184,7 +184,7 @@ window.updateBudgetSummary = function() {
     inputs.forEach(input => { total += window.unRp(input.value); });
     const el = document.getElementById('budgetSummary');
     if (el) {
-        el.innerText = 'Total Anggaran Bulanan: ' + window.rp(total);
+        el.innerText = window.t('monthly_total') + window.rp(total);
     }
 };
 window.openBudgetModal = function() {
@@ -264,7 +264,7 @@ window.updateDefaultBudgetSummary = function() {
     inputs.forEach(input => { total += window.unRp(input.value); });
     const el = document.getElementById('defaultBudgetSummary');
     if (el) {
-        el.innerText = 'Total Anggaran Bulanan: ' + window.rp(total);
+        el.innerText = window.t('monthly_total') + window.rp(total);
     }
 };
 window.saveDefaultBudget = async function() {
@@ -426,7 +426,7 @@ window.removeAnnualBudgetRow = function(idx) {
 window.updateAnnualBudgetSummary = function() {
     const total = (window._annualBudgetRows || []).reduce((s, r) => s + (Number(r.amount) || 0), 0);
     const el = document.getElementById('annualBudgetSummary');
-    if (el) el.innerText = 'Total Anggaran Tahunan: ' + window.rp(total);
+    if (el) el.innerText = window.t('annual_total') + window.rp(total);
 };
 
 window.saveAnnualBudget = async function() {

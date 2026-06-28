@@ -238,7 +238,7 @@ window.archiveAndClearData = async function() {
     st.style.display = 'block';
     st.style.background = '#fff3e0';
     st.style.color = '#cc7b00';
-    st.innerText = 'Mengekspor data ke JSON...';
+    st.innerText = window.t('exporting_json');
     const fileName = `Sinarkeu-Arsip-${window.currentBookId}-${new Date().toISOString().slice(0, 10)}.json`;
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.txs, null, 2));
     const a = document.createElement('a');
@@ -246,7 +246,7 @@ window.archiveAndClearData = async function() {
     a.setAttribute("download", fileName);
     a.click();
     await new Promise(r => setTimeout(r, 1000));
-    st.innerText = 'Menghapus data dari Supabase...';
+    st.innerText = window.t('deleting_supabase');
     if (window.isOnline()) {
         const tag_rb = window.getAccountTag ? window.getAccountTag() : null;
         const tagFilter_rb = tag_rb ? `&account_tag=eq.${tag_rb}` : '';
@@ -283,17 +283,17 @@ window.saveGoogleSheetsUrl = function() {
     const st  = document.getElementById('googleSheetsStatus');
     if (!url) {
         st.style.color = '#de350b';
-        st.innerText = 'URL tidak boleh kosong!';
+        st.innerText = window.t('url_empty');
         return;
     }
     if (!url.startsWith('https://script.google.com/macros/')) {
         st.style.color = '#de350b';
-        st.innerText = 'URL harus diawali https://script.google.com/macros/ ...';
+        st.innerText = window.t('url_invalid');
         return;
     }
     localStorage.setItem('sk_google_sheets_url', url);
     st.style.color = '#00875a';
-    st.innerText = 'URL Google Sheets Web App berhasil disimpan!';
+    st.innerText = window.t('sheets_url_saved');
     window.showToast('URL Google Sheets tersimpan', 'success');
     window.pushSetting('google_sheets_url', url, 'global');
 };
@@ -318,9 +318,9 @@ window.loadGoogleSheetsUrl = async function() {
         } catch (e) { /* fallback ke localStorage */ }
     }
     if (lastTs) {
-        lastEl.innerText = 'Backup terakhir: ' + new Date(lastTs).toLocaleString('id-ID');
+        lastEl.innerText = window.t('last_backup') + new Date(lastTs).toLocaleString(window.getLang()==='en'?'en-GB':'id-ID');
     } else {
-        lastEl.innerText = 'Belum pernah backup ke Google Sheets.';
+        lastEl.innerText = window.t('never_backup');
     }
 };
 window.backupToGoogleSheets = async function() {
@@ -435,7 +435,7 @@ window.resetAllApplication = async function() {
 
     if (wantExport) {
         const st = document.getElementById('resetAppStatus');
-        if (st) { st.style.display='block'; st.style.color='#cc7b00'; st.style.background='#fff3e0'; st.innerText='Menyiapkan file ekspor...'; }
+        if (st) { st.style.display='block'; st.style.color='#cc7b00'; st.style.background='#fff3e0'; st.innerText=window.t('preparing_export'); }
         try {
             const exportData = window._collectAllDataForExport();
             const totalTx = exportData.books.reduce((s, b) => s + b.transactions.length, 0);
