@@ -2126,13 +2126,6 @@ select.form-control option[value=""] {
 [data-theme="dark"] .offline-warning-bar { background: var(--warning-lt); border-color: #6A3F0E; }
 
 /* Setelan panel overrides — undo inline light colors */
-[data-theme="dark"] .data-management-panel[style*="background:#faf5ff"],
-[data-theme="dark"] .data-management-panel[style*="background:#fffbeb"],
-[data-theme="dark"] .data-management-panel[style*="background:#f0fff4"],
-[data-theme="dark"] .data-management-panel[style*="background:#f0f8ff"],
-[data-theme="dark"] .data-management-panel[style*="background:#fafafa"] {
-  background: var(--paper) !important;
-}
 
 /* ── Dark Mode Toggle Button ── */
 #darkModeToggle {
