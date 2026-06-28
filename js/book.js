@@ -38,36 +38,16 @@ window.switchBook = async function(id) {
 
     // ── PULL SEMUA DATA CLOUD UNTUK BUKU BARU ──
     try {
-        // 1. Transaksi
-        await window.pullFromCloudSilently();
+        // 1. Transaksi + settings sekaligus (parallel)
+        await Promise.all([
+            window.pullFromCloudSilently(),
+            window.pullAllSettings(),
+        ]);
 
-        // 2. Settings umum (termasuk fase kehidupan dll.)
-        await window.pullAllSettings();
-
-        // 3. Budgets (default, bulanan, tahunan)
-        try {
-            const defaultBudget = await window.loadDefaultBudgetFromCloud(window.currentBookId);
-            if (Object.keys(defaultBudget).length > 0) {
-                window.saveDefaultBudgetToLocal(window.currentBookId, defaultBudget);
-            }
-            const monthlyBudget = await window.loadMonthlyBudgetFromCloud(window.currentBookId);
-            if (Object.keys(monthlyBudget).length > 0) {
-                window.budgets = monthlyBudget;
-                if (typeof window.renderBudget === 'function') window.renderBudget();
-            }
-            const annualBudget = await window.loadAnnualBudgetFromCloud(window.currentBookId);
-            if (annualBudget.length > 0) {
-                window.saveAnnualBudgetToLocal(window.currentBookId, annualBudget);
-            }
-        } catch (e) {
-            console.warn('[switchBook] Gagal pull budgets:', e);
-        }
-
-        // 4. Payment reminders — simpan ke cache per-buku, bukan global
+        // 2. Payment reminders (per-buku, tidak dicakup pullAllSettings)
         try {
             const reminders = await window.loadPaymentReminders(window.currentBookId);
             if (reminders && reminders.length > 0) {
-                // Tulis ke cache per-buku agar tidak menimpa buku lain
                 localStorage.setItem('sk_payment_reminders_' + window.currentBookId, JSON.stringify(reminders));
             }
             if (typeof window.renderPaymentReminders === 'function') await window.renderPaymentReminders();
@@ -75,27 +55,6 @@ window.switchBook = async function(id) {
         } catch (e) {
             console.warn('[switchBook] Gagal pull payment reminders:', e);
         }
-
-        // 5. Fase kehidupan
-        try {
-            const fasCloud = await window.pullSetting('fase_kehidupan', window.currentBookId);
-            if (fasCloud) {
-                const localRaw = localStorage.getItem('sk_fase_kehidupan_' + window.currentBookId);
-                const localFase = localRaw ? JSON.parse(localRaw) : null;
-                if (!localFase || new Date(fasCloud.updatedAt) > new Date(localFase.updatedAt || 0)) {
-                    localStorage.setItem('sk_fase_kehidupan_' + window.currentBookId, JSON.stringify(fasCloud));
-                }
-            }
-        } catch (e) { /* fase belum tersimpan di cloud */ }
-
-        // 6. Target dana darurat (bulan)
-        try {
-            const efCloud = await window.pullSetting('emergency_fund_months', window.currentBookId);
-            const efMonths = parseInt(efCloud);
-            if (!isNaN(efMonths) && efMonths > 0) {
-                localStorage.setItem('sk_emergency_fund_months_' + window.currentBookId, String(efMonths));
-            }
-        } catch (e) { /* target dana darurat belum tersimpan di cloud, pakai default 12 bulan */ }
 
         // Render ulang semua card keuangan setelah semua data per-buku selesai dimuat
         if (typeof window.updateFinancialCards === 'function') window.updateFinancialCards();
