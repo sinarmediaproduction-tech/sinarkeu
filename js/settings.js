@@ -387,3 +387,101 @@ window.saveDeviceName = function() {
     if (st) { st.style.color = '#00875a'; st.innerText = 'Tersimpan: ' + newId; }
     window.showToast('Nama perangkat diperbarui!', 'success');
 };
+
+// ── PERANGKAT TERHUBUNG ──
+window.loadConnectedDevices = async function() {
+    var listEl = document.getElementById('devicesList');
+    var statusEl = document.getElementById('devicesLoadStatus');
+    if (!listEl) return;
+
+    if (!window.isOnline()) {
+        if (statusEl) statusEl.innerText = 'Tidak terhubung ke cloud.';
+        listEl.innerHTML = '';
+        return;
+    }
+
+    var bookId = window.currentBookId;
+    if (!bookId) {
+        if (statusEl) statusEl.innerText = 'Pilih buku aktif terlebih dahulu.';
+        return;
+    }
+
+    if (statusEl) statusEl.innerText = 'Memuat data perangkat...';
+    listEl.innerHTML = '';
+
+    try {
+        var tag = window.getAccountTag ? window.getAccountTag() : null;
+        var tagFilter = tag ? '&account_tag=eq.' + tag : '';
+
+        var logs = await window.callSupabaseAPI(
+            'audit_logs', 'GET', null,
+            '?book_id=eq.' + bookId + '&order=timestamp.desc&limit=500' + tagFilter
+        );
+
+        if (!logs || !Array.isArray(logs) || logs.length === 0) {
+            if (statusEl) statusEl.innerText = '';
+            listEl.innerHTML = '<div style="font-size:.72rem; color:#aaa; text-align:center; padding:20px 0;">Belum ada log aktivitas di cloud.</div>';
+            return;
+        }
+
+        // Agregasi per device_id
+        var deviceMap = {};
+        logs.forEach(function(l) {
+            var did = l.device_id || 'UNKNOWN';
+            if (!deviceMap[did]) {
+                deviceMap[did] = { device_id: did, count: 0, last_seen: l.timestamp, actions: {} };
+            }
+            deviceMap[did].count++;
+            if (l.timestamp > deviceMap[did].last_seen) deviceMap[did].last_seen = l.timestamp;
+            var act = l.action || '-';
+            deviceMap[did].actions[act] = (deviceMap[did].actions[act] || 0) + 1;
+        });
+
+        var devices = Object.values(deviceMap).sort(function(a, b) {
+            return b.last_seen.localeCompare(a.last_seen);
+        });
+
+        var myId = window.deviceId || localStorage.getItem('sk_device_id') || '';
+
+        if (statusEl) statusEl.innerText = devices.length + ' perangkat ditemukan dari ' + logs.length + ' log.';
+
+        var html = '';
+        devices.forEach(function(d) {
+            var isMe = d.device_id === myId;
+            var lastDate = new Date(d.last_seen);
+            var now = new Date();
+            var diffDays = Math.floor((now - lastDate) / 86400000);
+            var lastLabel = diffDays === 0 ? 'Hari ini'
+                : diffDays === 1 ? 'Kemarin'
+                : diffDays < 30 ? diffDays + ' hari lalu'
+                : diffDays < 365 ? Math.floor(diffDays / 30) + ' bulan lalu'
+                : Math.floor(diffDays / 365) + ' tahun lalu';
+
+            var dotColor = diffDays <= 7 ? '#00875a' : diffDays <= 30 ? '#cc7b00' : '#bbb';
+            var topActions = Object.entries(d.actions)
+                .sort(function(a, b) { return b[1] - a[1]; })
+                .slice(0, 3).map(function(a) { return a[0]; }).join(', ');
+
+            html += '<div style="border:1px solid var(--rule); border-radius:8px; padding:10px 12px; margin-bottom:8px; background:var(--paper);">';
+            html += '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">';
+            html += '<span style="font-size:.78rem; font-weight:700; color:var(--ink);">';
+            html += '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:' + dotColor + '; margin-right:5px; vertical-align:middle;"></span>';
+            html += window.escapeHtml(d.device_id);
+            if (isMe) html += ' <span style="font-size:.6rem; background:#e3fcef; color:#006644; padding:1px 7px; border-radius:10px; font-weight:600; vertical-align:middle;">Perangkat ini</span>';
+            html += '</span>';
+            html += '<span style="font-size:.65rem; color:#888;">' + d.count + ' aksi</span>';
+            html += '</div>';
+            html += '<div style="font-size:.65rem; color:#888; line-height:1.7;">';
+            html += 'Terakhir aktif: <b style="color:var(--ink-mid);">' + lastLabel + '</b> &nbsp;&middot;&nbsp; ';
+            html += lastDate.toLocaleDateString("id-ID", {day:"numeric", month:"short", year:"numeric"}) + ' ' + lastDate.toLocaleTimeString("id-ID", {hour:"2-digit", minute:"2-digit"});
+            html += '<br>Aktivitas: ' + window.escapeHtml(topActions);
+            html += '</div></div>';
+        });
+
+        listEl.innerHTML = html;
+
+    } catch(e) {
+        if (statusEl) statusEl.innerText = 'Gagal memuat: ' + e.message;
+        console.error('[Devices]', e);
+    }
+};

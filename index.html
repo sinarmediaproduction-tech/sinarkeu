@@ -549,6 +549,7 @@
             <button type="button" class="setelan-tab-btn" data-tab="migration" onclick="window.switchSetelanTab('migration')"><span data-i18n="migration_section">Migrasi Data ke Cloud</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="reset" onclick="window.switchSetelanTab('reset')"><span data-i18n="reset_app_section">Reset Total Aplikasi</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="archive" onclick="window.switchSetelanTab('archive')"><span data-i18n="archive_section">Arsipkan & Kosongkan Database</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="devices" onclick="window.switchSetelanTab('devices'); window.loadConnectedDevices()">Perangkat Terhubung</button>
         </div>
 
         <div class="setelan-tab-content" id="setelanTabContent">
@@ -743,6 +744,19 @@
             </div>
             <div id="archiveStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
             <button class="btn btn-danger" style="width:100%;" onclick="archiveAndClearData()">Arsipkan JSON & Kosongkan Database</button>
+        </div>
+
+        <!-- Perangkat Terhubung -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="devices" style="margin-top:0;">
+            <div class="panel-title" style="display:flex; align-items:center; justify-content:space-between;">
+                <span>Perangkat Terhubung</span>
+                <button class="btn btn-secondary" style="font-size:.65rem; padding:3px 10px;" onclick="window.loadConnectedDevices()">↻ Refresh</button>
+            </div>
+            <div style="font-size:.7rem; color:#666; margin-bottom:12px; line-height:1.6;">
+                Daftar perangkat yang pernah mengakses buku ini, berdasarkan log aktivitas di cloud. Perangkat yang lama tidak aktif bisa diabaikan.
+            </div>
+            <div id="devicesLoadStatus" style="font-size:.7rem; color:#888; margin-bottom:8px;"></div>
+            <div id="devicesList"></div>
         </div>
 
         </div>
