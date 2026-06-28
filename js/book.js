@@ -12,13 +12,6 @@ window.updateBookSelectDropdown = function() {
     });
 };
 
-window.updateHeaderTitle = function() {
-    const el = document.getElementById('headerBrandTitle');
-    if (!el) return;
-    const book = window.books.find(b => b.id === window.currentBookId);
-    el.textContent = book ? book.name : 'Sinarkeu';
-};
-
 window.switchBook = async function(id) {
     if (!window.books.find(b => b.id === id)) return;
     if (id === window.currentBookId) return;
@@ -31,7 +24,6 @@ window.switchBook = async function(id) {
     window.txs = cached ? JSON.parse(cached) : [];
     window.render();
     window.updateBookSelectDropdown();
-    window.updateHeaderTitle();
     if (document.getElementById('bookManagerModal').classList.contains('show')) window.renderBookList();
     window.showToast("Berhasil beralih ke: " + (window.books.find(b => b.id === id)?.name || id));
 
@@ -175,7 +167,6 @@ window.renameBook = async function(id) {
     window.renderBookList();
     window.renderBookParentOptions();
     window.updateBookSelectDropdown();
-    window.updateHeaderTitle();
     window.showToast(`Nama buku diubah ke "${book.name}"`, 'success');
     await window.addCloudLog('SISTEM', `Mengganti nama buku ID ${id} menjadi "${book.name}"`);
 };

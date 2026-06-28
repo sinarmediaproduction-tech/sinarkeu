@@ -130,7 +130,6 @@ window.continueAppInit = async function() {
     }
     document.getElementById('budgetMonth').value = new Date().getMonth() + 1;
     window.updateBookSelectDropdown();
-    window.updateHeaderTitle();
     window.updateSyncStatusBadge();
     if (!window.getCloudUrl() || !window.getSupabaseKey()) {
         setTimeout(() => window.openSetupModal(), 400);
@@ -143,7 +142,6 @@ window.continueAppInit = async function() {
                 window.pushSetting('google_sheets_url', localGsUrl, 'global');
             }
             window.updateBookSelectDropdown();
-            window.updateHeaderTitle();
             window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
             window.updateTgStatusBadge();
             await window.pullAllBooksFromCloud();

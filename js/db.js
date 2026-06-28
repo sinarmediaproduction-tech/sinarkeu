@@ -333,7 +333,6 @@ window.pullAllSettings = async function() {
         }
         if (booksUpdated) {
             window.updateBookSelectDropdown();
-            window.updateHeaderTitle();
         }
         if (budgetUpdated) {
             window.renderBudget();
