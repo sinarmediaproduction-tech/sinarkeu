@@ -357,6 +357,8 @@ window.toggleDarkMode = function() {
     var newDark = !isDark;
     localStorage.setItem('sk_dark_mode', newDark ? '1' : '0');
     window.applyTheme(newDark);
+    // Re-render cards yang backgroundnya di-set via JS agar warna ikut update
+    if (typeof window.renderBudget === 'function') window.renderBudget();
 };
 
 // Apply on load (sebelum render apapun untuk menghindari flash)

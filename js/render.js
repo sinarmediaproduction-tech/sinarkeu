@@ -136,17 +136,18 @@ window.updateFinancialCards = function() {
     // Warna peringatan card Dana Saling Jaga
     const cardDSJ = document.getElementById('cardDanaSalingJaga');
     const note = document.getElementById('fcDSJNote');
+    const _isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     if (cardDSJ && note) {
         if (sisaSetelahDarurat <= 0) {
             cardDSJ.style.borderTopColor = '#de350b';
-            cardDSJ.style.background = '#fff5f5';
+            cardDSJ.style.background = _isDark ? '#2A0A0A' : '#fff5f5';
             note.innerText = 'Saldo belum cukup untuk dana darurat';
             note.style.color = '#de350b';
         } else {
             cardDSJ.style.borderTopColor = '#00875a';
-            cardDSJ.style.background = '';
+            cardDSJ.style.background = _isDark ? '#161616' : '';
             note.innerText = '50% dari saldo setelah kebutuhan setahun';
-            note.style.color = '#888';
+            note.style.color = _isDark ? '#5A5A56' : '#888';
         }
     }
 
@@ -155,10 +156,10 @@ window.updateFinancialCards = function() {
     if (cardKS) {
         if (saldoAkhir < kebutuhanSetahun) {
             cardKS.style.borderTopColor = '#de350b';
-            cardKS.style.background = '#fff5f5';
+            cardKS.style.background = _isDark ? '#2A0A0A' : '#fff5f5';
         } else {
             cardKS.style.borderTopColor = '#d69e2e';
-            cardKS.style.background = '';
+            cardKS.style.background = _isDark ? '#161616' : '';
         }
     }
 

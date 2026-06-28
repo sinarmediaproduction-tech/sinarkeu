@@ -2102,3 +2102,54 @@ select.form-control option[value=""] {
   border-color: transparent !important;
   transform: scale(1.15);
 }
+
+/* ── Dark Mode: override inline styles pada stat-cards khusus ── */
+[data-theme="dark"] #cardAnggaranTahunan,
+[data-theme="dark"] #cardDanaDarurat,
+[data-theme="dark"] #cardKebutuhanSetahun,
+[data-theme="dark"] #cardFaseKehidupan,
+[data-theme="dark"] #cardDanaSalingJaga,
+[data-theme="dark"] #goldCard,
+[data-theme="dark"] #zakatCard {
+  background: var(--paper) !important;
+}
+
+/* Sub-label warna #888 yang hardcode */
+[data-theme="dark"] .stat-card [style*="color:#888"],
+[data-theme="dark"] .stat-card [style*="color: #888"],
+[data-theme="dark"] #goldSource,
+[data-theme="dark"] #zakatSource {
+  color: var(--ink-faint) !important;
+}
+
+/* Badge inline di dalam stat-card */
+[data-theme="dark"] #cardAnggaranTahunan [style*="background:#f3e8ff"] {
+  background: #1A0F2A !important;
+  color: #A78BFA !important;
+}
+[data-theme="dark"] #cardDanaDarurat [style*="background:#fff7e6"] {
+  background: #2A1A00 !important;
+  color: #F59E0B !important;
+}
+[data-theme="dark"] #cardFaseKehidupan [style*="background:#fff0f7"] {
+  background: #2A0A1A !important;
+  color: #F472B6 !important;
+}
+
+/* goldValueRow border dan teks */
+[data-theme="dark"] #goldValueRow {
+  border-top-color: #4A3A00 !important;
+}
+[data-theme="dark"] #goldValueLabel,
+[data-theme="dark"] #goldValue {
+  color: #D4914A !important;
+}
+
+/* Fase kehidupan desc text */
+[data-theme="dark"] #fcFaseDesc {
+  color: var(--ink-faint) !important;
+}
+[data-theme="dark"] #fcDanaDaruratNote,
+[data-theme="dark"] #fcDSJNote {
+  color: var(--ink-faint) !important;
+}
