@@ -92,3 +92,23 @@ window.getCloudUrl = function() { return window.globalSupabaseUrl || ''; };
 window.getSupabaseKey = function() { return window.globalSupabaseKey || ''; };
 
 window.escHtml = window.escapeHtml; // alias for older code
+
+// Animasi angka dari nilai lama ke nilai baru dengan easing
+window.animateValue = function(id, toVal, duration) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    duration = duration || 500;
+    const fromVal = window.unRp(el.innerText) || 0;
+    if (fromVal === toVal) { el.innerText = window.rp(toVal); return; }
+    const startTime = performance.now();
+    // easeOutQuart
+    function ease(t) { return 1 - Math.pow(1 - t, 4); }
+    function step(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const current = Math.round(fromVal + (toVal - fromVal) * ease(progress));
+        el.innerText = window.rp(current);
+        if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+};

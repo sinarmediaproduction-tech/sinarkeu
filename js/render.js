@@ -124,7 +124,7 @@ window.updateFinancialCards = function() {
     const danaSalingJaga = sisaSetelahDarurat > 0 ? sisaSetelahDarurat * 0.5 : 0;
 
     // Update DOM
-    const set = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = window.rp(val); };
+    const set = (id, val) => window.animateValue(id, val, 500);
     set('fcAnggaranBulanan', anggaranBulanan);
     set('fcAnggaranTahunan', anggaranTahunan);
     set('fcDanaDarurat', danaDarurat);

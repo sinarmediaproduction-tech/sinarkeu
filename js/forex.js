@@ -205,7 +205,12 @@ window.updateZakatCard = function() {
     const income = _getIncomeThisMonth();
     const zakat = Math.round(income * ZAKAT_PERSEN / 100);
     const bln = new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' });
-    valEl.innerText = 'Rp ' + zakat.toLocaleString('id-ID');
+    valEl.innerText = valEl.innerText || window.rp(0); // pastikan ada nilai awal untuk animasi
+    if (typeof window.animateValue === 'function') {
+        window.animateValue('zakatValue', zakat, 500);
+    } else {
+        valEl.innerText = 'Rp ' + zakat.toLocaleString('id-ID');
+    }
     srcEl.innerText = `2,5% × pemasukan ${bln}`;
     card.style.display = 'block';
 };
