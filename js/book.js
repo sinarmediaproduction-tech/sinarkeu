@@ -111,6 +111,7 @@ window.renderBookList = function() {
             <div class="book-list-actions">
                 ${!isCurrent ? `<button class="btn-mini" onclick="window.switchBook('${b.id}')">Buka</button>` : ''}
                 <button class="btn-mini" style="background:#f0f4ff; color:#1a56db; border:1px solid #c5d8ff;" onclick="window.renameBook('${b.id}')">Nama</button>
+                <button class="btn-mini" style="background:#fff7e6; color:#cc7b00; border:1px solid #ffd591;" onclick="window.openCardVisibilityModal('${b.id}')" title="Pilih card yang ditampilkan untuk buku ini">Card</button>
                 ${b.parentId && isCurrent ? `<button class="btn-mini" style="background:#6b46c1; color:#fff;" onclick="window.closeModal('bookManagerModal'); window.openTutupAnakBuku()">Tutup & Kirim</button>` : ''}
                 ${delBtn}
             </div>

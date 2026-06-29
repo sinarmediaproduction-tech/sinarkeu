@@ -840,6 +840,26 @@
     </div>
 </div>
 
+<!-- Modal Visibilitas Card Perencanaan Keuangan (per buku) -->
+<div id="cardVisibilityModal" class="modal">
+    <div class="modal-content" style="max-width:420px;">
+        <div class="modal-header">
+            <h3>Tampilan Card · <span id="cardVisibilityBookName" style="color:#cc7b00;"></span></h3>
+            <button class="modal-close" onclick="window.closeModal('cardVisibilityModal')">×</button>
+        </div>
+        <div style="padding:0 22px 16px;">
+            <div style="font-size:.7rem; color:#888; margin-bottom:10px; line-height:1.6;">
+                Pilih card perencanaan keuangan yang ingin ditampilkan untuk buku ini. Card yang dicentang akan tampil, yang tidak dicentang akan disembunyikan — pengaturan ini khusus untuk buku ini saja.
+            </div>
+            <div id="cardVisibilityList"></div>
+            <div style="display:flex; gap:8px; margin-top:16px;">
+                <button class="btn btn-secondary" style="flex:1;" onclick="window.closeModal('cardVisibilityModal')">Batal</button>
+                <button class="btn btn-primary" style="flex:2; background:#cc7b00; border-color:#cc7b00;" onclick="window.saveCardVisibility()">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Anggaran Tahunan -->
 <div id="annualBudgetModal" class="modal">
     <div class="modal-content wide">

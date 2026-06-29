@@ -171,6 +171,8 @@ window.reEncryptAllCloudSettings = async function() {
             await window.pushSetting('default_budget', defBud, b.id);
             const annBud = window.getAnnualBudget(b.id);
             await window.pushSetting('annual_budget', annBud, b.id);
+            const hiddenCards = window.getHiddenCards ? window.getHiddenCards(b.id) : [];
+            await window.pushSetting('hidden_cards', hiddenCards, b.id);
         }
         await window.pushSettingTelegram();
         console.log('[Sync] Re-enkripsi & push ulang semua setting ke cloud selesai (kunci baru).');
@@ -316,6 +318,14 @@ window.pullAllSettings = async function() {
                 const months = parseInt(parsed);
                 if (!isNaN(months) && months > 0) {
                     localStorage.setItem('sk_emergency_fund_months_' + row.book_id, String(months));
+                    if (row.book_id === window.currentBookId) {
+                        budgetUpdated = true;
+                    }
+                }
+            }
+            if (row.key === 'hidden_cards') {
+                if (Array.isArray(parsed)) {
+                    localStorage.setItem('sk_hidden_cards_' + row.book_id, JSON.stringify(parsed));
                     if (row.book_id === window.currentBookId) {
                         budgetUpdated = true;
                     }

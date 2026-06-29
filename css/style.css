@@ -1226,7 +1226,7 @@ select.form-control option[value=""] {
 }
 .book-list-item:hover { background: var(--paper-warm); }
 .book-list-name { font-size: .78rem; font-weight: 400; color: var(--ink); }
-.book-list-actions { display: flex; gap: 6px; }
+.book-list-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* ── Log ── */
 .log-section {

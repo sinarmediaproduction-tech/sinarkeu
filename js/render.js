@@ -87,6 +87,80 @@ window.render = function() {
     window.updateUIForOnlineStatus();
 };
 
+// ==================== VISIBILITAS CARD PERENCANAAN KEUANGAN (PER BUKU) ====================
+// Memungkinkan setiap card di bagian "FINANCIAL PLANNING CARDS" dinonaktifkan
+// (disembunyikan) secara independen untuk buku tertentu. Disimpan & disinkronkan
+// dengan pola yang sama seperti window.getEmergencyFundMonths() di bawah.
+window.FINANCIAL_CARD_IDS = ['cardAnggaranBulanan', 'cardAnggaranTahunan', 'cardDanaDarurat', 'cardKebutuhanSetahun', 'cardFaseKehidupan', 'cardDanaSalingJaga'];
+window.FINANCIAL_CARD_LABELS = {
+    cardAnggaranBulanan: 'monthly_budget',
+    cardAnggaranTahunan: 'annual_budget',
+    cardDanaDarurat: 'emergency_fund',
+    cardKebutuhanSetahun: 'annual_needs',
+    cardFaseKehidupan: 'life_phase',
+    cardDanaSalingJaga: 'mutual_fund'
+};
+window.getHiddenCards = function(bookId) {
+    const raw = localStorage.getItem('sk_hidden_cards_' + (bookId || window.currentBookId));
+    try {
+        const arr = JSON.parse(raw || '[]');
+        return Array.isArray(arr) ? arr.filter(id => window.FINANCIAL_CARD_IDS.includes(id)) : [];
+    } catch { return []; }
+};
+window.saveHiddenCardsToLocal = function(hiddenArr, bookId) {
+    localStorage.setItem('sk_hidden_cards_' + (bookId || window.currentBookId), JSON.stringify(hiddenArr || []));
+};
+window.applyHiddenCardsVisibility = function() {
+    const hidden = window.getHiddenCards();
+    window.FINANCIAL_CARD_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = hidden.includes(id) ? 'none' : '';
+    });
+};
+
+// Modal: atur card mana yang disembunyikan untuk buku tertentu (default: buku aktif).
+window._cardVisibilityTargetBookId = null;
+window.openCardVisibilityModal = function(bookId) {
+    const targetId = bookId || window.currentBookId;
+    window._cardVisibilityTargetBookId = targetId;
+    const book = window.books.find(b => b.id === targetId);
+    const titleEl = document.getElementById('cardVisibilityBookName');
+    if (titleEl) titleEl.innerText = book ? book.name : '';
+    const hidden = window.getHiddenCards(targetId);
+    const list = document.getElementById('cardVisibilityList');
+    if (list) {
+        list.innerHTML = '';
+        window.FINANCIAL_CARD_IDS.forEach(id => {
+            const labelKey = window.FINANCIAL_CARD_LABELS[id];
+            const label = (typeof window.t === 'function') ? window.t(labelKey) : labelKey;
+            const row = document.createElement('label');
+            row.style.cssText = 'display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #eee; cursor:pointer; font-size:.85rem;';
+            row.innerHTML = `<input type="checkbox" data-card-id="${id}" ${hidden.includes(id) ? '' : 'checked'} style="width:16px; height:16px;"> <span>${window.escapeHtml(label)}</span>`;
+            list.appendChild(row);
+        });
+    }
+    window.openModal('cardVisibilityModal');
+};
+window.saveCardVisibility = async function() {
+    const targetId = window._cardVisibilityTargetBookId || window.currentBookId;
+    const list = document.getElementById('cardVisibilityList');
+    const hidden = [];
+    if (list) {
+        list.querySelectorAll('input[type=checkbox]').forEach(cb => {
+            if (!cb.checked) hidden.push(cb.getAttribute('data-card-id'));
+        });
+    }
+    window.saveHiddenCardsToLocal(hidden, targetId);
+    if (window.isOnline()) {
+        await window.pushSetting('hidden_cards', hidden, targetId);
+    }
+    if (targetId === window.currentBookId) {
+        window.applyHiddenCardsVisibility();
+    }
+    window.closeModal('cardVisibilityModal');
+    window.showToast('Pengaturan tampilan card disimpan', 'success');
+};
+
 window.updateFinancialCards = function() {
     // Anggaran Bulanan dari Anggaran Dasar
     const defaultBudget = window.getDefaultBudget(window.currentBookId);
@@ -165,6 +239,9 @@ window.updateFinancialCards = function() {
 
     // Update card fase kehidupan
     if (typeof window.updateFaseCard === 'function') window.updateFaseCard();
+
+    // Terapkan visibilitas card sesuai pengaturan per-buku (lihat openCardVisibilityModal)
+    window.applyHiddenCardsVisibility();
 };
 
 window.renderPagination = function(totalCount, totalPages) {
