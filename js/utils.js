@@ -93,6 +93,34 @@ window.getSupabaseKey = function() { return window.globalSupabaseKey || ''; };
 
 window.escHtml = window.escapeHtml; // alias for older code
 
+// Tombol "Copy SQL" di Panduan Pengguna (#supabaseSetupSqlBlock, lihat 1a. Setup
+// Database Supabase di index.html) — menyalin teks skrip apa adanya ke clipboard.
+window.copySupabaseSetupSql = function() {
+    const block = document.getElementById('supabaseSetupSqlBlock');
+    if (!block) return;
+    const sql = block.innerText || block.textContent || '';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(sql)
+            .then(() => window.showToast('Skrip SQL disalin ke clipboard!', 'success'))
+            .catch(() => window.showToast('Gagal menyalin, silakan select & copy manual', 'warning'));
+    } else {
+        // Fallback untuk browser lama tanpa Clipboard API
+        const ta = document.createElement('textarea');
+        ta.value = sql;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+            document.execCommand('copy');
+            window.showToast('Skrip SQL disalin ke clipboard!', 'success');
+        } catch (e) {
+            window.showToast('Gagal menyalin, silakan select & copy manual', 'warning');
+        }
+        document.body.removeChild(ta);
+    }
+};
+
 // Animasi angka dari nilai lama ke nilai baru dengan easing
 window.animateValue = function(id, toVal, duration) {
     const el = document.getElementById(id);
