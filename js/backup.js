@@ -14,10 +14,10 @@ window.renderBackupList = function() {
     info.innerText = infoText;
     let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + window.currentBookId) || '[]');
     container.innerHTML = '';
-    if (localBackups.length === 0) { container.innerHTML = '<div style="color:#888; font-size:.7rem; text-align:center;">Tidak ada cadangan manual internal</div>'; return; }
+    if (localBackups.length === 0) { container.innerHTML = '<div style="color:var(--ink-faint); font-size:.7rem; text-align:center;">Tidak ada cadangan manual internal</div>'; return; }
     localBackups.forEach((b, i) => {
         let div = document.createElement('div');
-        div.style = 'display:flex; justify-content:space-between; align-items:center; font-size:.7rem; padding:6px 0; border-bottom:1px solid #eee;';
+        div.style = 'display:flex; justify-content:space-between; align-items:center; font-size:.7rem; padding:6px 0; border-bottom:1px solid var(--rule);';
         div.innerHTML = `
             <span>${window.escapeHtml(window.formatDateTime(b.timestamp))} (${window.escapeHtml(String(b.count))} Txs)</span>
             <div>
@@ -120,23 +120,23 @@ window.checkAndRunDailyAutoBackup = async function() {
 window.loadCloudBackupList = async function() {
     let container = document.getElementById('cloudBackupListContainer');
     if (!container) return;
-    if (!window.isOnline()) { container.innerHTML = '<div style="color:#888; font-size:.7rem; text-align:center; padding:8px;">Online untuk melihat cadangan cloud</div>'; return; }
+    if (!window.isOnline()) { container.innerHTML = '<div style="color:var(--ink-faint); font-size:.7rem; text-align:center; padding:8px;">Online untuk melihat cadangan cloud</div>'; return; }
     try {
         const _blTag = window.getAccountTag ? window.getAccountTag() : null;
         const _blTagFilter = _blTag ? `&account_tag=eq.${_blTag}` : '';
         const backups = await window.callSupabaseAPI('backups', 'GET', null, `?book_id=eq.${window.currentBookId}&order=created_at.desc&limit=10${_blTagFilter}`);
         window.renderCloudBackupList(backups || []);
-    } catch (e) { container.innerHTML = '<div style="color:#bf2600; font-size:.7rem; text-align:center; padding:8px;">Gagal memuat cadangan cloud</div>'; }
+    } catch (e) { container.innerHTML = '<div style="color:var(--danger); font-size:.7rem; text-align:center; padding:8px;">Gagal memuat cadangan cloud</div>'; }
 };
 window.renderCloudBackupList = function(backups) {
     let container = document.getElementById('cloudBackupListContainer');
     if (!container) return;
-    if (!backups || backups.length === 0) { container.innerHTML = '<div style="color:#888; font-size:.7rem; text-align:center; padding:8px;">Belum ada cadangan cloud</div>'; return; }
+    if (!backups || backups.length === 0) { container.innerHTML = '<div style="color:var(--ink-faint); font-size:.7rem; text-align:center; padding:8px;">Belum ada cadangan cloud</div>'; return; }
     container.innerHTML = '';
     backups.forEach((b) => {
-        let typeBadge = b.backup_type === 'AUTO' ? '<span style="background:#e3fcef;color:#006644;padding:1px 6px;border-radius:8px;font-size:.6rem;font-weight:700;">AUTO</span>' : '<span style="background:#e8f0fe;color:#1a56db;padding:1px 6px;border-radius:8px;font-size:.6rem;font-weight:700;">MANUAL</span>';
+        let typeBadge = b.backup_type === 'AUTO' ? '<span style="background:var(--success-lt);color:var(--success);padding:1px 6px;border-radius:8px;font-size:.6rem;font-weight:700;">AUTO</span>' : '<span style="background:var(--info-lt);color:var(--info);padding:1px 6px;border-radius:8px;font-size:.6rem;font-weight:700;">MANUAL</span>';
         let div = document.createElement('div');
-        div.style = 'display:flex; justify-content:space-between; align-items:center; font-size:.7rem; padding:7px 0; border-bottom:1px solid #eee;';
+        div.style = 'display:flex; justify-content:space-between; align-items:center; font-size:.7rem; padding:7px 0; border-bottom:1px solid var(--rule);';
         div.innerHTML = `<span>${window.escapeHtml(window.formatDateTime(b.created_at))} ${typeBadge} (${window.escapeHtml(String(b.tx_count))} Txs)</span><button class="btn-mini" onclick="window.restoreFromCloudBackup('${b.id}')">Restore</button>`;
         container.appendChild(div);
     });
@@ -236,8 +236,8 @@ window.archiveAndClearData = async function() {
         await new Promise(r => setTimeout(r, 2000));
     }
     st.style.display = 'block';
-    st.style.background = '#fff3e0';
-    st.style.color = '#cc7b00';
+    st.style.background = 'var(--warning-lt)';
+    st.style.color = 'var(--warning)';
     st.innerText = window.t('exporting_json');
     const fileName = `Sinarkeu-Arsip-${window.currentBookId}-${new Date().toISOString().slice(0, 10)}.json`;
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.txs, null, 2));
@@ -269,8 +269,8 @@ window.archiveAndClearData = async function() {
         await window.pushSetting('default_budget', {}, window.currentBookId);
     }
     window.render();
-    st.style.background = '#e3fcef';
-    st.style.color = '#006644';
+    st.style.background = 'var(--success-lt)';
+    st.style.color = 'var(--success)';
     st.innerText = `Selesai! ${fileName} tersimpan & database telah dikosongkan. Backup final telah disimpan ke cloud.`;
     window.showToast('Database berhasil dikosongkan', 'success');
     if (cfg.active) window.sendTelegramNotif(`<b>EKSEKUSI SELESAI</b>\n\nData buku <b>${bookName}</b> telah dihapus permanen.\n\nArsip tersimpan di: ${fileName}\nDevice: ${window.deviceId}`);
@@ -282,17 +282,17 @@ window.saveGoogleSheetsUrl = function() {
     const url = document.getElementById('googleSheetsUrlInput').value.trim();
     const st  = document.getElementById('googleSheetsStatus');
     if (!url) {
-        st.style.color = '#de350b';
+        st.style.color = 'var(--danger)';
         st.innerText = window.t('url_empty');
         return;
     }
     if (!url.startsWith('https://script.google.com/macros/')) {
-        st.style.color = '#de350b';
+        st.style.color = 'var(--danger)';
         st.innerText = window.t('url_invalid');
         return;
     }
     localStorage.setItem('sk_google_sheets_url', url);
-    st.style.color = '#00875a';
+    st.style.color = 'var(--success)';
     st.innerText = window.t('sheets_url_saved');
     window.showToast('URL Google Sheets tersimpan', 'success');
     window.pushSetting('google_sheets_url', url, 'global');
@@ -342,7 +342,7 @@ window.backupToGoogleSheets = async function() {
     const setStatus = (color, msg) => {
         if (st) { st.style.color = color; st.innerText = msg; }
     };
-    setStatus('#cc7b00', 'Mengirim data ke Google Sheets...');
+    setStatus('var(--warning)', 'Mengirim data ke Google Sheets...');
     const payload = {
         book: window.currentBookId,
         exported_at: new Date().toISOString(),
@@ -365,7 +365,7 @@ window.backupToGoogleSheets = async function() {
         });
         const nowIso = new Date().toISOString();
         const now = new Date().toLocaleString('id-ID');
-        setStatus('#00875a', 'Data terkirim ke Google Sheets! (' + now + ')');
+        setStatus('var(--success)', 'Data terkirim ke Google Sheets! (' + now + ')');
         localStorage.setItem('sk_last_gsheets_backup_' + window.currentBookId, nowIso);
         const lastEl = document.getElementById('googleSheetsLastBackup');
         if (lastEl) lastEl.innerText = 'Backup terakhir: ' + now;
@@ -376,7 +376,7 @@ window.backupToGoogleSheets = async function() {
         }
         await window.addCloudLog('BACKUP', 'Backup ke Google Sheets: ' + window.txs.length + ' transaksi');
     } catch (e) {
-        setStatus('#de350b', 'Gagal: ' + e.message + ' — Periksa koneksi internet dan URL Web App.');
+        setStatus('var(--danger)', 'Gagal: ' + e.message + ' — Periksa koneksi internet dan URL Web App.');
         window.showToast('Gagal backup ke Google Sheets', 'error');
         console.error('[BackupGSheets]', e);
     }
@@ -435,7 +435,7 @@ window.resetAllApplication = async function() {
 
     if (wantExport) {
         const st = document.getElementById('resetAppStatus');
-        if (st) { st.style.display='block'; st.style.color='#cc7b00'; st.style.background='#fff3e0'; st.innerText=window.t('preparing_export'); }
+        if (st) { st.style.display='block'; st.style.color='var(--warning)'; st.style.background='var(--warning-lt)'; st.innerText=window.t('preparing_export'); }
         try {
             const exportData = window._collectAllDataForExport();
             const totalTx = exportData.books.reduce((s, b) => s + b.transactions.length, 0);
@@ -491,7 +491,7 @@ window.resetAllApplication = async function() {
         st.style.background = bg;
         st.innerText = msg;
     };
-    show('#cc7b00', '#fff3e0', 'Memulai reset...');
+    show('var(--warning)', 'var(--warning-lt)', 'Memulai reset...');
 
     try {
         // ── Hapus Supabase (semua tabel, tanpa filter book_id) ──
@@ -499,27 +499,27 @@ window.resetAllApplication = async function() {
             const tag_fr = window.getAccountTag ? window.getAccountTag() : null;
             const tagFilter_fr = tag_fr ? `&account_tag=eq.${tag_fr}` : '';
 
-            show('#cc7b00', '#fff3e0', 'Menghapus transaksi dari Supabase...');
+            show('var(--warning)', 'var(--warning-lt)', 'Menghapus transaksi dari Supabase...');
             await window.callSupabaseAPI('transactions', 'DELETE', null, `?id=neq.00000000-0000-0000-0000-000000000000${tagFilter_fr}`);
 
-            show('#cc7b00', '#fff3e0', 'Menghapus log audit dari Supabase...');
+            show('var(--warning)', 'var(--warning-lt)', 'Menghapus log audit dari Supabase...');
             await window.callSupabaseAPI('audit_logs', 'DELETE', null, `?id=neq.00000000-0000-0000-0000-000000000000${tagFilter_fr}`);
 
-            show('#cc7b00', '#fff3e0', 'Menghapus settings dari Supabase...');
+            show('var(--warning)', 'var(--warning-lt)', 'Menghapus settings dari Supabase...');
             await window.callSupabaseAPI('settings', 'DELETE', null, `?key=neq.__placeholder__${tagFilter_fr}`);
 
-            show('#cc7b00', '#fff3e0', 'Menghapus pengingat pembayaran dari Supabase...');
+            show('var(--warning)', 'var(--warning-lt)', 'Menghapus pengingat pembayaran dari Supabase...');
             await window.callSupabaseAPI('payment_reminders', 'DELETE', null, `?id=neq.00000000-0000-0000-0000-000000000000${tagFilter_fr}`);
 
-            show('#cc7b00', '#fff3e0', 'Menghapus cadangan cloud dari Supabase...');
+            show('var(--warning)', 'var(--warning-lt)', 'Menghapus cadangan cloud dari Supabase...');
             await window.callSupabaseAPI('backups', 'DELETE', null, `?id=neq.00000000-0000-0000-0000-000000000000${tagFilter_fr}`);
         } else {
-            show('#cc7b00', '#fff8e1', 'Offline — Supabase tidak dibersihkan, hanya localStorage yang direset.');
+            show('var(--warning)', 'var(--warning-lt)', 'Offline — Supabase tidak dibersihkan, hanya localStorage yang direset.');
             await new Promise(r => setTimeout(r, 1500));
         }
 
         // ── Hapus SEMUA localStorage dengan prefix sk_ ──
-        show('#cc7b00', '#fff3e0', 'Menghapus data lokal...');
+        show('var(--warning)', 'var(--warning-lt)', 'Menghapus data lokal...');
         const keysToDelete = [];
         for (let i = 0; i < localStorage.length; i++) {
             const k = localStorage.key(i);
@@ -533,7 +533,7 @@ window.resetAllApplication = async function() {
         window.currentBookId = null;
         window.budgets = {};
 
-        show('#006644', '#e3fcef', 'Reset selesai! Aplikasi akan dimuat ulang...');
+        show('var(--success)', 'var(--success-lt)', 'Reset selesai! Aplikasi akan dimuat ulang...');
         window.showToast('Aplikasi berhasil direset', 'success');
 
         // Reload setelah jeda singkat agar pesan terbaca
@@ -541,7 +541,7 @@ window.resetAllApplication = async function() {
 
     } catch (e) {
         console.error('[ResetApp]', e);
-        show('#de350b', '#fff5f5', 'Gagal: ' + e.message + '\n\nCoba hapus manual via Supabase dashboard.');
+        show('var(--danger)', 'var(--danger-lt)', 'Gagal: ' + e.message + '\n\nCoba hapus manual via Supabase dashboard.');
         window.showToast('Reset gagal: ' + e.message, 'error');
     }
 };
@@ -557,16 +557,16 @@ window.exportAllDataOnly = async function() {
         st.innerText = msg;
     };
     try {
-        show('#cc7b00', '#fff3e0', 'Menyiapkan ekspor...');
+        show('var(--warning)', 'var(--warning-lt)', 'Menyiapkan ekspor...');
         const exportData = window._collectAllDataForExport();
         const totalTx = exportData.books.reduce((s, b) => s + b.transactions.length, 0);
         const fileName = `Sinarkeu-Export-${new Date().toISOString().slice(0, 10)}.json`;
         window._downloadJSON(exportData, fileName);
-        show('#006644', '#e3fcef', `"${fileName}" sedang diunduh — ${totalTx} transaksi dari ${exportData.books.length} buku.`);
+        show('var(--success)', 'var(--success-lt)', `"${fileName}" sedang diunduh — ${totalTx} transaksi dari ${exportData.books.length} buku.`);
         window.showToast('Ekspor berhasil', 'success');
         setTimeout(() => { if (st) st.style.display = 'none'; }, 5000);
     } catch (e) {
-        show('#de350b', '#fff5f5', 'Gagal ekspor: ' + e.message);
+        show('var(--danger)', 'var(--danger-lt)', 'Gagal ekspor: ' + e.message);
     }
 };
 
@@ -589,17 +589,17 @@ window.importAllDataFromFile = async function(input) {
     // ── Baca & validasi file ──
     let importData;
     try {
-        show('#cc7b00', '#fff3e0', 'Membaca file...');
+        show('var(--warning)', 'var(--warning-lt)', 'Membaca file...');
         const text = await file.text();
         importData = JSON.parse(text);
     } catch (e) {
-        show('#de350b', '#fff5f5', 'File tidak valid atau bukan JSON: ' + e.message);
+        show('var(--danger)', 'var(--danger-lt)', 'File tidak valid atau bukan JSON: ' + e.message);
         return;
     }
 
     // Validasi struktur minimal
     if (!importData.books || !Array.isArray(importData.books)) {
-        show('#de350b', '#fff5f5', 'Format file tidak dikenali. Pastikan file berasal dari fitur Ekspor Sinarkeu.');
+        show('var(--danger)', 'var(--danger-lt)', 'Format file tidak dikenali. Pastikan file berasal dari fitur Ekspor Sinarkeu.');
         return;
     }
 
@@ -623,7 +623,7 @@ window.importAllDataFromFile = async function(input) {
         return;
     }
 
-    show('#cc7b00', '#fff3e0', 'Memulai import...');
+    show('var(--warning)', 'var(--warning-lt)', 'Memulai import...');
 
     let importedBooks = 0, importedTx = 0, skippedTx = 0, errors = [];
 
@@ -634,7 +634,7 @@ window.importAllDataFromFile = async function(input) {
         for (const bookData of importData.books) {
             if (!bookData.id || !bookData.name) { errors.push(`Buku tanpa ID/nama dilewati.`); continue; }
 
-            show('#cc7b00', '#fff3e0', `Mengimpor buku "${bookData.name}"...`);
+            show('var(--warning)', 'var(--warning-lt)', `Mengimpor buku "${bookData.name}"...`);
 
             // ── Tambahkan buku jika belum ada ──
             const bookExists = currentBooks.find(b => b.id === bookData.id);
@@ -691,7 +691,7 @@ window.importAllDataFromFile = async function(input) {
 
             // ── Push transaksi baru ke Supabase ──
             if (newTxs.length > 0 && window.isOnline() && window.getCloudUrl() && window.getSupabaseKey()) {
-                show('#cc7b00', '#fff3e0', `Upload ${newTxs.length} transaksi buku "${bookData.name}" ke Supabase...`);
+                show('var(--warning)', 'var(--warning-lt)', `Upload ${newTxs.length} transaksi buku "${bookData.name}" ke Supabase...`);
                 const _rtTag = window.getAccountTag ? window.getAccountTag() : null;
                 const payload = newTxs.map(t => ({
                     id: t.id,
@@ -738,7 +738,7 @@ window.importAllDataFromFile = async function(input) {
 
         // ── Ringkasan ──
         const warningLine = errors.length > 0 ? `\n${errors.length} item dilewati: ${errors[0]}` : '';
-        show('#006644', '#e3fcef',
+        show('var(--success)', 'var(--success-lt)',
             `Import selesai!\n` +
             `${importedBooks} buku, ${importedTx} transaksi baru ditambahkan` +
             (skippedTx > 0 ? `, ${skippedTx} duplikat dilewati` : '') +
@@ -748,7 +748,7 @@ window.importAllDataFromFile = async function(input) {
 
     } catch (e) {
         console.error('[Import]', e);
-        show('#de350b', '#fff5f5', 'Import gagal: ' + e.message);
+        show('var(--danger)', 'var(--danger-lt)', 'Import gagal: ' + e.message);
         window.showToast('Import gagal: ' + e.message, 'error');
     }
 };

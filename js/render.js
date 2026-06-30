@@ -46,7 +46,7 @@ window.render = function() {
         balanceMap[t.id] = tempBal;
     });
     if (filtered.length === 0) {
-        body.innerHTML = '<tr><td colspan="9" class="text-center" style="color:#888; padding:30px;">'+window.t('no_transactions')+'</td></tr>';
+        body.innerHTML = '<tr><td colspan="9" class="text-center" style="color:var(--ink-faint); padding:30px;">'+window.t('no_transactions')+'</td></tr>';
         document.getElementById('paginationBar').style.display = 'none';
         window.renderBudget();
         return;
@@ -73,8 +73,8 @@ window.render = function() {
             <td>${window.formatDateTime(t.date)}</td>
             <td>${badge}</td>
             <td>${window.escapeHtml(t.description)}</td>
-            <td class="text-right" style="color:#00875a; font-weight:500;">${incText}</td>
-            <td class="text-right" style="color:#de350b; font-weight:500;">${expText}</td>
+            <td class="text-right" style="color:var(--success); font-weight:500;">${incText}</td>
+            <td class="text-right" style="color:var(--danger); font-weight:500;">${expText}</td>
             <td class="text-right col-saldo" style="font-weight:600;">${window.rp(balanceMap[t.id] || 0)}</td>
             <td class="text-center col-nota">${attCell}</td>
             <td class="text-center"><button class="action-btn" onclick="window.openActionMenu('${t.id}')" ${actionBtnDisabled}>⋮</button></td>
@@ -134,7 +134,7 @@ window.openCardVisibilityModal = function(bookId) {
             const labelKey = window.FINANCIAL_CARD_LABELS[id];
             const label = (typeof window.t === 'function') ? window.t(labelKey) : labelKey;
             const row = document.createElement('label');
-            row.style.cssText = 'display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #eee; cursor:pointer; font-size:.85rem;';
+            row.style.cssText = 'display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--rule); cursor:pointer; font-size:.85rem;';
             row.innerHTML = `<input type="checkbox" data-card-id="${id}" ${hidden.includes(id) ? '' : 'checked'} style="width:16px; height:16px;"> <span>${window.escapeHtml(label)}</span>`;
             list.appendChild(row);
         });
@@ -212,15 +212,15 @@ window.updateFinancialCards = function() {
     const note = document.getElementById('fcDSJNote');
     if (cardDSJ && note) {
         if (sisaSetelahDarurat <= 0) {
-            cardDSJ.style.borderTopColor = '#de350b';
-            cardDSJ.style.background = _isDark ? '#2A0A0A' : '#fff5f5';
+            cardDSJ.style.borderTopColor = 'var(--danger)';
+            cardDSJ.style.background = _isDark ? 'var(--danger-lt)' : 'var(--danger-lt)';
             note.innerText = window.t('emergency_insufficient');
-            note.style.color = '#de350b';
+            note.style.color = 'var(--danger)';
         } else {
-            cardDSJ.style.borderTopColor = '#00875a';
-            cardDSJ.style.background = _isDark ? '#161616' : '';
+            cardDSJ.style.borderTopColor = 'var(--success)';
+            cardDSJ.style.background = '';
             note.innerText = window.t('emergency_50pct');
-            note.style.color = _isDark ? '#5A5A56' : '#888';
+            note.style.color = 'var(--ink-faint)';
         }
     }
 
@@ -230,10 +230,8 @@ window.updateFinancialCards = function() {
     const gap = saldoAkhir - kebutuhanSetahun;
     // Set border/bg dulu berdasarkan nilai final (tidak ikut animasi)
     if (cardKS) {
-        cardKS.style.borderTopColor = gap < 0 ? '#de350b' : '#d69e2e';
-        cardKS.style.background = gap < 0
-            ? (_isDark ? '#2A0A0A' : '#fff5f5')
-            : (_isDark ? '#161616' : '');
+        cardKS.style.borderTopColor = gap < 0 ? 'var(--danger)' : 'var(--warning)';
+        cardKS.style.background = gap < 0 ? 'var(--danger-lt)' : '';
     }
     // Sembunyikan gap info selama animasi berjalan, tampilkan setelah selesai
     if (ksGapInfo) ksGapInfo.style.display = 'none';
@@ -241,12 +239,12 @@ window.updateFinancialCards = function() {
         if (!ksGapInfo) return;
         ksGapInfo.style.display = 'block';
         if (gap < 0) {
-            ksGapInfo.style.background = _isDark ? '#3D1010' : '#ffe9e9';
-            ksGapInfo.style.color = '#de350b';
+            ksGapInfo.style.background = 'var(--danger-lt)';
+            ksGapInfo.style.color = 'var(--danger)';
             ksGapInfo.innerHTML = `\u26A0 Kurang <b>${window.rp ? window.rp(Math.abs(gap)) : Math.abs(gap)}</b> untuk kategori <b>Aman</b>`;
         } else {
-            ksGapInfo.style.background = _isDark ? '#0D2B1A' : '#e6f9f0';
-            ksGapInfo.style.color = '#0F6E56';
+            ksGapInfo.style.background = 'var(--success-lt)';
+            ksGapInfo.style.color = 'var(--success)';
             ksGapInfo.innerHTML = gap === 0
                 ? `\u2713 Saldo pas menutupi kebutuhan`
                 : `\u2713 Surplus <b>${window.rp ? window.rp(gap) : gap}</b> \u2014 Keuangan Aman`;

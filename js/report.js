@@ -92,7 +92,7 @@ function generateMonthlyReport() {
         const pct    = budget > 0 ? Math.min(100, Math.round(v / budget * 100)) : null;
         const bar    = budget > 0
           ? `<div style="height:6px;border-radius:3px;background:${C.barBg};margin-top:3px;">
-               <div style="height:6px;border-radius:3px;background:${pct >= 100 ? '#de350b' : pct >= 80 ? '#ff991f' : '#00875a'};width:${pct}%;"></div>
+               <div style="height:6px;border-radius:3px;background:${pct >= 100 ? C.expTxt : pct >= 80 ? (dk ? '#E0A850' : '#ff991f') : C.incTxt};width:${pct}%;"></div>
              </div>` : '';
         return `<tr>
           <td style="padding:8px 10px; color:${C.ink};">${c}</td>
@@ -218,12 +218,23 @@ function exportReportAsPDF() {
   const budgets = (window.budgets && window.budgets[key]) ? window.budgets[key] : {};
   const totalBudget = Object.values(budgets).reduce((s, v) => s + (+v || 0), 0);
 
+  // ── Token warna sesuai tema (PDF export) ──
+  const dk2 = document.documentElement.getAttribute('data-theme') === 'dark';
+  const CPDF = {
+    bg:     dk2 ? '#161616' : '#ffffff',
+    rowAlt: dk2 ? '#1E1E1B' : '#f9f9f9',
+    barBg:  dk2 ? '#333330' : '#eeeeee',
+    incTxt: dk2 ? '#4ADE80' : '#006644',
+    expTxt: dk2 ? '#F87171' : '#de350b',
+    warnTxt:dk2 ? '#E0A850' : '#ff991f',
+  };
+
   // ── Sorted transactions ──────────────────────────────────
   const sorted = allTx.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
 
   // ── Row helpers ──────────────────────────────────────────
   const txRows = sorted.map((t, i) => `
-    <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f9f9f9'};">
+    <tr style="background:${i % 2 === 0 ? CPDF.bg : CPDF.rowAlt};">
       <td class="center">${i + 1}</td>
       <td>${fmtDate(t.date)}</td>
       <td>${t.category || (t.type === 'income' ? 'Pemasukan' : 'Lainnya')}</td>
@@ -235,7 +246,7 @@ function exportReportAsPDF() {
   const catRows = cats.map(([ c, v ]) => {
     const bud = budgets[c] || 0;
     const pct = bud > 0 ? Math.min(100, Math.round(v / bud * 100)) : null;
-    const barColor = pct === null ? '#ccc' : pct >= 100 ? '#de350b' : pct >= 80 ? '#ff991f' : '#00875a';
+    const barColor = pct === null ? CPDF.barBg : pct >= 100 ? CPDF.expTxt : pct >= 80 ? CPDF.warnTxt : CPDF.incTxt;
     return `
       <tr>
         <td>${c}</td>
@@ -243,7 +254,7 @@ function exportReportAsPDF() {
         <td class="money">${bud > 0 ? fmtRp(bud) : '—'}</td>
         <td class="center">${bud > 0 ? `${pct}%` : '—'}</td>
         <td style="padding:5.5px 6px;">
-          ${bud > 0 ? `<div style="height:7px;border-radius:4px;background:#eee;">
+          ${bud > 0 ? `<div style="height:7px;border-radius:4px;background:${CPDF.barBg};">
             <div style="height:7px;border-radius:4px;background:${barColor};width:${pct}%;"></div>
           </div>` : ''}
         </td>

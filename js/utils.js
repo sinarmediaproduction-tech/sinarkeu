@@ -43,10 +43,10 @@ window.showToast = function(msg, type = 'success') {
     const toast = document.getElementById('toastMessage');
     const icon = document.getElementById('toastIcon');
     const text = document.getElementById('toastText');
-    if (type === 'success') { icon.innerHTML = ''; toast.style.background = '#00875a'; }
-    else if (type === 'error') { icon.innerHTML = ''; toast.style.background = '#de350b'; }
-    else if (type === 'warning') { icon.innerHTML = ''; toast.style.background = '#cc7b00'; }
-    else { icon.innerHTML = 'ℹ'; toast.style.background = '#1a1a1a'; }
+    if (type === 'success') { icon.innerHTML = ''; toast.style.background = 'var(--success)'; }
+    else if (type === 'error') { icon.innerHTML = ''; toast.style.background = 'var(--danger)'; }
+    else if (type === 'warning') { icon.innerHTML = ''; toast.style.background = 'var(--warning)'; }
+    else { icon.innerHTML = 'ℹ'; toast.style.background = 'var(--ink)'; }
     text.innerText = msg;
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 3000);
