@@ -227,13 +227,29 @@ window.updateFinancialCards = function() {
 
     // Warna peringatan card Kebutuhan Setahun
     const cardKS = document.getElementById('cardKebutuhanSetahun');
+    const ksGapInfo = document.getElementById('fcKSGapInfo');
     if (cardKS) {
-        if (saldoAkhir < kebutuhanSetahun) {
+        const gap = saldoAkhir - kebutuhanSetahun;
+        if (gap < 0) {
             cardKS.style.borderTopColor = '#de350b';
             cardKS.style.background = _isDark ? '#2A0A0A' : '#fff5f5';
+            if (ksGapInfo) {
+                ksGapInfo.style.display = 'block';
+                ksGapInfo.style.background = _isDark ? '#3D1010' : '#ffe9e9';
+                ksGapInfo.style.color = '#de350b';
+                ksGapInfo.innerHTML = `\u26A0 Kurang <b>${window.rp ? window.rp(Math.abs(gap)) : Math.abs(gap)}</b> untuk kategori <b>Aman</b>`;
+            }
         } else {
             cardKS.style.borderTopColor = '#d69e2e';
             cardKS.style.background = _isDark ? '#161616' : '';
+            if (ksGapInfo) {
+                ksGapInfo.style.display = 'block';
+                ksGapInfo.style.background = _isDark ? '#0D2B1A' : '#e6f9f0';
+                ksGapInfo.style.color = '#0F6E56';
+                ksGapInfo.innerHTML = gap === 0
+                    ? `\u2713 Saldo pas menutupi kebutuhan`
+                    : `\u2713 Surplus <b>${window.rp ? window.rp(gap) : gap}</b> \u2014 Keuangan Aman`;
+            }
         }
     }
 
