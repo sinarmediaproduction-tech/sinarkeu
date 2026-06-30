@@ -2058,14 +2058,19 @@ select.form-control option[value=""] {
 
 /* Inputs & selects */
 [data-theme="dark"] input,
-[data-theme="dark"] select,
 [data-theme="dark"] textarea {
-  background: var(--paper);
+  background-color: var(--paper);
+  color: var(--ink);
+  border-color: var(--rule);
+}
+/* Select dipisah agar background-image SVG panah tidak ikut ter-reset */
+[data-theme="dark"] select {
+  background-color: var(--paper);
   color: var(--ink);
   border-color: var(--rule);
 }
 [data-theme="dark"] input::placeholder { color: var(--ink-faint); }
-[data-theme="dark"] .form-control { background: var(--paper); color: var(--ink); border-color: var(--rule); }
+[data-theme="dark"] .form-control { background-color: var(--paper); color: var(--ink); border-color: var(--rule); }
 [data-theme="dark"] .form-control:focus { border-color: var(--ink); }
 
 /* Modal */
