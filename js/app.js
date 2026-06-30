@@ -357,6 +357,13 @@ window.toggleDarkMode = function() {
     window.applyTheme(newDark);
     // Re-render cards yang backgroundnya di-set via JS agar warna ikut update
     if (typeof window.renderBudget === 'function') window.renderBudget();
+    if (typeof window.updateFinancialCards === 'function') window.updateFinancialCards();
+    if (typeof window.updatePaymentReminderBanner === 'function') window.updatePaymentReminderBanner();
+    // Jika modal pengingat sedang terbuka, render ulang list-nya juga
+    var prModal = document.getElementById('paymentReminderModal');
+    if (prModal && prModal.classList.contains('open')) {
+        if (typeof window.renderPaymentReminders === 'function') window.renderPaymentReminders();
+    }
 };
 
 // Apply on load (sebelum render apapun untuk menghindari flash)
