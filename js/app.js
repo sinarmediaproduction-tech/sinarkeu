@@ -364,6 +364,12 @@ window.toggleDarkMode = function() {
     if (prModal && prModal.classList.contains('open')) {
         if (typeof window.renderPaymentReminders === 'function') window.renderPaymentReminders();
     }
+    // Jika modal laporan sedang terbuka dan sudah ada konten, generate ulang
+    var repModal = document.getElementById('monthlyReportModal');
+    var repContent = document.getElementById('reportContent');
+    if (repModal && repModal.classList.contains('open') && repContent && repContent.querySelector('table')) {
+        if (typeof generateMonthlyReport === 'function') generateMonthlyReport();
+    }
 };
 
 // Apply on load (sebelum render apapun untuk menghindari flash)

@@ -61,71 +61,96 @@ function generateMonthlyReport() {
   const bookName = _book ? _book.name : 'Buku Kas';
   const accName  = document.getElementById('activeAccountLabel')?.textContent || '';
 
+  // ── Token warna sesuai tema ──
+  const dk = document.documentElement.getAttribute('data-theme') === 'dark';
+  const C = {
+    bg:         dk ? '#161616' : '#ffffff',
+    ink:        dk ? '#E8E8E2' : '#1a1a1a',
+    inkMuted:   dk ? '#8A8A80' : '#555555',
+    inkFaint:   dk ? '#6A6A60' : '#888888',
+    rule:       dk ? '#2E2E2A' : '#e0e0e0',
+    rowAlt:     dk ? '#1E1E1B' : '#fafafa',
+    thead:      dk ? '#222220' : '#f5f5f5',
+    barBg:      dk ? '#333330' : '#eeeeee',
+    incBg:      dk ? '#0A2E1A' : '#e3fcef',
+    incBd:      dk ? '#1A5C38' : '#57d9a3',
+    incTxt:     dk ? '#4ADE80' : '#006644',
+    expBg:      dk ? '#2E0A0A' : '#fff0f0',
+    expBd:      dk ? '#7A2020' : '#ff8f73',
+    expTxt:     dk ? '#F87171' : '#bf2600',
+    balPosBg:   dk ? '#0A1A3A' : '#e8f0fe',
+    balPosBd:   dk ? '#2A4A8A' : '#4a86e8',
+    balPosTxt:  dk ? '#93C5FD' : '#174ea6',
+    budgetBg:   dk ? '#2A1E00' : '#fffbe6',
+    budgetBd:   dk ? '#7A5A00' : '#ffe58f',
+    budgetTxt:  dk ? '#FCD34D' : '#874d00',
+  };
+
   let catRows = cats.length
     ? cats.map(([c, v]) => {
         const budget = budgets[c] || 0;
         const pct    = budget > 0 ? Math.min(100, Math.round(v / budget * 100)) : null;
         const bar    = budget > 0
-          ? `<div style="height:6px;border-radius:3px;background:#eee;margin-top:3px;">
+          ? `<div style="height:6px;border-radius:3px;background:${C.barBg};margin-top:3px;">
                <div style="height:6px;border-radius:3px;background:${pct >= 100 ? '#de350b' : pct >= 80 ? '#ff991f' : '#00875a'};width:${pct}%;"></div>
              </div>` : '';
         return `<tr>
-          <td style="padding:8px 10px;">${c}</td>
-          <td style="padding:8px 10px; text-align:right;">${fmtRp(v)}</td>
-          <td style="padding:8px 10px; text-align:right; color:#888;">${budget > 0 ? fmtRp(budget) : '—'}</td>
-          <td style="padding:8px 10px; width:100px;">${budget > 0 ? `${pct}%${bar}` : '—'}</td>
+          <td style="padding:8px 10px; color:${C.ink};">${c}</td>
+          <td style="padding:8px 10px; text-align:right; color:${C.ink};">${fmtRp(v)}</td>
+          <td style="padding:8px 10px; text-align:right; color:${C.inkFaint};">${budget > 0 ? fmtRp(budget) : '—'}</td>
+          <td style="padding:8px 10px; width:100px; color:${C.ink};">${budget > 0 ? `${pct}%${bar}` : '—'}</td>
         </tr>`;
       }).join('')
-    : `<tr><td colspan="4" style="padding:16px; text-align:center; color:#aaa;">Tidak ada pengeluaran</td></tr>`;
+    : `<tr><td colspan="4" style="padding:16px; text-align:center; color:${C.inkFaint};">Tidak ada pengeluaran</td></tr>`;
 
   document.getElementById('reportContent').innerHTML = `
-    <div style="font-family:'Inter',sans-serif; color:#1a1a1a;">
+    <div style="font-family:'Inter',sans-serif; color:${C.ink}; background:${C.bg};">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
         <div>
-          <div style="font-size:.75rem; color:#888;">${accName} · ${bookName}</div>
-          <div style="font-size:1.05rem; font-weight:700;">${monthName(month)} ${year}</div>
+          <div style="font-size:.75rem; color:${C.inkFaint};">${accName} · ${bookName}</div>
+          <div style="font-size:1.05rem; font-weight:700; color:${C.ink};">${monthName(month)} ${year}</div>
         </div>
-        <div style="font-size:.7rem; color:#aaa;">Dibuat: ${nowStr()}</div>
+        <div style="font-size:.7rem; color:${C.inkFaint};">Dibuat: ${nowStr()}</div>
       </div>
 
       <!-- Summary cards -->
       <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px;">
-        <div style="background:#e3fcef; border:1.5px solid #57d9a3; border-radius:10px; padding:14px 16px;">
-          <div style="font-size:.65rem; color:#006644; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Total Pemasukan</div>
-          <div style="font-size:1rem; font-weight:700; color:#006644; margin-top:4px;">${fmtRp(income)}</div>
+        <div style="background:${C.incBg}; border:1.5px solid ${C.incBd}; border-radius:10px; padding:14px 16px;">
+          <div style="font-size:.65rem; color:${C.incTxt}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Total Pemasukan</div>
+          <div style="font-size:1rem; font-weight:700; color:${C.incTxt}; margin-top:4px;">${fmtRp(income)}</div>
         </div>
-        <div style="background:#fff0f0; border:1.5px solid #ff8f73; border-radius:10px; padding:14px 16px;">
-          <div style="font-size:.65rem; color:#bf2600; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Total Pengeluaran</div>
-          <div style="font-size:1rem; font-weight:700; color:#bf2600; margin-top:4px;">${fmtRp(expense)}</div>
+        <div style="background:${C.expBg}; border:1.5px solid ${C.expBd}; border-radius:10px; padding:14px 16px;">
+          <div style="font-size:.65rem; color:${C.expTxt}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Total Pengeluaran</div>
+          <div style="font-size:1rem; font-weight:700; color:${C.expTxt}; margin-top:4px;">${fmtRp(expense)}</div>
         </div>
-        <div style="background:${balance >= 0 ? '#e8f0fe' : '#fff0f0'}; border:1.5px solid ${balance >= 0 ? '#4a86e8' : '#ff8f73'}; border-radius:10px; padding:14px 16px;">
-          <div style="font-size:.65rem; color:${balance >= 0 ? '#174ea6' : '#bf2600'}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Saldo Bersih</div>
-          <div style="font-size:1rem; font-weight:700; color:${balance >= 0 ? '#174ea6' : '#bf2600'}; margin-top:4px;">${fmtRp(balance)}</div>
+        <div style="background:${balance >= 0 ? C.balPosBg : C.expBg}; border:1.5px solid ${balance >= 0 ? C.balPosBd : C.expBd}; border-radius:10px; padding:14px 16px;">
+          <div style="font-size:.65rem; color:${balance >= 0 ? C.balPosTxt : C.expTxt}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Saldo Bersih</div>
+          <div style="font-size:1rem; font-weight:700; color:${balance >= 0 ? C.balPosTxt : C.expTxt}; margin-top:4px;">${fmtRp(balance)}</div>
         </div>
       </div>
 
       ${totalBudget > 0 ? `
-      <div style="background:#fffbe6; border:1.5px solid #ffe58f; border-radius:10px; padding:12px 16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+      <div style="background:${C.budgetBg}; border:1.5px solid ${C.budgetBd}; border-radius:10px; padding:12px 16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
         <div>
-          <div style="font-size:.65rem; color:#874d00; font-weight:600;">Total Anggaran Bulan Ini</div>
-          <div style="font-size:.95rem; font-weight:700; color:#874d00;">${fmtRp(totalBudget)}</div>
+          <div style="font-size:.65rem; color:${C.budgetTxt}; font-weight:600;">Total Anggaran Bulan Ini</div>
+          <div style="font-size:.95rem; font-weight:700; color:${C.budgetTxt};">${fmtRp(totalBudget)}</div>
         </div>
         <div style="text-align:right;">
-          <div style="font-size:.65rem; color:#874d00; font-weight:600;">Sisa Anggaran</div>
-          <div style="font-size:.95rem; font-weight:700; color:${totalBudget - expense >= 0 ? '#006644' : '#bf2600'};">${fmtRp(totalBudget - expense)}</div>
+          <div style="font-size:.65rem; color:${C.budgetTxt}; font-weight:600;">Sisa Anggaran</div>
+          <div style="font-size:.95rem; font-weight:700; color:${totalBudget - expense >= 0 ? C.incTxt : C.expTxt};">${fmtRp(totalBudget - expense)}</div>
         </div>
       </div>` : ''}
 
       <!-- Kategori -->
-      <div style="font-size:.78rem; font-weight:700; margin-bottom:8px; color:#555; text-transform:uppercase; letter-spacing:.5px;">Pengeluaran per Kategori</div>
-      <div style="border:1.5px solid #e0e0e0; border-radius:10px; overflow:hidden; margin-bottom:20px;">
+      <div style="font-size:.78rem; font-weight:700; margin-bottom:8px; color:${C.inkMuted}; text-transform:uppercase; letter-spacing:.5px;">Pengeluaran per Kategori</div>
+      <div style="border:1.5px solid ${C.rule}; border-radius:10px; overflow:hidden; margin-bottom:20px;">
         <table style="width:100%; border-collapse:collapse; font-size:.78rem;">
           <thead>
-            <tr style="background:#f5f5f5; text-align:left;">
-              <th style="padding:8px 10px; font-weight:600;">Kategori</th>
-              <th style="padding:8px 10px; font-weight:600; text-align:right;">Realisasi</th>
-              <th style="padding:8px 10px; font-weight:600; text-align:right;">Anggaran</th>
-              <th style="padding:8px 10px; font-weight:600;">Progress</th>
+            <tr style="background:${C.thead}; text-align:left;">
+              <th style="padding:8px 10px; font-weight:600; color:${C.inkMuted};">Kategori</th>
+              <th style="padding:8px 10px; font-weight:600; text-align:right; color:${C.inkMuted};">Realisasi</th>
+              <th style="padding:8px 10px; font-weight:600; text-align:right; color:${C.inkMuted};">Anggaran</th>
+              <th style="padding:8px 10px; font-weight:600; color:${C.inkMuted};">Progress</th>
             </tr>
           </thead>
           <tbody>${catRows}</tbody>
@@ -133,31 +158,31 @@ function generateMonthlyReport() {
       </div>
 
       <!-- Daftar transaksi -->
-      <div style="font-size:.78rem; font-weight:700; margin-bottom:8px; color:#555; text-transform:uppercase; letter-spacing:.5px;">Daftar Transaksi (${allTx.length} transaksi)</div>
-      <div style="border:1.5px solid #e0e0e0; border-radius:10px; overflow:hidden;">
+      <div style="font-size:.78rem; font-weight:700; margin-bottom:8px; color:${C.inkMuted}; text-transform:uppercase; letter-spacing:.5px;">Daftar Transaksi (${allTx.length} transaksi)</div>
+      <div style="border:1.5px solid ${C.rule}; border-radius:10px; overflow:hidden;">
         <table style="width:100%; border-collapse:collapse; font-size:.75rem;">
           <thead>
-            <tr style="background:#f5f5f5;">
-              <th style="padding:8px 10px; text-align:left; font-weight:600;">Tanggal</th>
-              <th style="padding:8px 10px; text-align:left; font-weight:600;">Kategori</th>
-              <th style="padding:8px 10px; text-align:left; font-weight:600;">Deskripsi</th>
-              <th style="padding:8px 10px; text-align:right; font-weight:600;">Jumlah</th>
+            <tr style="background:${C.thead};">
+              <th style="padding:8px 10px; text-align:left; font-weight:600; color:${C.inkMuted};">Tanggal</th>
+              <th style="padding:8px 10px; text-align:left; font-weight:600; color:${C.inkMuted};">Kategori</th>
+              <th style="padding:8px 10px; text-align:left; font-weight:600; color:${C.inkMuted};">Deskripsi</th>
+              <th style="padding:8px 10px; text-align:right; font-weight:600; color:${C.inkMuted};">Jumlah</th>
             </tr>
           </thead>
           <tbody>
             ${allTx.length
               ? allTx.slice().sort((a, b) => new Date(a.date) - new Date(b.date))
                   .map((t, i) => `
-                    <tr style="background:${i % 2 === 0 ? '#fff' : '#fafafa'}; border-top:1px solid #f0f0f0;">
-                      <td style="padding:7px 10px; white-space:nowrap;">${fmtDate(t.date)}</td>
-                      <td style="padding:7px 10px;">${t.category || (t.type === 'income' ? 'Pemasukan' : 'Lainnya')}</td>
-                      <td style="padding:7px 10px; color:#444;">${t.description || '-'}</td>
-                      <td style="padding:7px 10px; text-align:right; font-weight:600; color:${t.type === 'income' ? '#006644' : '#bf2600'};">
+                    <tr style="background:${i % 2 === 0 ? C.bg : C.rowAlt}; border-top:1px solid ${C.rule};">
+                      <td style="padding:7px 10px; white-space:nowrap; color:${C.ink};">${fmtDate(t.date)}</td>
+                      <td style="padding:7px 10px; color:${C.ink};">${t.category || (t.type === 'income' ? 'Pemasukan' : 'Lainnya')}</td>
+                      <td style="padding:7px 10px; color:${C.inkMuted};">${t.description || '-'}</td>
+                      <td style="padding:7px 10px; text-align:right; font-weight:600; color:${t.type === 'income' ? C.incTxt : C.expTxt};">
                         ${t.type === 'income' ? '+' : '-'}${fmtRp(t.amount)}
                       </td>
                     </tr>`)
                   .join('')
-              : `<tr><td colspan="4" style="padding:16px; text-align:center; color:#aaa;">Tidak ada transaksi</td></tr>`
+              : `<tr><td colspan="4" style="padding:16px; text-align:center; color:${C.inkFaint};">Tidak ada transaksi</td></tr>`
             }
           </tbody>
         </table>
