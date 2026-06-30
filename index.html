@@ -219,11 +219,31 @@ create index if not exists idx_pr_tag  on public.payment_reminders (account_tag)
 
 grant select, insert, update, delete on public.payment_reminders to anon, authenticated;
 
+-- ── 6. STORAGE BUCKET: attachments ──────────────────────────
+-- Untuk fitur lampiran foto nota pada transaksi. Foto diunggah
+-- ke bucket ini lalu URL-nya disimpan di kolom attachment pada
+-- tabel transactions. Jika bucket tidak ada, aplikasi tetap
+-- berjalan (fallback ke base64) tapi foto tidak tersimpan di
+-- Storage.
+insert into storage.buckets (id, name, public)
+values ('attachments', 'attachments', true)
+on conflict (id) do nothing;
+
+-- Izinkan anon mengunggah foto nota
+create policy if not exists "anon upload attachments"
+on storage.objects for insert to anon
+with check (bucket_id = 'attachments');
+
+-- Izinkan siapa saja membaca foto nota (public bucket)
+create policy if not exists "public read attachments"
+on storage.objects for select to anon
+using (bucket_id = 'attachments');
+
 -- ============================================================
 -- SELESAI. Lima tabel (transactions, settings, audit_logs,
--- backups, payment_reminders) sudah siap dan langsung bisa
--- diakses lewat anon key — tidak perlu langkah manual lain di
--- dashboard Supabase.
+-- backups, payment_reminders) + 1 Storage bucket (attachments)
+-- sudah siap dan langsung bisa diakses lewat anon key —
+-- tidak perlu langkah manual lain di dashboard Supabase.
 -- ============================================================</pre>
             </div>
             <p style="color:#888; font-size:.7rem;">Catatan: skrip ini sengaja <strong>tidak</strong> mengaktifkan Row Level Security (RLS) karena aplikasi ini tidak memakai Supabase Auth — keamanan data mengandalkan enkripsi AES‑GCM di sisi browser dengan password akun Anda, bukan policy RLS. Jaga URL &amp; Anon Key project agar tidak tersebar ke publik.</p>
