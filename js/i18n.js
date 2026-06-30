@@ -73,7 +73,7 @@
             monthly_budget: 'Anggaran Bulanan',
             annual_budget: 'Anggaran Tahunan',
             emergency_fund: 'Dana Darurat',
-            annual_needs: 'Kebutuhan Setahun',
+            annual_needs: 'Cadangan Wajib',
             life_phase: 'Fase Kehidupan',
             mutual_fund: 'Dana Saling Jaga',
             monthly_template: 'Template per kategori, berlaku tiap bulan',
@@ -257,7 +257,7 @@
 
             // === RENDER / UI ===
             emergency_insufficient: 'Saldo belum cukup untuk dana darurat',
-            emergency_50pct: '50% dari saldo setelah kebutuhan setahun',
+            emergency_50pct: '50% dari saldo setelah cadangan wajib',
             life_phase_not_set: 'Belum diatur',
             life_phase_click: 'Klik untuk mengatur fase kehidupan pernikahan Anda',
             ai_analysis_btn: 'Analisis AI',
@@ -387,7 +387,7 @@
             monthly_budget: 'Monthly Budget',
             annual_budget: 'Annual Budget',
             emergency_fund: 'Emergency Fund',
-            annual_needs: 'Annual Needs',
+            annual_needs: 'Mandatory Reserve',
             life_phase: 'Life Phase',
             mutual_fund: 'Mutual Fund',
             monthly_template: 'Template per category, applies each month',
@@ -571,7 +571,7 @@
 
             // === RENDER / UI ===
             emergency_insufficient: 'Balance is not enough for emergency fund',
-            emergency_50pct: '50% of balance after annual needs',
+            emergency_50pct: '50% of balance after mandatory reserve',
             life_phase_not_set: 'Not set',
             life_phase_click: 'Click to set your life phase',
             ai_analysis_btn: 'AI Analysis',
