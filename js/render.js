@@ -198,19 +198,18 @@ window.updateFinancialCards = function() {
     const danaSalingJaga = sisaSetelahDarurat > 0 ? sisaSetelahDarurat * 0.5 : 0;
 
     // Update DOM
+    const _isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const set = (id, val) => window.animateValue(id, val, 500);
     set('fcAnggaranBulanan', anggaranBulanan);
     set('fcAnggaranTahunan', anggaranTahunan);
     set('fcDanaDarurat', danaDarurat);
     const efNote = document.getElementById('fcDanaDaruratNote');
     if (efNote) efNote.innerText = `${efMonths}× anggaran bulanan (target ideal)`;
-    set('fcKebutuhanSetahun', kebutuhanSetahun);
     set('fcDanaSalingJaga', danaSalingJaga);
 
     // Warna peringatan card Dana Saling Jaga
     const cardDSJ = document.getElementById('cardDanaSalingJaga');
     const note = document.getElementById('fcDSJNote');
-    const _isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     if (cardDSJ && note) {
         if (sisaSetelahDarurat <= 0) {
             cardDSJ.style.borderTopColor = '#de350b';
@@ -225,33 +224,34 @@ window.updateFinancialCards = function() {
         }
     }
 
-    // Warna peringatan card Kebutuhan Setahun
+    // Warna & gap info card Kebutuhan Setahun — update setelah animasi selesai
     const cardKS = document.getElementById('cardKebutuhanSetahun');
     const ksGapInfo = document.getElementById('fcKSGapInfo');
+    const gap = saldoAkhir - kebutuhanSetahun;
+    // Set border/bg dulu berdasarkan nilai final (tidak ikut animasi)
     if (cardKS) {
-        const gap = saldoAkhir - kebutuhanSetahun;
-        if (gap < 0) {
-            cardKS.style.borderTopColor = '#de350b';
-            cardKS.style.background = _isDark ? '#2A0A0A' : '#fff5f5';
-            if (ksGapInfo) {
-                ksGapInfo.style.display = 'block';
-                ksGapInfo.style.background = _isDark ? '#3D1010' : '#ffe9e9';
-                ksGapInfo.style.color = '#de350b';
-                ksGapInfo.innerHTML = `\u26A0 Kurang <b>${window.rp ? window.rp(Math.abs(gap)) : Math.abs(gap)}</b> untuk kategori <b>Aman</b>`;
-            }
-        } else {
-            cardKS.style.borderTopColor = '#d69e2e';
-            cardKS.style.background = _isDark ? '#161616' : '';
-            if (ksGapInfo) {
-                ksGapInfo.style.display = 'block';
-                ksGapInfo.style.background = _isDark ? '#0D2B1A' : '#e6f9f0';
-                ksGapInfo.style.color = '#0F6E56';
-                ksGapInfo.innerHTML = gap === 0
-                    ? `\u2713 Saldo pas menutupi kebutuhan`
-                    : `\u2713 Surplus <b>${window.rp ? window.rp(gap) : gap}</b> \u2014 Keuangan Aman`;
-            }
-        }
+        cardKS.style.borderTopColor = gap < 0 ? '#de350b' : '#d69e2e';
+        cardKS.style.background = gap < 0
+            ? (_isDark ? '#2A0A0A' : '#fff5f5')
+            : (_isDark ? '#161616' : '');
     }
+    // Sembunyikan gap info selama animasi berjalan, tampilkan setelah selesai
+    if (ksGapInfo) ksGapInfo.style.display = 'none';
+    window.animateValue('fcKebutuhanSetahun', kebutuhanSetahun, 500, function() {
+        if (!ksGapInfo) return;
+        ksGapInfo.style.display = 'block';
+        if (gap < 0) {
+            ksGapInfo.style.background = _isDark ? '#3D1010' : '#ffe9e9';
+            ksGapInfo.style.color = '#de350b';
+            ksGapInfo.innerHTML = `\u26A0 Kurang <b>${window.rp ? window.rp(Math.abs(gap)) : Math.abs(gap)}</b> untuk kategori <b>Aman</b>`;
+        } else {
+            ksGapInfo.style.background = _isDark ? '#0D2B1A' : '#e6f9f0';
+            ksGapInfo.style.color = '#0F6E56';
+            ksGapInfo.innerHTML = gap === 0
+                ? `\u2713 Saldo pas menutupi kebutuhan`
+                : `\u2713 Surplus <b>${window.rp ? window.rp(gap) : gap}</b> \u2014 Keuangan Aman`;
+        }
+    });
 
     // Update card fase kehidupan
     if (typeof window.updateFaseCard === 'function') window.updateFaseCard();

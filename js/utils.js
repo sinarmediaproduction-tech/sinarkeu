@@ -122,12 +122,12 @@ window.copySupabaseSetupSql = function() {
 };
 
 // Animasi angka dari nilai lama ke nilai baru dengan easing
-window.animateValue = function(id, toVal, duration) {
+window.animateValue = function(id, toVal, duration, onComplete) {
     const el = document.getElementById(id);
     if (!el) return;
     duration = duration || 500;
     const fromVal = window.unRp(el.innerText) || 0;
-    if (fromVal === toVal) { el.innerText = window.rp(toVal); return; }
+    if (fromVal === toVal) { el.innerText = window.rp(toVal); if (onComplete) onComplete(); return; }
     const startTime = performance.now();
     // easeOutQuart
     function ease(t) { return 1 - Math.pow(1 - t, 4); }
@@ -137,6 +137,7 @@ window.animateValue = function(id, toVal, duration) {
         const current = Math.round(fromVal + (toVal - fromVal) * ease(progress));
         el.innerText = window.rp(current);
         if (progress < 1) requestAnimationFrame(step);
+        else if (onComplete) onComplete();
     }
     requestAnimationFrame(step);
 };
