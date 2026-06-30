@@ -198,7 +198,6 @@ window.updateFinancialCards = function() {
     const danaSalingJaga = sisaSetelahDarurat > 0 ? sisaSetelahDarurat * 0.5 : 0;
 
     // Update DOM
-    const _isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const set = (id, val) => window.animateValue(id, val, 500);
     set('fcAnggaranBulanan', anggaranBulanan);
     set('fcAnggaranTahunan', anggaranTahunan);
@@ -213,7 +212,7 @@ window.updateFinancialCards = function() {
     if (cardDSJ && note) {
         if (sisaSetelahDarurat <= 0) {
             cardDSJ.style.borderTopColor = 'var(--danger)';
-            cardDSJ.style.background = _isDark ? 'var(--danger-lt)' : 'var(--danger-lt)';
+            cardDSJ.style.background = 'var(--danger-lt)';
             note.innerText = window.t('emergency_insufficient');
             note.style.color = 'var(--danger)';
         } else {

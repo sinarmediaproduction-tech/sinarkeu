@@ -241,8 +241,6 @@ window.renderPaymentReminders = async function() {
     const upcomingAlert = document.getElementById('prUpcomingAlert');
     if (!container) return;
     
-    const _isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-
     if (list.length === 0) {
         container.innerHTML = '<div id="prEmptyMsg" style="font-size:.72rem; color:var(--ink-faint); text-align:center; padding:18px 0;">Belum ada jadwal pembayaran. Tambahkan di bawah.</div>';
         if (upcomingAlert) upcomingAlert.style.display = 'none';
@@ -391,8 +389,6 @@ window.updatePaymentReminderBanner = function(list) {
     const badge = document.getElementById('reminderBadge');
     const drawerBadge = document.getElementById('drawerReminderBadge');
     
-    const _isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-
     if (urgent.length > 0) {
         if (banner) {
             banner.style.display = 'block';
