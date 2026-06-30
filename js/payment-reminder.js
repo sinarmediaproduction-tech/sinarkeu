@@ -241,6 +241,8 @@ window.renderPaymentReminders = async function() {
     const upcomingAlert = document.getElementById('prUpcomingAlert');
     if (!container) return;
     
+    const _isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
     if (list.length === 0) {
         container.innerHTML = '<div id="prEmptyMsg" style="font-size:.72rem; color:#aaa; text-align:center; padding:18px 0;">Belum ada jadwal pembayaran. Tambahkan di bawah.</div>';
         if (upcomingAlert) upcomingAlert.style.display = 'none';
@@ -254,6 +256,9 @@ window.renderPaymentReminders = async function() {
     const urgent = sorted.filter(s => s.days <= 3);
     if (urgent.length > 0 && upcomingAlert) {
         upcomingAlert.style.display = 'block';
+        upcomingAlert.style.background = _isDark ? '#2D1F00' : '#fef3c7';
+        upcomingAlert.style.border = `1.5px solid ${_isDark ? '#b45309' : '#f59e0b'}`;
+        upcomingAlert.style.color = _isDark ? '#fcd34d' : '#92400e';
         upcomingAlert.innerHTML = '<strong>Segera jatuh tempo:</strong><br>' +
             urgent.map(s => {
                 const label = s.days === 0 ? 'Hari ini!' : `${s.days} hari lagi`;
@@ -271,17 +276,25 @@ window.renderPaymentReminders = async function() {
             : `Tahunan — ${['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][item.month-1]} tgl ${item.day}`;
         const dayLabel = days === 0 ? 'Hari ini!' : `${days} hari lagi`;
         
+        const bgColor   = isUrgent ? (_isDark ? '#2D1F00' : '#fef3c7') : (_isDark ? '#1E1E1B' : '#f9fafb');
+        const bdColor   = isUrgent ? (_isDark ? '#b45309' : '#f59e0b') : (_isDark ? '#2E2E2A' : '#e5e7eb');
+        const nameColor = _isDark ? '#E8E8E2' : '#1a1a1a';
+        const metaColor = _isDark ? '#8A8A80' : '#666';
+        const noteColor = _isDark ? '#6A6A60' : '#888';
+        const dayColor  = isUrgent ? (_isDark ? '#fcd34d' : '#92400e') : (_isDark ? '#C8C8C0' : '#374151');
+        const btnBorder = _isDark ? '#3E3E3A' : '#d1d5db';
+        
         const el = document.createElement('div');
-        el.style.cssText = `display:flex; align-items:center; gap:10px; background:${isUrgent ? '#fef3c7' : '#f9fafb'}; border:1.5px solid ${isUrgent ? '#f59e0b' : '#e5e7eb'}; border-radius:8px; padding:10px 12px;`;
+        el.style.cssText = `display:flex; align-items:center; gap:10px; background:${bgColor}; border:1.5px solid ${bdColor}; border-radius:8px; padding:10px 12px;`;
         el.innerHTML = `
             <div style="flex:1; min-width:0;">
-                <div style="font-size:.8rem; font-weight:700; color:#1a1a1a;">${window.escapeHtml(item.name)}</div>
-                <div style="font-size:.68rem; color:#666; margin-top:2px;">${recLabel} &nbsp;·&nbsp; Berikutnya: ${window.formatNextDate(item)}</div>
-                ${item.note ? `<div style="font-size:.65rem; color:#888; margin-top:2px; font-style:italic;">${window.escapeHtml(item.note)}</div>` : ''}
+                <div style="font-size:.8rem; font-weight:700; color:${nameColor};">${window.escapeHtml(item.name)}</div>
+                <div style="font-size:.68rem; color:${metaColor}; margin-top:2px;">${recLabel} &nbsp;·&nbsp; Berikutnya: ${window.formatNextDate(item)}</div>
+                ${item.note ? `<div style="font-size:.65rem; color:${noteColor}; margin-top:2px; font-style:italic;">${window.escapeHtml(item.note)}</div>` : ''}
             </div>
-            <div style="font-size:.68rem; font-weight:700; white-space:nowrap; color:${isUrgent ? '#92400e' : '#374151'};">${dayLabel}</div>
+            <div style="font-size:.68rem; font-weight:700; white-space:nowrap; color:${dayColor};">${dayLabel}</div>
             <div style="display:flex; gap:4px;">
-                <button onclick="window.editPaymentReminder('${item.id}')" style="background:none; border:1px solid #d1d5db; border-radius:5px; padding:3px 7px; cursor:pointer; font-size:.7rem;" title="Edit">Edit</button>
+                <button onclick="window.editPaymentReminder('${item.id}')" style="background:none; border:1px solid ${btnBorder}; border-radius:5px; padding:3px 7px; cursor:pointer; font-size:.7rem; color:${metaColor};" title="Edit">Edit</button>
                 <button onclick="window.deletePaymentReminderHandler('${item.id}')" style="background:none; border:1px solid #fca5a5; border-radius:5px; padding:3px 7px; cursor:pointer; font-size:.7rem; color:#ef4444;" title="Hapus">Hapus</button>
             </div>
         `;
@@ -386,11 +399,19 @@ window.updatePaymentReminderBanner = function(list) {
     const badge = document.getElementById('reminderBadge');
     const drawerBadge = document.getElementById('drawerReminderBadge');
     
+    const _isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
     if (urgent.length > 0) {
         if (banner) {
             banner.style.display = 'block';
+            banner.style.background = _isDark ? '#2D1F00' : '#fef3c7';
+            banner.style.border = `1.5px solid ${_isDark ? '#b45309' : '#f59e0b'}`;
+            const titleEl = banner.querySelector('.pr-banner-title');
+            const textEl = banner.querySelector('.pr-banner-text');
+            if (titleEl) titleEl.style.color = _isDark ? '#fcd34d' : '#92400e';
+            if (textEl) textEl.style.color = _isDark ? '#fbbf24' : '#78350f';
             bannerText.innerHTML = urgent.map(s => {
-                const label = s.days === 0 ? '<strong style="color:#ef4444">Hari ini!</strong>' : `<strong>${s.days} hari lagi</strong>`;
+                const label = s.days === 0 ? `<strong style="color:#ef4444">Hari ini!</strong>` : `<strong>${s.days} hari lagi</strong>`;
                 return `<strong>${window.escapeHtml(s.item.name)}</strong> — ${window.formatNextDate(s.item)} · ${label}`;
             }).join('<br>');
         }

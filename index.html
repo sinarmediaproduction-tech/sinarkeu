@@ -371,12 +371,12 @@ grant select, insert, update, delete on public.payment_reminders to anon, authen
     </div>
 
     <!-- ===== PAYMENT REMINDER NOTIFICATION BANNER ===== -->
-    <div id="paymentReminderBanner" style="display:none; background:#fef3c7; border:1.5px solid #f59e0b; border-radius:10px; padding:12px 16px; margin-bottom:10px;">
+    <div id="paymentReminderBanner" class="pr-banner" style="display:none; border-radius:10px; padding:12px 16px; margin-bottom:10px;">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
             <div style="display:flex; align-items:center; gap:10px;">
                 <div>
-                    <div style="font-size:.78rem; font-weight:700; color:#92400e;" data-i18n="payment_reminder_banner">Pengingat Pembayaran</div>
-                    <div id="paymentReminderBannerText" style="font-size:.72rem; color:#78350f; line-height:1.6;"></div>
+                    <div class="pr-banner-title" style="font-size:.78rem; font-weight:700;" data-i18n="payment_reminder_banner">Pengingat Pembayaran</div>
+                    <div id="paymentReminderBannerText" class="pr-banner-text" style="font-size:.72rem; line-height:1.6;"></div>
                 </div>
             </div>
             <button onclick="openPaymentReminderModal()" style="font-size:.7rem; padding:5px 12px; background:#d97706; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; white-space:nowrap;" data-i18n="see_all">Lihat Semua</button>
@@ -1344,7 +1344,7 @@ grant select, insert, update, delete on public.payment_reminders to anon, authen
         <div style="padding:0 22px 16px;">
 
             <!-- Notif segera jatuh tempo -->
-            <div id="prUpcomingAlert" style="display:none; background:#fef3c7; border:1.5px solid #f59e0b; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:.75rem; color:#92400e; line-height:1.8;"></div>
+            <div id="prUpcomingAlert" class="pr-upcoming-alert" style="display:none; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:.75rem; line-height:1.8;"></div>
 
             <!-- Daftar pengingat aktif -->
             <div style="margin-bottom:14px;">
@@ -1355,7 +1355,7 @@ grant select, insert, update, delete on public.payment_reminders to anon, authen
             </div>
 
             <!-- Form tambah/edit -->
-            <div style="border-top:1.5px dashed #1a1a1a; padding-top:14px;">
+            <div class="pr-form-divider" style="padding-top:14px;">
                 <div style="font-size:.75rem; font-weight:700; margin-bottom:10px;" id="prFormTitle">＋ Tambah Jadwal Baru</div>
                 <input type="hidden" id="prEditId" value="">
                 <div class="form-group" style="margin-bottom:10px;">

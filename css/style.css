@@ -2466,3 +2466,35 @@ select.form-control option[value=""] {
 }
 [data-theme="dark"] .cs-option:hover,
 [data-theme="dark"] .cs-option.selected { background: var(--paper-warm); }
+
+/* ── PAYMENT REMINDER — Light mode defaults ── */
+.pr-banner {
+    background: #fef3c7;
+    border: 1.5px solid #f59e0b;
+}
+.pr-banner-title { color: #92400e; }
+.pr-banner-text  { color: #78350f; }
+.pr-upcoming-alert {
+    background: #fef3c7;
+    border: 1.5px solid #f59e0b;
+    color: #92400e;
+}
+.pr-form-divider {
+    border-top: 1.5px dashed #1a1a1a;
+}
+
+/* ── PAYMENT REMINDER — Dark mode overrides ── */
+[data-theme="dark"] .pr-banner {
+    background: #2D1F00;
+    border-color: #b45309;
+}
+[data-theme="dark"] .pr-banner-title { color: #fcd34d; }
+[data-theme="dark"] .pr-banner-text  { color: #fbbf24; }
+[data-theme="dark"] .pr-upcoming-alert {
+    background: #2D1F00;
+    border-color: #b45309;
+    color: #fcd34d;
+}
+[data-theme="dark"] .pr-form-divider {
+    border-top-color: #2E2E2A;
+}
