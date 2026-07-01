@@ -36,8 +36,11 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
 // Tag TIDAK dienkripsi (tidak perlu); nilai salt sendiri bukan rahasia —
 // yang rahasia adalah password yang dipakai untuk menurunkan AES key dari
 // salt itu.
-window.getAccountTag = function() {
-    const saltB64 = localStorage.getItem('sk_crypto_salt');
+// Diekstrak dari getAccountTag() supaya bisa dipakai untuk salt akun MANAPUN
+// (tidak harus akun aktif) -- dibutuhkan oleh verifikasi password-terbaru
+// saat unlock akun lain yang sedang terkunci (lihat submitAccountUnlock di
+// account.js).
+window._accountTagFromSalt = function(saltB64) {
     if (!saltB64) return null;
     // Ambil 6 byte pertama dari salt (sudah 16 byte random), encode base64url
     // tanpa padding -> 8 karakter yang URL-safe dan stabil selama salt tidak
@@ -48,6 +51,9 @@ window.getAccountTag = function() {
         const b64 = btoa(String.fromCharCode(...slice));
         return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
     } catch { return null; }
+};
+window.getAccountTag = function() {
+    return window._accountTagFromSalt(localStorage.getItem('sk_crypto_salt'));
 };
 
 // ==================== MULTI-DEVICE CRYPTO BOOTSTRAP ====================
@@ -71,9 +77,9 @@ window.pushCryptoSaltCheck = async function(saltB64, checkB64) {
     return result !== null;
 };
 
-window.pullCryptoSaltCheck = async function() {
+window.pullCryptoSaltCheck = async function(tagOverride) {
     if (!window.isOnline()) return null;
-    const tag = window.getAccountTag();
+    const tag = tagOverride !== undefined ? tagOverride : window.getAccountTag();
     // OR filter: ambil baris ber-tag milik akun ini ATAU baris lama tanpa tag.
     // Penting untuk bootstrap multi-device: baris crypto_salt/check lama (NULL)
     // harus bisa dibaca sebelum migrasi men-tag ulang baris tersebut.

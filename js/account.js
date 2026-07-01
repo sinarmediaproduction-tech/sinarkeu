@@ -103,12 +103,41 @@ window.submitAccountUnlock = async function() {
     const saltB64  = localStorage.getItem(saltKey);
     const checkEnc = localStorage.getItem(checkKey);
     if (!saltB64 || !checkEnc) { st.innerText = window.t('encryption_data_not_found'); return; }
+    let key;
     try {
         const salt  = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
-        const key   = await window.deriveKey(pwd, salt);
+        key = await window.deriveKey(pwd, salt);
         const plain = await window.decryptStr(key, checkEnc);
         if (plain !== 'sinarkeu_ok') throw new Error('wrong');
     } catch { st.innerText = window.t('lock_wrong_pwd') + ' Coba lagi.'; return; }
+
+    // ==== VERIFIKASI KE CLOUD: pastikan password akun ini masih yang terbaru ====
+    // Sama seperti unlockWithPassword() di crypto.js -- cache lokal akun ini
+    // bisa saja usang kalau password sudah diganti dari device lain.
+    if (window.isOnline()) {
+        try {
+            const url    = await window.decryptStr(key, localStorage.getItem(nsPrefix + 'enc_supabase_url'));
+            const apiKey = await window.decryptStr(key, localStorage.getItem(nsPrefix + 'enc_supabase_key'));
+            const tag    = window._accountTagFromSalt(saltB64);
+            const prevUrl = window.globalSupabaseUrl, prevKey = window.globalSupabaseKey;
+            window.globalSupabaseUrl = url;
+            window.globalSupabaseKey = apiKey;
+            const cloud = await window.pullCryptoSaltCheck(tag);
+            window.globalSupabaseUrl = prevUrl; window.globalSupabaseKey = prevKey;
+            if (cloud && cloud.check) {
+                let cloudPlain = null;
+                try { cloudPlain = await window.decryptStr(key, cloud.check); } catch { cloudPlain = null; }
+                if (cloudPlain !== 'sinarkeu_ok') {
+                    st.innerText = window.t('lock_wrong_pwd') + ' Coba lagi.';
+                    return;
+                }
+                if (cloud.check !== checkEnc) localStorage.setItem(checkKey, cloud.check);
+            }
+        } catch (e) {
+            console.warn('[MultiAccount] Gagal verifikasi password ke cloud, lanjut pakai cache lokal (mode offline-fallback):', e);
+        }
+    }
+
     sessionStorage.setItem('sk_acc_sess_' + accId, '1');
     // Simpan password sementara agar bisa di-XOR-obfuscate setelah _doSwitch()
     // me-restore URL sesi akun baru ke sessionStorage (terjadi setelah reload).

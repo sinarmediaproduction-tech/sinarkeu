@@ -46,10 +46,54 @@ window.unlockWithPassword = async function(password) {
         const plain = await window.decryptStr(key, localStorage.getItem('sk_crypto_check'));
         if (plain !== 'sinarkeu_ok') return false;
     } catch { return false; }
+    let url, apiKey;
     try {
-        window.globalSupabaseUrl = await window.decryptStr(key, localStorage.getItem('sk_enc_supabase_url'));
-        window.globalSupabaseKey = await window.decryptStr(key, localStorage.getItem('sk_enc_supabase_key'));
+        url = await window.decryptStr(key, localStorage.getItem('sk_enc_supabase_url'));
+        apiKey = await window.decryptStr(key, localStorage.getItem('sk_enc_supabase_key'));
     } catch { return false; }
+
+    // ==================== VERIFIKASI KE CLOUD (PASSWORD TERBARU) ====================
+    // Cache lokal (sk_crypto_check) di device ini bisa jadi sudah USANG kalau
+    // password sudah diganti dari device lain (rotatePasswordKeepingSalt hanya
+    // meng-overwrite crypto_check di CLOUD, tidak mendorong perubahan ke device
+    // lain -- lihat komentar di rotatePasswordKeepingSalt). Karena salt TIDAK
+    // pernah berubah saat ganti password, url/apiKey di atas tetap valid untuk
+    // dipakai menghubungi cloud yang sama walau password sudah lama.
+    //
+    // Begitu url berhasil didekripsi, langsung tanya ke cloud: crypto_check
+    // TERBARU yang mana? Kalau derived key dari password yang baru dimasukkan
+    // TIDAK cocok dengan crypto_check terbaru itu, berarti password ini sudah
+    // tidak berlaku lagi (sudah diganti dari device lain) -> tolak login,
+    // walau cache lokal device ini masih menganggapnya benar.
+    if (window.isOnline()) {
+        const prevUrl = window.globalSupabaseUrl, prevKey = window.globalSupabaseKey;
+        window.globalSupabaseUrl = url;
+        window.globalSupabaseKey = apiKey;
+        try {
+            const cloud = await window.pullCryptoSaltCheck();
+            if (cloud && cloud.check) {
+                let cloudPlain = null;
+                try { cloudPlain = await window.decryptStr(key, cloud.check); } catch { cloudPlain = null; }
+                if (cloudPlain !== 'sinarkeu_ok') {
+                    // Password sudah tidak sinkron dengan yang terbaru di cloud.
+                    window.globalSupabaseUrl = prevUrl; window.globalSupabaseKey = prevKey;
+                    return false;
+                }
+                // Sinkronkan cache lokal ke versi cloud terbaru supaya percobaan
+                // login berikutnya (termasuk saat offline) memakai nilai yang benar.
+                if (cloud.check !== localStorage.getItem('sk_crypto_check')) {
+                    localStorage.setItem('sk_crypto_check', cloud.check);
+                }
+            }
+            // cloud null (belum pernah push / baris tidak ditemukan) -> anggap
+            // device ini sumber kebenaran, lanjut pakai cache lokal seperti biasa.
+        } catch (e) {
+            console.warn('[Crypto] Gagal verifikasi password ke cloud, lanjut pakai cache lokal (mode offline-fallback):', e);
+        }
+    }
+
+    window.globalSupabaseUrl = url;
+    window.globalSupabaseKey = apiKey;
     window._sessionCryptoKey = key;
     sessionStorage.setItem('sk_session_unlocked', '1');
     sessionStorage.setItem('sk_session_url', window.globalSupabaseUrl);
