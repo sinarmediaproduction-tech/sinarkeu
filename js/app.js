@@ -329,6 +329,7 @@ window.addEventListener('DOMContentLoaded', () => {
     window.initApp();
     window.fetchForexRate();
     setTimeout(window.fetchGoldPrice, 1500);
+    window.updateEmasQuotaDisplay();
 });
 
 // ==================== DARK MODE ====================

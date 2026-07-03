@@ -431,7 +431,10 @@ using (bucket_id = 'attachments');
         <div class="stat-card" id="goldCard" style="border-color:#b7791f;">
             <div class="stat-label" style="color:#b7791f;" data-i18n="gold_per_gram">Emas / gram</div>
             <div class="stat-value" id="goldPrice" style="color:#b7791f; font-size:1.333rem;">Memuat...</div>
-            <div style="font-size:.6rem; color:#999; margin-top:4px;" id="goldSource"></div>
+            <div style="font-size:.6rem; color:#999; margin-top:4px;">
+                <span id="goldSource"></span>
+                <span id="goldRefreshBtn" onclick="window.fetchGoldPrice(true)" title="Perbarui sekarang (memakai kuota API)" style="cursor:pointer; color:#b7791f; margin-left:4px; display:none;">⟳</span>
+            </div>
             <div id="goldValueRow" style="display:none; margin-top:6px; padding-top:6px; border-top:1px dashed #e9c46a;">
                 <div style="font-size:.6rem; color:#92400e; font-weight:600;" id="goldValueLabel"></div>
                 <div style="font-size:.85rem; font-weight:700; color:#92400e;" id="goldValue"></div>
@@ -717,7 +720,7 @@ using (bucket_id = 'attachments');
         <div class="setelan-tabs" id="setelanTabs">
             <button type="button" class="setelan-tab-btn active" data-tab="lang" onclick="window.switchSetelanTab('lang')"><span data-i18n="language_section">Bahasa / Language</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="ai" onclick="window.switchSetelanTab('ai')"><span data-i18n="ai_analysis_section">Analisis AI</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="gold" onclick="window.switchSetelanTab('gold')"><span data-i18n="gold_price_section">Harga Emas Antam</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="gold" onclick="window.switchSetelanTab('gold'); window.updateEmasQuotaDisplay()"><span data-i18n="gold_price_section">Harga Emas Antam</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="charity" onclick="window.switchSetelanTab('charity')"><span data-i18n="charity_section">Sedekah</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="telegram" onclick="window.switchSetelanTab('telegram')"><span data-i18n="telegram_section">Notifikasi Telegram</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="supabase" onclick="window.switchSetelanTab('supabase')"><span data-i18n="supabase_section">Koneksi Supabase</span></button>
@@ -770,6 +773,7 @@ using (bucket_id = 'attachments');
             <div class="setelan-desc">
                 <span data-i18n="gold_api_desc">Masukkan API key dari <strong>emas.maulanar.my.id</strong> untuk menampilkan harga emas Antam terkini.</span>
             </div>
+            <div id="emasQuotaInfo" style="font-size:.68rem; color:#92400e; background:#fef3c7; border:1px solid #fde68a; border-radius:6px; padding:6px 8px; margin-bottom:10px;"></div>
             <div class="form-group" style="margin-bottom:10px;">
                 <label data-i18n="api_key_label">API Key</label>
                 <input type="text" id="emasApiKeyInput" class="form-control" placeholder="Masukkan API key dari emas.maulanar.my.id" oninput="updateEmasApiBadge()">

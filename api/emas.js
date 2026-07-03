@@ -48,7 +48,9 @@ export default async function handler(req, res) {
             return res.status(upstream.status).json({ error: 'Upstream error', detail: data });
         }
 
-        // Cache 5 menit di browser, 10 menit di Vercel edge
+        // Catatan: caching utama untuk menghemat kuota (20 hit/bulan) dilakukan di
+        // client (localStorage, lihat js/forex.js EMAS_CACHE_HOURS). Header ini hanya
+        // cadangan tambahan di edge Vercel, bukan andalan utama.
         res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=300');
         return res.status(200).json(data);
     } catch (err) {

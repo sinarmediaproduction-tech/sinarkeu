@@ -1,4 +1,64 @@
 // ==================== FOREX & GOLD ====================
+// Free tier emas.maulanar.my.id = 20 hit/bulan.
+// EMAS_CACHE_HOURS=48 -> maksimal ~15 panggilan otomatis/bulan (30 hari / 2 hari),
+// menyisakan ~5 hit buffer untuk tombol "Tes" & refresh manual.
+// Harga Antam sendiri biasanya cuma update 1x/hari, jadi cache 2 hari masih relevan.
+const EMAS_CACHE_HOURS = 48;
+const EMAS_CACHE_KEY   = 'sk_emas_price_cache';
+const EMAS_QUOTA_KEY   = 'sk_emas_quota';
+const EMAS_QUOTA_LIMIT = 20;
+
+function _emasCurrentMonthKey() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+function _emasQuotaGet() {
+    try {
+        const q = JSON.parse(localStorage.getItem(EMAS_QUOTA_KEY) || 'null');
+        if (!q || q.month !== _emasCurrentMonthKey()) return 0;
+        return q.count;
+    } catch { return 0; }
+}
+function _emasQuotaTrack() {
+    const monthKey = _emasCurrentMonthKey();
+    let q;
+    try { q = JSON.parse(localStorage.getItem(EMAS_QUOTA_KEY) || 'null'); } catch { q = null; }
+    if (!q || q.month !== monthKey) q = { month: monthKey, count: 0 };
+    q.count += 1;
+    localStorage.setItem(EMAS_QUOTA_KEY, JSON.stringify(q));
+    return q.count;
+}
+window.updateEmasQuotaDisplay = function() {
+    const el = document.getElementById('emasQuotaInfo');
+    if (!el) return;
+    const used = _emasQuotaGet();
+    const sisa = Math.max(0, EMAS_QUOTA_LIMIT - used);
+    const cache = _emasCacheRead();
+    let cacheInfo = '';
+    if (cache) {
+        const jamLalu = Math.floor((Date.now() - cache.timestamp) / 3600000);
+        cacheInfo = ` · Harga terakhir dari server ${jamLalu < 1 ? 'baru saja' : jamLalu + ' jam lalu'}, cache berlaku ${EMAS_CACHE_HOURS} jam.`;
+    }
+    el.innerHTML = `Kuota API bulan ini: <strong>${used}/${EMAS_QUOTA_LIMIT}</strong> (sisa ${sisa})${cacheInfo}`;
+};
+function _emasCacheRead() {
+    try {
+        const c = JSON.parse(localStorage.getItem(EMAS_CACHE_KEY) || 'null');
+        if (!c || typeof c.pricePerGram !== 'number') return null;
+        return c;
+    } catch { return null; }
+}
+function _emasCacheWrite(pricePerGram, apiKey) {
+    localStorage.setItem(EMAS_CACHE_KEY, JSON.stringify({
+        pricePerGram,
+        apiKey,
+        timestamp: Date.now()
+    }));
+}
+window.clearEmasPriceCache = function() {
+    localStorage.removeItem(EMAS_CACHE_KEY);
+};
+
 window.fetchForexRate = async function() {
     const apis = [
         { name: 'open.er-api.com', url: 'https://open.er-api.com/v6/latest/USD', parse: d => d?.rates?.IDR },
@@ -67,6 +127,8 @@ window.testEmasApiKey = async function() {
             headers: { 'X-API-Key': key },
             signal: AbortSignal.timeout(8000)
         });
+        _emasQuotaTrack();
+        window.updateEmasQuotaDisplay();
         if (res.ok) {
             st.style.color = '#00875a';
             st.innerText = 'API key valid! Data Antam berhasil diakses.';
@@ -84,37 +146,64 @@ window.saveEmasApiKey = function() {
     const gram = parseFloat(document.getElementById('emasGramInput')?.value) || 0;
     const st   = document.getElementById('emasApiTestStatus');
     if (!key) { st.style.color = '#de350b'; st.innerText = 'API key tidak boleh kosong!'; return; }
+    const keyChanged = (localStorage.getItem('sk_emas_api_key') || '') !== key;
     localStorage.setItem('sk_emas_api_key', key);
     if (gram > 0) localStorage.setItem('sk_emas_gram', gram);
     else localStorage.removeItem('sk_emas_gram');
     st.style.color = '#00875a';
     st.innerText = 'Tersimpan! API key & jumlah emas diperbarui.';
     window.updateEmasApiBadge();
+    window.updateEmasQuotaDisplay();
     window.showToast('Setelan emas disimpan!', 'success');
-    window.fetchGoldPrice();
+    // Kalau key berubah, cache lama (punya key lain) otomatis diabaikan oleh fetchGoldPrice,
+    // jadi tidak perlu force refresh manual (hemat kuota).
+    window.fetchGoldPrice(keyChanged);
 };
 window.clearEmasApiKey = function() {
     if (!confirm('Hapus API key emas? Widget harga Antam akan menggunakan estimasi spot.')) return;
     localStorage.removeItem('sk_emas_api_key');
+    window.clearEmasPriceCache();
     const inp = document.getElementById('emasApiKeyInput');
     if (inp) inp.value = '';
     const st = document.getElementById('emasApiTestStatus');
     if (st) { st.style.color = '#666'; st.innerText = 'API key dihapus. Beralih ke estimasi spot.'; }
     window.updateEmasApiBadge();
+    window.updateEmasQuotaDisplay();
     window.showToast('API key emas dihapus.', 'info');
     window.fetchGoldPrice();
 };
-window.fetchGoldPrice = async function() {
+window.fetchGoldPrice = async function(forceRefresh) {
     const priceEl = document.getElementById('goldPrice');
     const srcEl   = document.getElementById('goldSource');
+    const refreshBtn = document.getElementById('goldRefreshBtn');
     if (!priceEl) return;
     const emasApiKey = (localStorage.getItem('sk_emas_api_key') || '').trim();
+
     if (emasApiKey) {
+        if (refreshBtn) refreshBtn.style.display = 'inline';
+
+        // Pakai cache dulu kalau masih berlaku & key sama, biar kuota 20 hit/bulan cukup
+        const cache = _emasCacheRead();
+        const cacheValid = cache && cache.apiKey === emasApiKey &&
+            (Date.now() - cache.timestamp) < EMAS_CACHE_HOURS * 3600 * 1000;
+
+        if (cacheValid && !forceRefresh) {
+            priceEl.textContent = 'Rp ' + Math.round(cache.pricePerGram).toLocaleString('id-ID');
+            const jamLalu = Math.floor((Date.now() - cache.timestamp) / 3600000);
+            srcEl.textContent = `Cache · diperbarui ${jamLalu < 1 ? 'baru saja' : jamLalu + ' jam lalu'}`;
+            srcEl.style.color = '#999';
+            window.updateGoldValueDisplay(cache.pricePerGram);
+            window.updateEmasQuotaDisplay();
+            return;
+        }
+
         try {
             const res = await fetch('/api/emas', {
                 headers: { 'X-API-Key': emasApiKey },
                 signal: AbortSignal.timeout(8000)
             });
+            _emasQuotaTrack();
+            window.updateEmasQuotaDisplay();
             if (res.ok) {
                 const json = await res.json();
                 const item = json?.data?.[0];
@@ -124,7 +213,19 @@ window.fetchGoldPrice = async function() {
                     // Normalisasi ke harga per 1 gram
                     const hargaPerGram = totalHarga / beratGram;
                     priceEl.textContent = 'Rp ' + Math.round(hargaPerGram).toLocaleString('id-ID');
+                    srcEl.textContent = 'Live dari server · baru saja';
+                    srcEl.style.color = '#999';
                     window.updateGoldValueDisplay(hargaPerGram);
+                    _emasCacheWrite(hargaPerGram, emasApiKey);
+                    return;
+                }
+            } else if (res.status === 429) {
+                srcEl.textContent = 'Kuota API bulanan habis, beralih ke estimasi spot';
+                srcEl.style.color = '#de350b';
+                // Kalau masih ada cache lama (walau kadaluarsa), lebih baik pakai itu daripada estimasi spot kasar
+                if (cache) {
+                    priceEl.textContent = 'Rp ' + Math.round(cache.pricePerGram).toLocaleString('id-ID');
+                    window.updateGoldValueDisplay(cache.pricePerGram);
                     return;
                 }
             } else {
@@ -135,6 +236,8 @@ window.fetchGoldPrice = async function() {
             srcEl.textContent = `Gagal hubungi API (${e.message}), beralih ke estimasi spot`;
             srcEl.style.color = '#cc7b00';
         }
+    } else if (refreshBtn) {
+        refreshBtn.style.display = 'none';
     }
     const apis = [
         { name: 'jsdelivr', url: 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/xau.json', parse: d => d?.xau?.usd },
