@@ -14,7 +14,7 @@ window.EXPENSE_CATEGORIES = [
     'Makanan & Minuman', 'Tagihan', 'Belanja', 'Kesehatan', 
     'Hiburan', 'Pendidikan', 'Transportasi', 'Investasi', 
     'Skin & Body Care', 'Kitchen', 'Cleaning', 'Pajak & Iuran', 
-    'Pertanian', 'Sedekah', 'Sumbangan'
+    'Pertanian', 'Sedekah', 'Sumbangan', 'Pulsa', 'Pakan Peliharaan'
 ];
 window.INCOME_CATEGORIES = [
     'Gaji', 'Freelance', 'Bonus', 'THR',

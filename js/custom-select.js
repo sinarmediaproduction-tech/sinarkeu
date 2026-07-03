@@ -21,6 +21,8 @@ const EXPENSE_COLORS = {
   'Pertanian':         '#15803d',
   'Sedekah':           '#0f766e',
   'Sumbangan':         '#0f766e',
+  'Pulsa':             '#f97316',
+  'Pakan Peliharaan':  '#84cc16',
 };
 
 const INCOME_COLORS = {
