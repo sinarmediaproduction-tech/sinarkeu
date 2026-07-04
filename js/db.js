@@ -101,7 +101,15 @@ window.pullCryptoSaltCheck = async function(tagOverride) {
     // Penting untuk bootstrap multi-device: baris crypto_salt/check lama (NULL)
     // harus bisa dibaca sebelum migrasi men-tag ulang baris tersebut.
     const tagFilter = window.tagOrFilter(tag);
-    const rows = await window.callSupabaseAPI('settings', 'GET', null, `?book_id=eq.global&key=in.(crypto_salt,crypto_check)${tagFilter}`);
+    // FIX: tabel `settings` tidak punya unique constraint dan push selalu INSERT
+    // baris baru (bukan upsert sungguhan -- lihat catatan di pullAllSettings/
+    // reEncryptAllCloudSettings). Kalau setup/ganti password pernah tersubmit
+    // lebih dari sekali, bisa ada BEBERAPA baris crypto_salt/crypto_check untuk
+    // tag yang sama. Tanpa ORDER BY, rows.find() bisa mengambil baris LAMA/SALAH
+    // -- inilah penyebab device baru menurunkan AES key dari salt yang keliru
+    // walau url/anonkey/password sudah sama persis. order=updated_at.desc
+    // memastikan baris PERTAMA yang cocok untuk tiap key selalu yang terbaru.
+    const rows = await window.callSupabaseAPI('settings', 'GET', null, `?book_id=eq.global&key=in.(crypto_salt,crypto_check)${tagFilter}&order=updated_at.desc`);
     if (!rows || !Array.isArray(rows) || rows.length === 0) return null;
     const saltRow = rows.find(r => r.key === 'crypto_salt');
     const checkRow = rows.find(r => r.key === 'crypto_check');
