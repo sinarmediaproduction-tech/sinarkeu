@@ -321,7 +321,7 @@ window.pullSetting = async function(key, bookId) {
     
     try {
         var _psTag = window.getAccountTag ? window.getAccountTag() : null;
-        var _psTagFilter = _psTag ? '&account_tag=eq.' + _psTag : '';
+        var _psTagFilter = window.tagOrFilter(_psTag);
         var result = await window.callSupabaseAPI(
             'settings',
             'GET',
@@ -411,7 +411,7 @@ window.loadConnectedDevices = async function() {
 
     try {
         var tag = window.getAccountTag ? window.getAccountTag() : null;
-        var tagFilter = tag ? '&account_tag=eq.' + tag : '';
+        var tagFilter = window.tagOrFilter(tag);
 
         var logs = await window.callSupabaseAPI(
             'audit_logs', 'GET', null,

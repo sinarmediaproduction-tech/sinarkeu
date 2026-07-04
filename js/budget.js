@@ -460,7 +460,7 @@ window.loadDefaultBudgetFromCloud = async function(bookId) {
                 'settings',
                 'GET',
                 null,
-                `?book_id=eq.${bookId}&key=eq.default_budget&limit=1${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
+                `?book_id=eq.${bookId}&key=eq.default_budget&limit=1${window.tagOrFilter(window.getAccountTag && window.getAccountTag())}`
             );
             
             if (result && Array.isArray(result) && result.length > 0) {
@@ -511,7 +511,7 @@ window.loadMonthlyBudgetFromCloud = async function(bookId) {
                 'settings',
                 'GET',
                 null,
-                `?book_id=eq.${bookId}&key=eq.budgets&limit=1${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
+                `?book_id=eq.${bookId}&key=eq.budgets&limit=1${window.tagOrFilter(window.getAccountTag && window.getAccountTag())}`
             );
             
             if (result && Array.isArray(result) && result.length > 0) {
@@ -575,7 +575,7 @@ window.loadAnnualBudgetFromCloud = async function(bookId) {
                 'settings',
                 'GET',
                 null,
-                `?book_id=eq.${bookId}&key=eq.annual_budget&limit=1${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
+                `?book_id=eq.${bookId}&key=eq.annual_budget&limit=1${window.tagOrFilter(window.getAccountTag && window.getAccountTag())}`
             );
             
             if (result && Array.isArray(result) && result.length > 0) {
@@ -649,7 +649,7 @@ window.migrateAllBudgets = async function(bookId) {
             'settings',
             'GET',
             null,
-            `?book_id=eq.${bookId}&key=eq.default_budget&limit=1${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
+            `?book_id=eq.${bookId}&key=eq.default_budget&limit=1${window.tagOrFilter(window.getAccountTag && window.getAccountTag())}`
         );
         
         if (existing && Array.isArray(existing) && existing.length > 0) {

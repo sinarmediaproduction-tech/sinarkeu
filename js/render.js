@@ -501,7 +501,7 @@ window.confirmDelete = async function(id) {
         // oleh query incremental, sehingga bisa dibuang dari cache perangkat lain.
         if (window.isOnline()) {
             const _sdTag = window.getAccountTag ? window.getAccountTag() : null;
-            const _sdTagFilter = _sdTag ? `&account_tag=eq.${_sdTag}` : '';
+            const _sdTagFilter = window.tagOrFilter(_sdTag);
             window.callSupabaseAPI('transactions', 'PATCH', { is_deleted: true, updated_at: new Date().toISOString() }, `?id=eq.${id}${_sdTagFilter}`);
         }
         window.txs = window.txs.filter(x => x.id !== id);

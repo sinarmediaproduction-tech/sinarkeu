@@ -56,6 +56,23 @@ window.getAccountTag = function() {
     return window._accountTagFromSalt(localStorage.getItem('sk_crypto_salt'));
 };
 
+// ==================== FIX: OR-NULL FILTER UNTUK BACA DATA ====================
+// SEBELUM PERBAIKAN INI: banyak query GET memakai `tag ? '&account_tag=eq.'+tag : ''`.
+// Itu BUKAN filter OR walau komentarnya bilang begitu -- PostgREST meng-AND-kan semua
+// parameter query, jadi begitu device mana pun sudah punya tag (hampir selalu, sejak
+// crypto_salt lokal ada), semua baris lama yang account_tag-nya masih NULL (dibuat
+// sebelum kolom ini ditambahkan, dan tidak pernah di-backfill) langsung tersaring habis
+// dan tidak pernah muncul lagi -- termasuk saat device baru join backend yang sama.
+//
+// window.tagOrFilter(tag) menghasilkan filter PostgREST yang benar-benar OR:
+// baris ber-tag SAMA milik akun ini, ATAU baris lama tanpa tag sama sekali.
+// Dipakai di semua query GET (baca) yang sebelumnya cuma AND-tag. Untuk operasi
+// DELETE/PATCH massal tetap sengaja pakai AND-tag saja (lebih aman kalau satu
+// backend Supabase dipakai lebih dari satu akun/password berbeda).
+window.tagOrFilter = function(tag) {
+    return tag ? `&or=(account_tag.eq.${tag},account_tag.is.null)` : '';
+};
+
 // ==================== MULTI-DEVICE CRYPTO BOOTSTRAP ====================
 // Salt PBKDF2 + nilai "check" terenkripsi disimpan di cloud (tabel `settings`,
 // book_id='global') TANPA dienkripsi ulang oleh sesi (memang tidak perlu:
@@ -83,7 +100,7 @@ window.pullCryptoSaltCheck = async function(tagOverride) {
     // OR filter: ambil baris ber-tag milik akun ini ATAU baris lama tanpa tag.
     // Penting untuk bootstrap multi-device: baris crypto_salt/check lama (NULL)
     // harus bisa dibaca sebelum migrasi men-tag ulang baris tersebut.
-    const tagFilter = tag ? `&account_tag=eq.${tag}` : '';
+    const tagFilter = window.tagOrFilter(tag);
     const rows = await window.callSupabaseAPI('settings', 'GET', null, `?book_id=eq.global&key=in.(crypto_salt,crypto_check)${tagFilter}`);
     if (!rows || !Array.isArray(rows) || rows.length === 0) return null;
     const saltRow = rows.find(r => r.key === 'crypto_salt');
@@ -238,7 +255,7 @@ window.pullAllSettings = async function() {
     // OR filter: baris ber-tag milik akun ini ATAU baris lama tanpa tag (data sebelum
     // fitur account_tag). Setelah migrasi selesai, semua baris sudah punya tag dan
     // baris NULL tidak akan muncul lagi — filter ini aman dipakai permanen.
-    const tagFilter = tag ? `&account_tag=eq.${tag}` : '';
+    const tagFilter = window.tagOrFilter(tag);
     const allRows = await window.callSupabaseAPI('settings', 'GET', null, `?order=updated_at.desc${tagFilter}`);
     if (allRows && Array.isArray(allRows)) {
         let booksUpdated = false;
@@ -431,7 +448,7 @@ window.pullPaymentRemindersFromCloud = async function(bookId) {
             'payment_reminders',
             'GET',
             null,
-            `?book_id=eq.${bookId}&order=created_at.desc${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
+            `?book_id=eq.${bookId}&order=created_at.desc${window.tagOrFilter(window.getAccountTag ? window.getAccountTag() : null)}`
         );
         
         if (result && Array.isArray(result)) {
