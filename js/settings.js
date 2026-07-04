@@ -326,7 +326,7 @@ window.pullSetting = async function(key, bookId) {
             'settings',
             'GET',
             null,
-            '?book_id=eq.' + bookId + '&key=eq.' + key + '&limit=1' + _psTagFilter
+            '?book_id=eq.' + bookId + '&key=eq.' + key + '&order=updated_at.desc&limit=1' + _psTagFilter
         );
         
         if (result && Array.isArray(result) && result.length > 0) {

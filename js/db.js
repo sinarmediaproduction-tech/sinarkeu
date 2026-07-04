@@ -262,11 +262,28 @@ window.pullAllSettings = async function() {
         let telegramUpdated = false;
         let budgetUpdated = false;
         let hasStaleRows = false; // ada baris cloud terenkripsi kunci lama
+        // ==== FIX: cegah baris riwayat lama menimpa balik data terbaru ====
+        // Tabel `settings` di sini TIDAK melakukan upsert sungguhan (lihat
+        // callSupabaseAPI: header 'Prefer: resolution=merge-duplicates' tanpa
+        // parameter 'on_conflict', dan payload push tidak pernah menyertakan
+        // 'id'). Akibatnya SETIAP penyimpanan (books, budgets, dst.) selalu
+        // INSERT baris baru, bukan menimpa baris lama -- jadi tabel ini bisa
+        // berisi banyak snapshot historis untuk (book_id, key) yang sama.
+        // Query di atas sudah diurutkan `updated_at.desc` (terbaru duluan),
+        // jadi baris PERTAMA yang ditemukan untuk kombinasi (book_id, key)
+        // tertentu adalah yang paling baru -- baris berikutnya untuk
+        // kombinasi yang sama WAJIB dilewati, kalau tidak, snapshot lama bisa
+        // menimpa balik data terbaru di akhir loop (mis. buku yang sudah
+        // dihapus muncul lagi).
+        const _seenSettingKeys = new Set();
         for (const row of allRows) {
             // crypto_salt & crypto_check bukan setting JSON terenkripsi biasa
             // (lihat window.pushCryptoSaltCheck) -- jangan diproses di sini,
             // supaya tidak memicu warning dekripsi & JSON.parse yang sia-sia.
             if (row.key === 'crypto_salt' || row.key === 'crypto_check') continue;
+            const _rowDedupKey = (row.book_id || '') + '::' + row.key;
+            if (_seenSettingKeys.has(_rowDedupKey)) continue; // sudah ada versi lebih baru
+            _seenSettingKeys.add(_rowDedupKey);
             let parsed;
             const decryptedValue = await window._decryptSettingValue(row.value);
             if (decryptedValue === null) {

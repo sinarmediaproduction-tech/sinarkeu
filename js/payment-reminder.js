@@ -166,7 +166,7 @@ window.migratePaymentReminders = async function(bookId) {
             'payment_reminders',
             'GET',
             null,
-            `?book_id=eq.${bookId}&limit=1${tagFilter}`
+            `?book_id=eq.${bookId}&order=updated_at.desc&limit=1${tagFilter}`
         );
         if (existing && Array.isArray(existing) && existing.length > 0) {
             console.log('[PaymentReminder] Data sudah ada di cloud, skip migrasi');
