@@ -90,7 +90,15 @@ window.pushCryptoSaltCheck = async function(saltB64, checkB64) {
         { book_id: 'global', key: 'crypto_salt', value: saltB64, updated_at: now, ...(tag ? { account_tag: tag } : {}) },
         { book_id: 'global', key: 'crypto_check', value: checkB64, updated_at: now, ...(tag ? { account_tag: tag } : {}) }
     ];
-    const result = await window.callSupabaseAPI('settings', 'POST', payload);
+    // FIX PERMANEN: setelah unique constraint settings_unique_row (book_id, key,
+    // account_tag) dibuat di Supabase (lihat fix_settings_upsert.sql), parameter
+    // on_conflict di bawah membuat POST ini benar-benar meng-UPDATE baris yang
+    // sudah ada untuk tag ini, bukan selalu INSERT baris baru seperti sebelumnya.
+    // Kalau tag kosong (kasus push salt PERTAMA kali sebelum salt tersimpan ke
+    // localStorage, lihat bootstrapCryptoForBackend), tetap INSERT biasa seperti
+    // semula -- aman karena baris ber-tag NULL tidak dibatasi unique constraint.
+    const onConflict = tag ? '?on_conflict=book_id,key,account_tag' : '';
+    const result = await window.callSupabaseAPI('settings', 'POST', payload, onConflict);
     return result !== null;
 };
 
@@ -144,7 +152,16 @@ window.pushSetting = async function(key, value, bookId) {
         updated_at: new Date().toISOString(),
         ...(tag ? { account_tag: tag } : {})
     }];
-    const result = await window.callSupabaseAPI('settings', 'POST', payload);
+    // FIX PERMANEN: sama seperti pushCryptoSaltCheck di atas -- setelah unique
+    // constraint settings_unique_row (book_id, key, account_tag) dibuat di
+    // Supabase (lihat fix_settings_upsert.sql), on_conflict membuat push ini
+    // benar-benar UPDATE baris yang sudah ada, bukan numpuk snapshot baru tiap
+    // kali. Ini yang menyebabkan bug "buku Debugging menutupi 7 buku asli":
+    // versi 'books' TERBARU (berdasar updated_at) selalu menang saat pull,
+    // padahal "terbaru" seharusnya = "hasil edit paling baru", bukan sekadar
+    // baris mana yang kebetulan ter-insert belakangan dari device manapun.
+    const onConflict = tag ? '?on_conflict=book_id,key,account_tag' : '';
+    const result = await window.callSupabaseAPI('settings', 'POST', payload, onConflict);
     // callSupabaseAPI mengembalikan null kalau request gagal (lihat fungsi di atas).
     return result !== null;
 };
