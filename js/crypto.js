@@ -150,7 +150,15 @@ window.setupNewPassword = async function(password, url, apiKey) {
 window.bootstrapCryptoForBackend = async function(password, url, apiKey) {
     window.globalSupabaseUrl = url;
     window.globalSupabaseKey = apiKey;
-    const cloud = await window.pullCryptoSaltCheck();
+    // PENTING: pakai varian STRICT di sini, bukan window.pullCryptoSaltCheck()
+    // biasa. Varian biasa mengembalikan null baik saat cloud memang kosong
+    // MAUPUN saat pengecekan gagal (offline/network error) -- ambigu, dan kalau
+    // dipakai di sini bisa membuat device yang sebenarnya cuma gagal konek
+    // keliru mengira dirinya "device pertama" lalu generate salt sendiri yang
+    // berbeda dari salt asli yang sudah ada di cloud. Varian strict melempar
+    // Error untuk kasus gagal-cek, jadi setup BERHENTI dengan pesan jelas
+    // alih-alih diam-diam membuat akun yang tidak bisa sinkron dengan device lain.
+    const cloud = await window.pullCryptoSaltCheckStrict();
     if (cloud) {
         const salt = Uint8Array.from(atob(cloud.salt), c => c.charCodeAt(0));
         const key = await window.deriveKey(password, salt);
@@ -163,6 +171,8 @@ window.bootstrapCryptoForBackend = async function(password, url, apiKey) {
         }
         return { key, saltB64: cloud.salt, checkB64: cloud.check, joined: true };
     }
+    // Sampai di sini HANYA kalau pullCryptoSaltCheckStrict() sukses mengecek dan
+    // memang tidak menemukan baris apa pun -- baru aman generate salt baru.
     const saltBytes = crypto.getRandomValues(new Uint8Array(16));
     const saltB64 = btoa(String.fromCharCode(...saltBytes));
     const key = await window.deriveKey(password, saltBytes);

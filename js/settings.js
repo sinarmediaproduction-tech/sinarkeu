@@ -279,6 +279,10 @@ window.doFirstTimeSetup = async function() {
         st.className = 'setup-status error';
         if (e && e.code === 'PASSWORD_MISMATCH') {
             st.innerText = window.t('backend_diff_password');
+        } else if (e && e.code === 'OFFLINE') {
+            st.innerText = 'Tidak ada koneksi internet. Sambungkan internet dulu, lalu coba setup lagi -- jangan lanjutkan dalam keadaan offline supaya tidak membuat salt/akun baru yang terpisah.';
+        } else if (e && e.code === 'CHECK_FAILED') {
+            st.innerText = 'Gagal mengecek apakah backend ini sudah pernah disetup dari device lain (cek URL/API key/koneksi). Coba lagi, jangan lanjutkan sampai ini berhasil.';
         } else {
             st.innerText = 'Gagal menyiapkan enkripsi: ' + (e && e.message ? e.message : 'error tidak diketahui');
         }

@@ -125,6 +125,44 @@ window.pullCryptoSaltCheck = async function(tagOverride) {
     return { salt: saltRow.value, check: checkRow.value };
 };
 
+// ==================== VARIAN STRICT: bedakan "cloud kosong" vs "gagal cek" ====================
+// Dipakai KHUSUS oleh window.bootstrapCryptoForBackend (crypto.js) saat
+// memutuskan apakah boleh generate salt baru. pullCryptoSaltCheck() biasa di
+// atas mengembalikan null untuk 3 kondisi sekaligus: offline, request gagal,
+// ATAU memang belum ada data -- ambigu, dan berbahaya kalau dipakai untuk
+// memutuskan "generate salt baru": device yang sebenarnya cuma gagal konek
+// bisa keliru mengira dirinya device pertama, lalu bikin salt sendiri yang
+// berbeda dari salt asli yang sebenarnya sudah ada di cloud (persis kejadian
+// yang sudah pernah terjadi).
+//
+// Varian ini MELEMPAR Error (bukan diam-diam return null) untuk kondisi
+// offline/gagal cek, supaya pemanggil berhenti dan menampilkan pesan error
+// yang jelas ke user -- bukan lanjut generate salt baru. null hanya
+// dikembalikan kalau query ke Supabase BENAR-BENAR sukses dan hasilnya nol
+// baris (device pertama yang sah, aman generate salt baru).
+window.pullCryptoSaltCheckStrict = async function(tagOverride) {
+    if (!window.isOnline()) {
+        const err = new Error('Tidak ada koneksi internet -- tidak bisa memastikan apakah backend ini sudah pernah disetup dari device lain. Sambungkan internet dulu sebelum lanjut setup.');
+        err.code = 'OFFLINE';
+        throw err;
+    }
+    const tag = tagOverride !== undefined ? tagOverride : window.getAccountTag();
+    const tagFilter = window.tagOrFilter(tag);
+    const rows = await window.callSupabaseAPI('settings', 'GET', null, `?book_id=eq.global&key=in.(crypto_salt,crypto_check)${tagFilter}&order=updated_at.desc`);
+    if (rows === null) {
+        // callSupabaseAPI mengembalikan null saat request gagal (network error,
+        // Supabase down, url/anonkey salah, dll) -- BUKAN berarti tabelnya kosong.
+        const err = new Error('Gagal menghubungi Supabase untuk mengecek salt yang sudah ada. Cek lagi koneksi/URL/API key, jangan lanjutkan setup sampai ini berhasil.');
+        err.code = 'CHECK_FAILED';
+        throw err;
+    }
+    if (!Array.isArray(rows) || rows.length === 0) return null; // benar-benar kosong, aman generate salt baru
+    const saltRow = rows.find(r => r.key === 'crypto_salt');
+    const checkRow = rows.find(r => r.key === 'crypto_check');
+    if (!saltRow || !checkRow || !saltRow.value || !checkRow.value) return null;
+    return { salt: saltRow.value, check: checkRow.value };
+};
+
 // ==================== PUSH SETTINGS ====================
 // Semua nilai dienkripsi (AES-GCM) dengan kunci sesi sebelum dikirim ke cloud,
 // supaya isi tabel `settings` di Supabase tidak pernah berupa plain text
