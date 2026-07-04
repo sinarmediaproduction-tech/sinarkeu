@@ -192,6 +192,39 @@ window.rotatePasswordKeepingSalt = async function(newPassword, saltB64) {
     return { key, saltB64, checkB64 };
 };
 
+// ==================== SELF-HEAL: PASTIKAN SALT LOKAL SUDAH ADA DI CLOUD ====================
+// KASUS NYATA yang memicu ini: device lama sudah lama dipakai dengan salt
+// lokalnya sendiri, tapi baris crypto_salt/crypto_check TIDAK PERNAH ke-push
+// ke cloud (mis. setup pertama terjadi sebelum fitur bootstrapCryptoForBackend
+// ada, atau kebetulan offline saat setup). Saat device KEDUA melakukan setup
+// dan mengecek cloud (pullCryptoSaltCheck), cloud kosong -> device kedua
+// mengira dirinya paling pertama, generate salt SENDIRI, dan push itu.
+// Hasilnya dua device dengan dua salt/tag berbeda yang tidak pernah bisa
+// saling baca data walau url/anonkey/password sama persis.
+//
+// Dipanggil tiap kali app berhasil unlock & online (lihat continueAppInit di
+// app.js). Kalau device ini sudah punya salt lokal TAPI cloud belum punya
+// baris apa pun untuk tag salt ini, push sekarang -- supaya device lain yang
+// join belakangan menemukan salt yang benar, bukan generate salt baru sendiri.
+// Tidak melakukan apa-apa (aman) kalau cloud sudah punya baris untuk tag ini.
+window.ensureCryptoSaltPushed = async function() {
+    if (!window.isOnline() || !window._sessionCryptoKey) return;
+    const localSalt = localStorage.getItem('sk_crypto_salt');
+    const localCheck = localStorage.getItem('sk_crypto_check');
+    if (!localSalt || !localCheck) return;
+    try {
+        const cloud = await window.pullCryptoSaltCheck();
+        if (!cloud) {
+            const pushed = await window.pushCryptoSaltCheck(localSalt, localCheck);
+            if (pushed) {
+                console.log('[Crypto] Self-heal: salt lokal belum ada di cloud, sudah di-push otomatis.');
+            }
+        }
+    } catch (e) {
+        console.warn('[Crypto] Gagal self-heal crypto salt ke cloud:', e);
+    }
+};
+
 // ==================== SESSION KEY RESTORE SETELAH RELOAD ====================
 // Setelah location.reload() (mis. switch akun), window._sessionCryptoKey
 // hilang karena hanya in-memory. Fungsi ini men-derive ulang AES key dari:

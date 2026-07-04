@@ -136,6 +136,12 @@ window.continueAppInit = async function() {
     } else {
         if (window.isOnline()) {
             await window.pullAllSettings();
+            // Self-heal: kalau device ini sudah lama pakai salt lokal sendiri tapi
+            // belum pernah ke-push ke cloud, push sekarang. Mencegah device lain
+            // yang setup belakangan generate salt sendiri karena mengira cloud
+            // masih kosong. Lihat catatan lengkap di window.ensureCryptoSaltPushed
+            // (js/crypto.js).
+            await window.ensureCryptoSaltPushed();
             window.loadGoogleSheetsUrl();
             const localGsUrl = localStorage.getItem('sk_google_sheets_url');
             if (localGsUrl && window.isOnline()) {
