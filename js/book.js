@@ -337,6 +337,41 @@ window.openTelegramSettings = async function() {
 
 // ==================== TUTUP ANAK BUKU ====================
 
+// [BUG FIX] Sebelumnya tutupAnakBuku() SELALU menghitung ulang SEMUA transaksi
+// anak buku dari awal setiap kali dipanggil, tanpa ada penanda "sudah pernah
+// ditutup". Akibatnya kalau tombol "Kirim Ringkasan ke Induk" diklik lagi
+// (klik ganda, atau anak buku dibuka ulang bulan berikutnya tanpa transaksi
+// baru), ringkasan yang SAMA terkirim lagi ke buku induk -> double count.
+//
+// Fix: simpan book.lastClosedAt (timestamp ISO) setiap kali berhasil ditutup.
+// Panggilan berikutnya hanya menghitung transaksi yang tanggalnya SETELAH
+// lastClosedAt tersebut, bukan seluruh riwayat lagi.
+//
+// Catatan: balanceOffset (saldo dari transaksi lama yang sudah di-trim dari
+// cache lokal, lihat trimAndSaveLocal) hanya diikutkan pada penutupan
+// PERTAMA KALI (saat lastClosedAt belum ada) -- pada penutupan berikutnya,
+// riwayat lama itu sudah pernah terhitung & terkirim sebelumnya, sehingga
+// tidak boleh ditambahkan lagi.
+window._getUnclosedChildTxs = function(book) {
+    const lastClosedAt = book && book.lastClosedAt ? book.lastClosedAt : null;
+    const txs = lastClosedAt
+        ? window.txs.filter(t => {
+            const d = window.parseTxDate(t.date);
+            return d && !isNaN(d) && d > new Date(lastClosedAt);
+          })
+        : window.txs;
+    const balanceOffset = lastClosedAt
+        ? 0
+        : (Number(localStorage.getItem('sk_balance_offset_' + window.currentBookId)) || 0);
+    let totalInc = 0, totalExp = 0;
+    txs.forEach(t => {
+        const amt = Number(t.amount) || 0;
+        if (t.type === 'income') totalInc += amt;
+        else totalExp += amt;
+    });
+    return { txs, totalInc, totalExp, balanceOffset, netTotal: totalInc - totalExp + balanceOffset, lastClosedAt };
+};
+
 window.openTutupAnakBuku = function() {
     const book = window.books.find(b => b.id === window.currentBookId);
     if (!book || !book.parentId) {
@@ -349,41 +384,53 @@ window.openTutupAnakBuku = function() {
         return;
     }
 
-    // Hitung total
-    let totalInc = 0, totalExp = 0;
-    window.txs.forEach(t => {
-        const amt = Number(t.amount) || 0;
-        if (t.type === 'income') totalInc += amt;
-        else totalExp += amt;
-    });
-    const balanceOffset = Number(localStorage.getItem('sk_balance_offset_' + window.currentBookId)) || 0;
-    const netTotal = totalInc - totalExp + balanceOffset;
-    const txCount = window.txs.length;
+    // Hitung total — HANYA transaksi yang belum pernah dikirim ke induk
+    // (lihat window._getUnclosedChildTxs, [BUG FIX] double-count).
+    const calc = window._getUnclosedChildTxs(book);
+    const { totalInc, totalExp, netTotal } = calc;
+    const txCount = calc.txs.length;
+    const sinceLabel = calc.lastClosedAt
+        ? `sejak penutupan terakhir (${new Date(calc.lastClosedAt).toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })})`
+        : 'dari seluruh riwayat (belum pernah ditutup sebelumnya)';
 
     // Isi modal konfirmasi
     const el = document.getElementById('tutupAnakBukuInfo');
     if (el) {
-        el.innerHTML = `
-            <div style="background:#f3e8ff; border:1px solid #d6bcfa; border-radius:8px; padding:12px 14px; font-size:.78rem; line-height:1.8;">
-                <div><b>Anak Buku:</b> ${window.escapeHtml(book.name)}</div>
-                <div><b>Kirim ke Induk:</b> ${window.escapeHtml(parentBook.name)}</div>
-                <hr style="margin:8px 0; border-color:#e9d8fd;">
-                <div>Jumlah transaksi: <b>${txCount}</b></div>
-                <div>Total pemasukan: <b style="color:#00875a">${window.rp(totalInc)}</b></div>
-                <div>Total pengeluaran: <b style="color:#de350b">${window.rp(totalExp)}</b></div>
-                <div><b>Net yang dikirim: <span style="color:${netTotal >= 0 ? '#00875a' : '#de350b'}">${window.rp(Math.abs(netTotal))}</span></b>
-                    ${netTotal < 0 ? ' (pengeluaran)' : ' (pemasukan)'}</div>
-            </div>
-            <div style="margin-top:10px; font-size:.72rem; color:#666;">
-                Satu transaksi ringkasan akan ditambahkan ke buku <b>${window.escapeHtml(parentBook.name)}</b>.<br>
-                Anak buku ini <b>tidak dihapus</b> — tetap bisa dibuka sebagai arsip.
-            </div>
-        `;
+        if (txCount === 0) {
+            el.innerHTML = `
+                <div style="background:#fff7e6; border:1px solid #ffd591; border-radius:8px; padding:12px 14px; font-size:.78rem; line-height:1.8; color:#946200;">
+                    Tidak ada transaksi baru ${window.escapeHtml(sinceLabel)}. Tidak ada yang perlu dikirim ke buku induk.
+                </div>
+            `;
+        } else {
+            el.innerHTML = `
+                <div style="background:#f3e8ff; border:1px solid #d6bcfa; border-radius:8px; padding:12px 14px; font-size:.78rem; line-height:1.8;">
+                    <div><b>Anak Buku:</b> ${window.escapeHtml(book.name)}</div>
+                    <div><b>Kirim ke Induk:</b> ${window.escapeHtml(parentBook.name)}</div>
+                    <div style="font-size:.68rem; color:#6b46c1; margin-top:2px;">Dihitung ${window.escapeHtml(sinceLabel)}</div>
+                    <hr style="margin:8px 0; border-color:#e9d8fd;">
+                    <div>Jumlah transaksi: <b>${txCount}</b></div>
+                    <div>Total pemasukan: <b style="color:#00875a">${window.rp(totalInc)}</b></div>
+                    <div>Total pengeluaran: <b style="color:#de350b">${window.rp(totalExp)}</b></div>
+                    <div><b>Net yang dikirim: <span style="color:${netTotal >= 0 ? '#00875a' : '#de350b'}">${window.rp(Math.abs(netTotal))}</span></b>
+                        ${netTotal < 0 ? ' (pengeluaran)' : ' (pemasukan)'}</div>
+                </div>
+                <div style="margin-top:10px; font-size:.72rem; color:#666;">
+                    Satu transaksi ringkasan akan ditambahkan ke buku <b>${window.escapeHtml(parentBook.name)}</b>.<br>
+                    Anak buku ini <b>tidak dihapus</b> — tetap bisa dibuka sebagai arsip. Penutupan berikutnya hanya akan menghitung transaksi baru setelah ini.
+                </div>
+            `;
+        }
     }
 
     // Isi default deskripsi
     const descEl = document.getElementById('tutupAnakBukuDesc');
     if (descEl) descEl.value = `Ringkasan: ${book.name}`;
+
+    // Nonaktifkan tombol kirim kalau tidak ada transaksi baru sejak penutupan
+    // terakhir — mencegah klik tak sengaja yang tidak akan mengirim apa pun.
+    const submitBtn = document.getElementById('tutupAnakBukuSubmitBtn');
+    if (submitBtn) submitBtn.disabled = (txCount === 0);
 
     window.openModal('tutupAnakBukuModal');
 };
@@ -399,18 +446,25 @@ window.tutupAnakBuku = async function() {
     const descEl = document.getElementById('tutupAnakBukuDesc');
     const deskripsi = (descEl ? descEl.value.trim() : '') || `Ringkasan: ${book.name}`;
 
-    // Hitung net
-    let totalInc = 0, totalExp = 0;
-    window.txs.forEach(t => {
-        const amt = Number(t.amount) || 0;
-        if (t.type === 'income') totalInc += amt;
-        else totalExp += amt;
-    });
-    const balanceOffset = Number(localStorage.getItem('sk_balance_offset_' + window.currentBookId)) || 0;
-    const netTotal = totalInc - totalExp + balanceOffset;
+    // Hitung net — HANYA transaksi yang belum pernah dikirim ke induk
+    // (lihat window._getUnclosedChildTxs, [BUG FIX] double-count).
+    const calc = window._getUnclosedChildTxs(book);
+    const { netTotal } = calc;
+    const closeTimestamp = new Date().toISOString();
 
+    if (calc.txs.length === 0) {
+        window.showToast('Tidak ada transaksi baru untuk dikirim sejak penutupan terakhir.', 'warning');
+        return;
+    }
     if (netTotal === 0) {
-        window.showToast('Tidak ada net transaksi untuk dikirim.', 'warning');
+        // Ada transaksi baru tapi net-nya nol (income = expense persis) — tetap
+        // tandai sebagai sudah ditutup supaya transaksi ini tidak dihitung lagi
+        // di penutupan berikutnya, walau tidak ada apa pun yang dikirim ke induk.
+        book.lastClosedAt = closeTimestamp;
+        localStorage.setItem('sk_books', JSON.stringify(window.books));
+        await window.pushSettingBooks();
+        window.showToast('Tidak ada net transaksi untuk dikirim, tapi transaksi ini sudah ditandai selesai.', 'info');
+        window.closeModal('tutupAnakBukuModal');
         return;
     }
 
@@ -446,6 +500,13 @@ window.tutupAnakBuku = async function() {
     const parentCached = JSON.parse(localStorage.getItem('sk_txs_' + parentBook.id) || '[]');
     parentCached.unshift(newTx);
     window.trimAndSaveLocal(parentBook.id, parentCached);
+
+    // [BUG FIX] Tandai anak buku ini sudah ditutup pada timestamp ini, supaya
+    // penutupan berikutnya HANYA menghitung transaksi baru setelah sekarang —
+    // bukan mengulang seluruh riwayat lagi (mencegah double-count ke induk).
+    book.lastClosedAt = closeTimestamp;
+    localStorage.setItem('sk_books', JSON.stringify(window.books));
+    await window.pushSettingBooks();
 
     await window.addCloudLog('SISTEM', `Tutup anak buku "${book.name}" → kirim ${window.rp(txAmount)} ke "${parentBook.name}"`);
 
