@@ -93,10 +93,12 @@ window.getSupabaseKey = function() { return window.globalSupabaseKey || ''; };
 
 window.escHtml = window.escapeHtml; // alias for older code
 
-// Tombol "Copy SQL" di Panduan Pengguna (#supabaseSetupSqlBlock, lihat 1a. Setup
-// Database Supabase di index.html) — menyalin teks skrip apa adanya ke clipboard.
-window.copySupabaseSetupSql = function() {
-    const block = document.getElementById('supabaseSetupSqlBlock');
+// Tombol "Copy SQL" di Panduan Pengguna — dipakai untuk beberapa blok skrip
+// SQL berbeda (1a. Setup Database untuk project baru, 1b. Migrasi untuk
+// project lama). blockId default ke skrip setup awal (perilaku lama tetap
+// sama persis untuk pemanggil yang tidak mengirim argumen).
+window.copySqlBlock = function(blockId) {
+    const block = document.getElementById(blockId || 'supabaseSetupSqlBlock');
     if (!block) return;
     const sql = block.innerText || block.textContent || '';
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -120,6 +122,9 @@ window.copySupabaseSetupSql = function() {
         document.body.removeChild(ta);
     }
 };
+// Alias lama dipertahankan supaya tombol "Copy SQL" di 1a (dibuat sebelum
+// copySqlBlock generik ini ada) tetap berfungsi tanpa perlu ubah HTML.
+window.copySupabaseSetupSql = function() { window.copySqlBlock('supabaseSetupSqlBlock'); };
 
 // Animasi angka dari nilai lama ke nilai baru dengan easing
 window.animateValue = function(id, toVal, duration, onComplete) {

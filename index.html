@@ -249,6 +249,34 @@ using (bucket_id = 'attachments');
             </div>
             <p style="color:#888; font-size:.7rem;">Catatan: skrip ini sengaja <strong>tidak</strong> mengaktifkan Row Level Security (RLS) karena aplikasi ini tidak memakai Supabase Auth — keamanan data mengandalkan enkripsi AES‑GCM di sisi browser dengan password akun Anda, bukan policy RLS. Jaga URL &amp; Anon Key project agar tidak tersebar ke publik.</p>
 
+            <h5>1b. Migrasi untuk Project Lama (Sudah Pernah Setup Sebelumnya)</h5>
+            <p>Kalau project Supabase Anda sudah dipakai <strong>sebelum</strong> kolom <code>account_tag</code> ditambahkan ke aplikasi, tabel <code>settings</code> bisa saja masih menyimpan constraint versi lama (misalnya <code>settings_book_id_key_key</code>, <code>settings_pkey</code>, atau <code>settings_book_id_key_unique</code> — semuanya cuma di kolom <code>book_id, key</code> tanpa <code>account_tag</code>). Ini menyebabkan error <code>409 Conflict</code> / <code>duplicate key value violates unique constraint</code> saat menyimpan data (misalnya anggaran) dari akun/device baru. Jalankan skrip ini <strong>sekali</strong> di SQL Editor untuk membersihkan constraint lama tersebut — aman dijalankan berkali-kali dan tidak menghapus data.</p>
+            <div style="position:relative; margin-bottom:8px;">
+                <button class="btn-mini" style="position:absolute; top:8px; right:8px; background:#238636; color:#fff; border:1px solid #2ea043;" onclick="window.copySqlBlock('settingsMigrationSqlBlock')">Copy SQL</button>
+                <pre id="settingsMigrationSqlBlock" style="background:#0d1117; color:#c9d1d9; font-size:.66rem; line-height:1.55; padding:14px; padding-right:80px; border-radius:8px; overflow-x:auto; white-space:pre; max-height:340px; margin:0;">-- ============================================================
+-- SINARKEU — MIGRASI CONSTRAINT `settings` UNTUK PROJECT LAMA
+-- ============================================================
+-- Jalankan SEKALI di Supabase SQL Editor kalau muncul error
+-- 409 / "duplicate key value violates unique constraint" saat
+-- menyimpan data (settings) dari akun atau device baru.
+--
+-- Constraint yang benar (dipakai kode aplikasi lewat parameter
+-- on_conflict=book_id,key,account_tag) adalah UNIQUE gabungan
+-- ketiga kolom itu. Skrip ini menghapus semua bentuk constraint
+-- lama yang cuma mencakup (book_id, key) tanpa account_tag, lalu
+-- memastikan hanya settings_unique_row yang tersisa.
+-- ============================================================
+
+alter table public.settings drop constraint if exists settings_pkey;
+alter table public.settings drop constraint if exists settings_book_id_key_key;
+alter table public.settings drop constraint if exists settings_unique_row;
+drop index if exists public.settings_book_id_key_unique;
+
+alter table public.settings
+    add constraint settings_unique_row unique (book_id, key, account_tag);</pre>
+            </div>
+            <p style="color:#888; font-size:.7rem;">Skrip ini aman dijalankan berkali-kali (idempotent) dan tidak menghapus data apa pun — hanya mengganti definisi constraint di tabel <code>settings</code>.</p>
+
             <h5>2. Manajemen Akun</h5>
             <ul>
                 <li>Klik tombol <strong>"Ganti Akun"</strong> di pojok kanan atas.</li>
