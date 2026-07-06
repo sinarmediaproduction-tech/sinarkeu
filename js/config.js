@@ -4,7 +4,7 @@ window.CRYPTO_CHECK_KEY = 'sk_crypto_check';
 window.CRYPTO_URL_KEY   = 'sk_enc_supabase_url';
 window.CRYPTO_AKEY_KEY  = 'sk_enc_supabase_key';
 window.SENTINEL_PLAIN   = 'sinarkeu_ok';
-window.MAX_LOCAL_TXS    = 300;
+window.MAX_LOCAL_TXS    = 1000;
 
 window.ACC_LIST_KEY   = 'sk_accounts';
 window.ACC_ACTIVE_KEY = 'sk_active_account';

@@ -17,9 +17,9 @@ window.parseTxDate = function(str) {
 
 window.trimAndSaveLocal = function(bookId, data) {
     const sorted = [...data].sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date));
-    const trimmed = sorted.slice(0, 300);
+    const trimmed = sorted.slice(0, window.MAX_LOCAL_TXS);
     localStorage.setItem('sk_txs_' + bookId, JSON.stringify(trimmed));
-    const remainder = sorted.slice(300);
+    const remainder = sorted.slice(window.MAX_LOCAL_TXS);
     let balanceOffset = 0;
     remainder.forEach(t => {
         const amt = Number(t.amount) || 0;
@@ -51,9 +51,9 @@ window.pullFromCloudSilently = async function() {
         // Baris NULL adalah data sebelum fitur account_tag ditambahkan; harus tetap terbaca
         // sampai migrasi selesai men-tag ulang semua baris tersebut.
         const _txTagFilter = window.tagOrFilter(_txTag);
-        let query = `?book_id=eq.${window.currentBookId}&is_deleted=eq.false&order=date.desc&limit=300${_txTagFilter}`;
+        let query = `?book_id=eq.${window.currentBookId}&is_deleted=eq.false&order=date.desc&limit=${window.MAX_LOCAL_TXS}${_txTagFilter}`;
         if (lastSync) {
-            query = `?book_id=eq.${window.currentBookId}&order=updated_at.desc&updated_at=gt.${lastSync}&limit=300${_txTagFilter}`;
+            query = `?book_id=eq.${window.currentBookId}&order=updated_at.desc&updated_at=gt.${lastSync}&limit=${window.MAX_LOCAL_TXS}${_txTagFilter}`;
         }
         let cloudData = await window.callSupabaseAPI('transactions', 'GET', null, query);
         if (cloudData && Array.isArray(cloudData)) {
@@ -108,7 +108,7 @@ window.pullAllBooksFromCloud = async function() {
         // OR filter: baris ber-tag akun ini ATAU baris lama tanpa tag (data sebelum migrasi).
         const _fxTagFilter = window.tagOrFilter(_fxTag);
         let cloudData = await window.callSupabaseAPI('transactions', 'GET', null,
-            `?book_id=eq.${bookId}&is_deleted=eq.false&order=date.desc&limit=300${_fxTagFilter}`);
+            `?book_id=eq.${bookId}&is_deleted=eq.false&order=date.desc&limit=${window.MAX_LOCAL_TXS}${_fxTagFilter}`);
         if (!cloudData || !Array.isArray(cloudData)) continue;
         const cloudMapped = cloudData.map(c => ({
             id: c.id, type: c.type, amount: Number(c.amount),

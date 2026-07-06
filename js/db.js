@@ -13,12 +13,32 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
         const res = await fetch(url, config);
         if (!res.ok) {
             const errText = await res.text();
-            throw new Error(errText);
+            const err = new Error(errText);
+            err.status = res.status;
+            throw err;
         }
         const text = await res.text();
         return text ? JSON.parse(text) : true;
     } catch (e) {
         console.error(`Supabase API Error (${table}):`, e);
+        // [FIX] Sebelumnya kegagalan (selain offline) selalu diam-diam --
+        // cuma masuk console, tidak pernah kelihatan oleh user. Ini yang
+        // membuat masalah seperti "constraint on_conflict tidak ada di
+        // database" (lihat fix_settings_upsert.sql) tidak pernah ketahuan
+        // dan hanya terasa sebagai "data acak/tidak sinkron". Tampilkan
+        // toast (di-throttle 15 detik) supaya user tahu ada push/pull yang
+        // gagal, bukan cuma "kelihatan aneh".
+        if (window.isOnline() && window.showToast) {
+            const now = Date.now();
+            if (!window._lastSyncErrorToastAt || now - window._lastSyncErrorToastAt > 15000) {
+                window._lastSyncErrorToastAt = now;
+                const isConflictErr = e && e.status === 400 && /on conflict|constraint/i.test(e.message || '');
+                const msg = isConflictErr
+                    ? `Gagal sinkron tabel '${table}': constraint database belum di-setup. Jalankan fix_settings_upsert.sql di Supabase SQL Editor.`
+                    : `Gagal sinkron tabel '${table}' (${e && e.status ? e.status : 'network'}). Cek koneksi/URL/API key.`;
+                window.showToast(msg, 'error');
+            }
+        }
         return null;
     }
 };
