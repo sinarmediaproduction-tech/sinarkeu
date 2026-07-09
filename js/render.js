@@ -71,7 +71,7 @@ window.render = function() {
         tr.innerHTML = `
             <td class="text-center col-no">${globalIndex}</td>
             <td>${window.formatDateTime(t.date)}</td>
-            <td>${badge}</td>
+            <td class="col-category">${badge}</td>
             <td>${window.escapeHtml(t.description)}</td>
             <td class="text-right" style="color:var(--success); font-weight:500;">${incText}</td>
             <td class="text-right" style="color:var(--danger); font-weight:500;">${expText}</td>

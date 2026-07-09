@@ -416,7 +416,9 @@ alter table public.settings
             <!-- [UI] Tombol "Ganti Akun" dihapus dari top bar desktop sesuai permintaan.
                  Fungsi ganti akun tetap tersedia lewat menu mobile drawer (lihat index.html
                  sekitar baris 1385, tombol dengan data-i18n="switch_account" yang sama). -->
-            <button class="mobile-only hamburger-btn" onclick="openMobileDrawer()" title="Menu" data-i18n="menu">Menu</button>
+            <button class="mobile-only hamburger-btn hamburger-btn-icon" onclick="openMobileDrawer()" title="Menu" aria-label="Menu">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
         </div>
     </div>
 
@@ -613,7 +615,7 @@ alter table public.settings
     <div class="table-container">
         <table>
             <thead>
-                <tr><th class="col-no" data-i18n="col_no">No</th><th data-i18n="col_date">Tanggal</th><th data-i18n="col_category">Kategori</th><th data-i18n="col_description">Deskripsi</th><th data-i18n="col_income">Pemasukan</th><th data-i18n="col_expense">Pengeluaran</th><th class="col-saldo" data-i18n="col_balance">Saldo</th><th class="col-nota" data-i18n="col_receipt">Nota</th><th data-i18n="col_action">Aksi</th></tr>
+                <tr><th class="col-no" data-i18n="col_no">No</th><th data-i18n="col_date">Tanggal</th><th class="col-category" data-i18n="col_category">Kategori</th><th data-i18n="col_description">Deskripsi</th><th data-i18n="col_income">Pemasukan</th><th data-i18n="col_expense">Pengeluaran</th><th class="col-saldo" data-i18n="col_balance">Saldo</th><th class="col-nota" data-i18n="col_receipt">Nota</th><th data-i18n="col_action">Aksi</th></tr>
             </thead>
             <tbody id="transactionTableBody"></tbody>
         </table>

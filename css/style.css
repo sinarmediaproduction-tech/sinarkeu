@@ -1739,6 +1739,25 @@ select.form-control option[value=""] {
      sendiri (diatur di bawah) yang menentukan, bukan flex-shrink:0 di sini. */
   .book-selector > *:not(.book-select) { flex-shrink: 0; }
   .book-select { min-width: 110px; }
+
+  /* [UI] Tombol Menu di hape jadi icon 3 garis (bukan teks) */
+  .hamburger-btn-icon {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+  }
+
+  /* [UI] Tabel transaksi di hape: tampilkan hanya kolom Tanggal, Deskripsi,
+     Pemasukan, Pengeluaran, Aksi. Sembunyikan No, Kategori, Saldo, Nota. */
+  table .col-no,
+  table .col-category,
+  table .col-saldo,
+  table .col-nota {
+    display: none;
+  }
 }
 
 @media(min-width:769px) and (max-width:1024px) {
