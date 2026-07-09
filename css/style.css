@@ -800,13 +800,16 @@ button:disabled, .btn:disabled,
   padding: 6px 12px;
   font-size: 1rem;
   font-weight: 500;
-  background: var(--ink);
-  color: var(--paper);
-  border: none;
-  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1.5px solid var(--rule);
+  border-radius: 999px;
   cursor: pointer;
   line-height: 1;
+  transition: background 0.15s, border-color 0.15s;
 }
+.hamburger-btn:hover { background: var(--paper-warm); border-color: var(--ink-faint); }
+.hamburger-btn:active { background: var(--rule); }
 
 /* ── Table ── */
 .table-container {
@@ -1725,7 +1728,7 @@ select.form-control option[value=""] {
      muat), diganti scroll horizontal supaya tidak ada yang kepotong/hilang. */
   .book-selector {
     flex-wrap: nowrap;
-    gap: 6px;
+    gap: 8px;
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
@@ -1740,14 +1743,33 @@ select.form-control option[value=""] {
   .book-selector > *:not(.book-select) { flex-shrink: 0; }
   .book-select { min-width: 110px; }
 
-  /* [UI] Tombol Menu di hape jadi icon 3 garis (bukan teks) */
+  /* [UI] Khusus tampilan hape: sembunyikan badge waktu sinkronisasi terakhir
+     supaya top bar hanya berisi status SUPABASE ON, dropdown buku, dan
+     tombol hamburger. */
+  #syncTimeBadge { display: none !important; }
+
+  /* [UI] Dropdown pilih buku melebar mengisi sisa ruang top bar (tidak ada
+     ruang kosong) karena item lain sudah diminimalkan di tampilan hape. */
+  .book-selector > .cs-wrapper.compact {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto;
+  }
+  .book-selector > .cs-wrapper.compact .cs-trigger {
+    max-width: none;
+    width: 100%;
+  }
+
+  /* [UI] Tombol Menu di hape jadi icon 3 garis (bukan teks), warna mengikuti
+     tema (terang = bg terang, gelap = bg gelap) dan bentuk lebih rounded. */
   .hamburger-btn-icon {
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     padding: 0;
+    flex-shrink: 0;
   }
 
   /* [UI] Tabel transaksi di hape: tampilkan hanya kolom Tanggal, Deskripsi,
@@ -2161,7 +2183,6 @@ select.form-control option[value=""] {
   border-color: var(--ink);
 }
 [data-theme="dark"] .manage-books-btn:hover:not(:disabled) { background: var(--ink-muted); }
-[data-theme="dark"] .hamburger-btn { background: var(--ink); color: var(--paper-warm); }
 
 /* Table */
 [data-theme="dark"] th { background: var(--paper-warm); color: var(--ink-faint); }
