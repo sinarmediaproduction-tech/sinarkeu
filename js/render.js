@@ -413,6 +413,7 @@ window.handleSubmit = async function(e) {
     const attachmentData = await window.resolveAttachment(window.currentAttachmentFile, window.currentAttachmentData, txId);
     let newTx = { id: txId, type, date, category, description, amount, attachment: attachmentData, updated_at: new Date().toISOString() };
     window.txs.unshift(newTx);
+    window._dirtyTxIds.add(newTx.id); // [FIX RACE] tandai baris ini saja yang perlu di-push
     window.closeModal('addModal');
     window.currentAttachmentFile = null;
     window.saveTransactions();
@@ -478,6 +479,7 @@ window.handleEditSubmit = async function(e) {
     if (amount <= 0) { alert('Nominal harus valid!'); return; }
     const editAttachment = await window.resolveAttachment(window.currentAttachmentFile, window.currentAttachmentData, id);
     window.txs[idx] = { id, type, date, category, description, amount, attachment: editAttachment, updated_at: new Date().toISOString() };
+    window._dirtyTxIds.add(id); // [FIX RACE] tandai baris ini saja yang perlu di-push
     window.closeModal('editModal');
     window.currentAttachmentFile = null;
     window.saveTransactions();

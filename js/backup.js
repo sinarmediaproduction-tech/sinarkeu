@@ -42,7 +42,9 @@ window.restoreFromIndex = function(i) {
     let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + window.currentBookId) || '[]');
     if (localBackups[i] && confirm("Pulihkan data dari snapshot cadangan ini? Data saat ini akan diganti.")) {
         window.txs = localBackups[i].data;
-        window.saveTransactions();
+        // forceFullPush=true: restore sengaja mengganti seluruh data buku ini,
+        // jadi semua baris harus di-push, bukan cuma yang "dirty".
+        window.saveTransactions(true);
         window.closeModal('backupModal');
         window.showToast("Data berhasil dipulihkan");
     }
@@ -150,7 +152,8 @@ window.restoreFromCloudBackup = async function(backupId) {
         const rows = await window.callSupabaseAPI('backups', 'GET', null, `?id=eq.${backupId}&book_id=eq.${window.currentBookId}${_brTagFilter}`);
         if (!rows || rows.length === 0) { window.showToast('Data backup tidak ditemukan', 'error'); return; }
         window.txs = JSON.parse(rows[0].data);
-        window.saveTransactions();
+        // forceFullPush=true: sama seperti restore lokal, seluruh data harus menang.
+        window.saveTransactions(true);
         window.closeModal('backupModal');
         window.showToast('Data berhasil dipulihkan dari cloud!', 'success');
         await window.addCloudLog('RESTORE', 'Restore dari cloud backup id: ' + backupId);
@@ -208,7 +211,10 @@ window.handleJsonImport = function(e) {
                         }
                     }
                     window.txs = uniqueTxs;
-                    window.saveTransactions();
+                    // forceFullPush=true: import JSON bisa membawa banyak transaksi baru
+                    // sekaligus (bukan satu id yang jelas seperti add/edit biasa), jadi
+                    // paling aman dorong semua supaya tidak ada yang tertinggal di cloud.
+                    window.saveTransactions(true);
                     window.showToast(`${newTxs.length} transaksi berhasil diimpor!`, 'success');
                     window.addCloudLog('IMPORT', `Import ${newTxs.length} transaksi dari JSON`);
                 }

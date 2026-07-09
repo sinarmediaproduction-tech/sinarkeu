@@ -145,15 +145,45 @@ window.forceFullSync = async function() {
     }
 };
 
-window.pushToCloud = async function(bookId, txs) {
+// [FIX RACE MULTI-DEVICE] Set berisi id transaksi yang berubah di PERANGKAT INI
+// sejak push terakhir berhasil. Ditambahkan oleh handleSubmit (tambah) dan
+// handleEditSubmit (ubah) — lihat render.js. Dipakai supaya pushToCloud() hanya
+// meng-upsert baris yang benar-benar diubah, bukan seluruh window.txs.
+//
+// Kenapa ini penting: sebelumnya pushToCloud() SELALU mengirim seluruh
+// window.txs (bisa ratusan baris, lihat MAX_LOCAL_TXS) dengan
+// Prefer:resolution=merge-duplicates (upsert full-row overwrite), setiap kali
+// SATU transaksi ditambah/diubah. Skenario race:
+//   1. Device A & B sama-sama sudah sinkron, 50 transaksi.
+//   2. Device A ubah transaksi #10 -> 1.5 detik kemudian debounce push
+//      SELURUH 50 transaksi (termasuk salinan lokal A untuk #11..#50 yang
+//      SUDAH BASI kalau device lain baru saja mengubahnya).
+//   3. Kalau di antara pull terakhir A dan push ini, device B sempat mengubah
+//      transaksi #20, maka push A akan MENIMPA perubahan B itu dengan data
+//      lama A secara diam-diam -- lost update, tanpa error apa pun.
+// Ini persis kelas bug yang sama dengan bug hadiah di Merdeka (menimpa data
+// yang tidak sedang diubah), hanya lebih tersembunyi karena terjadi per-baris,
+// bukan di dalam satu kolom JSON.
+window._dirtyTxIds = new Set();
+
+window.pushToCloud = async function(bookId, txs, dirtyIds) {
     // bookId & txs opsional: jika diisi (dari debouncedPushToCloud), pakai snapshot
     // yang di-capture saat debounce dipanggil — bukan nilai currentBookId/txs saat ini
     // yang mungkin sudah berubah karena user pindah buku (Bug Fix 2).
     if (!window.isOnline()) return;
     bookId = bookId || window.currentBookId;
     txs = txs || window.txs;
+    // dirtyIds undefined/null -> mode lama (force full push), dipakai sengaja oleh
+    // restore backup/import (lihat backup.js: saveTransactions(true)) karena di situ
+    // memang SELURUH data lokal harus menang menimpa cloud.
+    // dirtyIds diisi (Set, boleh kosong) -> hanya push baris yang berubah di device ini.
+    let toPush = txs;
+    if (dirtyIds) {
+        toPush = txs.filter(t => dirtyIds.has(t.id));
+        if (toPush.length === 0) return;
+    }
     const _ptTag = window.getAccountTag ? window.getAccountTag() : null;
-    const payload = txs.map(t => ({
+    const payload = toPush.map(t => ({
         id: t.id,
         book_id: bookId,
         device_id: window.deviceId,
@@ -170,21 +200,34 @@ window.pushToCloud = async function(bookId, txs) {
     let res = await window.callSupabaseAPI('transactions', 'POST', payload);
     if (res && Array.isArray(res)) {
         console.log(`Sinkronisasi ${res.length} transaksi ke Supabase Cloud berhasil.`);
+        if (dirtyIds) {
+            // Hapus HANYA id yang barusan berhasil di-push dari dirty set global.
+            // Kalau ada edit baru masuk selama network delay (setelah snapshot
+            // diambil di debouncedPushToCloud), id itu ditambahkan lagi ke
+            // window._dirtyTxIds oleh handleSubmit/handleEditSubmit dan TIDAK
+            // ada di toPush ini, jadi tidak ikut terhapus -- akan ke-push di
+            // siklus debounce berikutnya.
+            toPush.forEach(t => window._dirtyTxIds.delete(t.id));
+        }
         window._lastSyncTime = new Date();
         window.updateSyncTimeBadge();
     }
 };
 
-window.debouncedPushToCloud = function() {
+window.debouncedPushToCloud = function(forceFullPush) {
     // [BUG FIX 2] Capture bookId SEKARANG (sebelum delay 1500ms).
     // Tanpa ini, jika user switchBook dalam 1.5 detik setelah edit transaksi,
     // pushToCloud() terjadi setelah currentBookId sudah berganti — transaksi
     // buku lama ter-push dengan book_id buku baru di Supabase.
     const bookIdSnapshot = window.currentBookId;
     const txsSnapshot = [...window.txs];
+    // Snapshot dirty ids SEKARANG juga, dengan alasan yang sama seperti bookId/txs
+    // di atas: supaya id yang ditambahkan ke window._dirtyTxIds SETELAH titik ini
+    // (edit baru yang masuk selama delay) tidak ikut ke-clear oleh push ini.
+    const dirtySnapshot = forceFullPush ? null : new Set(window._dirtyTxIds);
     if (window._pushDebounceTimer) clearTimeout(window._pushDebounceTimer);
     window._pushDebounceTimer = setTimeout(() => {
-        window.pushToCloud(bookIdSnapshot, txsSnapshot);
+        window.pushToCloud(bookIdSnapshot, txsSnapshot, dirtySnapshot);
     }, 1500);
 };
 
@@ -253,8 +296,13 @@ window.loadTransactions = function() {
     if (window.isOnline()) window.pullFromCloudSilently();
 };
 
-window.saveTransactions = function() {
+window.saveTransactions = function(forceFullPush) {
+    // forceFullPush=true dipakai HANYA oleh restore backup lokal/cloud dan import
+    // JSON (lihat backup.js) -- kasus di mana window.txs memang sengaja diganti
+    // total dan seluruh isinya harus menang menimpa cloud. Untuk tambah/ubah
+    // transaksi biasa, JANGAN pernah pass true di sini -- biarkan default
+    // (push hanya baris dirty) supaya tidak menimpa perubahan device lain.
     window.trimAndSaveLocal(window.currentBookId, window.txs);
     window.render();
-    window.debouncedPushToCloud();
+    window.debouncedPushToCloud(forceFullPush);
 };
