@@ -36,7 +36,7 @@ window.render = function() {
     if ((window.expenseChartVisible || !window._expenseChartInitialized) && typeof window.renderExpenseChart === 'function') {
         window.renderExpenseChart();
     }
-    let allSorted = [...window.txs].sort((a, b) => window.parseTxDate(a.date) - window.parseTxDate(b.date));
+    let allSorted = [...window.txs].sort((a, b) => window.parseTxDate(a.date) - window.parseTxDate(b.date) || String(a.id).localeCompare(String(b.id)));
     let balanceMap = {};
     let tempBal = balanceOffset;
     allSorted.forEach(t => {
@@ -402,7 +402,7 @@ window.handleSubmit = async function(e) {
     let type = document.querySelector('input[name="type"]:checked').value;
     const nowTx = new Date();
     const _pad = n => String(n).padStart(2, '0');
-    const date = `${nowTx.getFullYear()}-${_pad(nowTx.getMonth()+1)}-${_pad(nowTx.getDate())}T${_pad(nowTx.getHours())}:${_pad(nowTx.getMinutes())}`;
+    const date = `${nowTx.getFullYear()}-${_pad(nowTx.getMonth()+1)}-${_pad(nowTx.getDate())}T${_pad(nowTx.getHours())}:${_pad(nowTx.getMinutes())}:${_pad(nowTx.getSeconds())}`;
     document.getElementById('txDate').value = date;
     let category = type === 'expense' ? document.getElementById('txCategory').value : document.getElementById('txIncomeCategory').value;
     let description = document.getElementById('txDesc').value.trim();
@@ -466,12 +466,13 @@ window.handleEditSubmit = async function(e) {
     let idx = window.txs.findIndex(x => x.id === id);
     if (idx === -1) return;
     let type = document.querySelector('input[name="editType"]:checked').value;
-    let date = document.getElementById('editTxDate').value;
-    // [BUG FIX] Jaga-jaga: jika field tanggal tersembunyi ini kosong (misal
-    // gagal terisi karena format tanggal sumber tidak valid untuk
-    // datetime-local), JANGAN timpa tanggal asli transaksi dengan string
-    // kosong — itu akan ditolak Supabase (22007) dan merusak data.
-    if (!date) date = window.txs[idx].date;
+    // [FIX] Field #editTxDate tersembunyi (display:none) dan tidak pernah
+    // diedit user — nilainya cuma presisi menit (batasan native
+    // datetime-local). Kalau dipakai apa adanya di sini, setiap kali edit
+    // transaksi detik aslinya akan ter-reset jadi :00, yang bisa memicu
+    // tabrakan urutan dengan transaksi lain yang menitnya sama. Jadi
+    // tanggal asli (lengkap dengan detik) tetap dipertahankan di sini.
+    let date = window.txs[idx].date;
     let category = type === 'expense' ? document.getElementById('editTxCategory').value : document.getElementById('editTxIncomeCategory').value;
     let description = document.getElementById('editTxDesc').value.trim();
     let amount = window.unRp(document.getElementById('editTxAmount').value);

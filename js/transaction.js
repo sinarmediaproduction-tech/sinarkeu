@@ -16,7 +16,7 @@ window.parseTxDate = function(str) {
 };
 
 window.trimAndSaveLocal = function(bookId, data) {
-    const sorted = [...data].sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date));
+    const sorted = [...data].sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date) || String(b.id).localeCompare(String(a.id)));
     const trimmed = sorted.slice(0, window.MAX_LOCAL_TXS);
     localStorage.setItem('sk_txs_' + bookId, JSON.stringify(trimmed));
     const remainder = sorted.slice(window.MAX_LOCAL_TXS);
@@ -78,14 +78,14 @@ window.pullFromCloudSilently = async function() {
                         }
                     }
                 });
-                window.txs = Object.values(localMap).sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date));
+                window.txs = Object.values(localMap).sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date) || String(b.id).localeCompare(String(a.id)));
             } else if (!lastSync) {
                 window.txs = cloudData.map(c => ({
                     id: c.id, type: c.type, amount: Number(c.amount),
                     category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
                     description: c.description, date: c.date,
                     attachment: c.attachment, updated_at: c.updated_at || null
-                }));
+                })).sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date) || String(b.id).localeCompare(String(a.id)));
             }
             window.trimAndSaveLocal(window.currentBookId, window.txs);
             window._lastFullSyncTime[window.currentBookId] = new Date().toISOString();

@@ -1373,31 +1373,27 @@ alter table public.settings
 </div>
 
 <!-- ===== MOBILE DRAWER ===== -->
-<div id="mobileDrawerOverlay" onclick="closeMobileDrawer()" style="position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:3000; backdrop-filter:blur(2px); opacity:0; pointer-events:none; transition:opacity 0.25s;"></div>
-<div id="mobileDrawer" style="position:fixed; top:0; right:0; height:100%; width:82%; max-width:300px; background:#fff; z-index:3001; box-shadow:-4px 0 24px rgba(0,0,0,0.18); border-left:2px solid #1a1a1a; overflow-y:auto; transform:translateX(100%); transition:transform 0.25s cubic-bezier(.4,0,.2,1); display:flex; flex-direction:column;">
-    <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 18px 14px; border-bottom:1.5px solid #1a1a1a; background:#1a1a1a;">
-        <span style="font-size:.9rem; font-weight:700; color:#fff;" data-i18n="menu">Menu</span>
-        <button onclick="closeMobileDrawer()" style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:#fff; line-height:1;">×</button>
+<div id="mobileDrawerOverlay" class="mdrawer-overlay" onclick="closeMobileDrawer()"></div>
+<div id="mobileDrawer" class="mdrawer">
+    <div class="mdrawer-header">
+        <span class="mdrawer-header-title" data-i18n="menu">Menu</span>
+        <button class="mdrawer-close" onclick="closeMobileDrawer()" aria-label="Tutup">×</button>
     </div>
-    <div style="padding:14px 18px; background:#e8f0fe; border-bottom:1px solid #c5d8ff;">
-        <div style="font-size:.62rem; font-weight:600; color:#555; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px;">Akun Aktif</div>
-        <div id="drawerAccountLabel" style="font-size:.8rem; font-weight:700; color:#1a1a1a;">—</div>
+    <div class="mdrawer-account">
+        <div class="mdrawer-account-label">Akun Aktif</div>
+        <div id="drawerAccountLabel" class="mdrawer-account-value">—</div>
     </div>
-    <div style="padding:16px 18px; display:flex; flex-direction:column; gap:10px; flex:1;">
-        <button onclick="drawerAction(openBookManager)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#1a1a1a; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;" data-i18n="manage_book">Kelola Buku</button>
-        <button onclick="drawerAction(forceFullSync)" title="Sinkronisasi" aria-label="Sinkronisasi" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#00875a; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:center; display:flex; align-items:center; justify-content:center;">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path></svg>
+    <div class="mdrawer-body">
+        <button class="mdrawer-btn mdrawer-btn-primary" onclick="drawerAction(openBookManager)" data-i18n="manage_book">Kelola Buku</button>
+        <button class="mdrawer-btn mdrawer-btn-success" onclick="drawerAction(forceFullSync)" data-i18n="sync">Sinkronisasi</button>
+        <button class="mdrawer-btn mdrawer-btn-neutral" onclick="drawerAction(openSetelanModal)" data-i18n="settings">Setelan</button>
+        <button class="mdrawer-btn mdrawer-btn-warning" onclick="drawerAction(openPaymentReminderModal)">
+            <span data-i18n="payment_reminder">Pengingat Pembayaran</span>
+            <span id="drawerReminderBadge" class="mdrawer-badge"></span>
         </button>
-        <button onclick="drawerAction(openSetelanModal)" title="Setelan" aria-label="Setelan" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#4a5568; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:center; display:flex; align-items:center; justify-content:center;">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852 1 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-        </button>
-        <button onclick="drawerAction(openPaymentReminderModal)" title="Pengingat Pembayaran" aria-label="Pengingat Pembayaran" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#d97706; color:#fff; border:none; border-radius:8px; cursor:pointer; text-align:center; display:flex; align-items:center; justify-content:center; position:relative;">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-            <span id="drawerReminderBadge" style="display:none; position:absolute; top:8px; right:16px; background:#ef4444; color:#fff; font-size:.6rem; font-weight:700; border-radius:10px; padding:1px 6px;"></span>
-        </button>
-        <div style="height:1px; background:#eee; margin:4px 0;"></div>
-        <button onclick="drawerAction(logoutToLockScreen)" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#f5f5f5; color:#1a1a1a; border:1.5px solid #ddd; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;" data-i18n="switch_account">Ganti Akun</button>
-        <button onclick="window.toggleDarkMode(); document.getElementById('drawerDarkLabel').textContent = document.documentElement.getAttribute('data-theme')==='dark' ? '☀️ Mode Terang' : '🌙 Mode Gelap';" id="drawerDarkBtn" style="width:100%; padding:13px 16px; font-size:.85rem; font-weight:600; background:#f5f5f5; color:#1a1a1a; border:1.5px solid #ddd; border-radius:8px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px;"><span id="drawerDarkLabel">🌙 Mode Gelap</span></button>
+        <div class="mdrawer-divider"></div>
+        <button class="mdrawer-btn mdrawer-btn-outline" onclick="drawerAction(logoutToLockScreen)" data-i18n="switch_account">Ganti Akun</button>
+        <button class="mdrawer-btn mdrawer-btn-outline" id="drawerDarkBtn" onclick="window.toggleDarkMode(); document.getElementById('drawerDarkLabel').textContent = document.documentElement.getAttribute('data-theme')==='dark' ? '☀️ Mode Terang' : '🌙 Mode Gelap';"><span id="drawerDarkLabel">🌙 Mode Gelap</span></button>
     </div>
 </div>
 
