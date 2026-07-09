@@ -145,10 +145,11 @@ window.forceFullSync = async function() {
     }
 };
 
-// [FIX RACE MULTI-DEVICE] Set berisi id transaksi yang berubah di PERANGKAT INI
-// sejak push terakhir berhasil. Ditambahkan oleh handleSubmit (tambah) dan
-// handleEditSubmit (ubah) — lihat render.js. Dipakai supaya pushToCloud() hanya
-// meng-upsert baris yang benar-benar diubah, bukan seluruh window.txs.
+// [FIX RACE MULTI-DEVICE + MULTI-TAB] Set berisi id transaksi yang berubah di
+// PERANGKAT/BROWSER INI sejak push terakhir berhasil. Ditambahkan lewat
+// window.markTxDirty() oleh handleSubmit (tambah) dan handleEditSubmit (ubah)
+// di render.js. Dipakai supaya pushToCloud() hanya meng-upsert baris yang
+// benar-benar diubah, bukan seluruh window.txs.
 //
 // Kenapa ini penting: sebelumnya pushToCloud() SELALU mengirim seluruh
 // window.txs (bisa ratusan baris, lihat MAX_LOCAL_TXS) dengan
@@ -165,6 +166,96 @@ window.forceFullSync = async function() {
 // yang tidak sedang diubah), hanya lebih tersembunyi karena terjadi per-baris,
 // bukan di dalam satu kolom JSON.
 window._dirtyTxIds = new Set();
+
+// [MULTI-TAB] Dirty ids di atas cuma in-memory -> kalau tab A menandai dirty
+// lalu di-close SEBELUM debounce 1.5 detik sempat push (atau sebelum sempat
+// online), penandaan itu hilang total dan transaksi itu tidak akan pernah
+// ter-push kecuali user mengubahnya lagi. window._dirtyStoreKey menyimpan
+// peta {txId: bookId} yang sama persis ke localStorage, supaya:
+//   1. Tab lain yang masih terbuka bisa lihat dirty ids ini (lewat event
+//      'storage' bawaan browser, lihat listener di bawah) dan ikut
+//      menganggapnya perlu di-push kalau tab itu yang lebih dulu push.
+//   2. Kalau SEMUA tab/tab ini di-close sebelum sempat push, saat app dibuka
+//      lagi (device/tab manapun), window.flushPendingDirtyOnStart() akan
+//      menemukan sisa dirty ids ini di localStorage dan langsung push --
+//      tidak ada transaksi yang "lupa" ter-sync.
+window._dirtyStoreKey = 'sk_dirty_pending';
+
+window._loadDirtyStore = function() {
+    try { return JSON.parse(localStorage.getItem(window._dirtyStoreKey) || '{}'); }
+    catch (e) { return {}; }
+};
+window._saveDirtyStore = function(storeObj) {
+    try { localStorage.setItem(window._dirtyStoreKey, JSON.stringify(storeObj)); }
+    catch (e) { /* localStorage penuh/nonaktif — dirty tetap ada di memori tab ini */ }
+};
+
+// Tandai satu id transaksi sebagai "perlu di-push", baik di memori tab ini
+// maupun di localStorage (supaya tab lain & sesi berikutnya tahu).
+window.markTxDirty = function(id, bookId) {
+    bookId = bookId || window.currentBookId;
+    window._dirtyTxIds.add(id);
+    const store = window._loadDirtyStore();
+    store[id] = bookId;
+    window._saveDirtyStore(store);
+};
+
+// Hapus sekumpulan id dari dirty tracking (dipanggil setelah push berhasil),
+// baik dari memori tab ini maupun localStorage.
+window.clearTxDirty = function(ids) {
+    ids.forEach(id => window._dirtyTxIds.delete(id));
+    const store = window._loadDirtyStore();
+    ids.forEach(id => { delete store[id]; });
+    window._saveDirtyStore(store);
+};
+
+// [MULTI-TAB] Dipanggil sekali saat app start (lihat app.js continueAppInit).
+// Kalau ada dirty ids tersisa dari sesi/tab sebelumnya yang tidak sempat
+// ter-push (tab ditutup, koneksi putus, dsb), push sekarang juga -- per buku,
+// memakai cache localStorage buku itu (bukan window.txs, karena buku itu
+// belum tentu sedang aktif/ditampilkan).
+window.flushPendingDirtyOnStart = async function() {
+    if (!window.isOnline()) return;
+    const store = window._loadDirtyStore();
+    const ids = Object.keys(store);
+    if (ids.length === 0) return;
+    const byBook = {};
+    ids.forEach(id => { (byBook[store[id]] = byBook[store[id]] || []).push(id); });
+    for (const bookId in byBook) {
+        const cacheRaw = localStorage.getItem('sk_txs_' + bookId);
+        const cacheTxs = cacheRaw ? JSON.parse(cacheRaw) : [];
+        const dirtySet = new Set(byBook[bookId]);
+        await window.pushToCloud(bookId, cacheTxs, dirtySet);
+    }
+};
+
+// [MULTI-TAB] Kalau tab LAIN di browser yang sama menulis ke localStorage,
+// event 'storage' otomatis terpicu di tab ini (tidak pernah terpicu di tab
+// yang menulis sendiri -- pas untuk kebutuhan kita).
+//   - Cache transaksi buku yang sedang dibuka berubah (tab lain
+//     tambah/ubah/hapus, atau tab lain barusan pull dari cloud) -> reload
+//     window.txs dari localStorage & render ulang, supaya tab ini tidak
+//     menampilkan data basi ATAU nanti mem-push balik data basi itu.
+//   - Dirty store berubah -> sinkronkan window._dirtyTxIds in-memory tab ini,
+//     supaya siapa pun (tab ini atau tab lain) yang debounce-nya lebih dulu
+//     selesai, ikut mem-push id yang ditandai tab lain, dan tidak ada tab
+//     yang mem-push ulang id yang barusan berhasil di-push tab lain.
+window.addEventListener('storage', function(e) {
+    if (!e.key) return;
+    if (e.key === 'sk_txs_' + window.currentBookId) {
+        try {
+            window.txs = e.newValue ? JSON.parse(e.newValue) : [];
+            window.render();
+        } catch (err) { console.warn('[MultiTab] Gagal parse update txs dari tab lain:', err); }
+        return;
+    }
+    if (e.key === window._dirtyStoreKey) {
+        try {
+            const store = e.newValue ? JSON.parse(e.newValue) : {};
+            window._dirtyTxIds = new Set(Object.keys(store).filter(id => store[id] === window.currentBookId));
+        } catch (err) { console.warn('[MultiTab] Gagal parse dirty store dari tab lain:', err); }
+    }
+});
 
 window.pushToCloud = async function(bookId, txs, dirtyIds) {
     // bookId & txs opsional: jika diisi (dari debouncedPushToCloud), pakai snapshot
@@ -201,13 +292,14 @@ window.pushToCloud = async function(bookId, txs, dirtyIds) {
     if (res && Array.isArray(res)) {
         console.log(`Sinkronisasi ${res.length} transaksi ke Supabase Cloud berhasil.`);
         if (dirtyIds) {
-            // Hapus HANYA id yang barusan berhasil di-push dari dirty set global.
-            // Kalau ada edit baru masuk selama network delay (setelah snapshot
-            // diambil di debouncedPushToCloud), id itu ditambahkan lagi ke
-            // window._dirtyTxIds oleh handleSubmit/handleEditSubmit dan TIDAK
-            // ada di toPush ini, jadi tidak ikut terhapus -- akan ke-push di
-            // siklus debounce berikutnya.
-            toPush.forEach(t => window._dirtyTxIds.delete(t.id));
+            // Hapus HANYA id yang barusan berhasil di-push, dari memori DAN
+            // localStorage (window.clearTxDirty), supaya tab lain juga tahu id
+            // ini sudah beres dan tidak mem-push ulang. Kalau ada edit baru
+            // masuk selama network delay (setelah snapshot diambil di
+            // debouncedPushToCloud), id itu ditandai ulang lewat markTxDirty
+            // dan TIDAK ada di toPush ini, jadi tidak ikut terhapus -- akan
+            // ke-push di siklus debounce berikutnya.
+            window.clearTxDirty(toPush.map(t => t.id));
         }
         window._lastSyncTime = new Date();
         window.updateSyncTimeBadge();
@@ -292,6 +384,12 @@ window.loadTransactions = function() {
     let stored = localStorage.getItem('sk_txs_' + window.currentBookId);
     window.txs = stored ? JSON.parse(stored) : [];
     window.txs.sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date));
+    // [MULTI-TAB] Muat dirty ids milik buku ini dari localStorage. Ini bisa berisi
+    // id yang ditandai tab lain (belum sempat ke-push tab itu) atau sisa dari sesi
+    // sebelumnya yang belum sempat online. Timpa in-memory Set supaya tidak
+    // "mencampur" dirty ids buku sebelumnya yang sedang aktif di tab ini.
+    const _dirtyStore = window._loadDirtyStore();
+    window._dirtyTxIds = new Set(Object.keys(_dirtyStore).filter(id => _dirtyStore[id] === window.currentBookId));
     window.render();
     if (window.isOnline()) window.pullFromCloudSilently();
 };

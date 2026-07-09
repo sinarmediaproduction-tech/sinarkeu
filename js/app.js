@@ -135,6 +135,12 @@ window.continueAppInit = async function() {
         setTimeout(() => window.openSetupModal(), 400);
     } else {
         if (window.isOnline()) {
+            // [FIX RACE MULTI-TAB/SESSION] Push dulu sisa dirty ids dari sesi/tab
+            // sebelumnya yang mungkin belum sempat ter-sync (tab ditutup, koneksi
+            // putus, dsb) SEBELUM pullAllBooksFromCloud() di bawah menimpa cache
+            // lokal buku-buku itu. Lihat window.flushPendingDirtyOnStart di
+            // js/transaction.js untuk detail.
+            await window.flushPendingDirtyOnStart();
             await window.pullAllSettings();
             // Self-heal: kalau device ini sudah lama pakai salt lokal sendiri tapi
             // belum pernah ke-push ke cloud, push sekarang. Mencegah device lain
