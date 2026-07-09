@@ -47,12 +47,30 @@ const INCOME_COLORS = {
 // ── Close semua dropdown saat klik di luar ──
 document.addEventListener('click', function(e) {
   document.querySelectorAll('.cs-wrapper.open').forEach(function(w) {
-    if (!w.contains(e.target)) closeCustomSelect(w);
+    var dd = w._csDropdown;
+    var insideDropdown = dd && dd.contains(e.target);
+    if (!w.contains(e.target) && !insideDropdown) closeCustomSelect(w);
   });
 });
 
 function closeCustomSelect(wrapper) {
   wrapper.classList.remove('open');
+  var dropdown = wrapper._csDropdown;
+  if (dropdown && dropdown.parentNode === document.body) {
+    // Kembalikan dropdown ke dalam wrapper & bersihkan posisi fixed
+    wrapper.appendChild(dropdown);
+    dropdown.style.position = '';
+    dropdown.style.left = '';
+    dropdown.style.top = '';
+    dropdown.style.bottom = '';
+    dropdown.style.width = '';
+    dropdown.style.minWidth = '';
+  }
+  if (wrapper._csRepositionHandler) {
+    window.removeEventListener('scroll', wrapper._csRepositionHandler, true);
+    window.removeEventListener('resize', wrapper._csRepositionHandler);
+    wrapper._csRepositionHandler = null;
+  }
   var search = wrapper.querySelector('.cs-search');
   if (search) {
     search.value = '';
@@ -120,6 +138,8 @@ window.initCustomSelect = function(selectEl, opts) {
   optList.className = 'cs-options';
   dropdown.appendChild(optList);
   wrapper.appendChild(dropdown);
+  wrapper._csDropdown = dropdown;
+  wrapper._csTrigger = trigger;
 
   // Render options dari <select>
   function buildOptions() {
@@ -199,16 +219,40 @@ window.initCustomSelect = function(selectEl, opts) {
       closeCustomSelect(wrapper);
     } else {
       wrapper.classList.add('open');
-      // Posisi dropdown — flip ke atas kalau tidak cukup ruang bawah
-      var rect = wrapper.getBoundingClientRect();
-      var spaceBelow = window.innerHeight - rect.bottom;
-      if (spaceBelow < 200) {
-        dropdown.style.top = 'auto';
-        dropdown.style.bottom = 'calc(100% + 2px)';
-      } else {
-        dropdown.style.top = '';
-        dropdown.style.bottom = '';
+
+      // Pindahkan dropdown ke <body> dengan position:fixed supaya tidak
+      // pernah kepotong oleh ancestor yang punya overflow:hidden/auto
+      // (mis. .book-selector yang di hape overflow-y:hidden untuk
+      // scroll horizontal top bar).
+      document.body.appendChild(dropdown);
+      dropdown.style.position = 'fixed';
+
+      function positionDropdown() {
+        var rect = trigger.getBoundingClientRect();
+        var dropH = dropdown.offsetHeight || 260;
+        var spaceBelow = window.innerHeight - rect.bottom;
+        var left = rect.left;
+        var width = Math.max(rect.width, 180);
+        // Jangan sampai keluar dari tepi kanan layar
+        if (left + width > window.innerWidth - 8) {
+          left = Math.max(8, window.innerWidth - width - 8);
+        }
+        dropdown.style.left = left + 'px';
+        dropdown.style.width = width + 'px';
+        dropdown.style.minWidth = width + 'px';
+        if (spaceBelow < dropH + 10 && rect.top > dropH) {
+          dropdown.style.top = 'auto';
+          dropdown.style.bottom = (window.innerHeight - rect.top + 2) + 'px';
+        } else {
+          dropdown.style.bottom = 'auto';
+          dropdown.style.top = (rect.bottom + 2) + 'px';
+        }
       }
+      positionDropdown();
+      wrapper._csRepositionHandler = positionDropdown;
+      window.addEventListener('scroll', positionDropdown, true);
+      window.addEventListener('resize', positionDropdown);
+
       setTimeout(function() {
         var search = wrapper.querySelector('.cs-search');
         if (search) search.focus();
