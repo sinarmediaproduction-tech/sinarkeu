@@ -397,7 +397,6 @@ alter table public.settings
                 <input type="text" id="headerAIInput" class="header-ai-input" placeholder="Tanya AI keuangan..." data-i18n="ai_placeholder" data-i18n-attr="placeholder" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.submitHeaderAI();}" autocomplete="off">
                 <button class="header-ai-btn" onclick="window.submitHeaderAI()" title="Kirim">→</button>
             </div>
-            <label data-i18n="book_label">BUKU:</label>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
             <button class="manage-books-btn desktop-only" id="kelolaBukuBtn" onclick="openBookManager()" data-i18n="manage_book">Kelola</button>
             <button class="manage-books-btn desktop-only icon-btn" id="manualSyncBtn" style="background:none; border-color:transparent; color:var(--ink-faint);" onclick="forceFullSync()" title="Sinkronisasi" aria-label="Sinkronisasi">
