@@ -1720,7 +1720,25 @@ select.form-control option[value=""] {
   .container { padding: 0 16px 32px; }
   .account-bar { padding: 0 16px; }
   .header { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .book-selector { flex-wrap: wrap; gap: 6px; }
+  /* [UI] Semua item top bar jadi SATU BARIS di hape: flex-wrap dimatikan
+     (sebelumnya "wrap" bikin item pindah ke baris berikutnya kalau tidak
+     muat), diganti scroll horizontal supaya tidak ada yang kepotong/hilang. */
+  .book-selector {
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge lama */
+    padding-bottom: 2px;
+  }
+  .book-selector::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+  /* Label, badge, dan tombol tidak boleh menyusut (nanti tulisannya gepeng);
+     dropdown buku (.book-select) sengaja DIKECUALIKAN supaya lebar minimumnya
+     sendiri (diatur di bawah) yang menentukan, bukan flex-shrink:0 di sini. */
+  .book-selector > *:not(.book-select) { flex-shrink: 0; }
+  .book-select { min-width: 110px; }
 }
 
 @media(min-width:769px) and (max-width:1024px) {
