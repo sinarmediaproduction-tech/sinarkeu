@@ -60,6 +60,7 @@ function closeCustomSelect(wrapper) {
     // Kembalikan dropdown ke dalam wrapper & bersihkan posisi fixed
     wrapper.appendChild(dropdown);
     dropdown.style.position = '';
+    dropdown.style.display = '';
     dropdown.style.left = '';
     dropdown.style.top = '';
     dropdown.style.bottom = '';
@@ -226,6 +227,7 @@ window.initCustomSelect = function(selectEl, opts) {
       // scroll horizontal top bar).
       document.body.appendChild(dropdown);
       dropdown.style.position = 'fixed';
+      dropdown.style.display = 'flex';
 
       function positionDropdown() {
         var rect = trigger.getBoundingClientRect();
