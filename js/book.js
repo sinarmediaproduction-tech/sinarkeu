@@ -2,13 +2,36 @@
 window.updateBookSelectDropdown = function() {
     let sel = document.getElementById('currentBookSelect');
     sel.innerHTML = '';
+
+    // [UI] Kelompokkan anak buku tepat di bawah buku induknya (bukan
+    // mengikuti urutan asli array window.books apa adanya), supaya
+    // hierarki induk → anak terlihat jelas di dropdown pilih buku.
+    const childrenByParent = {};
+    const topLevel = [];
+    const idSet = new Set(window.books.map(b => b.id));
     window.books.forEach(b => {
+        if (b.parentId && idSet.has(b.parentId)) {
+            (childrenByParent[b.parentId] = childrenByParent[b.parentId] || []).push(b);
+        } else {
+            // Buku mandiri, ATAU anak buku "yatim" (induknya sudah tidak
+            // ada/terhapus) — tetap ditampilkan sebagai level teratas
+            // supaya tidak hilang dari daftar.
+            topLevel.push(b);
+        }
+    });
+
+    function addOption(b, isChild) {
         let opt = document.createElement('option');
         opt.value = b.id;
-        const isChild = !!b.parentId;
         opt.innerText = isChild ? '  ↳ ' + b.name : b.name;
+        if (isChild) opt.setAttribute('data-child', '1');
         if (b.id === window.currentBookId) opt.selected = true;
         sel.appendChild(opt);
+    }
+
+    topLevel.forEach(b => {
+        addOption(b, false);
+        (childrenByParent[b.id] || []).forEach(child => addOption(child, true));
     });
 };
 
