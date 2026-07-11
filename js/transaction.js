@@ -15,6 +15,34 @@ window.parseTxDate = function(str) {
     return new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s || 0));
 };
 
+// [FIX CLOCK SKEW MULTI-DEVICE] Cari updated_at TERBESAR di antara baris-baris
+// yang baru saja diambil dari cloud, dipakai sebagai cursor sinkronisasi
+// incremental berikutnya (window._lastFullSyncTime[bookId]).
+//
+// KENAPA INI PENTING: sebelumnya cursor itu diisi dengan new Date().toISOString()
+// -- jam LOKAL perangkat yang MELAKUKAN PULL. Kalau jam perangkat itu maju
+// dibanding jam server (atau dibanding jam perangkat lain yang mengirim data),
+// baris yang di-push perangkat lain BISA punya updated_at yang -- menurut jam
+// server -- sebenarnya lebih baru dari cursor lama, tapi tetap lolos dari
+// query `updated_at=gt.<cursor>` berikutnya karena cursor sudah kadung "di masa
+// depan". Efeknya: perubahan dari device lain hilang/basi diam-diam, dan baru
+// muncul lagi kalau baris itu diubah SEKALI LAGI. Ini persis pola "device A
+// jam-nya beda, device B tidak pernah lihat perubahan A" yang dilaporkan.
+//
+// Perbaikan: cursor SELALU diturunkan dari nilai updated_at yang sungguhan ada
+// di baris hasil query (jam SERVER, lewat trigger DB -- lihat
+// sql/server_side_updated_at_trigger.sql), bukan jam device manapun. Kalau
+// tidak ada baris sama sekali, cursor lama dipertahankan (belum ada yang
+// berubah, aman).
+window._maxUpdatedAt = function(rows, fallback) {
+    let max = fallback || null;
+    (rows || []).forEach(r => {
+        const v = r && r.updated_at;
+        if (v && (!max || v > max)) max = v;
+    });
+    return max;
+};
+
 window.trimAndSaveLocal = function(bookId, data) {
     const sorted = [...data].sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date) || String(b.id).localeCompare(String(a.id)));
     const trimmed = sorted.slice(0, window.MAX_LOCAL_TXS);
@@ -88,7 +116,10 @@ window.pullFromCloudSilently = async function() {
                 })).sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date) || String(b.id).localeCompare(String(a.id)));
             }
             window.trimAndSaveLocal(window.currentBookId, window.txs);
-            window._lastFullSyncTime[window.currentBookId] = new Date().toISOString();
+            // [FIX CLOCK SKEW] Cursor diambil dari updated_at TERBESAR di data
+            // yang baru ditarik (jam server), BUKAN new Date() (jam device ini).
+            // Lihat window._maxUpdatedAt di atas untuk alasan lengkap.
+            window._lastFullSyncTime[window.currentBookId] = window._maxUpdatedAt(cloudData, lastSync);
             window.render();
             window._lastSyncTime = new Date();
             window.updateSyncTimeBadge();
@@ -117,7 +148,12 @@ window.pullAllBooksFromCloud = async function() {
             attachment: c.attachment, updated_at: c.updated_at || null
         }));
         const trimmed = window.trimAndSaveLocal(bookId, cloudMapped);
-        window._lastFullSyncTime[bookId] = new Date().toISOString();
+        // [FIX CLOCK SKEW] Sama seperti pullFromCloudSilently: cursor dari jam
+        // server (updated_at baris), bukan jam device. forceFullSync() memanggil
+        // fungsi ini untuk SEMUA buku -- kalau cursor-nya salah pakai jam device,
+        // pull incremental berikutnya (pullFromCloudSilently) ikut kebawa salah
+        // untuk buku itu juga.
+        window._lastFullSyncTime[bookId] = window._maxUpdatedAt(cloudMapped, window._lastFullSyncTime[bookId]);
         if (bookId === window.currentBookId) {
             window.txs = trimmed;
             window.render();
@@ -291,6 +327,26 @@ window.pushToCloud = async function(bookId, txs, dirtyIds) {
     let res = await window.callSupabaseAPI('transactions', 'POST', payload);
     if (res && Array.isArray(res)) {
         console.log(`Sinkronisasi ${res.length} transaksi ke Supabase Cloud berhasil.`);
+        // [FIX CLOCK SKEW] `res` adalah representasi baris SETELAH trigger DB
+        // menimpa updated_at dengan jam SERVER (lihat
+        // sql/server_side_updated_at_trigger.sql). Timpa cache lokal (tab ini
+        // dan buku lain di localStorage) dengan updated_at server yang
+        // sungguhan, supaya device ini juga memakai jam yang sama dengan
+        // device lain saat membandingkan cloudUpdated >= localUpdated nanti.
+        const byId = {};
+        res.forEach(r => { byId[r.id] = r.updated_at; });
+        if (bookId === window.currentBookId) {
+            window.txs = window.txs.map(t => byId[t.id] ? { ...t, updated_at: byId[t.id] } : t);
+            localStorage.setItem('sk_txs_' + bookId, JSON.stringify(window.txs));
+        } else {
+            const cacheRaw = localStorage.getItem('sk_txs_' + bookId);
+            if (cacheRaw) {
+                try {
+                    const cache = JSON.parse(cacheRaw).map(t => byId[t.id] ? { ...t, updated_at: byId[t.id] } : t);
+                    localStorage.setItem('sk_txs_' + bookId, JSON.stringify(cache));
+                } catch (e) { /* cache buku lain tidak valid, biarkan apa adanya */ }
+            }
+        }
         if (dirtyIds) {
             // Hapus HANYA id yang barusan berhasil di-push, dari memori DAN
             // localStorage (window.clearTxDirty), supaya tab lain juga tahu id
