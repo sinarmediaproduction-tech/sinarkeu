@@ -209,6 +209,75 @@ window.forceFullSync = async function() {
 // Ini persis kelas bug yang sama dengan bug hadiah di Merdeka (menimpa data
 // yang tidak sedang diubah), hanya lebih tersembunyi karena terjadi per-baris,
 // bukan di dalam satu kolom JSON.
+// ==================== SOFT-DELETE: TAHAN-BANTING KONEKSI PUTUS ====================
+// [FIX] Sebelumnya confirmDelete() (render.js) langsung PATCH ke Supabase
+// TANPA di-`await` dan tanpa dicek hasilnya, lalu baris itu langsung dibuang
+// dari window.txs & localStorage seolah sudah pasti berhasil. Kalau request
+// itu gagal atau terputus di tengah jalan (koneksi flaky, tab/app ditutup
+// tepat setelah klik hapus, dsb), TIDAK ADA CATATAN bahwa penghapusan itu
+// masih tertunda -- beda dengan tambah/ubah transaksi yang sudah punya
+// dirty-tracking + flushPendingDirtyOnStart (lihat di atas). Akibatnya:
+// baris di cloud tetap hidup (is_deleted masih false), device ini sudah
+// terlanjur menganggapnya terhapus, dan begitu device ini (atau device lain)
+// melakukan pull berikutnya, transaksi itu "hidup lagi" secara diam-diam.
+//
+// Pola di bawah ini meniru persis dirty-tracking untuk create/update:
+// simpan niat "baris ini perlu di-tandai is_deleted di cloud" ke localStorage
+// SEBELUM mencoba PATCH, baru hapus catatan itu SETELAH PATCH benar-benar
+// sukses. Kalau gagal/terputus, catatan itu tetap ada dan akan dicoba lagi
+// oleh window.flushPendingDeletesOnStart() (dipanggil saat app start, DAN
+// setiap kali koneksi kembali online -- lihat app.js).
+window._pendingDeleteStoreKey = 'sk_delete_pending';
+
+window._loadPendingDeleteStore = function() {
+    try { return JSON.parse(localStorage.getItem(window._pendingDeleteStoreKey) || '{}'); }
+    catch (e) { return {}; }
+};
+window._savePendingDeleteStore = function(storeObj) {
+    try { localStorage.setItem(window._pendingDeleteStoreKey, JSON.stringify(storeObj)); }
+    catch (e) { /* localStorage penuh/nonaktif -- tetap dicoba lagi di sesi ini */ }
+};
+window.markTxPendingDelete = function(id, bookId) {
+    const store = window._loadPendingDeleteStore();
+    store[id] = bookId || window.currentBookId;
+    window._savePendingDeleteStore(store);
+};
+window.clearTxPendingDelete = function(id) {
+    const store = window._loadPendingDeleteStore();
+    delete store[id];
+    window._savePendingDeleteStore(store);
+};
+
+// Satu-satunya tempat yang benar-benar mem-PATCH is_deleted=true ke cloud.
+// SELALU di-await oleh pemanggil, dan mengembalikan true/false sesuai hasil
+// sungguhan -- tidak pernah "fire and forget" seperti sebelumnya.
+window.pushDeleteToCloud = async function(id, bookId) {
+    if (!window.isOnline()) return false;
+    const tag = window.getAccountTag ? window.getAccountTag() : null;
+    const tagFilter = window.tagOrFilter(tag);
+    const result = await window.callSupabaseAPI(
+        'transactions', 'PATCH',
+        { is_deleted: true, updated_at: new Date().toISOString() },
+        `?id=eq.${id}&book_id=eq.${bookId || window.currentBookId}${tagFilter}`
+    );
+    return result !== null;
+};
+
+// Dipanggil saat app start (setelah flushPendingDirtyOnStart, SEBELUM
+// pullAllBooksFromCloud -- lihat app.js) dan setiap kali koneksi online lagi,
+// supaya penghapusan yang sempat gagal/terputus tidak pernah "hidup lagi"
+// gara-gara pull berikutnya menarik ulang baris yang harusnya sudah mati.
+window.flushPendingDeletesOnStart = async function() {
+    if (!window.isOnline()) return;
+    const store = window._loadPendingDeleteStore();
+    const ids = Object.keys(store);
+    if (ids.length === 0) return;
+    for (const id of ids) {
+        const ok = await window.pushDeleteToCloud(id, store[id]);
+        if (ok) window.clearTxPendingDelete(id);
+    }
+};
+
 window._dirtyTxIds = new Set();
 
 // [MULTI-TAB] Dirty ids di atas cuma in-memory -> kalau tab A menandai dirty

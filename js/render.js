@@ -502,14 +502,28 @@ window.confirmDelete = async function(id) {
         // perangkat tersebut sampai ada full sync manual. Dengan PATCH
         // is_deleted=true + updated_at baru, baris tombstone ini tetap kebawa
         // oleh query incremental, sehingga bisa dibuang dari cache perangkat lain.
-        if (window.isOnline()) {
-            const _sdTag = window.getAccountTag ? window.getAccountTag() : null;
-            const _sdTagFilter = window.tagOrFilter(_sdTag);
-            window.callSupabaseAPI('transactions', 'PATCH', { is_deleted: true, updated_at: new Date().toISOString() }, `?id=eq.${id}${_sdTagFilter}`);
-        }
+        //
+        // [FIX] Tandai dulu sebagai "pending delete" (persisted, lihat
+        // window.markTxPendingDelete di transaction.js) SEBELUM mencoba PATCH,
+        // dan betul-betul di-await + dicek hasilnya -- bukan fire-and-forget
+        // seperti sebelumnya. Kalau PATCH gagal (koneksi putus di tengah jalan,
+        // tab ditutup, dsb), catatan pending delete ini TETAP ADA dan akan
+        // dicoba lagi otomatis oleh window.flushPendingDeletesOnStart() saat
+        // app dibuka lagi atau koneksi online lagi -- baris itu tidak akan
+        // "hidup lagi" secara diam-diam di pull berikutnya.
+        const bookIdAtDelete = window.currentBookId;
+        window.markTxPendingDelete(id, bookIdAtDelete);
         window.txs = window.txs.filter(x => x.id !== id);
         window.saveTransactions();
         window.showToast("Transaksi dihapus", "warning");
+        if (window.isOnline()) {
+            const ok = await window.pushDeleteToCloud(id, bookIdAtDelete);
+            if (ok) {
+                window.clearTxPendingDelete(id);
+            } else {
+                console.warn('[Delete] Gagal PATCH is_deleted ke cloud, akan dicoba lagi otomatis:', id);
+            }
+        }
         await window.addCloudLog('HAPUS', `Menghapus transaksi "${t.description}" ber-ID: ${id}`);
         window.sendTelegramNotif(window.buildTxNotifMessage('HAPUS', t, window.getCurrentBookName()));
     }

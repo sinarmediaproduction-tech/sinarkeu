@@ -47,6 +47,11 @@ window.startAutoSync = function() {
     if (window._syncInterval) clearInterval(window._syncInterval);
     window._syncInterval = setInterval(async () => {
         if (window.isOnline()) {
+            // Retry dulu penghapusan yang mungkin masih tertunda (gagal PATCH
+            // sebelumnya) SEBELUM pull, dengan alasan yang sama seperti di
+            // continueAppInit(): supaya baris yang harusnya sudah dihapus tidak
+            // sempat "hidup lagi" gara-gara pull duluan menariknya balik.
+            await window.flushPendingDeletesOnStart();
             await window.pullAllSettings();
             await window.pullFromCloudSilently();
             window.updateBookSelectDropdown();
@@ -141,6 +146,7 @@ window.continueAppInit = async function() {
             // lokal buku-buku itu. Lihat window.flushPendingDirtyOnStart di
             // js/transaction.js untuk detail.
             await window.flushPendingDirtyOnStart();
+            await window.flushPendingDeletesOnStart();
             await window.pullAllSettings();
             // Self-heal: kalau device ini sudah lama pakai salt lokal sendiri tapi
             // belum pernah ke-push ke cloud, push sekarang. Mencegah device lain
@@ -204,7 +210,7 @@ window.continueAppInit = async function() {
     // listener menumpuk dan forceFullSync() dipanggil berkali-kali.
     if (!window._globalListenersRegistered) {
         window._globalListenersRegistered = true;
-        window.addEventListener('online', () => { window.updateSyncStatusBadge(); window.updateUIForOnlineStatus(); window.forceFullSync(); });
+        window.addEventListener('online', () => { window.updateSyncStatusBadge(); window.updateUIForOnlineStatus(); window.flushPendingDeletesOnStart().then(() => window.forceFullSync()); });
         window.addEventListener('offline', () => { window.updateSyncStatusBadge(); window.updateUIForOnlineStatus(); });
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden && window.isOnline()) {

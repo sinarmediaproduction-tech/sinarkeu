@@ -6,7 +6,7 @@
  *   - Supabase & Telegram API → Network Only (data real-time, jangan di-cache)
  */
 
-const CACHE_NAME = 'sinarkeu-v9-cache-v2';
+const CACHE_NAME = 'sinarkeu-v9-cache-v3';
 const STATIC_CDN = [
   'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
