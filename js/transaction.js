@@ -81,7 +81,15 @@ window.pullFromCloudSilently = async function() {
         const _txTagFilter = window.tagOrFilter(_txTag);
         let query = `?book_id=eq.${window.currentBookId}&is_deleted=eq.false&order=date.desc&limit=${window.MAX_LOCAL_TXS}${_txTagFilter}`;
         if (lastSync) {
-            query = `?book_id=eq.${window.currentBookId}&order=updated_at.desc&updated_at=gt.${lastSync}&limit=${window.MAX_LOCAL_TXS}${_txTagFilter}`;
+            // [FIX] Timestamp dari SERVER (lihat sql/fix_server_side_updated_at.sql)
+            // berformat "...+00:00" (offset eksplisit), beda dari
+            // new Date().toISOString() milik JS yang selalu berakhiran "Z".
+            // Tanda "+" itu, kalau ditaruh mentah-mentah di query string, dibaca
+            // sebagai SPASI oleh URL decoder Supabase -- bukan lagi tanda plus --
+            // sehingga timestamp-nya jadi tidak valid dan request ditolak (400,
+            // kode 22007). Selalu encodeURIComponent() nilai yang masuk ke query
+            // string, terutama untuk cursor ini yang sekarang bisa mengandung "+".
+            query = `?book_id=eq.${window.currentBookId}&order=updated_at.desc&updated_at=gt.${encodeURIComponent(lastSync)}&limit=${window.MAX_LOCAL_TXS}${_txTagFilter}`;
         }
         let cloudData = await window.callSupabaseAPI('transactions', 'GET', null, query);
         if (cloudData && Array.isArray(cloudData)) {
