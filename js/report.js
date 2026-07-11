@@ -30,15 +30,35 @@ function nowStr() {
 }
 
 // ── Generate Laporan (tampilan dalam modal) ──────────────────
-function generateMonthlyReport() {
+async function generateMonthlyReport() {
   const month = parseInt(document.getElementById('reportMonth').value);
   const year  = parseInt(document.getElementById('reportYear').value);
   const key   = `${year}-${String(month).padStart(2, '0')}`;
 
-  const allTx    = (window.txs || []).filter(t => {
-    const d = new Date(t.date);
-    return d.getFullYear() === year && (d.getMonth() + 1) === month;
-  });
+  // [FIX] window.txs cuma menyimpan MAX_LOCAL_TXS (1000) transaksi TERBARU
+  // (lihat trimAndSaveLocal di transaction.js) -- kalau buku ini sudah punya
+  // lebih dari itu, bulan-bulan lama akan tersaring habis dari window.txs dan
+  // laporan bulan itu akan tampil KOSONG/kurang padahal transaksinya ada,
+  // cuma saldo total yang tetap benar (lewat balance_offset). Untuk laporan
+  // bulan spesifik, selalu tarik langsung dari cloud kalau online -- ini
+  // query per-bulan jadi jauh lebih murah dan tidak kena batas 1000 itu.
+  // Offline: tetap fallback ke window.txs (best effort, mungkin tidak
+  // lengkap untuk bulan yang sudah di luar cache lokal).
+  const reportContentEl = document.getElementById('reportContent');
+  let allTx;
+  if (window.isOnline() && typeof window.fetchMonthTransactionsFromCloud === 'function') {
+    if (reportContentEl) reportContentEl.innerHTML = '<div style="padding:24px;text-align:center;color:#888;">Memuat laporan...</div>';
+    const cloudTx = await window.fetchMonthTransactionsFromCloud(window.currentBookId, year, month);
+    allTx = cloudTx !== null ? cloudTx : (window.txs || []).filter(t => {
+      const d = new Date(t.date);
+      return d.getFullYear() === year && (d.getMonth() + 1) === month;
+    });
+  } else {
+    allTx = (window.txs || []).filter(t => {
+      const d = new Date(t.date);
+      return d.getFullYear() === year && (d.getMonth() + 1) === month;
+    });
+  }
 
   const income   = allTx.filter(t => t.type === 'income').reduce((s, t) => s + (+t.amount || 0), 0);
   const expense  = allTx.filter(t => t.type === 'expense').reduce((s, t) => s + (+t.amount || 0), 0);
@@ -192,7 +212,7 @@ function generateMonthlyReport() {
 }
 
 // ── Export PDF Profesional ───────────────────────────────────
-function exportReportAsPDF() {
+async function exportReportAsPDF() {
   const month    = parseInt(document.getElementById('reportMonth').value);
   const year     = parseInt(document.getElementById('reportYear').value);
   const key      = `${year}-${String(month).padStart(2, '0')}`;
@@ -200,10 +220,22 @@ function exportReportAsPDF() {
   const bookName = _book2 ? _book2.name : 'Buku Kas';
   const accName  = document.getElementById('activeAccountLabel')?.textContent?.trim() || 'Sinarkeu';
 
-  const allTx   = (window.txs || []).filter(t => {
-    const d = new Date(t.date);
-    return d.getFullYear() === year && (d.getMonth() + 1) === month;
-  });
+  // [FIX] Sama seperti generateMonthlyReport(): jangan andalkan window.txs
+  // yang cuma menyimpan 1000 transaksi terbaru -- tarik langsung dari cloud
+  // per-bulan supaya export PDF untuk bulan lama tetap lengkap.
+  let allTx;
+  if (window.isOnline() && typeof window.fetchMonthTransactionsFromCloud === 'function') {
+    const cloudTx = await window.fetchMonthTransactionsFromCloud(window.currentBookId, year, month);
+    allTx = cloudTx !== null ? cloudTx : (window.txs || []).filter(t => {
+      const d = new Date(t.date);
+      return d.getFullYear() === year && (d.getMonth() + 1) === month;
+    });
+  } else {
+    allTx = (window.txs || []).filter(t => {
+      const d = new Date(t.date);
+      return d.getFullYear() === year && (d.getMonth() + 1) === month;
+    });
+  }
 
   const income  = allTx.filter(t => t.type === 'income').reduce((s, t) => s + (+t.amount || 0), 0);
   const expense = allTx.filter(t => t.type === 'expense').reduce((s, t) => s + (+t.amount || 0), 0);

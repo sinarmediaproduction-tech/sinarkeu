@@ -58,6 +58,39 @@ window.trimAndSaveLocal = function(bookId, data) {
     return trimmed;
 };
 
+// ==================== LAPORAN: AMBIL SATU BULAN LANGSUNG DARI CLOUD ====================
+// [FIX] window.txs (dan cache localStorage sk_txs_*) cuma menyimpan
+// MAX_LOCAL_TXS (1000) transaksi TERBARU per buku (lihat trimAndSaveLocal).
+// Ini cukup untuk tampilan daftar utama & saldo (yang lebih lama dikompensasi
+// lewat balance_offset), TAPI kalau dipakai untuk laporan/export PDF bulan
+// tertentu yang sudah di luar jendela 1000 itu, transaksi bulan itu akan
+// tampil kosong/kurang padahal datanya masih ada di cloud.
+//
+// Dipakai oleh report.js (generateMonthlyReport, exportReportAsPDF): query
+// LANGSUNG per rentang tanggal satu bulan, TANPA batas limit seperti query
+// utama, supaya laporan bulan manapun -- baru atau lama -- selalu lengkap
+// selama online. Kalau offline atau gagal, return null supaya pemanggil
+// fallback ke window.txs (best effort, mungkin tidak lengkap).
+window.fetchMonthTransactionsFromCloud = async function(bookId, year, month) {
+    if (!window.isOnline() || !bookId) return null;
+    const pad = (n) => String(n).padStart(2, '0');
+    const startStr = `${year}-${pad(month)}-01`;
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+    const endStr = `${nextYear}-${pad(nextMonth)}-01`;
+    const tag = window.getAccountTag ? window.getAccountTag() : null;
+    const tagFilter = window.tagOrFilter(tag);
+    const query = `?book_id=eq.${bookId}&is_deleted=eq.false&date=gte.${startStr}&date=lt.${endStr}&order=date.asc${tagFilter}`;
+    const rows = await window.callSupabaseAPI('transactions', 'GET', null, query);
+    if (!rows || !Array.isArray(rows)) return null;
+    return rows.map(c => ({
+        id: c.id, type: c.type, amount: Number(c.amount),
+        category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
+        description: c.description, date: c.date,
+        attachment: c.attachment, updated_at: c.updated_at || null
+    }));
+};
+
 window.pullFromCloudSilently = async function() {
     if (!window.isOnline()) return;
     // [BUG FIX 3] Guard concurrent pull: jika pull sebelumnya masih berjalan
