@@ -11,7 +11,9 @@
 :root {
   --ink:        #0D0D0D;
   --ink-muted:  #6B6B6B;
-  --ink-faint:  #B4B4B4;
+  --ink-faint:  #767676; /* [FIX] sebelumnya #B4B4B4 -- kontras cuma ~2:1 di atas putih,
+                            jauh di bawah WCAG AA (4.5:1). #767676 = 4.54:1, tetap terasa
+                            "faint" dibanding --ink-muted tapi masih terbaca jelas. */
   --paper:      #FFFFFF;
   --paper-warm: #F7F7F6;
   --rule:       #E8E8E5;
