@@ -148,7 +148,13 @@ window.buildTxNotifMessage = function(action, tx, bookName) {
     // Catatan: untuk aksi HAPUS, confirmDelete() sudah menghapus transaksi dari
     // window.txs SEBELUM memanggil fungsi ini, sehingga saldo di atas sudah
     // mencerminkan kondisi setelah penghapusan — koreksi manual tidak diperlukan.
-    let saldoSekarang = totalInc - totalExp;
+    // [BUG FIX] window.txs hanya menyimpan MAX_LOCAL_TXS transaksi terakhir
+    // (lihat trimAndSaveLocal) — transaksi lama yang sudah di-trim harus
+    // dikompensasi lewat balanceOffset, sama seperti render.js/ai.js/forecast.js.
+    // Tanpa ini, saldo yang dikirim ke Telegram beda dari yang tampil di dashboard
+    // untuk buku dengan >1000 transaksi.
+    const balanceOffset = Number(localStorage.getItem('sk_balance_offset_' + window.currentBookId)) || 0;
+    let saldoSekarang = totalInc - totalExp + balanceOffset;
     return `<b>${actionLabel}</b>\n━━━━━━━━━━━━━━━━━━\nBuku: <b>${bookName}</b>\nJenis: ${typeLabel}${tx.category ? ' · <i>' + tx.category + '</i>' : ''}\nCatatan: ${tx.description}\nJumlah: <b>${window.rp(tx.amount)}</b>\nWaktu: ${window.formatDateTime(tx.date)}\n━━━━━━━━━━━━━━━━━━\nSaldo Saat Ini: <b>${window.rp(saldoSekarang)}</b>`;
 };
 
@@ -191,7 +197,10 @@ window.sendDailySummaryToTelegram = async function() {
         if (t.type === 'income') totalInc += amt;
         else totalExp += amt;
     });
-    let saldo = totalInc - totalExp;
+    // [BUG FIX] sama seperti buildTxNotifMessage — tambahkan balanceOffset agar
+    // saldo total konsisten dengan dashboard untuk buku dengan >1000 transaksi.
+    const balanceOffset = Number(localStorage.getItem('sk_balance_offset_' + window.currentBookId)) || 0;
+    let saldo = totalInc - totalExp + balanceOffset;
     let msg = `<b>Ringkasan Harian Sinarkeu</b>\n${today}\nBuku: <b>${window.getCurrentBookName()}</b>\n━━━━━━━━━━━━━━━━━━\n<b>Hari Ini:</b>\nMasuk: ${window.rp(incToday)}\nKeluar: ${window.rp(expToday)}\nSelisih: ${window.rp(incToday - expToday)}\n\n<b>Bulan ${monthNames[m - 1]} ${y}:</b>\nPemasukan: ${window.rp(incBulan)}\nPengeluaran: ${window.rp(expBulan)}\nSelisih: ${window.rp(incBulan - expBulan)}\n━━━━━━━━━━━━━━━━━━\n<b>Saldo Total: ${window.rp(saldo)}</b>`;
     window.sendTelegramNotif(msg);
 };

@@ -58,6 +58,49 @@ window.trimAndSaveLocal = function(bookId, data) {
     return trimmed;
 };
 
+// [BUG FIX - OFFSET SALDO SALAH SAAT FULL SYNC] trimAndSaveLocal() di atas menghitung
+// balanceOffset dari SISA (remainder) array yang di-passing ke dalamnya. Itu benar kalau
+// array itu berasal dari window.txs LOKAL yang belum dipotong (lihat pemanggilnya di
+// transaction.js/book.js/backup.js untuk kasus tambah/ubah/hapus transaksi lokal).
+//
+// TAPI untuk pull AWAL dari cloud (pullFromCloudSilently saat !lastSync) dan
+// pullAllBooksFromCloud (dipakai forceFullSync), query ke Supabase SUDAH membatasi
+// hasilnya dengan limit=MAX_LOCAL_TXS di sisi server. Array yang diterima klien
+// akibatnya TIDAK PERNAH lebih dari MAX_LOCAL_TXS baris -- remainder-nya selalu [],
+// dan trimAndSaveLocal menuliskan balanceOffset = 0, MENGHAPUS histori saldo buku
+// yang transaksinya > MAX_LOCAL_TXS. Ini kejadian tiap kali: login di device baru,
+// pertama kali buka sesi (reload), atau klik "Sinkron Penuh" -- baru "sembuh" pelan-
+// pelan setelah itu (bertambah satu-satu tiap ada transaksi baru yang ke-trim lokal),
+// TANPA pernah mendapat kembali offset historis yang sudah hilang.
+//
+// Server tidak bisa SUM(amount) untuk mengoreksi ini karena amount tersimpan
+// terenkripsi (enc_payload) -- lihat crypto.js. Jadi kalau terdeteksi kemungkinan
+// terpotong (jumlah baris yang diterima == MAX_LOCAL_TXS persis), tarik ulang KHUSUS
+// baris-baris yang lebih tua itu (paginated pakai offset, di luar batas limit biasa),
+// dekripsi, dan jumlahkan jadi balanceOffset yang sebenarnya.
+window._fetchOlderTxsBalanceOffset = async function(bookId) {
+    if (!window.isOnline()) return null; // offline: tidak bisa dihitung, pemanggil harus fallback (biarkan offset lama)
+    const _tag = window.getAccountTag ? window.getAccountTag() : null;
+    const _tagFilter = window.tagOrFilter(_tag);
+    const PAGE_SIZE = 1000;
+    let offsetSum = 0;
+    let start = window.MAX_LOCAL_TXS;
+    while (true) {
+        const query = `?book_id=eq.${bookId}&is_deleted=eq.false&order=date.desc,id.desc&limit=${PAGE_SIZE}&offset=${start}${_tagFilter}`;
+        const rows = await window.callSupabaseAPI('transactions', 'GET', null, query);
+        if (!rows || !Array.isArray(rows) || rows.length === 0) break;
+        const decoded = await Promise.all(rows.map(r => window.decodeCloudTxRow(r)));
+        decoded.forEach(t => {
+            const amt = Number(t.amount) || 0;
+            if (t.type === 'income') offsetSum += amt;
+            else offsetSum -= amt;
+        });
+        if (rows.length < PAGE_SIZE) break;
+        start += PAGE_SIZE;
+    }
+    return offsetSum;
+};
+
 // ==================== LAPORAN: AMBIL SATU BULAN LANGSUNG DARI CLOUD ====================
 // [FIX] window.txs (dan cache localStorage sk_txs_*) cuma menyimpan
 // MAX_LOCAL_TXS (1000) transaksi TERBARU per buku (lihat trimAndSaveLocal).
@@ -148,6 +191,16 @@ window.pullFromCloudSilently = async function() {
                     .sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date) || String(b.id).localeCompare(String(a.id)));
             }
             window.trimAndSaveLocal(window.currentBookId, window.txs);
+            // [BUG FIX] lihat catatan di _fetchOlderTxsBalanceOffset -- kalau ini pull AWAL
+            // (bukan incremental) dan hasilnya persis MAX_LOCAL_TXS baris (indikasi mungkin
+            // masih ada baris lebih lama di cloud), trimAndSaveLocal barusan SALAH menuliskan
+            // balanceOffset = 0. Tarik ulang offset yang sebenarnya sebelum render.
+            if (!lastSync && cloudData.length >= window.MAX_LOCAL_TXS) {
+                const trueOffset = await window._fetchOlderTxsBalanceOffset(window.currentBookId);
+                if (trueOffset !== null) {
+                    localStorage.setItem('sk_balance_offset_' + window.currentBookId, String(trueOffset));
+                }
+            }
             // [FIX CLOCK SKEW] Cursor diambil dari updated_at TERBESAR di data
             // yang baru ditarik (jam server), BUKAN new Date() (jam device ini).
             // Lihat window._maxUpdatedAt di atas untuk alasan lengkap.
@@ -176,6 +229,16 @@ window.pullAllBooksFromCloud = async function() {
         // [SECURITY] Dekripsi field sensitif -- lihat window.decodeCloudTxRow di crypto.js.
         const cloudMapped = await Promise.all(cloudData.map(c => window.decodeCloudTxRow(c)));
         const trimmed = window.trimAndSaveLocal(bookId, cloudMapped);
+        // [BUG FIX] sama seperti pullFromCloudSilently -- query di atas dibatasi
+        // limit=MAX_LOCAL_TXS di server, jadi trimAndSaveLocal tidak pernah melihat
+        // remainder yang sebenarnya. Kalau hasilnya persis MAX_LOCAL_TXS baris, tarik
+        // ulang offset yang benar dari baris-baris yang lebih tua.
+        if (cloudMapped.length >= window.MAX_LOCAL_TXS) {
+            const trueOffset = await window._fetchOlderTxsBalanceOffset(bookId);
+            if (trueOffset !== null) {
+                localStorage.setItem('sk_balance_offset_' + bookId, String(trueOffset));
+            }
+        }
         // [FIX CLOCK SKEW] Sama seperti pullFromCloudSilently: cursor dari jam
         // server (updated_at baris), bukan jam device. forceFullSync() memanggil
         // fungsi ini untuk SEMUA buku -- kalau cursor-nya salah pakai jam device,

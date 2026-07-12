@@ -34,7 +34,14 @@ window.getAITransactionData = function() {
     }
     const totalIncome  = filtered.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
     const totalExpense = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
-    const saldo = totalIncome - totalExpense;
+    // [BUG FIX] Untuk periode 'all', filtered = window.txs yang di-cap MAX_LOCAL_TXS
+    // (lihat trimAndSaveLocal) -- transaksi lama yang sudah di-trim harus dikompensasi
+    // lewat balanceOffset, sama seperti render.js/telegram.js, supaya AI tidak dikasih
+    // saldo yang keliru untuk buku dengan >1000 transaksi. Untuk periode per-bulan
+    // (thismonth/lastmonth/last3months) offset TIDAK ditambahkan karena "saldo" di situ
+    // memang berarti net arus kas periode itu saja, bukan saldo total historis.
+    const balanceOffset = period === 'all' ? (Number(localStorage.getItem('sk_balance_offset_' + window.currentBookId)) || 0) : 0;
+    const saldo = totalIncome - totalExpense + balanceOffset;
     const catMap = {};
     filtered.filter(t => t.type === 'expense').forEach(t => {
         const cat = t.category || 'Lain-lain';
