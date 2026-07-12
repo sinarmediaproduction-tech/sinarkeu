@@ -404,6 +404,40 @@ window.decodeCloudTxRow = async function(c) {
     };
 };
 
+// ==================== ENKRIPSI PAYMENT REMINDERS (pola sama seperti transaksi) ====================
+// Field sensitif: `name` (nama tagihan, mis. "Cicilan Motor", "SPP Anak")
+// dan `note`. day/recurrence/month juga ikut dienkripsi sekalian (tidak
+// pernah dipakai untuk query server-side, aman dienkripsi semua).
+window.encodeCloudReminderPayload = async function(r) {
+    if (!window._sessionCryptoKey) return null;
+    const plain = JSON.stringify({
+        name: r.name || '', day: r.day, recurrence: r.recurrence,
+        month: r.month || 1, note: r.note || ''
+    });
+    return await window.encryptStr(window._sessionCryptoKey, plain);
+};
+window.decodeCloudReminderRow = async function(row) {
+    if (row.enc_payload && window._sessionCryptoKey) {
+        try {
+            const plain = await window.decryptStr(window._sessionCryptoKey, row.enc_payload);
+            const d = JSON.parse(plain);
+            return {
+                id: row.id, book_id: row.book_id, name: d.name, day: d.day,
+                recurrence: d.recurrence, month: d.month || 1, note: d.note || '',
+                created_at: row.created_at, updated_at: row.updated_at
+            };
+        } catch (e) {
+            console.warn('[Crypto] Gagal dekripsi payment reminder', row.id, '-- fallback ke kolom plaintext (jika ada).', e);
+        }
+    }
+    // Fallback: baris pra-migrasi.
+    return {
+        id: row.id, book_id: row.book_id, name: row.name, day: row.day,
+        recurrence: row.recurrence, month: row.month || 1, note: row.note || '',
+        created_at: row.created_at, updated_at: row.updated_at
+    };
+};
+
 // ==================== THROTTLE PERCOBAAN UNLOCK (ANTI BRUTE-FORCE) ====================
 // SEBELUM INI: tidak ada batasan berapa kali password lock screen boleh dicoba.
 // PBKDF2 300rb iterasi memang memperlambat brute-force OFFLINE (mis. kalau

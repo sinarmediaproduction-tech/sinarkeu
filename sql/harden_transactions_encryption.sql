@@ -46,6 +46,19 @@ ALTER TABLE transactions ALTER COLUMN type DROP NOT NULL;
 -- Kolom `data` sudah TEXT, tidak perlu diubah tipenya -- sekarang berisi
 -- ciphertext base64 (AES-GCM) alih-alih JSON plaintext untuk backup baru.
 
+-- ── TABEL: payment_reminders (jalankan HANYA jika tabel ini ada) ──
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payment_reminders') THEN
+        EXECUTE 'ALTER TABLE payment_reminders ADD COLUMN IF NOT EXISTS enc_payload TEXT DEFAULT NULL';
+        EXECUTE 'ALTER TABLE payment_reminders ALTER COLUMN name DROP NOT NULL';
+        EXECUTE 'ALTER TABLE payment_reminders ALTER COLUMN day DROP NOT NULL';
+        EXECUTE 'ALTER TABLE payment_reminders ALTER COLUMN recurrence DROP NOT NULL';
+        EXECUTE 'ALTER TABLE payment_reminders ALTER COLUMN month DROP NOT NULL';
+        EXECUTE 'ALTER TABLE payment_reminders ALTER COLUMN note DROP NOT NULL';
+    END IF;
+END $$;
+
 -- ── ENABLE RLS (baseline, lihat catatan di atas) ─────────────
 -- Mengaktifkan RLS tanpa Supabase Auth tidak menambah isolasi antar-user,
 -- tapi tetap praktik baik: memastikan hanya kebijakan eksplisit di bawah
@@ -71,6 +84,21 @@ DROP POLICY IF EXISTS anon_full_access ON settings;
 CREATE POLICY anon_full_access ON settings FOR ALL TO anon USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS anon_full_access ON backups;
 CREATE POLICY anon_full_access ON backups FOR ALL TO anon USING (true) WITH CHECK (true);
+-- PENTING: RLS di atas sudah diaktifkan untuk payment_reminders & audit_logs
+-- (kalau ada) tanpa policy sama sekali -- itu artinya SEMUA akses akan
+-- ditolak (default-deny Postgres) sampai policy berikut dibuat. Jangan
+-- lewati blok ini kalau tabel-tabel tersebut ada di project Anda.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payment_reminders') THEN
+        EXECUTE 'DROP POLICY IF EXISTS anon_full_access ON payment_reminders';
+        EXECUTE 'CREATE POLICY anon_full_access ON payment_reminders FOR ALL TO anon USING (true) WITH CHECK (true)';
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'audit_logs') THEN
+        EXECUTE 'DROP POLICY IF EXISTS anon_full_access ON audit_logs';
+        EXECUTE 'CREATE POLICY anon_full_access ON audit_logs FOR ALL TO anon USING (true) WITH CHECK (true)';
+    END IF;
+END $$;
 
 -- ============================================================
 -- OPSIONAL, JALANKAN BELAKANGAN (setelah yakin semua device sudah update

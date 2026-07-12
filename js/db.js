@@ -547,12 +547,14 @@ window.pushPaymentReminderToCloud = async function(bookId, reminderData) {
     
     try {
         const tag = window.getAccountTag ? window.getAccountTag() : null;
-        const payload = {
-            ...reminderData,
-            book_id: bookId,
-            updated_at: new Date().toISOString(),
-            ...(tag ? { account_tag: tag } : {})
-        };
+        // [SECURITY] Enkripsi field sensitif -- lihat window.encodeCloudReminderPayload
+        // di crypto.js (fungsi ini tampaknya tidak lagi dipanggil di mana pun,
+        // sudah digantikan window.savePaymentReminder di payment-reminder.js,
+        // tapi tetap diamankan untuk berjaga-jaga).
+        const encPayload = window.encodeCloudReminderPayload ? await window.encodeCloudReminderPayload(reminderData) : null;
+        const payload = encPayload
+            ? { id: reminderData.id, book_id: bookId, enc_payload: encPayload, name: null, day: null, recurrence: null, month: null, note: null, created_at: reminderData.created_at, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) }
+            : { ...reminderData, book_id: bookId, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) };
         
         const result = await window.callSupabaseAPI('payment_reminders', 'POST', [payload]);
         return !!result;

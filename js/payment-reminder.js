@@ -120,9 +120,12 @@ window.loadPaymentReminders = async function(bookId) {
                 // lenyap. Item yang masih pending-delete DIBUANG dari hasil
                 // cloud (kalaupun masih ada di server), supaya tidak "hidup
                 // lagi" secara visual padahal user sudah menghapusnya.
+                // [SECURITY] Dekripsi field sensitif (name/note/dll) -- lihat
+                // window.decodeCloudReminderRow di crypto.js.
+                const decodedResult = await Promise.all(result.map(r => window.decodeCloudReminderRow(r)));
                 const pendingPush = _prLoadPendingPush(bookId);
                 const pendingDeleteIds = new Set(_prLoadPendingDelete(bookId));
-                const merged = result.filter(r => !pendingDeleteIds.has(r.id));
+                const merged = decodedResult.filter(r => !pendingDeleteIds.has(r.id));
                 const mergedIds = new Set(merged.map(r => r.id));
                 Object.values(pendingPush).forEach(r => {
                     if (!pendingDeleteIds.has(r.id) && !mergedIds.has(r.id)) merged.push(r);
@@ -176,13 +179,13 @@ window.savePaymentReminder = async function(bookId, reminderData, skipLocalUpser
     if (window.isOnline()) {
         try {
             const tag = window.getAccountTag ? window.getAccountTag() : null;
-            const payload = {
-                ...reminderData,
-                book_id: bookId,
-                updated_at: new Date().toISOString(),
-                ...(tag ? { account_tag: tag } : {})
-            };
-            
+            // [SECURITY] name/note/day/recurrence/month dienkripsi jadi satu
+            // kolom enc_payload -- lihat window.encodeCloudReminderPayload.
+            const encPayload = await window.encodeCloudReminderPayload(reminderData);
+            const payload = encPayload
+                ? { id: reminderData.id, book_id: bookId, enc_payload: encPayload, name: null, day: null, recurrence: null, month: null, note: null, created_at: reminderData.created_at, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) }
+                : { ...reminderData, book_id: bookId, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) };
+
             const result = await window.callSupabaseAPI('payment_reminders', 'POST', [payload]);
             if (result) {
                 console.log('[PaymentReminder] Berhasil sync ke cloud');
@@ -270,10 +273,13 @@ window.syncAllPaymentReminders = async function(bookId) {
         if (localReminders.length === 0) return true;
         
         const tag = window.getAccountTag ? window.getAccountTag() : null;
-        const payload = localReminders.map(r => ({
-            ...r,
-            updated_at: new Date().toISOString(),
-            ...(tag ? { account_tag: tag } : {})
+        // [SECURITY] Enkripsi field sensitif -- lihat window.encodeCloudReminderPayload.
+        const payload = await Promise.all(localReminders.map(async r => {
+            const encPayload = await window.encodeCloudReminderPayload(r);
+            if (encPayload) {
+                return { id: r.id, book_id: bookId, enc_payload: encPayload, name: null, day: null, recurrence: null, month: null, note: null, created_at: r.created_at, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) };
+            }
+            return { ...r, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) };
         }));
         
         const result = await window.callSupabaseAPI('payment_reminders', 'POST', payload);
@@ -349,10 +355,13 @@ window.migratePaymentReminders = async function(bookId) {
     
     try {
         const tag = window.getAccountTag ? window.getAccountTag() : null;
-        const payload = toMigrate.map(r => ({
-            ...r,
-            updated_at: new Date().toISOString(),
-            ...(tag ? { account_tag: tag } : {})
+        // [SECURITY] Enkripsi field sensitif -- lihat window.encodeCloudReminderPayload.
+        const payload = await Promise.all(toMigrate.map(async r => {
+            const encPayload = await window.encodeCloudReminderPayload(r);
+            if (encPayload) {
+                return { id: r.id, book_id: r.book_id || bookId, enc_payload: encPayload, name: null, day: null, recurrence: null, month: null, note: null, created_at: r.created_at, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) };
+            }
+            return { ...r, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) };
         }));
         await window.callSupabaseAPI('payment_reminders', 'POST', payload);
         console.log('[PaymentReminder] Migrasi berhasil!');

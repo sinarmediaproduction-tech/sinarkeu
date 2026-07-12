@@ -118,14 +118,16 @@ sadar bahwa begitu data diekspor ke sana, ia sudah keluar dari perlindungan
 enkripsi app ini sepenuhnya (tergantung keamanan skrip Apps Script mereka
 sendiri).
 
-### 🟢 CATATAN — `payment_reminders` masih plaintext (belum sempat dikerjakan)
-Tabel ini punya pola data serupa transaksi (kemungkinan berisi nominal
-tagihan) dan saat ini juga dikirim plaintext, dengan pola kode yang identik
-dengan `transactions` sebelum diperbaiki. Saya prioritaskan `transactions`
-dan `backups` dulu karena volumenya jauh lebih besar. Kalau mau, saya bisa
-terapkan pola enkripsi yang sama (persis seperti di atas) ke
-`js/payment-reminder.js` di sesi berikutnya — polanya sudah ada, tinggal
-direplikasi.
+### 🟢 CATATAN — `payment_reminders` sudah ikut dienkripsi
+Sebelumnya belum sempat dikerjakan (disebutkan di draf audit awal). Sudah
+diselesaikan: `name`, `note`, `day`, `recurrence`, `month` sekarang
+dienkripsi jadi kolom `enc_payload`, dengan pola identik seperti
+`transactions` (termasuk fallback baca plaintext untuk baris lama). Semua
+titik push (`savePaymentReminder`, `syncAllPaymentReminders`,
+`migratePaymentReminders`, dan fungsi lama tak terpakai
+`pushPaymentReminderToCloud` di `db.js`) dan titik pull
+(`loadPaymentReminders`) sudah disesuaikan. Migrasi kolomnya sudah
+ditambahkan ke `sql/harden_transactions_encryption.sql`.
 
 ## Roadmap untuk multiuser SaaS yang sesungguhnya
 
@@ -151,12 +153,19 @@ data, baru ganti alur login di UI).
 
 ## Ringkasan file yang berubah di paket ini
 
-- `js/crypto.js` — enkripsi field transaksi (`encodeCloudTxPayload`/
-  `decodeCloudTxRow`) + throttle anti brute-force.
+- `js/crypto.js` — enkripsi field transaksi & payment reminder
+  (`encodeCloudTxPayload`/`decodeCloudTxRow`,
+  `encodeCloudReminderPayload`/`decodeCloudReminderRow`) + throttle anti
+  brute-force.
 - `js/transaction.js` — semua titik push/pull transaksi memakai enkripsi.
+- `js/payment-reminder.js` — semua titik push/pull jadwal pembayaran
+  memakai enkripsi.
 - `js/backup.js` — backup cloud & restore-dari-file memakai enkripsi.
+- `js/db.js` — fungsi lama `pushPaymentReminderToCloud` (tak terpakai)
+  ikut diamankan untuk berjaga-jaga.
 - `js/app.js` — layar lock memakai throttle.
 - `index.html` — CSP + referrer policy dasar.
 - `sql/harden_transactions_encryption.sql` — migrasi DB (jalankan dulu di
-  Supabase sebelum deploy kode baru).
+  Supabase sebelum deploy kode baru); mencakup `transactions`, `backups`,
+  dan `payment_reminders`.
 - `js/db.js.bak` — dihapus dari paket.
