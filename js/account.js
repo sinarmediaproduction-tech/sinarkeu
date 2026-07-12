@@ -191,6 +191,68 @@ window.cancelEditAccount = function() {
     document.getElementById('newAccPwdConfirmGroup').style.display = '';
     document.getElementById('newAccStatus').innerText = '';
 };
+// ==================== DUPLICATE SUPABASE PROJECT DETECTION ====================
+// Tujuan: MENOLAK penambahan/pengubahan akun ke URL Supabase project yang
+// sudah dipakai oleh akun lain di aplikasi ini (di perangkat yang sama).
+// Satu project Supabase per akun adalah asumsi desain aplikasi ini (lihat
+// window._doSwitch, isolasi via sk_a{accId}_ prefix) -- kalau dua akun lokal
+// diam-diam menunjuk ke project yang sama, isolasi datanya jadi bergantung
+// pada account_tag di level aplikasi saja (lihat window.tagOrFilter di
+// db.js), bukan pada database terpisah. Itu tetap berfungsi, tapi rawan
+// membingungkan (dua "akun" terasa seperti satu, salt/tag bisa tertukar kalau
+// user pernah pakai versi lama sebelum account_tag ada). Makanya kita cegah
+// dari sisi UI sebelum sempat terjadi.
+//
+// Masalahnya: URL akun LAIN yang sudah tersimpan itu terenkripsi
+// (sk_a{accId}_enc_supabase_url) dengan kunci milik akun tersebut -- kita
+// TIDAK bisa mendekripsinya tanpa tahu passwordnya. Solusinya: simpan hash
+// SHA-256 dari URL (bukan rahasia, cukup untuk dibandingkan tanpa perlu tahu
+// isinya) di kunci terpisah yang TIDAK terenkripsi: sk_a{accId}_url_hash.
+window._normalizeSupabaseUrl = function(url) {
+    return (url || '').trim().replace(/\/+$/, '').toLowerCase();
+};
+window._hashUrlForDup = async function(url) {
+    const norm = window._normalizeSupabaseUrl(url);
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(norm));
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+};
+// Dipanggil tiap kali app selesai unlock (lihat continueAppInit di app.js).
+// URL akun aktif ada dalam bentuk plaintext di window.globalSupabaseUrl saat
+// itu, jadi ini kesempatan aman untuk menyimpan/memperbarui hash-nya --
+// termasuk untuk akun lama yang dibuat SEBELUM fitur deteksi duplikat ini
+// ada (self-heal bertahap, tanpa perlu migrasi khusus).
+window._backfillActiveAccountUrlHash = async function() {
+    try {
+        const activeId = window.getActiveAccountId();
+        if (!activeId || !window.globalSupabaseUrl) return;
+        const hash = await window._hashUrlForDup(window.globalSupabaseUrl);
+        const key = 'sk_a' + activeId + '_url_hash';
+        if (localStorage.getItem(key) !== hash) localStorage.setItem(key, hash);
+    } catch (e) { console.warn('[MultiAccount] Gagal backfill url_hash:', e); }
+};
+// Cari akun LAIN (selain excludeAccId) yang sudah terdaftar dengan URL
+// Supabase yang sama (setelah dinormalisasi). Mengembalikan objek akun kalau
+// ketemu, null kalau tidak ada konflik.
+window._findAccountWithSameUrl = async function(candidateUrl, excludeAccId) {
+    const hash = await window._hashUrlForDup(candidateUrl);
+    const accounts = window.getAllAccounts();
+    const activeId = window.getActiveAccountId();
+    for (const acc of accounts) {
+        if (acc.id === excludeAccId) continue;
+        const hashKey = 'sk_a' + acc.id + '_url_hash';
+        let accHash = localStorage.getItem(hashKey);
+        if (!accHash && acc.id === activeId && window.globalSupabaseUrl) {
+            // Akun aktif tapi belum pernah ke-backfill (mis. baru saja unlock
+            // sebelum continueAppInit sempat jalan) -- hitung langsung dari
+            // URL plaintext yang memang sudah ada di memori sekarang.
+            accHash = await window._hashUrlForDup(window.globalSupabaseUrl);
+            localStorage.setItem(hashKey, accHash);
+        }
+        if (accHash && accHash === hash) return acc;
+    }
+    return null;
+};
+
 // [FIX DOUBLE-SUBMIT] Guard supaya "Simpan Akun" tidak bisa dipicu dua kali
 // bersamaan (double-tap di mobile, atau klik berulang saat request lambat).
 // Tanpa ini, dua eksekusi paralel bisa saling menimpa window.globalSupabaseUrl/
@@ -244,6 +306,17 @@ window.saveNewAccount = async function() {
         st.style.color='#de350b';
         st.innerText = 'Format Supabase Project URL tidak valid. Harus diawali https:// (contoh: https://xxxxxxxx.supabase.co)';
         return;
+    }
+    // [FIX] Tolak kalau URL Supabase ini sudah dipakai akun lain di aplikasi
+    // ini -- lihat penjelasan window._findAccountWithSameUrl di atas.
+    if (hasCredentials) {
+        st.style.color='#888'; st.innerText = 'Memeriksa URL akun lain…';
+        const dupAcc = await window._findAccountWithSameUrl(url, editId || null);
+        if (dupAcc) {
+            st.style.color='#de350b';
+            st.innerText = `Project Supabase ini sudah terdaftar untuk akun "${dupAcc.name}". Satu project Supabase hanya boleh dipakai oleh satu akun di aplikasi ini.`;
+            return;
+        }
     }
 
     window._savingAccountInProgress = true;
@@ -344,6 +417,7 @@ window.saveNewAccount = async function() {
                 localStorage.setItem(ns + 'crypto_check', checkB64);
                 localStorage.setItem(ns + 'enc_supabase_url', encUrl);
                 localStorage.setItem(ns + 'enc_supabase_key', encAKey);
+                localStorage.setItem(ns + 'url_hash', await window._hashUrlForDup(url));
                 sessionStorage.setItem('sk_acc_sess_' + accId, '1');
 
                 window.saveAllAccounts(accounts);

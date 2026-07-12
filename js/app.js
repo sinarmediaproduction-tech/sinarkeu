@@ -158,6 +158,10 @@ window.continueAppInit = async function() {
     }
     document.getElementById('passwordLockScreen').style.display = 'none';
     window.updateActiveAccountLabel();
+    // [FIX] Indeks hash URL akun aktif untuk deteksi duplikat Supabase project
+    // saat menambah akun baru (lihat window._backfillActiveAccountUrlHash di
+    // account.js). Fire-and-forget, tidak menghalangi render UI.
+    if (typeof window._backfillActiveAccountUrlHash === 'function') window._backfillActiveAccountUrlHash();
     window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
     let currentYear = new Date().getFullYear();
     let selectYear = document.getElementById('budgetYear');
