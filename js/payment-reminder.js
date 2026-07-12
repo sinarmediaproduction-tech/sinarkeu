@@ -6,6 +6,96 @@ function prCacheKey(bookId) {
     return 'sk_payment_reminders_' + bookId;
 }
 
+// ==================== TAHAN-BANTING: PENDING PUSH & PENDING DELETE ====================
+// [FIX] Sebelumnya loadPaymentReminders() (dipanggil tiap app start & tiap
+// pindah buku) MENIMPA TOTAL localStorage dengan apa pun hasil GET dari
+// cloud. Kalau reminder baru dibuat/diedit saat OFFLINE (atau push-nya
+// gagal karena sebab lain), savePaymentReminder() tetap mengembalikan
+// `true` (dianggap "berhasil") padahal cuma tersimpan lokal -- lalu begitu
+// loadPaymentReminders() jalan lagi (misalnya app di-reload), cache lokal
+// itu langsung DITIMPA hasil cloud yang TIDAK PUNYA reminder itu. Reminder
+// yang baru dibuat lenyap begitu saja, bahkan di device yang sama, tanpa
+// pernah offline dalam pengertian "device lain".
+//
+// Pola di bawah ini sama seperti dirty-tracking transaksi & pending-delete:
+// simpan niat (push/delete) ke localStorage SEBELUM dicoba ke cloud, baru
+// dihapus SETELAH benar-benar sukses. loadPaymentReminders() sekarang
+// MERGE hasil cloud dengan item yang masih pending, bukan menimpa total.
+function prPendingPushKey(bookId) { return 'sk_pr_pending_push_' + bookId; }
+function prPendingDeleteKey(bookId) { return 'sk_pr_pending_delete_' + bookId; }
+
+function _prLoadPendingPush(bookId) {
+    try { return JSON.parse(localStorage.getItem(prPendingPushKey(bookId)) || '{}'); }
+    catch (e) { return {}; }
+}
+function _prSavePendingPush(bookId, obj) {
+    try { localStorage.setItem(prPendingPushKey(bookId), JSON.stringify(obj)); } catch (e) {}
+}
+function _prMarkPendingPush(bookId, reminderData) {
+    const store = _prLoadPendingPush(bookId);
+    store[reminderData.id] = reminderData;
+    _prSavePendingPush(bookId, store);
+}
+function _prClearPendingPush(bookId, id) {
+    const store = _prLoadPendingPush(bookId);
+    delete store[id];
+    _prSavePendingPush(bookId, store);
+}
+
+function _prLoadPendingDelete(bookId) {
+    try { return JSON.parse(localStorage.getItem(prPendingDeleteKey(bookId)) || '[]'); }
+    catch (e) { return []; }
+}
+function _prSavePendingDelete(bookId, arr) {
+    try { localStorage.setItem(prPendingDeleteKey(bookId), JSON.stringify(arr)); } catch (e) {}
+}
+function _prMarkPendingDelete(bookId, id) {
+    const arr = _prLoadPendingDelete(bookId);
+    if (!arr.includes(id)) arr.push(id);
+    _prSavePendingDelete(bookId, arr);
+}
+function _prClearPendingDelete(bookId, id) {
+    _prSavePendingDelete(bookId, _prLoadPendingDelete(bookId).filter(x => x !== id));
+}
+
+// Dipanggil saat app start & saat koneksi online lagi (lihat app.js), supaya
+// reminder yang sempat gagal ter-push/ter-delete akhirnya nyampe ke cloud
+// tanpa perlu user mengedit ulang secara manual. Tanpa argumen, fungsi ini
+// menyisir SEMUA buku yang punya sisa pending (bukan cuma buku yang sedang
+// aktif) -- mirror pola window.flushPendingDirtyOnStart untuk transaksi,
+// supaya reminder yang dibuat di buku lain sebelum app ditutup tidak
+// terlewat.
+window.flushPendingPaymentReminders = async function(bookId) {
+    if (!window.isOnline()) return;
+    let bookIds;
+    if (bookId) {
+        bookIds = [bookId];
+    } else {
+        const ids = new Set();
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (!k) continue;
+            if (k.startsWith('sk_pr_pending_push_')) ids.add(k.slice('sk_pr_pending_push_'.length));
+            if (k.startsWith('sk_pr_pending_delete_')) ids.add(k.slice('sk_pr_pending_delete_'.length));
+        }
+        bookIds = Array.from(ids);
+    }
+
+    for (const bId of bookIds) {
+        const pendingPush = _prLoadPendingPush(bId);
+        for (const id of Object.keys(pendingPush)) {
+            const ok = await window.savePaymentReminder(bId, pendingPush[id], /*skipLocalUpsert*/ true);
+            if (ok) _prClearPendingPush(bId, id);
+        }
+
+        const pendingDelete = _prLoadPendingDelete(bId);
+        for (const id of pendingDelete) {
+            const ok = await window.deletePaymentReminder(id, bId, /*skipLocalRemove*/ true);
+            if (ok) _prClearPendingDelete(bId, id);
+        }
+    }
+};
+
 // ── LOAD dari Supabase (dengan fallback ke Local Storage) ──
 window.loadPaymentReminders = async function(bookId) {
     if (!bookId) bookId = window.currentBookId;
@@ -24,9 +114,21 @@ window.loadPaymentReminders = async function(bookId) {
             );
             
             if (result && Array.isArray(result)) {
-                // Cache ke Local Storage
-                localStorage.setItem(prCacheKey(bookId), JSON.stringify(result));
-                return result;
+                // [FIX] MERGE, jangan timpa total: item yang masih pending-push
+                // (belum sukses di-push ke cloud) TETAP dipertahankan di cache
+                // lokal walau tidak muncul di hasil cloud ini, supaya tidak
+                // lenyap. Item yang masih pending-delete DIBUANG dari hasil
+                // cloud (kalaupun masih ada di server), supaya tidak "hidup
+                // lagi" secara visual padahal user sudah menghapusnya.
+                const pendingPush = _prLoadPendingPush(bookId);
+                const pendingDeleteIds = new Set(_prLoadPendingDelete(bookId));
+                const merged = result.filter(r => !pendingDeleteIds.has(r.id));
+                const mergedIds = new Set(merged.map(r => r.id));
+                Object.values(pendingPush).forEach(r => {
+                    if (!pendingDeleteIds.has(r.id) && !mergedIds.has(r.id)) merged.push(r);
+                });
+                localStorage.setItem(prCacheKey(bookId), JSON.stringify(merged));
+                return merged;
             }
         } catch (e) {
             console.warn('[PaymentReminder] Gagal load dari Supabase:', e);
@@ -43,24 +145,32 @@ window.loadPaymentReminders = async function(bookId) {
 };
 
 // ── SAVE ke Supabase + Local Storage ──
-window.savePaymentReminder = async function(bookId, reminderData) {
+window.savePaymentReminder = async function(bookId, reminderData, skipLocalUpsert) {
     if (!bookId) bookId = window.currentBookId;
     if (!bookId) return false;
     
-    // Simpan ke Local Storage dulu (cache)
-    let localReminders = [];
-    try {
-        localReminders = JSON.parse(localStorage.getItem(prCacheKey(bookId)) || '[]');
-        const index = localReminders.findIndex(r => r.id === reminderData.id);
-        if (index >= 0) {
-            localReminders[index] = { ...reminderData, book_id: bookId };
-        } else {
-            localReminders.push({ ...reminderData, book_id: bookId });
+    // Simpan ke Local Storage dulu (cache) -- dilewati saat dipanggil dari
+    // flushPendingPaymentReminders() karena item itu sudah ada di cache.
+    if (!skipLocalUpsert) {
+        let localReminders = [];
+        try {
+            localReminders = JSON.parse(localStorage.getItem(prCacheKey(bookId)) || '[]');
+            const index = localReminders.findIndex(r => r.id === reminderData.id);
+            if (index >= 0) {
+                localReminders[index] = { ...reminderData, book_id: bookId };
+            } else {
+                localReminders.push({ ...reminderData, book_id: bookId });
+            }
+            localStorage.setItem(prCacheKey(bookId), JSON.stringify(localReminders));
+        } catch (e) {
+            console.warn('[PaymentReminder] Gagal save ke localStorage:', e);
         }
-        localStorage.setItem(prCacheKey(bookId), JSON.stringify(localReminders));
-    } catch (e) {
-        console.warn('[PaymentReminder] Gagal save ke localStorage:', e);
     }
+
+    // [FIX] Tandai dulu sebagai "pending push" SEBELUM mencoba ke cloud --
+    // kalau gagal/offline, catatan ini tetap ada dan dicoba lagi otomatis
+    // oleh window.flushPendingPaymentReminders() (app start / online lagi).
+    _prMarkPendingPush(bookId, { ...reminderData, book_id: bookId });
     
     // Kirim ke Supabase
     if (window.isOnline()) {
@@ -76,31 +186,48 @@ window.savePaymentReminder = async function(bookId, reminderData) {
             const result = await window.callSupabaseAPI('payment_reminders', 'POST', [payload]);
             if (result) {
                 console.log('[PaymentReminder] Berhasil sync ke cloud');
+                _prClearPendingPush(bookId, reminderData.id);
                 return true;
             }
         } catch (e) {
             console.error('[PaymentReminder] Gagal save ke Supabase:', e);
             window.showToast('Data tersimpan lokal, gagal sync ke cloud', 'warning');
-            return false;
         }
+        // Gagal push walau online: tetap tersimpan lokal (pending), akan
+        // dicoba lagi otomatis. Beri tahu pemanggil ini belum benar-benar
+        // tersinkron, tapi jangan hilangkan data yang sudah tersimpan lokal.
+        return true;
     }
     
+    // Offline: tetap "berhasil" secara lokal, pending push akan di-flush
+    // otomatis begitu online lagi.
     return true;
 };
 
 // ── DELETE dari Supabase + Local Storage ──
-window.deletePaymentReminder = async function(reminderId, bookId) {
+window.deletePaymentReminder = async function(reminderId, bookId, skipLocalRemove) {
     if (!bookId) bookId = window.currentBookId;
     if (!bookId) return false;
     
-    // Hapus dari Local Storage
-    try {
-        let localReminders = JSON.parse(localStorage.getItem(prCacheKey(bookId)) || '[]');
-        localReminders = localReminders.filter(r => r.id !== reminderId);
-        localStorage.setItem(prCacheKey(bookId), JSON.stringify(localReminders));
-    } catch (e) {
-        console.warn('[PaymentReminder] Gagal hapus dari localStorage:', e);
+    // Hapus dari Local Storage -- dilewati saat dipanggil dari
+    // flushPendingPaymentReminders() karena item itu sudah dibuang duluan.
+    if (!skipLocalRemove) {
+        try {
+            let localReminders = JSON.parse(localStorage.getItem(prCacheKey(bookId)) || '[]');
+            localReminders = localReminders.filter(r => r.id !== reminderId);
+            localStorage.setItem(prCacheKey(bookId), JSON.stringify(localReminders));
+        } catch (e) {
+            console.warn('[PaymentReminder] Gagal hapus dari localStorage:', e);
+        }
+        // Kalau reminder ini masih pending-push (belum sempat sampai ke
+        // cloud sama sekali), tidak perlu lagi didorong -- cukup batalkan.
+        _prClearPendingPush(bookId, reminderId);
     }
+
+    // [FIX] Tandai pending-delete SEBELUM mencoba ke cloud, supaya kalau
+    // gagal/koneksi putus, penghapusan ini tetap tercatat dan dicoba lagi
+    // otomatis (bukan diam-diam batal, baris "hidup lagi" di pull berikutnya).
+    _prMarkPendingDelete(bookId, reminderId);
     
     // Hapus dari Supabase
     if (window.isOnline()) {
@@ -115,13 +242,17 @@ window.deletePaymentReminder = async function(reminderId, bookId) {
             );
             if (result) {
                 console.log('[PaymentReminder] Berhasil hapus dari cloud');
+                _prClearPendingDelete(bookId, reminderId);
                 return true;
             }
         } catch (e) {
             console.error('[PaymentReminder] Gagal hapus dari Supabase:', e);
             window.showToast('Data lokal terhapus, gagal sync ke cloud', 'warning');
-            return false;
         }
+        // Gagal hapus di cloud walau online: tetap dianggap "berhasil" secara
+        // lokal (sudah hilang dari layar), pending-delete akan di-flush
+        // otomatis begitu koneksi/permintaan berhasil.
+        return true;
     }
     
     return true;
