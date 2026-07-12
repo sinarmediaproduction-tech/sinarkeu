@@ -46,6 +46,14 @@ window.updateUIForOnlineStatus = function() {
 window.startAutoSync = function() {
     if (window._syncInterval) clearInterval(window._syncInterval);
     window._syncInterval = setInterval(async () => {
+        // [FIX RACE CONDITION] Kalau sedang menambah/mengedit akun (lihat
+        // window._acctCredTestLock di js/account.js), window.globalSupabaseUrl/
+        // Key sementara menunjuk ke backend BARU yang sedang diuji, bukan
+        // backend akun yang sedang aktif. Lewati tick ini supaya autosync tidak
+        // diam-diam push/pull ke backend yang salah pakai kunci enkripsi akun
+        // lama -- tick berikutnya (30 detik lagi) akan berjalan normal setelah
+        // proses tambah/edit akun selesai.
+        if (window._acctCredTestLock) return;
         if (window.isOnline()) {
             // Retry dulu penghapusan yang mungkin masih tertunda (gagal PATCH
             // sebelumnya) SEBELUM pull, dengan alasan yang sama seperti di

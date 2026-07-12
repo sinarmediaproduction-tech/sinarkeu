@@ -164,6 +164,10 @@ window.getCurrentBookName = function() {
 };
 
 window.sendDailySummaryToTelegram = async function() {
+    // [FIX RACE CONDITION] Lihat catatan di js/app.js (startAutoSync) --
+    // window.globalSupabaseUrl/Key bisa sementara menunjuk ke backend akun
+    // baru yang sedang diuji lewat Manajer Akun.
+    if (window._acctCredTestLock) return;
     let cfg = await window.getTgConfig();
     if (!cfg.active) return;
     let now = new Date();

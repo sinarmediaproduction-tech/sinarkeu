@@ -257,6 +257,13 @@ window.pullAllBooksFromCloud = async function() {
 
 window.forceFullSync = async function() {
     if (!window.requireOnline('sinkronisasi')) return;
+    // [FIX RACE CONDITION] Sama seperti guard di startAutoSync (js/app.js):
+    // jangan sinkron sementara kredensial global sedang dialihkan untuk
+    // menguji/bootstrap akun baru di menu Manajer Akun.
+    if (window._acctCredTestLock) {
+        window.showToast('Tunggu proses tambah/edit akun selesai sebelum sinkronisasi.', 'info');
+        return;
+    }
     try {
         await window.pullAllSettings();
         await window.pullAllBooksFromCloud();

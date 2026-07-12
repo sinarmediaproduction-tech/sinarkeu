@@ -191,10 +191,33 @@ window.cancelEditAccount = function() {
     document.getElementById('newAccPwdConfirmGroup').style.display = '';
     document.getElementById('newAccStatus').innerText = '';
 };
+// [FIX DOUBLE-SUBMIT] Guard supaya "Simpan Akun" tidak bisa dipicu dua kali
+// bersamaan (double-tap di mobile, atau klik berulang saat request lambat).
+// Tanpa ini, dua eksekusi paralel bisa saling menimpa window.globalSupabaseUrl/
+// Key satu sama lain dan/atau memicu dua kali bootstrapCryptoForBackend untuk
+// akun baru yang sama (dua salt acak berbeda ter-push ke cloud sebelum salah
+// satunya sempat punya tag -> device lain yang join belakangan bisa menurunkan
+// AES key dari salt yang salah). Lihat juga window._acctCredTestLock di bawah,
+// yang melindungi proses BACKGROUND lain (autosync dll) dari kredensial yang
+// sedang diuji di sini.
+window._savingAccountInProgress = false;
+
+window._setSaveAccButtonState = function(saving) {
+    const btn = document.getElementById('saveAccBtn');
+    if (btn) {
+        btn.disabled = saving;
+        btn.style.opacity = saving ? '0.6' : '1';
+        btn.innerText = saving ? 'Menyimpan…' : 'Simpan Akun';
+    }
+    const cancelBtn = document.getElementById('cancelAccBtn');
+    if (cancelBtn) { cancelBtn.disabled = saving; cancelBtn.style.opacity = saving ? '0.6' : '1'; }
+};
+
 window.saveNewAccount = async function() {
+    if (window._savingAccountInProgress) return; // double-submit guard
     const editId = document.getElementById('editingAccId').value.trim();
     const name   = document.getElementById('newAccName').value.trim();
-    const url    = document.getElementById('newAccUrl').value.trim();
+    let   url    = document.getElementById('newAccUrl').value.trim().replace(/\/+$/, ''); // buang trailing slash -> cegah URL ganda saat dipakai callSupabaseAPI
     const key    = document.getElementById('newAccKey').value.trim();
     const pwd    = document.getElementById('newAccPwd').value;
     const pwd2   = document.getElementById('newAccPwdConfirm').value;
@@ -202,96 +225,169 @@ window.saveNewAccount = async function() {
     if (!name) { st.style.color='#de350b'; st.innerText=window.t('acc_name_required'); return; }
     const isEdit = !!editId;
     const hasCredentials = url && key && pwd;
+
+    // [FIX] Cegah dua akun lokal dengan nama sama persis (case-insensitive) --
+    // sebelumnya tidak dicek sama sekali, bikin daftar akun di lock screen
+    // membingungkan kalau user tidak sengaja menambah nama yang sama dua kali.
+    const existingAccounts = window.getAllAccounts();
+    const dupName = existingAccounts.find(a => a.id !== editId && a.name.trim().toLowerCase() === name.toLowerCase());
+    if (dupName) { st.style.color='#de350b'; st.innerText = `Nama akun "${name}" sudah dipakai. Gunakan nama lain.`; return; }
+
     if (!isEdit && (!url || !key || !pwd || pwd.length < 6)) { st.style.color='#de350b'; st.innerText='URL, Anon Key, dan Password (min 6 karakter) wajib diisi!'; return; }
     if (isEdit && hasCredentials && pwd.length < 6) { st.style.color='#de350b'; st.innerText='Password minimal 6 karakter!'; return; }
     if (hasCredentials && pwd !== pwd2) { st.style.color='#de350b'; st.innerText='Konfirmasi password tidak cocok! Pastikan kedua password sama.'; return; }
-    let accounts = window.getAllAccounts();
-    const accId  = editId || ('acc_' + Date.now());
-    if (isEdit) { const idx = accounts.findIndex(a => a.id === editId); if (idx >= 0) accounts[idx].name = name; }
-    else accounts.push({ id: accId, name });
-    if (hasCredentials) {
-        st.style.color='#888'; st.innerText=window.t('testing_supabase');
-        const oldUrl = window.globalSupabaseUrl, oldKey = window.globalSupabaseKey;
-        window.globalSupabaseUrl = url; window.globalSupabaseKey = key;
-        const test = await window.callSupabaseAPI('transactions', 'GET', null, '?limit=1');
-        if (test === null) {
-            window.globalSupabaseUrl = oldUrl; window.globalSupabaseKey = oldKey;
-            st.style.color='#de350b'; st.innerText=window.t('acc_connection_failed'); return;
-        }
-
-        const ns = 'sk_a' + accId + '_';
-        const isActiveEdit = isEdit && accId === window.getActiveAccountId();
-        let cryptoKey, saltB64, checkB64;
-
-        if (isActiveEdit && localStorage.getItem('sk_crypto_salt')) {
-            // Ini rotasi password untuk akun yang SEDANG aktif -> pertahankan
-            // salt yang sama (lihat window.rotatePasswordKeepingSalt di
-            // crypto.js), supaya perangkat lain yang sudah "join" backend ini
-            // tidak kehilangan kecocokan kunci hanya karena password diganti
-            // lewat form akun ini (bukan lewat menu "Ubah Password").
-            const rotated = await window.rotatePasswordKeepingSalt(pwd, localStorage.getItem('sk_crypto_salt'));
-            cryptoKey = rotated.key; saltB64 = rotated.saltB64; checkB64 = rotated.checkB64;
-        } else {
-            // Akun baru, atau akun yang sedang TIDAK aktif, atau belum ada
-            // salt lokal sama sekali -> backend ini bisa jadi sudah pernah
-            // disetup dari perangkat lain, jadi coba join, atau buat baru
-            // kalau memang belum pernah ada (lihat window.bootstrapCryptoForBackend).
-            try {
-                const boot = await window.bootstrapCryptoForBackend(pwd, url, key);
-                cryptoKey = boot.key; saltB64 = boot.saltB64; checkB64 = boot.checkB64;
-            } catch (e) {
-                window.globalSupabaseUrl = oldUrl; window.globalSupabaseKey = oldKey;
-                st.style.color='#de350b';
-                st.innerText = (e && e.code === 'PASSWORD_MISMATCH')
-                    ? 'Backend ini sudah tersambung dari perangkat lain dengan password berbeda. Gunakan password yang sama.'
-                    : 'Gagal menyiapkan enkripsi: ' + (e && e.message ? e.message : 'error tidak diketahui');
-                return;
-            }
-        }
-
-        st.innerText = window.t('acc_encrypting_saving');
-        const encUrl  = await window.encryptStr(cryptoKey, url);
-        const encAKey = await window.encryptStr(cryptoKey, key);
-
-        if (isActiveEdit) {
-            localStorage.setItem('sk_crypto_salt', saltB64);
-            localStorage.setItem('sk_crypto_check', checkB64);
-            localStorage.setItem('sk_enc_supabase_url', encUrl);
-            localStorage.setItem('sk_enc_supabase_key', encAKey);
-            window.globalSupabaseUrl = url;
-            window.globalSupabaseKey = key;
-            window._sessionCryptoKey = cryptoKey;
-            sessionStorage.setItem('sk_session_unlocked', '1');
-            sessionStorage.setItem('sk_session_url', url);
-            sessionStorage.setItem('sk_session_akey', key);
-            sessionStorage.setItem('sk_session_ts', Date.now().toString());
-            // Pastikan cloud (crypto_check) ikut konsisten dgn kunci ini, lalu
-            // re-enkripsi setting yang sudah ada dengan kunci tersebut.
-            // Lihat window.reEncryptAllCloudSettings di db.js.
-            await window.pushCryptoSaltCheck(saltB64, checkB64);
-            if (typeof window.reEncryptAllCloudSettings === 'function') {
-                await window.reEncryptAllCloudSettings();
-            }
-        } else {
-            // Bukan akun aktif -> jangan ganggu sesi yang sedang berjalan.
-            window.globalSupabaseUrl = oldUrl; window.globalSupabaseKey = oldKey;
-        }
-        localStorage.setItem(ns + 'crypto_salt', saltB64);
-        localStorage.setItem(ns + 'crypto_check', checkB64);
-        localStorage.setItem(ns + 'enc_supabase_url', encUrl);
-        localStorage.setItem(ns + 'enc_supabase_key', encAKey);
-        sessionStorage.setItem('sk_acc_sess_' + accId, '1');
+    // [FIX] Validasi format URL SEBELUM menghubungi jaringan -- sebelumnya URL
+    // ngawur (tanpa http/https, typo, dsb.) langsung dilempar ke fetch() dan
+    // baru gagal dengan pesan generik "Koneksi gagal" yang tidak jelas
+    // penyebabnya.
+    if (hasCredentials && !/^https?:\/\/.+\..+/i.test(url)) {
+        st.style.color='#de350b';
+        st.innerText = 'Format Supabase Project URL tidak valid. Harus diawali https:// (contoh: https://xxxxxxxx.supabase.co)';
+        return;
     }
-    window.saveAllAccounts(accounts);
-    st.style.color='#00875a';
-    st.innerText = isEdit ? window.t('acc_updated') : window.t('acc_added');
-    window.showToast(isEdit ? 'Akun diperbarui!' : 'Akun baru ditambahkan!', 'success');
-    window.cancelEditAccount();
-    window.renderAccModalList();
-    window.renderAccountBar();
-    if (!isEdit && (!window.getActiveAccountId() || accounts.length === 1)) {
-        window._setActiveAccountId(accId);
-        setTimeout(() => { window.closeModal('accountManagerModal'); location.reload(); }, 800);
+
+    window._savingAccountInProgress = true;
+    window._setSaveAccButtonState(true);
+    try {
+        let accounts = window.getAllAccounts();
+        const accId  = editId || ('acc_' + Date.now());
+        if (isEdit) { const idx = accounts.findIndex(a => a.id === editId); if (idx >= 0) accounts[idx].name = name; }
+        else accounts.push({ id: accId, name });
+
+        if (hasCredentials) {
+            st.style.color='#888'; st.innerText=window.t('testing_supabase');
+            const oldUrl = window.globalSupabaseUrl, oldKey = window.globalSupabaseKey;
+            // [FIX RACE CONDITION] window.globalSupabaseUrl/Key adalah state GLOBAL
+            // yang juga dibaca oleh proses background: autosync tiap 30 detik
+            // (window.startAutoSync di app.js), sinkronisasi manual
+            // (window.forceFullSync di transaction.js), dan ringkasan harian
+            // Telegram (js/telegram.js). Selama blok di bawah ini berjalan,
+            // kedua variabel itu SENGAJA dialihkan sementara ke kredensial akun
+            // BARU yang sedang diuji/dibootstrap -- kalau salah satu proses
+          // background di atas kebetulan berjalan di tengah-tengah jendela
+            // waktu ini, ia akan memakai URL/API key akun baru tapi kunci
+            // enkripsi sesi (session crypto key) milik akun LAMA, yang bisa
+            // menyebabkan data akun aktif ter-push/ter-pull ke backend yang
+            // salah secara diam-diam. window._acctCredTestLock adalah flag yang
+            // dicek oleh proses-proses tersebut supaya mereka SKIP tick-nya
+            // selama proses tambah/edit akun ini berlangsung. Dibungkus
+            // try/finally supaya lock & kredensial lama SELALU pulih walau ada
+            // error tak terduga di tengah jalan (bukan hanya pada jalur gagal
+            // yang sudah diantisipasi).
+            window._acctCredTestLock = true;
+            try {
+                window.globalSupabaseUrl = url; window.globalSupabaseKey = key;
+                const test = await window.callSupabaseAPI('transactions', 'GET', null, '?limit=1');
+                if (test === null) {
+                    st.style.color='#de350b';
+                    st.innerText = window.t('acc_connection_failed') + ' Pastikan URL & Anon Key benar, dan tabel sudah di-setup (lihat Panduan Pengguna).';
+                    return;
+                }
+
+                const ns = 'sk_a' + accId + '_';
+                const isActiveEdit = isEdit && accId === window.getActiveAccountId();
+                let cryptoKey, saltB64, checkB64;
+
+                if (isActiveEdit && localStorage.getItem('sk_crypto_salt')) {
+                    // Ini rotasi password untuk akun yang SEDANG aktif -> pertahankan
+                    // salt yang sama (lihat window.rotatePasswordKeepingSalt di
+                    // crypto.js), supaya perangkat lain yang sudah "join" backend ini
+                    // tidak kehilangan kecocokan kunci hanya karena password diganti
+                    // lewat form akun ini (bukan lewat menu "Ubah Password").
+                    const rotated = await window.rotatePasswordKeepingSalt(pwd, localStorage.getItem('sk_crypto_salt'));
+                    cryptoKey = rotated.key; saltB64 = rotated.saltB64; checkB64 = rotated.checkB64;
+                } else {
+                    // Akun baru, atau akun yang sedang TIDAK aktif, atau belum ada
+                    // salt lokal sama sekali -> backend ini bisa jadi sudah pernah
+                    // disetup dari perangkat lain, jadi coba join, atau buat baru
+                    // kalau memang belum pernah ada (lihat window.bootstrapCryptoForBackend).
+                    try {
+                        const boot = await window.bootstrapCryptoForBackend(pwd, url, key);
+                        cryptoKey = boot.key; saltB64 = boot.saltB64; checkB64 = boot.checkB64;
+                    } catch (e) {
+                        st.style.color='#de350b';
+                        st.innerText = (e && e.code === 'PASSWORD_MISMATCH')
+                            ? 'Backend ini sudah tersambung dari perangkat lain dengan password berbeda. Gunakan password yang sama.'
+                            : 'Gagal menyiapkan enkripsi: ' + (e && e.message ? e.message : 'error tidak diketahui');
+                        return;
+                    }
+                }
+
+                st.innerText = window.t('acc_encrypting_saving');
+                const encUrl  = await window.encryptStr(cryptoKey, url);
+                const encAKey = await window.encryptStr(cryptoKey, key);
+
+                if (isActiveEdit) {
+                    localStorage.setItem('sk_crypto_salt', saltB64);
+                    localStorage.setItem('sk_crypto_check', checkB64);
+                    localStorage.setItem('sk_enc_supabase_url', encUrl);
+                    localStorage.setItem('sk_enc_supabase_key', encAKey);
+                    window.globalSupabaseUrl = url;
+                    window.globalSupabaseKey = key;
+                    window._sessionCryptoKey = cryptoKey;
+                    sessionStorage.setItem('sk_session_unlocked', '1');
+                    sessionStorage.setItem('sk_session_url', url);
+                    sessionStorage.setItem('sk_session_akey', key);
+                    sessionStorage.setItem('sk_session_ts', Date.now().toString());
+                    // Pastikan cloud (crypto_check) ikut konsisten dgn kunci ini, lalu
+                    // re-enkripsi setting yang sudah ada dengan kunci tersebut.
+                    // Lihat window.reEncryptAllCloudSettings di db.js.
+                    await window.pushCryptoSaltCheck(saltB64, checkB64);
+                    if (typeof window.reEncryptAllCloudSettings === 'function') {
+                        await window.reEncryptAllCloudSettings();
+                    }
+                } else {
+                    // Bukan akun aktif -> jangan ganggu sesi yang sedang berjalan.
+                    window.globalSupabaseUrl = oldUrl; window.globalSupabaseKey = oldKey;
+                }
+                localStorage.setItem(ns + 'crypto_salt', saltB64);
+                localStorage.setItem(ns + 'crypto_check', checkB64);
+                localStorage.setItem(ns + 'enc_supabase_url', encUrl);
+                localStorage.setItem(ns + 'enc_supabase_key', encAKey);
+                sessionStorage.setItem('sk_acc_sess_' + accId, '1');
+
+                window.saveAllAccounts(accounts);
+                st.style.color='#00875a';
+                st.innerText = isEdit ? window.t('acc_updated') : window.t('acc_added');
+                window.showToast(isEdit ? 'Akun diperbarui!' : 'Akun baru ditambahkan!', 'success');
+                window.cancelEditAccount();
+                window.renderAccModalList();
+                window.renderAccountBar();
+                if (!isEdit && (!window.getActiveAccountId() || accounts.length === 1)) {
+                    window._setActiveAccountId(accId);
+                    setTimeout(() => { window.closeModal('accountManagerModal'); location.reload(); }, 800);
+                }
+                return;
+            } finally {
+                // [FIX] Restore SELALU dijalankan, termasuk kalau ada exception tak
+                // terduga (mis. reEncryptAllCloudSettings melempar error) yang dulu
+                // bisa membuat window.globalSupabaseUrl/Key nyangkut permanen di
+                // kredensial akun baru walau prosesnya gagal di tengah jalan.
+                // Untuk kasus SUKSES pada akun aktif, url/key sudah sengaja
+                // di-set ke kredensial baru sebelum blok ini -- jangan ditimpa balik.
+                const isActiveEditSuccess = isEdit && accId === window.getActiveAccountId() && window.globalSupabaseUrl === url;
+                if (!isActiveEditSuccess) {
+                    window.globalSupabaseUrl = oldUrl; window.globalSupabaseKey = oldKey;
+                }
+                window._acctCredTestLock = false;
+            }
+        }
+
+        // Tidak ada kredensial baru (hanya ganti nama akun saat edit) -> langsung simpan.
+        window.saveAllAccounts(accounts);
+        st.style.color='#00875a';
+        st.innerText = isEdit ? window.t('acc_updated') : window.t('acc_added');
+        window.showToast(isEdit ? 'Akun diperbarui!' : 'Akun baru ditambahkan!', 'success');
+        window.cancelEditAccount();
+        window.renderAccModalList();
+        window.renderAccountBar();
+        if (!isEdit && (!window.getActiveAccountId() || accounts.length === 1)) {
+            window._setActiveAccountId(accId);
+            setTimeout(() => { window.closeModal('accountManagerModal'); location.reload(); }, 800);
+        }
+    } finally {
+        window._savingAccountInProgress = false;
+        window._setSaveAccButtonState(false);
     }
 };
 window.deleteAccount = async function(accId) {
