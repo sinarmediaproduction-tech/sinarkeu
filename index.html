@@ -64,13 +64,13 @@
         <div class="lock-account-picker" id="lockAccountPicker"></div>
         <div class="lock-input-wrap">
             <input type="password" id="lockPasswordInput" class="lock-input"
-                   placeholder="Password"
+                   placeholder="Password" disabled
                    onkeydown="if(event.key==='Enter') submitLockPassword()"
                    oninput="clearLockError()">
-            <button class="lock-eye-btn" onclick="toggleLockEye()" id="lockEyeBtn" title="Tampilkan/sembunyikan">Lihat</button>
+            <button class="lock-eye-btn" onclick="toggleLockEye()" id="lockEyeBtn" title="Tampilkan/sembunyikan" disabled>Lihat</button>
         </div>
         <div style="margin-top:14px;">
-            <button class="lock-btn" id="lockSubmitBtn" onclick="submitLockPassword()">Buka</button>
+            <button class="lock-btn" id="lockSubmitBtn" onclick="submitLockPassword()" disabled>Buka</button>
         </div>
         <div class="lock-status" id="lockStatus"></div>
         <button class="lock-add-account" onclick="openAccountManagerFromLock()">＋ Tambah akun baru</button>

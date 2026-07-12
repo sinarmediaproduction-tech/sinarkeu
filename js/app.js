@@ -123,6 +123,21 @@ window.submitLockPassword = async function() {
     }
 };
 
+// [FIX] Layar kunci tampil duluan dari CSS (display:flex default) sebelum
+// semua script di bawah <body> selesai dimuat, jadi input/tombolnya sengaja
+// disabled di HTML supaya tidak memicu ReferenceError kalau user keburu
+// menekan Enter/klik. Begitu baris ini jalan (app.js sudah lengkap, dan
+// crypto.js yang berisi toggleLockEye/clearLockError sudah lebih dulu
+// selesai dimuat), baru diaktifkan.
+(function enableLockScreenInputs() {
+    const inp = document.getElementById('lockPasswordInput');
+    const eyeBtn = document.getElementById('lockEyeBtn');
+    const submitBtn = document.getElementById('lockSubmitBtn');
+    if (inp) inp.disabled = false;
+    if (eyeBtn) eyeBtn.disabled = false;
+    if (submitBtn) submitBtn.disabled = false;
+})();
+
 window.continueAppInit = async function() {
     if (!window.globalSupabaseUrl) {
         sessionStorage.removeItem('sk_session_unlocked');

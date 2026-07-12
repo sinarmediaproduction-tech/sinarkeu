@@ -1794,6 +1794,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   color: var(--ink);
 }
 .lock-input:focus { border-color: var(--ink); }
+.lock-input:disabled { background: var(--paper-warm); color: var(--ink-faint); cursor: wait; }
 .lock-input.error-shake {
   border-color: var(--danger);
   animation: shake 0.4s ease;
@@ -1821,6 +1822,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   padding: 0;
   line-height: 1;
 }
+.lock-eye-btn:disabled { cursor: wait; opacity: .5; }
 
 .lock-btn {
   width: 100%;
