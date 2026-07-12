@@ -297,7 +297,12 @@ window.saveNewAccount = async function() {
 window.deleteAccount = async function(accId) {
     const acc = window.getAllAccounts().find(a => a.id === accId);
     if (!acc) return;
-    if (!confirm(`Hapus akun "${acc.name}"?\n\nData lokal akun ini akan dihapus dari browser. Data di Supabase TIDAK terpengaruh.`)) return;
+    const ok = await window.customConfirm({
+        title: 'Hapus Akun',
+        message: `Hapus akun "${acc.name}"?\n\nData lokal akun ini akan dihapus dari browser. Data di Supabase TIDAK terpengaruh.`,
+        confirmLabel: 'Hapus'
+    });
+    if (!ok) return;
     const nsPrefix = 'sk_a' + accId + '_';
     const toRemove = [];
     for (let i = 0; i < localStorage.length; i++) {

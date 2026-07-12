@@ -191,15 +191,23 @@ window.addNewBook = async function(e) {
 window.deleteBook = async function(id) {
     if (!window.requireOnline('menghapus buku')) return;
     if (id === window.currentBookId) {
-        alert('Tidak bisa menghapus buku kas yang sedang dibuka! Silakan pindah ke buku lain terlebih dahulu.');
+        await window.customAlert({ title: 'Tidak Bisa Dihapus', message: 'Tidak bisa menghapus buku kas yang sedang dibuka! Silakan pindah ke buku lain terlebih dahulu.' });
         return;
     }
     let b = window.books.find(x => x.id === id);
     if (!b) { window.showToast('Buku sudah tidak ada (mungkin sudah dihapus device lain)', 'warning'); return; }
-    const confirm1 = confirm(`Hapus permanen buku "${b.name}"?\n\nData yang dihapus:\n- Semua transaksi dalam buku ini\n- Anggaran bulanan\n- Anggaran Dasar\n- Log aktivitas\n\nData TIDAK BISA dikembalikan!`);
+    const confirm1 = await window.customConfirm({
+        title: 'Hapus Buku Permanen',
+        message: `Hapus permanen buku "${b.name}"?\n\nData yang dihapus:\n- Semua transaksi dalam buku ini\n- Anggaran bulanan\n- Anggaran Dasar\n- Log aktivitas\n\nData TIDAK BISA dikembalikan!`,
+        confirmLabel: 'Lanjut'
+    });
     if (!confirm1) return;
-    const confirm2 = prompt(`Ketik "HAPUS ${b.name}" untuk konfirmasi penghapusan buku ini:`);
-    if (confirm2 !== `HAPUS ${b.name}`) { alert('Konfirmasi gagal. Penghapusan dibatalkan.'); return; }
+    const typedName = await window.customPrompt({
+        title: 'Ketik Nama Buku untuk Konfirmasi',
+        message: `Ketik nama buku "${b.name}" persis sama untuk mengonfirmasi penghapusan permanen.`,
+        expectedValue: b.name
+    });
+    if (typedName === null) return;
     const cfg = window.getTgConfig();
     if (cfg.active) {
         window.sendTelegramNotif(`<b>Penghapusan Buku</b>\n\nBuku <b>${b.name}</b> akan dihapus oleh device ${window.deviceId}\n\nData akan dihapus dalam 3 detik...`);

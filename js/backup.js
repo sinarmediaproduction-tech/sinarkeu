@@ -227,14 +227,26 @@ window.handleJsonImport = function(e) {
 // Archive & Clear
 window.archiveAndClearData = async function() {
     if (!window.requireOnline('mengarsipkan data')) return;
-    if (window.txs.length === 0) { alert('Tidak ada data transaksi untuk diarsipkan!'); return; }
+    if (window.txs.length === 0) { await window.customAlert({ title: 'Tidak Ada Data', message: 'Tidak ada data transaksi untuk diarsipkan!' }); return; }
     const st = document.getElementById('archiveStatus');
-    const confirm1 = confirm(`PERINGATAN PENTING \n\nAnda akan mengarsipkan ${window.txs.length} transaksi ke file JSON, lalu menghapus SEMUA data buku ini dari Supabase dan lokal.\n\nTINDAKAN INI TIDAK DAPAT DIBATALKAN!\n\nKlik OK untuk melanjutkan ke konfirmasi kedua.`);
+    const confirm1 = await window.customConfirm({
+        title: 'Peringatan Penting',
+        message: `Anda akan mengarsipkan ${window.txs.length} transaksi ke file JSON, lalu menghapus SEMUA data buku ini dari Supabase dan lokal.\n\nTINDAKAN INI TIDAK DAPAT DIBATALKAN!`,
+        confirmLabel: 'Lanjut'
+    });
     if (!confirm1) return;
     const bookName = window.getCurrentBookName();
-    const userInput = prompt(`Ketik nama buku "${bookName}" untuk konfirmasi penghapusan permanen:\n\n(pengetikan harus persis sama)`);
-    if (userInput !== bookName) { alert('Nama buku tidak cocok. Penghapusan dibatalkan.'); return; }
-    const confirm3 = confirm(`KONFIRMASI FINAL \n\nApakah Anda SANGAT YAKIN ingin menghapus SEMUA data buku "${bookName}" secara permanen?\n\nData yang dihapus TIDAK BISA dikembalikan!\n\nKlik OK untuk menghapus permanen.`);
+    const userInput = await window.customPrompt({
+        title: 'Ketik Nama Buku untuk Konfirmasi',
+        message: `Ketik nama buku "${bookName}" persis sama untuk mengonfirmasi penghapusan permanen.`,
+        expectedValue: bookName
+    });
+    if (userInput === null) return;
+    const confirm3 = await window.customConfirm({
+        title: 'Konfirmasi Final',
+        message: `Apakah Anda SANGAT YAKIN ingin menghapus SEMUA data buku "${bookName}" secara permanen?\n\nData yang dihapus TIDAK BISA dikembalikan!`,
+        confirmLabel: 'Hapus Permanen'
+    });
     if (!confirm3) return;
     const cfg = window.getTgConfig();
     if (cfg.active) {
@@ -431,13 +443,13 @@ window._downloadJSON = function(data, filename) {
 
 window.resetAllApplication = async function() {
     // Konfirmasi 1 — tawarkan opsi export sebelum reset
-    const wantExport = confirm(
-        'EKSPOR DATA SEBELUM RESET?\n\n' +
-        'Sebelum menghapus semua data, apakah Anda ingin\n' +
-        'mengunduh backup JSON semua buku terlebih dahulu?\n\n' +
-        'Klik OK  → ekspor dulu, lalu lanjut ke reset\n' +
-        'Klik Batal → lanjut reset TANPA ekspor'
-    );
+    const wantExport = await window.customConfirm({
+        title: 'Ekspor Data Sebelum Reset?',
+        message: 'Sebelum menghapus semua data, apakah Anda ingin mengunduh backup JSON semua buku terlebih dahulu?\n\nKonfirmasi → ekspor dulu, lalu lanjut ke reset\nBatal → lanjut reset TANPA ekspor',
+        confirmLabel: 'Ekspor Dulu',
+        cancelLabel: 'Lewati Ekspor',
+        danger: false
+    });
 
     if (wantExport) {
         const st = document.getElementById('resetAppStatus');
@@ -452,40 +464,40 @@ window.resetAllApplication = async function() {
             await new Promise(r => setTimeout(r, 800));
         } catch (e) {
             if (st) { st.innerText = ''; st.style.display = 'none'; }
-            alert('Gagal mengekspor data: ' + e.message + '\nReset dibatalkan untuk keamanan.');
+            await window.customAlert({ title: 'Ekspor Gagal', message: 'Gagal mengekspor data: ' + e.message + '\nReset dibatalkan untuk keamanan.' });
             return;
         }
     }
 
     // Konfirmasi 2 — peringatan hapus
-    const confirm1 = confirm(
-        'RESET TOTAL APLIKASI \n\n' +
-        'Tindakan ini akan menghapus SEMUA data secara permanen:\n' +
-        '• Semua buku keuangan\n' +
-        '• Semua transaksi\n' +
-        '• Semua anggaran & setelan\n' +
-        '• Data Supabase (cloud)\n' +
-        '• Data lokal (localStorage)\n\n' +
-        (wantExport ? 'Backup sudah diunduh.\n\n' : '') +
-        'TIDAK DAPAT DIBATALKAN!\n\n' +
-        'Klik OK untuk lanjut ke konfirmasi berikutnya.'
-    );
+    const confirm1 = await window.customConfirm({
+        title: 'Reset Total Aplikasi',
+        message: 'Tindakan ini akan menghapus SEMUA data secara permanen:\n' +
+            '• Semua buku keuangan\n' +
+            '• Semua transaksi\n' +
+            '• Semua anggaran & setelan\n' +
+            '• Data Supabase (cloud)\n' +
+            '• Data lokal (localStorage)\n\n' +
+            (wantExport ? 'Backup sudah diunduh.\n\n' : '') +
+            'TIDAK DAPAT DIBATALKAN!',
+        confirmLabel: 'Lanjut'
+    });
     if (!confirm1) return;
 
     // Konfirmasi 3 — ketik kata kunci
-    const userInput = prompt('Ketik kata "RESET" (huruf kapital semua) untuk mengonfirmasi penghapusan total:');
-    if (userInput !== 'RESET') {
-        alert('Konfirmasi tidak cocok. Reset dibatalkan.');
-        return;
-    }
+    const userInput = await window.customPrompt({
+        title: 'Ketik Kata Kunci untuk Konfirmasi',
+        message: 'Ketik kata "RESET" (huruf kapital semua) untuk mengonfirmasi penghapusan total.',
+        expectedValue: 'RESET'
+    });
+    if (userInput === null) return;
 
     // Konfirmasi 4 — final
-    const confirm3 = confirm(
-        'KONFIRMASI FINAL \n\n' +
-        'Anda BENAR-BENAR yakin ingin mereset aplikasi?\n\n' +
-        'Seluruh data akan TERHAPUS PERMANEN.\n' +
-        'Klik OK untuk eksekusi reset.'
-    );
+    const confirm3 = await window.customConfirm({
+        title: 'Konfirmasi Final',
+        message: 'Anda BENAR-BENAR yakin ingin mereset aplikasi?\n\nSeluruh data akan TERHAPUS PERMANEN.',
+        confirmLabel: 'Reset Sekarang'
+    });
     if (!confirm3) return;
 
     // Tampilkan status

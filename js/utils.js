@@ -52,6 +52,97 @@ window.showToast = function(msg, type = 'success') {
     setTimeout(() => toast.classList.remove('show'), 3000);
 };
 
+// ==================== MODAL KONFIRMASI/PROMPT/ALERT KUSTOM ====================
+// [FIX UX] Pengganti confirm()/prompt()/alert() bawaan browser, khusus
+// dipakai untuk aksi PERMANEN (hapus buku, reset app, hapus akun). Lihat
+// markup #customConfirmModal di index.html untuk alasan lengkap.
+window._customConfirmPending = null;
+
+function _openCustomConfirmModal(opts) {
+    document.getElementById('customConfirmTitle').textContent = opts.title || 'Konfirmasi';
+    document.getElementById('customConfirmMessage').textContent = opts.message || '';
+    const input = document.getElementById('customConfirmInput');
+    const hint = document.getElementById('customConfirmInputHint');
+    const okBtn = document.getElementById('customConfirmOkBtn');
+    const cancelBtn = document.getElementById('customConfirmCancelBtn');
+
+    okBtn.textContent = opts.confirmLabel || 'OK';
+    cancelBtn.textContent = opts.cancelLabel || 'Batal';
+    okBtn.className = 'btn ' + (opts.danger ? 'btn-danger' : 'btn-primary');
+    cancelBtn.style.display = opts.mode === 'alert' ? 'none' : '';
+
+    if (opts.mode === 'prompt') {
+        input.style.display = 'block';
+        input.value = '';
+        input.placeholder = opts.placeholder || opts.expectedValue || '';
+        hint.style.display = 'block';
+        hint.textContent = `Ketik "${opts.expectedValue}" persis sama untuk mengaktifkan tombol konfirmasi.`;
+        okBtn.disabled = true;
+    } else {
+        input.style.display = 'none';
+        hint.style.display = 'none';
+        okBtn.disabled = false;
+    }
+
+    window.openModal('customConfirmModal');
+    if (opts.mode === 'prompt') setTimeout(() => input.focus(), 50);
+}
+
+// Dipanggil dari onclick tombol OK/Batal/close di markup modal (index.html).
+window._customConfirmValidateInput = function() {
+    const state = window._customConfirmPending;
+    if (!state || state.mode !== 'prompt') return;
+    const input = document.getElementById('customConfirmInput');
+    document.getElementById('customConfirmOkBtn').disabled = (input.value !== state.expectedValue);
+};
+
+window._customConfirmResolve = function(confirmed) {
+    const state = window._customConfirmPending;
+    if (!state) return;
+    // Untuk mode prompt, tombol OK sudah disabled selama teks belum cocok
+    // persis (lihat _customConfirmValidateInput), jadi confirmed=true di
+    // sini sudah pasti berarti teksnya benar.
+    window._customConfirmPending = null;
+    window.closeModal('customConfirmModal');
+    if (state.mode === 'prompt') {
+        const input = document.getElementById('customConfirmInput');
+        state.resolve(confirmed ? input.value : null);
+    } else if (state.mode === 'alert') {
+        state.resolve();
+    } else {
+        state.resolve(!!confirmed);
+    }
+};
+
+// Pengganti confirm(). Contoh: `if (await window.customConfirm({message:'...'})) { ... }`
+window.customConfirm = function(opts) {
+    opts = opts || {};
+    return new Promise(resolve => {
+        window._customConfirmPending = { resolve, mode: 'confirm' };
+        _openCustomConfirmModal({ mode: 'confirm', danger: true, ...opts });
+    });
+};
+
+// Pengganti prompt() untuk pola "ketik X untuk konfirmasi". Resolusinya
+// berupa string yang diketik user (selalu cocok persis, tombol OK baru aktif
+// kalau sudah cocok) kalau dikonfirmasi, atau null kalau dibatalkan.
+window.customPrompt = function(opts) {
+    opts = opts || {};
+    return new Promise(resolve => {
+        window._customConfirmPending = { resolve, mode: 'prompt', expectedValue: opts.expectedValue };
+        _openCustomConfirmModal({ mode: 'prompt', confirmLabel: 'Konfirmasi', danger: true, ...opts });
+    });
+};
+
+// Pengganti alert(). Cuma tombol OK (tanpa Batal).
+window.customAlert = function(opts) {
+    opts = opts || {};
+    return new Promise(resolve => {
+        window._customConfirmPending = { resolve, mode: 'alert' };
+        _openCustomConfirmModal({ mode: 'alert', confirmLabel: 'OK', danger: false, ...opts });
+    });
+};
+
 window.isOnline = function() {
     return window.globalSupabaseUrl && window.globalSupabaseKey && navigator.onLine;
 };

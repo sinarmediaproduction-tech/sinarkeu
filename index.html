@@ -688,6 +688,31 @@ alter table public.settings
     </div>
 </div>
 
+<!-- [FIX UX] Modal konfirmasi/prompt/alert kustom -- pengganti confirm()/
+     prompt()/alert() bawaan browser untuk aksi PERMANEN (hapus buku, reset
+     app, hapus akun). Satu markup dipakai ulang untuk ketiga jenis dialog,
+     dikendalikan oleh window.customConfirm/customPrompt/customAlert di
+     js/utils.js. Kenapa ini penting: dialog native tidak bisa dibedakan
+     visualnya (semua tombol OK terlihat sama, gampang ke-tap tanpa sengaja
+     di HP terutama saat ada beberapa dialog berantai), dan untuk pola
+     "ketik nama buku untuk konfirmasi" versi custom ini bisa kasih umpan
+     balik instan (tombol nonaktif sampai teksnya cocok) -- prompt() bawaan
+     browser tidak bisa begitu, baru ketahuan salah ketik SETELAH klik OK. -->
+<div id="customConfirmModal" class="modal" style="z-index:10000;">
+    <div class="modal-content" style="max-width:400px;">
+        <div class="modal-header"><h3 id="customConfirmTitle">Konfirmasi</h3><button class="modal-close" onclick="window._customConfirmResolve(false)">×</button></div>
+        <div style="padding:4px 2px 8px;">
+            <p id="customConfirmMessage" style="white-space:pre-line; font-size:.85rem; color:var(--ink-muted); line-height:1.5; margin:0 0 10px;"></p>
+            <input id="customConfirmInput" type="text" style="display:none; width:100%; padding:9px 10px; border:1.5px solid var(--rule); border-radius:6px; font-size:.85rem; background:var(--bg); color:var(--ink); box-sizing:border-box;" autocomplete="off" oninput="window._customConfirmValidateInput()">
+            <div id="customConfirmInputHint" style="display:none; font-size:.7rem; color:var(--ink-faint); margin-top:5px;"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="customConfirmCancelBtn" onclick="window._customConfirmResolve(false)">Batal</button>
+            <button type="button" class="btn btn-danger" id="customConfirmOkBtn" onclick="window._customConfirmResolve(true)">OK</button>
+        </div>
+    </div>
+</div>
+
 <!-- Book Manager Modal -->
 <div id="bookManagerModal" class="modal">
     <div class="modal-content">
