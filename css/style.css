@@ -2843,3 +2843,43 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 [data-theme="dark"] .pr-form-divider {
     border-top-color: var(--rule);
 }
+
+/* ==================== KONFLIK MULTI-DEVICE (js/sync-conflict.js) ==================== */
+.conflict-compare {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+.conflict-side {
+    border: 1.5px solid var(--rule);
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+.conflict-side-label {
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+    color: var(--ink-faint);
+    margin-bottom: 6px;
+}
+.conflict-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: .8rem;
+    padding: 3px 0;
+    border-bottom: 1px dashed var(--rule);
+}
+.conflict-row:last-child { border-bottom: none; }
+.conflict-row span { color: var(--ink-muted); }
+.conflict-row b { color: var(--ink); text-align: right; }
+.conflict-deleted-note {
+    font-size: .78rem;
+    color: var(--danger);
+    font-style: italic;
+}
+
+/* Dark mode: variabel sudah cukup, hanya pastikan kontras dash border */
+[data-theme="dark"] .conflict-row { border-bottom-color: var(--rule); }

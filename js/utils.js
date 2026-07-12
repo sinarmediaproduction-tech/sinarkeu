@@ -184,6 +184,14 @@ window.openModal = function(id) {
     }
 };
 window.closeModal = function(id) {
+    // [KONFLIK MULTI-DEVICE] Kalau user membatalkan edit (tutup editModal
+    // TANPA submit), baseline yang sempat dicatat window.setEditBaseline saat
+    // modal dibuka (lihat loadEditData di render.js) jadi tidak relevan lagi
+    // -- bersihkan supaya tidak menumpuk entri basi di localStorage.
+    if (id === 'editModal' && window.clearEditBaseline) {
+        const editingId = document.getElementById('editId') && document.getElementById('editId').value;
+        if (editingId) window.clearEditBaseline(editingId);
+    }
     document.getElementById(id).classList.remove('show');
 };
 

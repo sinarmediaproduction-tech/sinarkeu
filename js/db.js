@@ -1,5 +1,5 @@
 // ==================== SUPABASE API ====================
-window.callSupabaseAPI = async function(table, method, body = null, queryString = '') {
+window.callSupabaseAPI = async function(table, method, body = null, queryString = '', options = null) {
     const baseUrl = window.getCloudUrl();
     const apiKey = window.getSupabaseKey();
     if (!baseUrl || !apiKey) return null;
@@ -7,6 +7,16 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
     if (queryString) url += queryString;
     const headers = { 'apikey': apiKey, 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
     if (method === 'POST') headers['Prefer'] = 'resolution=merge-duplicates,return=representation';
+    // [MULTI-DEVICE CONFLICT DETECTION] PATCH biasa (mis. soft-delete) tidak
+    // butuh body baris hasil update -- PostgREST defaultnya balas 204 kosong.
+    // Tapi untuk PATCH kondisional (window._pushSingleTxConditional di
+    // js/sync-conflict.js), kita HARUS tahu persis berapa baris yang kena
+    // filter (0 = kondisi tidak cocok = row sudah berubah di device lain
+    // sejak terakhir kita lihat -> konflik; 1 = update kita berhasil bersih).
+    // options.returnRepresentation memaksa PostgREST mengembalikan baris yang
+    // benar-benar ter-update, supaya panjang array itu bisa dipakai sebagai
+    // sinyal konflik yang pasti (bukan asumsi).
+    if (options && options.returnRepresentation) headers['Prefer'] = 'return=representation';
     const config = { method: method, headers: headers };
     if (body) config.body = JSON.stringify(body);
     try {

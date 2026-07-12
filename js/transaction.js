@@ -453,6 +453,21 @@ window.addEventListener('storage', function(e) {
     }
 });
 
+// [KONFLIK MULTI-DEVICE] Fungsi ini adalah implementasi "batch" asli (push
+// banyak baris sekaligus lewat POST upsert -- menang berdasar updated_at
+// terbaru, TANPA pengecekan apakah baris itu berubah di device lain sejak
+// device ini terakhir melihatnya). Untuk baris yang BARU (belum pernah ada
+// di cloud) ini tidak masalah -- tidak ada yang bisa "ditimpa".
+//
+// Tapi untuk baris HASIL EDIT transaksi yang sudah ada, js/sync-conflict.js
+// MEMBUNGKUS fungsi ini: window.pushToCloud di bawah ini ditimpa ulang di
+// sana supaya baris hasil edit (yang device ini punya "baseline" updated_at
+// dari saat form edit dibuka -- lihat window.setEditBaseline) di-push lewat
+// jalur kondisional (window._pushSingleTxConditional) yang bisa mendeteksi
+// kalau device LAIN sudah mengubah baris yang sama duluan, lalu menampilkan
+// dialog resolusi konflik -- bukan diam-diam saling timpa. Baris baru (tanpa
+// baseline) tetap lewat jalur batch ini seperti biasa. Lihat js/sync-conflict.js
+// untuk detail lengkap.
 window.pushToCloud = async function(bookId, txs, dirtyIds) {
     // bookId & txs opsional: jika diisi (dari debouncedPushToCloud), pakai snapshot
     // yang di-capture saat debounce dipanggil — bukan nilai currentBookId/txs saat ini

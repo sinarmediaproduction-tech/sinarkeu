@@ -444,6 +444,14 @@ window.openActionMenu = function(id) {
 window.loadEditData = function(id) {
     let t = window.txs.find(x => x.id === id);
     if (!t) return;
+    // [KONFLIK MULTI-DEVICE] Catat updated_at transaksi ini PERSIS seperti yang
+    // diketahui device ini SEKARANG (sebelum diedit) sebagai "baseline". Nanti
+    // saat disimpan, js/sync-conflict.js memakai baseline ini untuk push
+    // kondisional: kalau ternyata device LAIN sudah mengubah baris yang sama
+    // setelah baseline ini (dan sebelum push device ini berhasil), itu konflik
+    // sungguhan yang perlu ditinjau user -- bukan ditimpa diam-diam. Lihat
+    // window.setEditBaseline di js/sync-conflict.js.
+    if (window.setEditBaseline) window.setEditBaseline(t.id, window.currentBookId, t.updated_at || null);
     document.getElementById('editId').value = t.id;
     if (t.type === 'income') document.getElementById('editTypeIncome').checked = true;
     else document.getElementById('editTypeExpense').checked = true;

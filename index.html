@@ -704,6 +704,28 @@ alter table public.settings
     </div>
 </div>
 
+<!-- [KONFLIK MULTI-DEVICE] Banner muncul kalau ada transaksi yang diedit
+     bersamaan di lebih dari satu perangkat -- lihat js/sync-conflict.js. -->
+<div id="conflictBanner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; align-items:center; justify-content:center; gap:10px; background:var(--warning-lt); border-bottom:1px solid var(--warning); padding:9px 14px; font-size:.78rem; color:var(--warning); text-align:center; flex-wrap:wrap;">
+    <span id="conflictBannerText"></span>
+    <button onclick="window.openConflictReview()" style="background:var(--warning); color:#fff; border:none; border-radius:6px; padding:5px 12px; font-size:.75rem; font-weight:600; cursor:pointer;">Tinjau</button>
+</div>
+
+<!-- [KONFLIK MULTI-DEVICE] Modal perbandingan versi lokal vs cloud, dengan
+     pilihan mana yang mau dipakai. Lihat window.openConflictReview /
+     resolveConflictKeepMine / resolveConflictKeepCloud di js/sync-conflict.js. -->
+<div id="conflictModal" class="modal" style="z-index:10000;">
+    <div class="modal-content" style="max-width:440px;">
+        <div class="modal-header"><h3>Konflik Data<span id="conflictModalCount" style="font-weight:400; font-size:.75rem; color:var(--ink-faint);"></span></h3></div>
+        <p style="font-size:.78rem; color:var(--ink-muted); margin:0 0 12px; line-height:1.5;">Transaksi ini sempat diubah di dua perangkat sebelum sinkron. Pilih versi mana yang ingin disimpan.</p>
+        <div id="conflictModalBody" class="conflict-compare"></div>
+        <div class="modal-footer" style="flex-wrap:wrap;">
+            <button type="button" class="btn btn-secondary" id="conflictKeepCloudBtn" onclick="window.resolveConflictKeepCloud()">Pakai versi cloud</button>
+            <button type="button" class="btn btn-primary" id="conflictKeepMineBtn" onclick="window.resolveConflictKeepMine()">Simpan versi saya</button>
+        </div>
+    </div>
+</div>
+
 <!-- Action Menu Modal -->
 <div id="actionMenuModal" class="modal">
     <div class="modal-content" style="max-width:260px">
@@ -1520,6 +1542,7 @@ alter table public.settings
 <script src="js/account.js"></script>
 <script src="js/book.js"></script>
 <script src="js/transaction.js"></script>
+<script src="js/sync-conflict.js"></script>
 <script src="js/budget.js"></script>
 <script src="js/payment-reminder.js"></script>
 <script src="js/expense-chart.js"></script>
