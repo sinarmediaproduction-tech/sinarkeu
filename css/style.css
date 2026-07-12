@@ -302,6 +302,14 @@ body {
   font-family: monospace;
   font-size: .6rem;
 }
+.sync-time-badge {
+  padding: 4px 10px;
+  font-family: monospace;
+  font-size: .6rem;
+  font-weight: 600;
+  color: var(--ink-faint, #666);
+  border-left: 1px solid var(--rule);
+}
 
 /* ── Offline Warning ── */
 .offline-warning-bar {
@@ -2369,6 +2377,7 @@ select.form-control option[value=""] {
 
 /* Sync badge */
 [data-theme="dark"] .device-id-badge { background: var(--ink); color: var(--paper-warm); }
+[data-theme="dark"] .sync-time-badge { color: var(--ink-faint); }
 
 /* Scrollbar */
 [data-theme="dark"] ::-webkit-scrollbar-track { background: var(--paper); }
