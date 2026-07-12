@@ -172,7 +172,7 @@ window.renderBudgetFormFields = function() {
         div.className = 'budget-cat-row';
         div.innerHTML = `
             <span class="budget-cat-label">${window.escapeHtml(cat)}</span>
-            <input type="text" class="form-control budget-input-field" data-cat="${window.escapeHtml(cat)}" value="${val ? Number(val).toLocaleString('id-ID') : '0'}" oninput="window.formatRupiah(this); window.updateBudgetSummary();" placeholder="Rp 0">
+            <input type="text" class="form-control budget-input-field" data-cat="${window.escapeHtml(cat)}" value="${val ? Number(val).toLocaleString('id-ID') : ''}" oninput="window.formatRupiah(this); window.updateBudgetSummary();" placeholder="Rp 0">
         `;
         container.appendChild(div);
     });
