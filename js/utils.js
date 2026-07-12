@@ -66,7 +66,14 @@ window.requireOnline = function(operationName) {
 
 // Modal utility (dipanggil dari onclick di HTML)
 window.openModal = function(id) {
-    if (!window.isOnline() && (id === 'addModal' || id === 'editModal' || id === 'bookManagerModal')) {
+    // [FIX UX] addModal & editModal sekarang boleh dibuka offline -- lihat
+    // catatan lengkap di handleSubmit/handleEditSubmit/confirmDelete
+    // (render.js) untuk kenapa ini aman. bookManagerModal TETAP diblokir:
+    // manajemen buku (buat/hapus/pindah buku) belum punya jalur offline-safe
+    // yang sama, jadi tetap butuh koneksi supaya tidak terjadi hal aneh
+    // seperti dua device sama-sama membuat buku baru dengan asumsi state
+    // cloud yang sudah usang.
+    if (!window.isOnline() && id === 'bookManagerModal') {
         window.showToast('Anda harus ONLINE untuk operasi ini!', 'warning');
         return;
     }
@@ -82,6 +89,7 @@ window.openModal = function(id) {
         window.currentAttachmentData = null;
         window.currentAttachmentFile = null;
         window.toggleCategoryField();
+        if (!window.isOnline()) window.showToast('Sedang offline — transaksi akan disimpan lokal dan disinkron otomatis nanti.', 'warning');
     }
 };
 window.closeModal = function(id) {

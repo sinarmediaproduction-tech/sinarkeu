@@ -398,7 +398,17 @@ window.resolveAttachment = async function(file, base64Fallback, txId) {
 };
 window.handleSubmit = async function(e) {
     e.preventDefault();
-    if (!window.requireOnline('menambah transaksi')) return;
+    // [FIX UX] Sebelumnya baris ini blokir total tambah transaksi kalau
+    // offline ("Anda harus ONLINE untuk menambah transaksi!"), padahal
+    // window.markTxDirty() + window.saveTransactions() di bawah SUDAH aman
+    // dipakai offline sejak awal: pushToCloud() sendiri langsung return kalau
+    // !isOnline() (lihat komentar di sana), dan tandanya tetap tersimpan di
+    // localStorage untuk di-push otomatis oleh flushPendingDirtyOnStart()
+    // begitu online lagi (app start / event 'online' / siklus auto-sync).
+    // Blokir ini jadi terasa aneh untuk app finansial harian yang dipakai di
+    // HP dengan sinyal naik-turun -- user mau catat transaksi cepat malah
+    // ditolak duluan. Transaksi baru sekarang tetap tersimpan lokal & muncul
+    // di layar walau offline, tinggal nunggu koneksi untuk sinkron ke cloud.
     let type = document.querySelector('input[name="type"]:checked').value;
     const nowTx = new Date();
     const _pad = n => String(n).padStart(2, '0');
@@ -417,13 +427,15 @@ window.handleSubmit = async function(e) {
     window.closeModal('addModal');
     window.currentAttachmentFile = null;
     window.saveTransactions();
-    window.showToast("Transaksi berhasil disimpan");
+    window.showToast(window.isOnline() ? "Transaksi berhasil disimpan" : "Tersimpan lokal — akan disinkron otomatis saat online", window.isOnline() ? "success" : "warning");
     if (type === 'expense') window.checkBudgetWarningAfterSave(date, category);
     await window.addCloudLog('TAMBAH', `Menambah item baru: "${description}" sebesar ${window.rp(amount)}`);
     window.sendTelegramNotif(window.buildTxNotifMessage('TAMBAH', newTx, window.getCurrentBookName()));
 };
 window.openActionMenu = function(id) {
-    if (!window.isOnline()) { window.showToast('Anda harus ONLINE untuk mengedit/menghapus data!', 'warning'); return; }
+    // [FIX UX] Sama seperti handleSubmit -- edit & hapus transaksi sudah
+    // aman offline (lihat handleEditSubmit & confirmDelete), jadi menu aksi
+    // ini tidak perlu diblokir duluan.
     window.actionId = id;
     window.openModal('actionMenuModal');
     document.getElementById('actionEditBtn').onclick = () => { window.closeModal('actionMenuModal'); window.loadEditData(id); };
@@ -461,7 +473,8 @@ window.loadEditData = function(id) {
 };
 window.handleEditSubmit = async function(e) {
     e.preventDefault();
-    if (!window.requireOnline('mengubah transaksi')) return;
+    // [FIX UX] Lihat catatan di handleSubmit -- edit juga aman offline lewat
+    // jalur dirty-tracking yang sama.
     let id = document.getElementById('editId').value;
     let idx = window.txs.findIndex(x => x.id === id);
     if (idx === -1) return;
@@ -484,12 +497,13 @@ window.handleEditSubmit = async function(e) {
     window.closeModal('editModal');
     window.currentAttachmentFile = null;
     window.saveTransactions();
-    window.showToast("Perubahan data disimpan");
+    window.showToast(window.isOnline() ? "Perubahan data disimpan" : "Perubahan tersimpan lokal — akan disinkron otomatis saat online", window.isOnline() ? "success" : "warning");
     await window.addCloudLog('UBAH', `Mengubah transaksi "${description}" menjadi senilai ${window.rp(amount)}`);
     window.sendTelegramNotif(window.buildTxNotifMessage('UBAH', window.txs[idx], window.getCurrentBookName()));
 };
 window.confirmDelete = async function(id) {
-    if (!window.requireOnline('menghapus transaksi')) return;
+    // [FIX UX] Lihat catatan di handleSubmit -- hapus juga aman offline
+    // lewat window.markTxPendingDelete + window.flushPendingDeletesOnStart.
     let t = window.txs.find(x => x.id === id);
     if (!t) return;
     if (confirm(`Apakah Anda yakin ingin menghapus transaksi "${t.description}"?`)) {
