@@ -78,19 +78,15 @@ cukup panjang/acak).
 File backup kode ikut ter-package ke production. Sudah dihapus dari paket
 ini. Saran: tambahkan `*.bak` ke `.gitignore` agar tidak terulang.
 
-### 🟡 SEDANG — Tidak ada security headers (SUDAH DIPERBAIKI sebagian)
-Tidak ada Content-Security-Policy atau header pengaman lain. Saya tambahkan
-CSP dasar + `referrer` policy lewat meta tag di `index.html` (dibatasi ke
-CDN yang benar-benar dipakai app). Beberapa header (`X-Frame-Options`,
-`Strict-Transport-Security`) tidak bisa diatur lewat meta tag — perlu
-dikonfigurasi di level Cloudflare Worker Anda, misalnya:
-
-```js
-// contoh di dalam Worker fetch handler, setelah response didapat
-response.headers.set('X-Frame-Options', 'DENY');
-response.headers.set('X-Content-Type-Options', 'nosniff');
-response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
-```
+### 🟡 SEDANG — Tidak ada security headers (SUDAH DIPERBAIKI)
+Tidak ada Content-Security-Policy atau header pengaman lain. CSP utama
+(script-src, connect-src, dll -- dibatasi ke CDN yang benar-benar dipakai app)
+dipasang lewat meta tag di `index.html`. Header yang TIDAK bisa/tidak berfungsi
+lewat meta tag (`X-Frame-Options`, `Strict-Transport-Security`,
+`X-Content-Type-Options`, dan `frame-ancestors` -- yang terakhir ini secara
+eksplisit diabaikan browser kalau dikirim lewat meta, per spesifikasi CSP)
+sekarang dipasang lewat file `_headers` di root proyek, dibaca otomatis oleh
+Cloudflare Pages tanpa perlu Worker terpisah.
 
 ### 🟡 SEDANG — Password sesi disimpan di sessionStorage dengan XOR sederhana
 `_storeSessionPassword`/`restoreSessionCryptoKey` menyimpan password

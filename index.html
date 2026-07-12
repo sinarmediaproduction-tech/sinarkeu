@@ -18,6 +18,11 @@
          di-whitelist per-domain. Untuk header yang tidak bisa diset lewat
          meta tag (X-Frame-Options, Strict-Transport-Security), atur di level
          Cloudflare Worker/Pages -- lihat SECURITY_AUDIT.md. -->
+    <!-- [FIX] frame-ancestors DIHAPUS dari sini -- spesifikasi CSP secara eksplisit
+         mengabaikan frame-ancestors (juga sandbox & report-uri) kalau dikirim lewat
+         <meta>, browser modern akan mencatatnya sebagai warning di console dan TIDAK
+         benar-benar menerapkannya. Directive ini sekarang dikirim lewat HTTP header
+         asli di file _headers (Cloudflare Pages), lihat root proyek. -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
         script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
@@ -27,7 +32,6 @@
         connect-src 'self' https: wss:;
         object-src 'none';
         base-uri 'self';
-        frame-ancestors 'none';
     ">
     <meta name="referrer" content="strict-origin-when-cross-origin">
 
