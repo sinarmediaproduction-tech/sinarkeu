@@ -210,10 +210,6 @@ window.continueAppInit = async function() {
             window.loadTransactions();
         }
     }
-    setInterval(() => {
-        let clock = document.getElementById('liveClock');
-        if (clock) clock.innerText = new Date().toLocaleTimeString('id-ID');
-    }, 1000);
     window.startAutoSync();
     window.updateUIForOnlineStatus();
     // Mulai auto-lock: kunci otomatis setelah tidak ada aktivitas
