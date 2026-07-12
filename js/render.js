@@ -632,7 +632,17 @@ window.saveFaseKehidupan = function() {
     const data = { fase, target, tanggungan, updatedAt: new Date().toISOString() };
     window.saveFaseKehidupanToLocal(data);
     if (window.isOnline()) {
-        window.pushSetting('fase_kehidupan', data, window.currentBookId);
+        // [FIX CLOCK SKEW] pushSetting() sekarang balikin baris hasil
+        // representasi server (lihat db.js), yang updated_at-nya sudah
+        // dijamin server lewat trigger -- bukan jam device manapun. Simpan
+        // nilai itu sebagai _serverUpdatedAt di cache lokal supaya
+        // perbandingan LWW berikutnya di pullAllSettings() (db.js) pakai jam
+        // yang konsisten dengan device lain, bukan jam device INI sendiri.
+        window.pushSetting('fase_kehidupan', data, window.currentBookId).then(result => {
+            if (result && Array.isArray(result) && result[0] && result[0].updated_at) {
+                window.saveFaseKehidupanToLocal({ ...data, _serverUpdatedAt: result[0].updated_at });
+            }
+        });
     }
     window.updateFaseCard();
     window.closeModal('faseKehidupanModal');

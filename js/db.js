@@ -221,7 +221,15 @@ window.pushSetting = async function(key, value, bookId) {
     const onConflict = tag ? '?on_conflict=book_id,key,account_tag' : '';
     const result = await window.callSupabaseAPI('settings', 'POST', payload, onConflict);
     // callSupabaseAPI mengembalikan null kalau request gagal (lihat fungsi di atas).
-    return result !== null;
+    // [FIX] Dulu fungsi ini cuma balikin true/false. Sekarang balikin `result`
+    // apa adanya (array baris hasil representasi server, atau null kalau
+    // gagal) -- tetap truthy/falsy sama seperti boolean lama (jadi semua
+    // pemanggil existing yang cuma cek `if (hasil)` tidak perlu diubah), TAPI
+    // pemanggil yang butuh nilai `updated_at` OTORITATIF dari SERVER (bukan
+    // `new Date()` milik device sendiri) sekarang bisa mengambilnya dari
+    // result[0].updated_at. Dipakai oleh saveFaseKehidupan() di render.js --
+    // lihat catatan di sana untuk kenapa ini penting (clock skew antar-device).
+    return result;
 };
 
 window.pushSettingBooks = async function() {
@@ -456,10 +464,25 @@ window.pullAllSettings = async function() {
             }
             if (row.key === 'fase_kehidupan') {
                 if (parsed && typeof parsed === 'object') {
+                    // [FIX CLOCK SKEW] Sebelumnya perbandingan "versi mana yang
+                    // menang" pakai parsed.updatedAt -- field DI DALAM JSON,
+                    // di-set dari jam DEVICE saat disimpan (new Date() di
+                    // render.js). Field itu tidak ke-cover trigger DB (trigger
+                    // cuma menjamin kolom updated_at di level BARIS, bukan isi
+                    // JSON-nya), jadi bug clock-skew yang sama seperti pada
+                    // transaksi/settings lain masih bisa terjadi di sini.
+                    // Sekarang pakai row.updated_at -- kolom asli tabel
+                    // `settings`, sudah dijamin server (lihat
+                    // sql/fix_server_side_updated_at.sql) -- dan disimpan
+                    // sebagai _serverUpdatedAt di cache lokal supaya
+                    // perbandingan berikutnya (termasuk saat push, lihat
+                    // saveFaseKehidupan di render.js) konsisten pakai jam yang
+                    // sama untuk semua device.
                     const localRaw = localStorage.getItem('sk_fase_kehidupan_' + row.book_id);
                     const localFase = localRaw ? JSON.parse(localRaw) : null;
-                    if (!localFase || new Date(parsed.updatedAt) > new Date(localFase.updatedAt || 0)) {
-                        localStorage.setItem('sk_fase_kehidupan_' + row.book_id, JSON.stringify(parsed));
+                    const localServerTime = localFase && localFase._serverUpdatedAt;
+                    if (!localFase || !localServerTime || row.updated_at > localServerTime) {
+                        localStorage.setItem('sk_fase_kehidupan_' + row.book_id, JSON.stringify({ ...parsed, _serverUpdatedAt: row.updated_at }));
                         if (row.book_id === window.currentBookId) {
                             budgetUpdated = true;
                         }
