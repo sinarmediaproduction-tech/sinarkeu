@@ -83,12 +83,9 @@ window.fetchMonthTransactionsFromCloud = async function(bookId, year, month) {
     const query = `?book_id=eq.${bookId}&is_deleted=eq.false&date=gte.${startStr}&date=lt.${endStr}&order=date.asc${tagFilter}`;
     const rows = await window.callSupabaseAPI('transactions', 'GET', null, query);
     if (!rows || !Array.isArray(rows)) return null;
-    return rows.map(c => ({
-        id: c.id, type: c.type, amount: Number(c.amount),
-        category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
-        description: c.description, date: c.date,
-        attachment: c.attachment, updated_at: c.updated_at || null
-    }));
+    // [SECURITY] Dekripsi field sensitif (jumlah/kategori/catatan/lampiran) --
+    // lihat window.decodeCloudTxRow di crypto.js.
+    return Promise.all(rows.map(c => window.decodeCloudTxRow(c)));
 };
 
 window.pullFromCloudSilently = async function() {
@@ -129,7 +126,10 @@ window.pullFromCloudSilently = async function() {
             if (lastSync && cloudData.length > 0) {
                 const localMap = {};
                 window.txs.forEach(t => { localMap[t.id] = t; });
-                cloudData.forEach(c => {
+                // [SECURITY] Dekripsi dulu semua baris (paralel) sebelum di-merge,
+                // supaya perbandingan updated_at/is_deleted tetap pakai data mentah dari cloud.
+                const decoded = await Promise.all(cloudData.map(c => window.decodeCloudTxRow(c)));
+                cloudData.forEach((c, i) => {
                     const cloudUpdated = c.updated_at || '1970-01-01T00:00:00.000Z';
                     const local = localMap[c.id];
                     const localUpdated = local ? (local.updated_at || '1970-01-01T00:00:00.000Z') : '1970-01-01T00:00:00.000Z';
@@ -138,23 +138,14 @@ window.pullFromCloudSilently = async function() {
                             // Tombstone dari perangkat lain: buang dari cache lokal ini juga.
                             delete localMap[c.id];
                         } else {
-                            localMap[c.id] = {
-                                id: c.id, type: c.type, amount: Number(c.amount),
-                                category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
-                                description: c.description, date: c.date,
-                                attachment: c.attachment, updated_at: c.updated_at || null
-                            };
+                            localMap[c.id] = decoded[i];
                         }
                     }
                 });
                 window.txs = Object.values(localMap).sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date) || String(b.id).localeCompare(String(a.id)));
             } else if (!lastSync) {
-                window.txs = cloudData.map(c => ({
-                    id: c.id, type: c.type, amount: Number(c.amount),
-                    category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
-                    description: c.description, date: c.date,
-                    attachment: c.attachment, updated_at: c.updated_at || null
-                })).sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date) || String(b.id).localeCompare(String(a.id)));
+                window.txs = (await Promise.all(cloudData.map(c => window.decodeCloudTxRow(c))))
+                    .sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date) || String(b.id).localeCompare(String(a.id)));
             }
             window.trimAndSaveLocal(window.currentBookId, window.txs);
             // [FIX CLOCK SKEW] Cursor diambil dari updated_at TERBESAR di data
@@ -182,12 +173,8 @@ window.pullAllBooksFromCloud = async function() {
         let cloudData = await window.callSupabaseAPI('transactions', 'GET', null,
             `?book_id=eq.${bookId}&is_deleted=eq.false&order=date.desc&limit=${window.MAX_LOCAL_TXS}${_fxTagFilter}`);
         if (!cloudData || !Array.isArray(cloudData)) continue;
-        const cloudMapped = cloudData.map(c => ({
-            id: c.id, type: c.type, amount: Number(c.amount),
-            category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
-            description: c.description, date: c.date,
-            attachment: c.attachment, updated_at: c.updated_at || null
-        }));
+        // [SECURITY] Dekripsi field sensitif -- lihat window.decodeCloudTxRow di crypto.js.
+        const cloudMapped = await Promise.all(cloudData.map(c => window.decodeCloudTxRow(c)));
         const trimmed = window.trimAndSaveLocal(bookId, cloudMapped);
         // [FIX CLOCK SKEW] Sama seperti pullFromCloudSilently: cursor dari jam
         // server (updated_at baris), bukan jam device. forceFullSync() memanggil
@@ -420,18 +407,29 @@ window.pushToCloud = async function(bookId, txs, dirtyIds) {
         if (toPush.length === 0) return;
     }
     const _ptTag = window.getAccountTag ? window.getAccountTag() : null;
-    const payload = toPush.map(t => ({
-        id: t.id,
-        book_id: bookId,
-        device_id: window.deviceId,
-        type: t.type,
-        amount: parseFloat(t.amount) || 0,
-        category: t.category || '',
-        description: t.description || '',
-        date: t.date,
-        attachment: t.attachment || null,
-        updated_at: t.updated_at || new Date().toISOString(),
-        ...(_ptTag ? { account_tag: _ptTag } : {})
+    // [SECURITY] Jumlah/kategori/catatan/lampiran dienkripsi jadi satu kolom
+    // enc_payload sebelum dikirim -- kolom lama (amount/category/description/
+    // attachment/type) SENGAJA tidak lagi diisi nilai asli. Lihat
+    // window.encodeCloudTxPayload di crypto.js dan
+    // sql/harden_transactions_encryption.sql untuk migrasi kolomnya.
+    // Jika kunci sesi entah kenapa belum siap (seharusnya tidak mungkin saat
+    // terkunci), fallback aman: tetap kirim plaintext ke kolom lama supaya
+    // data tidak hilang, daripada gagal total.
+    const payload = await Promise.all(toPush.map(async t => {
+        const encPayload = await window.encodeCloudTxPayload(t);
+        const base = {
+            id: t.id,
+            book_id: bookId,
+            device_id: window.deviceId,
+            date: t.date,
+            updated_at: t.updated_at || new Date().toISOString(),
+            ...(_ptTag ? { account_tag: _ptTag } : {})
+        };
+        if (encPayload) {
+            return { ...base, enc_payload: encPayload, type: null, amount: null, category: null, description: null, attachment: null };
+        }
+        console.warn('[Security] Kunci sesi tidak tersedia, transaksi', t.id, 'dikirim TIDAK terenkripsi (fallback).');
+        return { ...base, type: t.type, amount: parseFloat(t.amount) || 0, category: t.category || '', description: t.description || '', attachment: t.attachment || null };
     }));
     if (payload.length === 0) return;
     let res = await window.callSupabaseAPI('transactions', 'POST', payload);

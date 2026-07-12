@@ -352,6 +352,85 @@ window.getTelegramConfigDecrypted = async function() {
     return { token, chatId, edgeUrl };
 };
 
+// ==================== ENKRIPSI DATA TRANSAKSI (ZERO-KNOWLEDGE) ====================
+// SEBELUM INI: hanya kredensial Supabase & isi tabel `settings` yang dienkripsi
+// (lihat saveEncryptedCredentials, pushSetting/pullSetting di db.js). Tabel
+// `transactions` (jumlah uang, kategori, catatan, lampiran nota) dikirim ke
+// Supabase APA ADANYA / PLAINTEXT -- siapa pun yang bisa membaca database
+// (RLS salah konfigurasi, service-role key bocor, dsb.) bisa melihat seluruh
+// riwayat keuangan pengguna. Fungsi berikut menutup celah itu: field sensitif
+// dikemas jadi satu JSON, dienkripsi AES-GCM dengan kunci sesi yang SAMA
+// dipakai untuk settings, lalu disimpan sebagai satu kolom `enc_payload`.
+// Kolom lama (amount/category/description/attachment/type) TIDAK diisi lagi
+// data asli -- lihat sql/harden_transactions_encryption.sql untuk migrasi
+// kolomnya (dibuat nullable, tidak perlu tahu skema live sebelumnya).
+window.encodeCloudTxPayload = async function(t) {
+    if (!window._sessionCryptoKey) return null; // seharusnya selalu ada saat sesi terbuka
+    const plain = JSON.stringify({
+        type: t.type,
+        amount: t.amount,
+        category: t.category || '',
+        description: t.description || '',
+        attachment: t.attachment || null
+    });
+    return await window.encryptStr(window._sessionCryptoKey, plain);
+};
+
+// Menerjemahkan satu baris hasil GET dari Supabase menjadi objek transaksi
+// yang dipakai di seluruh app (window.txs dst). Mendukung baris LAMA (belum
+// bermigrasi, masih plaintext di kolom asli) secara transparan, supaya
+// migrasi bisa berjalan bertahap tanpa kehilangan data.
+window.decodeCloudTxRow = async function(c) {
+    if (c.enc_payload && window._sessionCryptoKey) {
+        try {
+            const plain = await window.decryptStr(window._sessionCryptoKey, c.enc_payload);
+            const d = JSON.parse(plain);
+            return {
+                id: c.id, type: d.type, amount: Number(d.amount) || 0,
+                category: d.category || (d.type === 'income' ? 'Pemasukan' : ''),
+                description: d.description, date: c.date,
+                attachment: d.attachment || null, updated_at: c.updated_at || null
+            };
+        } catch (e) {
+            console.warn('[Crypto] Gagal dekripsi transaksi', c.id, '-- fallback ke kolom plaintext (jika ada).', e);
+        }
+    }
+    // Fallback: baris pra-migrasi, atau dekripsi gagal (mis. kunci sesi belum siap).
+    return {
+        id: c.id, type: c.type, amount: Number(c.amount) || 0,
+        category: c.category || (c.type === 'income' ? 'Pemasukan' : ''),
+        description: c.description, date: c.date,
+        attachment: c.attachment || null, updated_at: c.updated_at || null
+    };
+};
+
+// ==================== THROTTLE PERCOBAAN UNLOCK (ANTI BRUTE-FORCE) ====================
+// SEBELUM INI: tidak ada batasan berapa kali password lock screen boleh dicoba.
+// PBKDF2 300rb iterasi memang memperlambat brute-force OFFLINE (mis. kalau
+// attacker punya salinan crypto_salt+crypto_check dari database), tapi TIDAK
+// ada penalti sama sekali untuk percobaan ONLINE lewat UI ini sendiri. Fungsi
+// di bawah menambah jeda (exponential backoff, dibatasi 5 menit) setelah 3x
+// percobaan gagal berturut-turut, disimpan per-perangkat di localStorage.
+// Ini bukan pengganti kekuatan password, tapi mengurangi kecepatan tebak-tebakan
+// otomatis dari UI, dan direkomendasikan dikombinasikan dengan password kuat.
+window._unlockThrottleKey = 'sk_unlock_throttle';
+window.getUnlockWaitMs = function() {
+    let data;
+    try { data = JSON.parse(localStorage.getItem(window._unlockThrottleKey) || '{}'); } catch { data = {}; }
+    const count = data.count || 0;
+    if (count < 3) return 0;
+    const waitSec = Math.min(15 * Math.pow(2, count - 3), 300); // maks 5 menit
+    const remain = (data.lastAt || 0) + waitSec * 1000 - Date.now();
+    return remain > 0 ? Math.ceil(remain / 1000) : 0; // dikembalikan dalam DETIK
+};
+window.recordUnlockAttempt = function(success) {
+    if (success) { localStorage.removeItem(window._unlockThrottleKey); return; }
+    let data;
+    try { data = JSON.parse(localStorage.getItem(window._unlockThrottleKey) || '{}'); } catch { data = {}; }
+    const count = (data.count || 0) + 1;
+    localStorage.setItem(window._unlockThrottleKey, JSON.stringify({ count, lastAt: Date.now() }));
+};
+
 // Lock screen helpers
 window.clearLockError = function() {
     document.getElementById('lockStatus').innerText = '';

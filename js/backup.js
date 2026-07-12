@@ -66,8 +66,26 @@ window.restoreFromBackup = function() {
 // Cloud Backup
 window.pushBackupToSupabaseForBook = async function(bookId, bookTxs, backupType) {
     const _pbTag = window.getAccountTag ? window.getAccountTag() : null;
-    const payload = [{ book_id: bookId, device_id: window.deviceId, backup_type: backupType, tx_count: bookTxs.length, data: JSON.stringify(bookTxs), created_at: new Date().toISOString(), ...(_pbTag ? { account_tag: _pbTag } : {}) }];
+    // [SECURITY] Snapshot backup berisi SELURUH transaksi buku ini -- sebelumnya
+    // disimpan sebagai JSON plaintext utuh di kolom `data`. Sekarang dienkripsi
+    // sebagai satu blob dengan kunci sesi yang sama (AES-GCM), konsisten dengan
+    // enkripsi per-baris di window.encodeCloudTxPayload.
+    const rawJson = JSON.stringify(bookTxs);
+    const dataToStore = window._sessionCryptoKey ? await window.encryptStr(window._sessionCryptoKey, rawJson) : rawJson;
+    const payload = [{ book_id: bookId, device_id: window.deviceId, backup_type: backupType, tx_count: bookTxs.length, data: dataToStore, created_at: new Date().toISOString(), ...(_pbTag ? { account_tag: _pbTag } : {}) }];
     return await window.callSupabaseAPI('backups', 'POST', payload);
+};
+// Membaca kolom `data` dari tabel `backups`, mendekripsi jika terenkripsi
+// (ciphertext AES-GCM base64), dengan fallback baca JSON plaintext lama
+// (backup yang dibuat sebelum fix ini) agar backup lama tetap bisa dipulihkan.
+window._decodeBackupData = async function(raw) {
+    if (window._sessionCryptoKey) {
+        try {
+            const plain = await window.decryptStr(window._sessionCryptoKey, raw);
+            return JSON.parse(plain);
+        } catch { /* bukan ciphertext -- lanjut coba parse sebagai JSON plaintext lama */ }
+    }
+    return JSON.parse(raw);
 };
 window.pushBackupToSupabase = async function(backupType) { return await window.pushBackupToSupabaseForBook(window.currentBookId, window.txs, backupType); };
 window.createCloudBackup = async function() {
@@ -101,11 +119,8 @@ window.checkAndRunDailyAutoBackup = async function() {
             const _abTagFilter = window.tagOrFilter(_abTag);
             const cloudData = await window.callSupabaseAPI('transactions', 'GET', null, `?book_id=eq.${book.id}&is_deleted=eq.false&order=date.desc&limit=300${_abTagFilter}`);
             if (cloudData && Array.isArray(cloudData)) {
-                txsToBackup = cloudData.map(c => ({
-                    id: c.id, type: c.type, amount: Number(c.amount),
-                    category: c.category || '', description: c.description,
-                    date: c.date, attachment: c.attachment, updated_at: c.updated_at || null
-                }));
+                // [SECURITY] Dekripsi field sensitif -- lihat window.decodeCloudTxRow di crypto.js.
+                txsToBackup = await Promise.all(cloudData.map(c => window.decodeCloudTxRow(c)));
             }
         }
         const result = await window.pushBackupToSupabaseForBook(book.id, txsToBackup, 'AUTO');
@@ -151,7 +166,7 @@ window.restoreFromCloudBackup = async function(backupId) {
         const _brTagFilter = window.tagOrFilter(_brTag);
         const rows = await window.callSupabaseAPI('backups', 'GET', null, `?id=eq.${backupId}&book_id=eq.${window.currentBookId}${_brTagFilter}`);
         if (!rows || rows.length === 0) { window.showToast('Data backup tidak ditemukan', 'error'); return; }
-        window.txs = JSON.parse(rows[0].data);
+        window.txs = await window._decodeBackupData(rows[0].data);
         // forceFullPush=true: sama seperti restore lokal, seluruh data harus menang.
         window.saveTransactions(true);
         window.closeModal('backupModal');
@@ -711,19 +726,17 @@ window.importAllDataFromFile = async function(input) {
             if (newTxs.length > 0 && window.isOnline() && window.getCloudUrl() && window.getSupabaseKey()) {
                 show('var(--warning)', 'var(--warning-lt)', `Upload ${newTxs.length} transaksi buku "${bookData.name}" ke Supabase...`);
                 const _rtTag = window.getAccountTag ? window.getAccountTag() : null;
-                const payload = newTxs.map(t => ({
-                    id: t.id,
-                    book_id: bookData.id,
-                    device_id: window.deviceId,
-                    type: t.type,
-                    amount: parseFloat(t.amount) || 0,
-                    category: t.category || '',
-                    description: t.description || '',
-                    date: t.date,
-                    attachment: t.attachment || null,
-                    updated_at: t.updated_at || new Date().toISOString(),
-                    is_deleted: false,
-                    ...(_rtTag ? { account_tag: _rtTag } : {})
+                // [SECURITY] Sama seperti pushToCloud() di transaction.js -- enkripsi
+                // field sensitif sebelum dikirim, bukan lagi plaintext.
+                const payload = await Promise.all(newTxs.map(async t => {
+                    const encPayload = await window.encodeCloudTxPayload(t);
+                    const base = {
+                        id: t.id, book_id: bookData.id, device_id: window.deviceId,
+                        date: t.date, updated_at: t.updated_at || new Date().toISOString(),
+                        is_deleted: false, ...(_rtTag ? { account_tag: _rtTag } : {})
+                    };
+                    if (encPayload) return { ...base, enc_payload: encPayload, type: null, amount: null, category: null, description: null, attachment: null };
+                    return { ...base, type: t.type, amount: parseFloat(t.amount) || 0, category: t.category || '', description: t.description || '', attachment: t.attachment || null };
                 }));
                 // Upload per-batch 50 agar tidak melebihi limit payload
                 for (let i = 0; i < payload.length; i += 50) {

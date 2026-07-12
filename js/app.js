@@ -92,17 +92,29 @@ window.submitLockPassword = async function() {
     const status = document.getElementById('lockStatus');
     const btn = document.getElementById('lockSubmitBtn');
     if (!pwd) { status.innerText = window.t('lock_pwd_empty'); return; }
+    // [SECURITY] Anti brute-force: kalau masih dalam masa tunggu akibat
+    // percobaan gagal berturut-turut sebelumnya, tolak dulu tanpa mencoba
+    // dekripsi/verifikasi ke cloud. Lihat window.getUnlockWaitMs di crypto.js.
+    const waitSec = window.getUnlockWaitMs ? window.getUnlockWaitMs() : 0;
+    if (waitSec > 0) {
+        status.innerText = `Terlalu banyak percobaan gagal. Coba lagi dalam ${waitSec} detik.`;
+        return;
+    }
     btn.disabled = true;
     btn.innerText = window.t('lock_verifying');
     status.innerText = '';
     const ok = await window.unlockWithPassword(pwd);
+    if (window.recordUnlockAttempt) window.recordUnlockAttempt(ok);
     if (ok) {
         document.getElementById('passwordLockScreen').style.display = 'none';
         window.continueAppInit();
     } else {
         btn.disabled = false;
         btn.innerText = window.t('lock_open');
-        status.innerText = window.t('lock_wrong_pwd');
+        const nextWait = window.getUnlockWaitMs ? window.getUnlockWaitMs() : 0;
+        status.innerText = nextWait > 0
+            ? `${window.t('lock_wrong_pwd')} Terlalu banyak percobaan, tunggu ${nextWait} detik.`
+            : window.t('lock_wrong_pwd');
         const inp = document.getElementById('lockPasswordInput');
         inp.classList.add('error-shake');
         inp.value = '';
