@@ -1191,58 +1191,94 @@ tr:hover td { background: var(--paper-warm); }
 .setelan-tab-panel { display: none; }
 .setelan-tab-panel.active { display: block; }
 
-/* ── Setelan sebagai Sidebar tetap (Desktop, >=1024px) ── */
+/* ── App Sidebar: Dashboard / Pengaturan (Desktop, >=1024px) ── */
+#appSidebar { display: none; }
+
 @media (min-width: 1024px) {
   #setelanBtn { display: none !important; }
 
-  .container { margin-left: 300px; }
-
-  #setelanModal {
-    display: block;
+  #appSidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     position: fixed;
     top: 0; left: 0;
-    width: 300px;
+    width: 220px;
     height: 100vh;
     background: var(--paper);
     border-right: 1px solid var(--rule);
     z-index: 500;
-    padding: 0;
+    padding: 20px 14px;
   }
-  [data-theme="dark"] #setelanModal { background: var(--paper); }
-
-  #setelanModal .setelan-modal-content {
-    width: 100%; height: 100%;
-    max-width: none !important; max-height: none !important;
-    border: none; border-radius: 0;
-    padding: 18px 14px;
-    display: flex; flex-direction: column;
+  .app-sidebar-brand {
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+    color: var(--ink);
+    padding: 4px 10px 16px;
   }
-  #setelanModal .modal-close { display: none; }
-  #setelanModal .modal-header { margin-bottom: 12px; }
-  #setelanModal .modal-header h3 { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); }
-
-  #setelanModal .setelan-tabs {
-    flex: 0 1 auto;
-    flex-direction: column;
-    overflow-x: visible;
-    overflow-y: auto;
-    max-height: 42vh;
-    gap: 2px;
-    padding: 2px 4px 10px 2px;
-    margin-bottom: 10px;
-    border-bottom: 1px solid var(--rule);
-  }
-  #setelanModal .setelan-tab-btn {
+  .app-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     width: 100%;
-    justify-content: flex-start;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: .74rem;
+    font-weight: 600;
     text-align: left;
-    white-space: normal;
-    line-height: 1.3;
+    background: none;
+    border: 1px solid transparent;
     border-radius: 6px;
-    padding: 8px 10px;
+    color: var(--ink-muted);
+    cursor: pointer;
+    transition: background .15s, color .15s;
   }
+  .app-nav-item:hover { background: var(--paper-warm); color: var(--ink); }
+  .app-nav-item.active { background: var(--ink); color: var(--paper); }
 
-  #setelanModal .setelan-tab-content { font-size: .92em; }
+  .container { margin-left: 220px; }
+
+  /* Setelan disembunyikan sampai menu "Setelan" di sidebar dipilih --
+     saat aktif, kontennya muncul di layar utama (bukan modal/overlay). */
+  body:not(.view-settings) #setelanModal { display: none !important; }
+
+  body.view-settings .container { display: none; }
+  body.view-settings #setelanModal {
+    display: block;
+    position: static;
+    width: auto;
+    max-width: 1440px;
+    height: auto;
+    margin: 0 0 0 220px;
+    background: none;
+    border: none;
+    z-index: auto;
+    padding: 28px 32px 40px;
+  }
+  body.view-settings #setelanModal .setelan-modal-content {
+    width: 100%; height: auto;
+    max-width: none !important; max-height: none !important;
+    min-height: 0;
+    border: 1px solid var(--rule);
+    border-radius: 0;
+    background: var(--paper);
+    padding: 24px;
+    display: block;
+  }
+  body.view-settings #setelanModal .modal-close { display: none; }
+  body.view-settings #setelanModal .setelan-tabs {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: visible;
+    max-height: none;
+    border-right: none;
+  }
+  body.view-settings #setelanModal .setelan-tab-btn {
+    width: auto;
+    white-space: nowrap;
+  }
+  body.view-settings #setelanModal .setelan-tab-content { max-height: none; }
 }
 
 .modal-header {

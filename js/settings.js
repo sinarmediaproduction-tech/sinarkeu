@@ -88,6 +88,31 @@ window.openSetelanModal = function(initialTab) {
     
     window.openModal('setelanModal');
     window.switchSetelanTab(initialTab || 'lang');
+
+    // Di layar desktop, Setelan tampil sebagai halaman penuh di area utama
+    // (bukan modal) -- sembunyikan dashboard & tandai menu sidebar aktif.
+    if (window.matchMedia('(min-width: 1024px)').matches) {
+        document.body.classList.add('view-settings');
+        window.updateAppSidebarNav('setelan');
+    }
+};
+
+// Alias supaya tombol menu sidebar "Setelan" bisa langsung memicu logika
+// yang sama dengan membuka Setelan dari tempat lain di aplikasi.
+window.showSetelanView = function(initialTab) {
+    window.openSetelanModal(initialTab);
+};
+
+window.showDashboardView = function() {
+    document.body.classList.remove('view-settings');
+    window.updateAppSidebarNav('dashboard');
+};
+
+window.updateAppSidebarNav = function(which) {
+    var dashBtn = document.getElementById('navDashboardBtn');
+    var setBtn = document.getElementById('navSetelanBtn');
+    if (dashBtn) dashBtn.classList.toggle('active', which === 'dashboard');
+    if (setBtn) setBtn.classList.toggle('active', which === 'setelan');
 };
 
 window.testCloudConnection = async function() {

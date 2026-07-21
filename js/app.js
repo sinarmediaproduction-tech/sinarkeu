@@ -385,18 +385,6 @@ window.addEventListener('DOMContentLoaded', () => {
     window.fetchForexRate();
     setTimeout(window.fetchGoldPrice, 1500);
     window.updateEmasQuotaDisplay();
-
-    // Setelan tampil sebagai sidebar tetap di layar desktop (>=1024px) --
-    // isi field-nya dari awal (bukan hanya saat tombol diklik).
-    var setelanSidebarMq = window.matchMedia('(min-width: 1024px)');
-    if (setelanSidebarMq.matches && typeof window.openSetelanModal === 'function') {
-        window.openSetelanModal();
-    }
-    setelanSidebarMq.addEventListener('change', function(e) {
-        if (e.matches && typeof window.openSetelanModal === 'function') {
-            window.openSetelanModal();
-        }
-    });
 });
 
 // ==================== DARK MODE ====================

@@ -404,6 +404,19 @@ alter table public.settings
     </div>
 </div>
 
+<!-- ===== APP SIDEBAR (Desktop) ===== -->
+<div id="appSidebar">
+    <div class="app-sidebar-brand">SinarKeu</div>
+    <button type="button" class="app-nav-item active" id="navDashboardBtn" onclick="window.showDashboardView()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+        <span>Dashboard</span>
+    </button>
+    <button type="button" class="app-nav-item" id="navSetelanBtn" onclick="window.showSetelanView()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852 1 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <span data-i18n="settings_title">Setelan</span>
+    </button>
+</div>
+
 <!-- ===== ACCOUNT BAR ===== -->
 <div class="container">
     <div class="header">
@@ -446,6 +459,7 @@ alter table public.settings
         </div>
     </div>
 
+    <div id="dashboardView">
     <div class="offline-warning-bar" id="offlineWarningBar">
         <span><strong data-i18n="offline_mode">Mode Baca Saja</strong> - <span data-i18n="offline_desc">Anda sedang offline. Untuk menambah/mengedit/menghapus data, sambungkan ke internet.</span></span>
     </div>
@@ -665,6 +679,7 @@ alter table public.settings
         <div id="transactionCount">0 transaksi</div>
     </div>
     <div id="auditLogSection" style="display:none;"></div>
+    </div><!-- /dashboardView -->
 </div>
 
 <div id="toastMessage" class="toast-message"><span id="toastIcon"></span><span id="toastText"></span></div>
