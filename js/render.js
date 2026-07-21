@@ -513,6 +513,13 @@ window.handleEditSubmit = async function(e) {
     window.currentAttachmentFile = null;
     window.saveTransactions();
     window.showToast(window.isOnline() ? "Perubahan data disimpan" : "Perubahan tersimpan lokal — akan disinkron otomatis saat online", window.isOnline() ? "success" : "warning");
+    // [BUG FIX - PERINGATAN ANGGARAN TIDAK DICEK SAAT EDIT] Sebelumnya
+    // checkBudgetWarningAfterSave() cuma dipanggil di handleSubmit (transaksi
+    // BARU) -- kalau transaksi pengeluaran yang SUDAH ADA diedit (nominal
+    // dinaikkan, atau dipindah ke kategori yang anggarannya sudah mepet),
+    // tidak ada peringatan sama sekali walau hasilnya jadi melewati anggaran.
+    // Cek ulang di sini juga, sama seperti alur tambah transaksi.
+    if (type === 'expense') window.checkBudgetWarningAfterSave(date, category);
     await window.addCloudLog('UBAH', `Mengubah transaksi "${description}" menjadi senilai ${window.rp(amount)}`);
     window.sendTelegramNotif(window.buildTxNotifMessage('UBAH', window.txs[idx], window.getCurrentBookName()));
 };
