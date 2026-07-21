@@ -73,29 +73,27 @@ window.checkNewMonthAutoApply = function() {
         }
     }
 };
-window.renderBudget = function() {
-    window.checkNewMonthAutoApply();
-    const m = document.getElementById('budgetMonth').value;
-    const y = document.getElementById('budgetYear').value;
-    const key = `${y}-${m}`;
-    const effective = window.getEffectiveBudget(parseInt(y), parseInt(m), window.currentBookId);
-    const currentBudget = effective.budget;
-    const source = effective.source;
-    const tag = document.getElementById('budgetSourceTag');
-    if (tag) {
-        if (source === 'custom') {
-            tag.className = 'budget-source-tag custom';
-            tag.innerText = window.t('this_month_only');
-        } else if (source === 'default' && Object.keys(currentBudget).length > 0) {
-            tag.className = 'budget-source-tag default';
-            tag.innerText = window.t('monthly_budget');
-        } else {
-            tag.className = 'budget-source-tag none';
-            tag.innerText = window.t('no_budget');
-        }
-    }
-    let totalTarget = 0;
-    window.EXPENSE_CATEGORIES.forEach(cat => { totalTarget += (currentBudget[cat] || 0); });
+// [BUG FIX - REALISASI ANGGARAN BULAN LAMA SALAH] Sebelumnya totalActual di bawah
+// SELALU dihitung dari window.txs, yang (lihat trimAndSaveLocal di transaction.js)
+// cuma menyimpan MAX_LOCAL_TXS (1000) transaksi TERBARU per buku. Dropdown
+// #budgetYear mengizinkan user memilih tahun currentYear-2 s/d currentYear+2
+// (lihat app.js), jadi user memang bisa mengecek anggaran bulan yang transaksinya
+// sudah "tertrim" dari cache lokal untuk buku dengan >1000 transaksi. Akibatnya
+// realisasi (totalActual) yang tampil bisa jauh lebih kecil dari kenyataan --
+// progress bar terlihat aman padahal anggaran bulan itu sebenarnya sudah jebol.
+// Ini persis kelas bug yang sudah diperbaiki di report.js (generateMonthlyReport)
+// dan telegram.js/ai.js (lewat balanceOffset untuk saldo total) tapi kelewat di sini.
+//
+// Perbaikan: tetap render SEKETIKA dari window.txs dulu (cepat, tetap benar untuk
+// bulan yang masih ada di cache/mode offline), lalu -- kalau online -- tarik ulang
+// transaksi bulan itu LANGSUNG dari cloud (window.fetchMonthTransactionsFromCloud,
+// sudah ada & dipakai report.js, tanpa batas limit seperti window.txs) dan perbaiki
+// tampilan realisasi begitu datanya sampai. window._budgetRenderToken mencegah hasil
+// fetch yang sudah basi (user keburu ganti bulan/tahun lagi) menimpa tampilan yang
+// sedang aktif.
+window._budgetRenderToken = 0;
+
+window._computeBudgetActualLocal = function(m, y) {
     let totalActual = 0;
     window.txs.forEach(t => {
         if (t.type === 'expense') {
@@ -105,6 +103,10 @@ window.renderBudget = function() {
             }
         }
     });
+    return totalActual;
+};
+
+window._applyBudgetActualUI = function(totalTarget, totalActual) {
     document.getElementById('budgetTargetDisplay').innerText = window.rp(totalTarget);
     document.getElementById('budgetActualDisplay').innerText = window.rp(totalActual);
     let remaining = totalTarget - totalActual;
@@ -140,6 +142,58 @@ window.renderBudget = function() {
         if (pctEl2) pctEl2.style.color = '#00875a';
     }
 };
+
+window.renderBudget = function() {
+    window.checkNewMonthAutoApply();
+    const m = document.getElementById('budgetMonth').value;
+    const y = document.getElementById('budgetYear').value;
+    const effective = window.getEffectiveBudget(parseInt(y), parseInt(m), window.currentBookId);
+    const currentBudget = effective.budget;
+    const source = effective.source;
+    const tag = document.getElementById('budgetSourceTag');
+    if (tag) {
+        if (source === 'custom') {
+            tag.className = 'budget-source-tag custom';
+            tag.innerText = window.t('this_month_only');
+        } else if (source === 'default' && Object.keys(currentBudget).length > 0) {
+            tag.className = 'budget-source-tag default';
+            tag.innerText = window.t('monthly_budget');
+        } else {
+            tag.className = 'budget-source-tag none';
+            tag.innerText = window.t('no_budget');
+        }
+    }
+    let totalTarget = 0;
+    window.EXPENSE_CATEGORIES.forEach(cat => { totalTarget += (currentBudget[cat] || 0); });
+
+    // Render seketika dari cache lokal — benar untuk bulan yang masih ada di
+    // window.txs dan untuk mode offline (lihat catatan [BUG FIX] di atas).
+    const totalActualLocal = window._computeBudgetActualLocal(m, y);
+    window._applyBudgetActualUI(totalTarget, totalActualLocal);
+
+    // Perbaiki dengan data cloud lengkap kalau online, supaya bulan yang sudah
+    // di luar cache MAX_LOCAL_TXS tetap menampilkan realisasi yang benar.
+    const myToken = ++window._budgetRenderToken;
+    const bookIdAtCall = window.currentBookId;
+    if (window.isOnline() && typeof window.fetchMonthTransactionsFromCloud === 'function') {
+        window.fetchMonthTransactionsFromCloud(bookIdAtCall, parseInt(y), parseInt(m))
+            .then(cloudTx => {
+                // Batalkan hasil basi: user sudah ganti bulan/tahun/buku, atau
+                // renderBudget() sudah dipanggil ulang sejak fetch ini dimulai.
+                if (myToken !== window._budgetRenderToken) return;
+                if (bookIdAtCall !== window.currentBookId) return;
+                if (!cloudTx || !Array.isArray(cloudTx)) return; // gagal/offline di tengah jalan — pertahankan angka lokal
+                const currentM = document.getElementById('budgetMonth').value;
+                const currentY = document.getElementById('budgetYear').value;
+                if (currentM != m || currentY != y) return; // dropdown sudah berubah lagi
+                let totalActualCloud = 0;
+                cloudTx.forEach(t => { if (t.type === 'expense') totalActualCloud += (Number(t.amount) || 0); });
+                window._applyBudgetActualUI(totalTarget, totalActualCloud);
+            })
+            .catch(() => { /* biarkan angka lokal, sudah ditampilkan di atas */ });
+    }
+};
+
 window.renderBudgetFormFields = function() {
     const container = document.getElementById('budgetCategoriesContainer');
     container.innerHTML = '';
