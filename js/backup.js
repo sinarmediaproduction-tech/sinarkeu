@@ -44,20 +44,24 @@ window.createBackup = function() {
 // transaction.js), bukan seluruh riwayat buku. Untuk buku dengan >1000
 // transaksi, window.saveTransactions(true) setelah restore akan memanggil
 // trimAndSaveLocal() dengan array 1000-an itu sebagai "seluruh data" --
-// remainder-nya kosong, sehingga balanceOffset lama (net dari transaksi lebih
-// tua yang sudah ter-trim) TERTIMPA jadi 0. Saldo yang tampil langsung salah
-// secara diam-diam sampai user kebetulan klik "Sinkron Penuh" berikutnya.
+// remainder-nya kosong, sehingga balanceOffset/incomeOffset/expenseOffset lama
+// (net & rincian dari transaksi lebih tua yang sudah ter-trim) TERTIMPA jadi 0.
+// Saldo & kartu Total Pemasukan/Pengeluaran yang tampil langsung salah secara
+// diam-diam sampai user kebetulan klik "Sinkron Penuh" berikutnya.
 //
-// Perbaikan: sama seperti window._fetchOlderTxsBalanceOffset yang sudah
-// dipakai pullFromCloudSilently/pullAllBooksFromCloud -- setelah restore,
-// tarik ulang offset yang SEBENARNYA dari baris-baris lama di cloud (kalau
-// online) dan timpa localStorage dengan nilai itu, baru render ulang.
+// Perbaikan: sama seperti window._fetchOlderTxsOffsets yang sudah dipakai
+// pullFromCloudSilently/pullAllBooksFromCloud -- setelah restore, tarik ulang
+// offset yang SEBENARNYA (net, pemasukan, pengeluaran) dari baris-baris lama
+// di cloud (kalau online) dan timpa localStorage dengan nilai itu, baru render
+// ulang.
 window._fixBalanceOffsetAfterRestore = async function(bookId) {
-    if (!window.isOnline() || typeof window._fetchOlderTxsBalanceOffset !== 'function') return;
+    if (!window.isOnline() || typeof window._fetchOlderTxsOffsets !== 'function') return;
     try {
-        const trueOffset = await window._fetchOlderTxsBalanceOffset(bookId);
-        if (trueOffset !== null) {
-            localStorage.setItem('sk_balance_offset_' + bookId, String(trueOffset));
+        const trueOffsets = await window._fetchOlderTxsOffsets(bookId);
+        if (trueOffsets !== null) {
+            localStorage.setItem('sk_balance_offset_' + bookId, String(trueOffsets.balanceOffset));
+            localStorage.setItem('sk_income_offset_' + bookId, String(trueOffsets.incomeOffset));
+            localStorage.setItem('sk_expense_offset_' + bookId, String(trueOffsets.expenseOffset));
             if (bookId === window.currentBookId) window.render();
         }
     } catch (e) {

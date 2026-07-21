@@ -26,11 +26,18 @@ window.render = function() {
         else totalExp += amt;
     });
     const balanceOffset = Number(localStorage.getItem('sk_balance_offset_' + window.currentBookId)) || 0;
+    // [BUG FIX - TOTAL PEMASUKAN/PENGELUARAN TIDAK LENGKAP] balanceOffset di atas
+    // cuma NET dari transaksi lama yang ter-trim dari window.txs (lihat
+    // trimAndSaveLocal di transaction.js) -- cukup untuk mengoreksi currentBalance,
+    // tapi statIncome/statExpense di bawah butuh offsetnya masing-masing supaya
+    // tidak menampilkan angka yang understated untuk buku >MAX_LOCAL_TXS transaksi.
+    const incomeOffset = Number(localStorage.getItem('sk_income_offset_' + window.currentBookId)) || 0;
+    const expenseOffset = Number(localStorage.getItem('sk_expense_offset_' + window.currentBookId)) || 0;
     let currentBalance = totalInc - totalExp + balanceOffset;
     window._lastBalance = currentBalance;
     document.getElementById('statBalance').innerText = window.rp(currentBalance);
-    document.getElementById('statIncome').innerText = window.rp(totalInc);
-    document.getElementById('statExpense').innerText = window.rp(totalExp);
+    document.getElementById('statIncome').innerText = window.rp(totalInc + incomeOffset);
+    document.getElementById('statExpense').innerText = window.rp(totalExp + expenseOffset);
     window.updateZakatCard();
     if (typeof window.renderForecastCard === 'function') window.renderForecastCard();
     if ((window.expenseChartVisible || !window._expenseChartInitialized) && typeof window.renderExpenseChart === 'function') {

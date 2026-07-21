@@ -43,18 +43,29 @@ window._maxUpdatedAt = function(rows, fallback) {
     return max;
 };
 
+// [BUG FIX - CARD "TOTAL PEMASUKAN"/"TOTAL PENGELUARAN" TIDAK LENGKAP] Sebelumnya
+// fungsi ini cuma menyimpan balanceOffset (NET pemasukan-pengeluaran dari transaksi
+// lama yang ter-trim). Itu cukup untuk mengoreksi "Saldo Akhir" (lihat render.js),
+// TAPI tidak cukup untuk kartu "Total Pemasukan"/"Total Pengeluaran" di dashboard --
+// dua kartu itu menyiratkan angka SEMUA WAKTU, tapi sebelumnya cuma menjumlah
+// window.txs (maks MAX_LOCAL_TXS transaksi terbaru), jadi untuk buku >1000
+// transaksi angkanya jauh lebih kecil dari kenyataan walau "Saldo Akhir" di
+// sebelahnya sudah benar. Sekarang simpan juga incomeOffset & expenseOffset
+// terpisah (bukan cuma net-nya) supaya render.js bisa mengoreksi kedua kartu itu.
 window.trimAndSaveLocal = function(bookId, data) {
     const sorted = [...data].sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date) || String(b.id).localeCompare(String(a.id)));
     const trimmed = sorted.slice(0, window.MAX_LOCAL_TXS);
     localStorage.setItem('sk_txs_' + bookId, JSON.stringify(trimmed));
     const remainder = sorted.slice(window.MAX_LOCAL_TXS);
-    let balanceOffset = 0;
+    let balanceOffset = 0, incomeOffset = 0, expenseOffset = 0;
     remainder.forEach(t => {
         const amt = Number(t.amount) || 0;
-        if (t.type === 'income') balanceOffset += amt;
-        else balanceOffset -= amt;
+        if (t.type === 'income') { balanceOffset += amt; incomeOffset += amt; }
+        else { balanceOffset -= amt; expenseOffset += amt; }
     });
     localStorage.setItem('sk_balance_offset_' + bookId, String(balanceOffset));
+    localStorage.setItem('sk_income_offset_' + bookId, String(incomeOffset));
+    localStorage.setItem('sk_expense_offset_' + bookId, String(expenseOffset));
     return trimmed;
 };
 
@@ -78,12 +89,19 @@ window.trimAndSaveLocal = function(bookId, data) {
 // terpotong (jumlah baris yang diterima == MAX_LOCAL_TXS persis), tarik ulang KHUSUS
 // baris-baris yang lebih tua itu (paginated pakai offset, di luar batas limit biasa),
 // dekripsi, dan jumlahkan jadi balanceOffset yang sebenarnya.
-window._fetchOlderTxsBalanceOffset = async function(bookId) {
+//
+// [BUG FIX - CARD TOTAL PEMASUKAN/PENGELUARAN] Sekarang mengembalikan objek
+// {balanceOffset, incomeOffset, expenseOffset} -- bukan cuma net balanceOffset --
+// supaya pemanggil (pullFromCloudSilently/pullAllBooksFromCloud/restore backup)
+// bisa mengoreksi kartu Total Pemasukan & Total Pengeluaran juga, bukan cuma
+// Saldo Akhir. window._fetchOlderTxsBalanceOffset (nama lama) dipertahankan
+// sebagai alias tipis di bawah untuk kompatibilitas pemanggil lama.
+window._fetchOlderTxsOffsets = async function(bookId) {
     if (!window.isOnline()) return null; // offline: tidak bisa dihitung, pemanggil harus fallback (biarkan offset lama)
     const _tag = window.getAccountTag ? window.getAccountTag() : null;
     const _tagFilter = window.tagOrFilter(_tag);
     const PAGE_SIZE = 1000;
-    let offsetSum = 0;
+    let balanceOffset = 0, incomeOffset = 0, expenseOffset = 0;
     let start = window.MAX_LOCAL_TXS;
     while (true) {
         const query = `?book_id=eq.${bookId}&is_deleted=eq.false&order=date.desc,id.desc&limit=${PAGE_SIZE}&offset=${start}${_tagFilter}`;
@@ -92,13 +110,20 @@ window._fetchOlderTxsBalanceOffset = async function(bookId) {
         const decoded = await Promise.all(rows.map(r => window.decodeCloudTxRow(r)));
         decoded.forEach(t => {
             const amt = Number(t.amount) || 0;
-            if (t.type === 'income') offsetSum += amt;
-            else offsetSum -= amt;
+            if (t.type === 'income') { balanceOffset += amt; incomeOffset += amt; }
+            else { balanceOffset -= amt; expenseOffset += amt; }
         });
         if (rows.length < PAGE_SIZE) break;
         start += PAGE_SIZE;
     }
-    return offsetSum;
+    return { balanceOffset, incomeOffset, expenseOffset };
+};
+
+// Alias lama: sebagian kode (mis. sebelum fix ini) mungkin masih memanggil nama
+// ini dan cuma butuh angka net-nya saja.
+window._fetchOlderTxsBalanceOffset = async function(bookId) {
+    const result = await window._fetchOlderTxsOffsets(bookId);
+    return result ? result.balanceOffset : null;
 };
 
 // ==================== LAPORAN: AMBIL SATU BULAN LANGSUNG DARI CLOUD ====================
@@ -191,14 +216,16 @@ window.pullFromCloudSilently = async function() {
                     .sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date) || String(b.id).localeCompare(String(a.id)));
             }
             window.trimAndSaveLocal(window.currentBookId, window.txs);
-            // [BUG FIX] lihat catatan di _fetchOlderTxsBalanceOffset -- kalau ini pull AWAL
+            // [BUG FIX] lihat catatan di _fetchOlderTxsOffsets -- kalau ini pull AWAL
             // (bukan incremental) dan hasilnya persis MAX_LOCAL_TXS baris (indikasi mungkin
             // masih ada baris lebih lama di cloud), trimAndSaveLocal barusan SALAH menuliskan
-            // balanceOffset = 0. Tarik ulang offset yang sebenarnya sebelum render.
+            // balanceOffset/incomeOffset/expenseOffset = 0. Tarik ulang yang sebenarnya sebelum render.
             if (!lastSync && cloudData.length >= window.MAX_LOCAL_TXS) {
-                const trueOffset = await window._fetchOlderTxsBalanceOffset(window.currentBookId);
-                if (trueOffset !== null) {
-                    localStorage.setItem('sk_balance_offset_' + window.currentBookId, String(trueOffset));
+                const trueOffsets = await window._fetchOlderTxsOffsets(window.currentBookId);
+                if (trueOffsets !== null) {
+                    localStorage.setItem('sk_balance_offset_' + window.currentBookId, String(trueOffsets.balanceOffset));
+                    localStorage.setItem('sk_income_offset_' + window.currentBookId, String(trueOffsets.incomeOffset));
+                    localStorage.setItem('sk_expense_offset_' + window.currentBookId, String(trueOffsets.expenseOffset));
                 }
             }
             // [FIX CLOCK SKEW] Cursor diambil dari updated_at TERBESAR di data
@@ -234,9 +261,11 @@ window.pullAllBooksFromCloud = async function() {
         // remainder yang sebenarnya. Kalau hasilnya persis MAX_LOCAL_TXS baris, tarik
         // ulang offset yang benar dari baris-baris yang lebih tua.
         if (cloudMapped.length >= window.MAX_LOCAL_TXS) {
-            const trueOffset = await window._fetchOlderTxsBalanceOffset(bookId);
-            if (trueOffset !== null) {
-                localStorage.setItem('sk_balance_offset_' + bookId, String(trueOffset));
+            const trueOffsets = await window._fetchOlderTxsOffsets(bookId);
+            if (trueOffsets !== null) {
+                localStorage.setItem('sk_balance_offset_' + bookId, String(trueOffsets.balanceOffset));
+                localStorage.setItem('sk_income_offset_' + bookId, String(trueOffsets.incomeOffset));
+                localStorage.setItem('sk_expense_offset_' + bookId, String(trueOffsets.expenseOffset));
             }
         }
         // [FIX CLOCK SKEW] Sama seperti pullFromCloudSilently: cursor dari jam
