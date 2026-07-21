@@ -25,8 +25,30 @@ window.renderForecastCard = function() {
     const months = Object.keys(monthMap).sort();
     if (months.length === 0) { card.innerHTML = _forecastEmpty(); return; }
 
-    // ── Gunakan maks 6 bulan terakhir sebagai basis ──
-    const basis = months.slice(-6);
+    // ── Bulan berjalan (dipakai untuk basis & tren) ──
+    const now = new Date();
+    const thisKey  = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    // [BUG FIX - RATA-RATA IKUT BULAN BERJALAN YANG BELUM SELESAI] Sebelumnya
+    // basis = months.slice(-6) ikut memasukkan bulan INI walau belum selesai
+    // (misal baru tanggal 3), sehingga avgInc/avgExp/avgSurplus dan status
+    // "Sehat/Waspada/Kritis" jadi bias ke bawah di awal bulan -- data bulan
+    // berjalan yang masih sedikit dihitung penuh seolah satu bulan utuh.
+    //
+    // Perbaikan: basis rata-rata HANYA memakai bulan-bulan yang sudah selesai
+    // (bukan bulan berjalan). Kalau belum ada satu pun bulan selesai (user
+    // baru mulai pakai app bulan ini), fallback tetap memakai bulan berjalan
+    // supaya card tidak kosong, tapi ditandai lewat basisIncludesCurrent
+    // supaya UI bisa memberi catatan bahwa datanya belum lengkap.
+    const completedMonths = months.filter(k => k !== thisKey);
+    let basis, basisIncludesCurrent;
+    if (completedMonths.length > 0) {
+        basis = completedMonths.slice(-6);
+        basisIncludesCurrent = false;
+    } else {
+        basis = months.slice(-6);
+        basisIncludesCurrent = true;
+    }
     const totalInc = basis.reduce((s, k) => s + monthMap[k].inc, 0);
     const totalExp = basis.reduce((s, k) => s + monthMap[k].exp, 0);
     const avgInc   = totalInc / basis.length;
@@ -43,8 +65,6 @@ window.renderForecastCard = function() {
     });
 
     // ── Tren: bulan ini vs bulan lalu ──
-    const now = new Date();
-    const thisKey  = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const prevKey  = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
     const thisExp  = (monthMap[thisKey] || {}).exp || 0;
@@ -114,6 +134,9 @@ window.renderForecastCard = function() {
         : '<span class="fc-tag" style="color:#aaa;">—</span>';
 
     const proyeksiColor = proyeksiBulan >= 6 ? '#0F6E56' : proyeksiBulan >= 3 ? '#854F0B' : '#993C1D';
+    const basisSubLabel = basisIncludesCurrent
+        ? `per bulan (bulan berjalan, belum lengkap)`
+        : `per bulan (${basis.length} bln terakhir)`;
 
     card.innerHTML = `
         <div class="fc-header">
@@ -130,12 +153,12 @@ window.renderForecastCard = function() {
                 <div class="fc-metric">
                     <div class="fc-metric-label">Rata-rata Pemasukan</div>
                     <div class="fc-metric-value" style="color:#0F6E56;">${window.rp ? window.rp(avgInc) : avgInc}</div>
-                    <div class="fc-metric-sub">per bulan (${basis.length} bln terakhir)</div>
+                    <div class="fc-metric-sub">${basisSubLabel}</div>
                 </div>
                 <div class="fc-metric">
                     <div class="fc-metric-label">Rata-rata Pengeluaran</div>
                     <div class="fc-metric-value" style="color:#993C1D;">${window.rp ? window.rp(avgExp) : avgExp} ${trenHTML}</div>
-                    <div class="fc-metric-sub">per bulan (${basis.length} bln terakhir)</div>
+                    <div class="fc-metric-sub">${basisSubLabel}</div>
                 </div>
             </div>
             <div class="fc-row">
