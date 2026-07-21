@@ -72,8 +72,14 @@ async function generateMonthlyReport() {
   });
   const cats = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
 
-  // Anggaran bulan ini
-  const budgets = (window.budgets && window.budgets[key]) ? window.budgets[key] : {};
+  // Anggaran bulan ini — pakai getEffectiveBudget supaya konsisten dengan
+  // kartu Anggaran di dashboard (budget.js/renderBudget): kalau bulan ini
+  // tidak punya anggaran KHUSUS, fallback ke Anggaran Bulanan (default).
+  // Sebelumnya baca window.budgets[key] langsung, jadi selalu 0/kosong untuk
+  // bulan mana pun yang memakai anggaran default (kasus paling umum).
+  const budgets = (typeof window.getEffectiveBudget === 'function')
+    ? window.getEffectiveBudget(year, month, window.currentBookId).budget
+    : ((window.budgets && window.budgets[key]) ? window.budgets[key] : {});
   const totalBudget = Object.values(budgets).reduce((s, v) => s + (+v || 0), 0);
 
   // Buat HTML untuk modal
@@ -247,7 +253,12 @@ async function exportReportAsPDF() {
     catMap[c] = (catMap[c] || 0) + (+t.amount || 0);
   });
   const cats = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
-  const budgets = (window.budgets && window.budgets[key]) ? window.budgets[key] : {};
+  // Sama seperti generateMonthlyReport(): pakai getEffectiveBudget supaya
+  // PDF ikut fallback ke Anggaran Bulanan default, bukan cuma anggaran
+  // khusus bulan ini yang sering kosong.
+  const budgets = (typeof window.getEffectiveBudget === 'function')
+    ? window.getEffectiveBudget(year, month, window.currentBookId).budget
+    : ((window.budgets && window.budgets[key]) ? window.budgets[key] : {});
   const totalBudget = Object.values(budgets).reduce((s, v) => s + (+v || 0), 0);
 
   // ── Token warna sesuai tema (PDF export) ──
