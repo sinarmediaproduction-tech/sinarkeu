@@ -27,6 +27,8 @@
   --warning-lt: #FAEEDA;
   --purple:     #5B3A8E;
   --purple-lt:  #F1EAFB;
+  --brand:      #E61D4C; /* warna dominan icon aplikasi (icon-192.png / icon-512.png) */
+  --brand-dark: #B8163C;
   /* Extended palette */
   --fase:       #e53e8a;
   --fase-lt:    #fff0f7;
@@ -1205,8 +1207,8 @@ tr:hover td { background: var(--paper-warm); }
     top: 0; left: 0;
     width: 220px;
     height: 100vh;
-    background: var(--paper);
-    border-right: 1px solid var(--rule);
+    background: linear-gradient(180deg, var(--brand) 0%, var(--brand-dark) 100%);
+    border-right: none;
     z-index: 500;
     padding: 20px 14px;
   }
@@ -1214,7 +1216,7 @@ tr:hover td { background: var(--paper-warm); }
     font-size: .78rem;
     font-weight: 700;
     letter-spacing: .02em;
-    color: var(--ink);
+    color: #fff;
     padding: 4px 10px 16px;
   }
   .app-nav-item {
@@ -1230,14 +1232,22 @@ tr:hover td { background: var(--paper-warm); }
     background: none;
     border: 1px solid transparent;
     border-radius: 6px;
-    color: var(--ink-muted);
+    color: rgba(255, 255, 255, .8);
     cursor: pointer;
     transition: background .15s, color .15s;
   }
-  .app-nav-item:hover { background: var(--paper-warm); color: var(--ink); }
-  .app-nav-item.active { background: var(--ink); color: var(--paper); }
+  .app-nav-item svg { stroke: currentColor; }
+  .app-nav-item:hover { background: rgba(255, 255, 255, .14); color: #fff; }
+  .app-nav-item.active { background: #fff; color: var(--brand); }
 
-  .container { margin-left: 220px; }
+  /* Konten mengisi penuh sisa layar di sebelah kanan sidebar, tidak lagi
+     terpotong oleh max-width:1440px bawaan .container yang menyisakan
+     ruang kosong di layar lebar. */
+  .container {
+    margin-left: 220px;
+    margin-right: 0;
+    max-width: none;
+  }
 
   /* Setelan disembunyikan sampai menu "Setelan" di sidebar dipilih --
      saat aktif, kontennya muncul di layar utama (bukan modal/overlay). */
@@ -1248,7 +1258,7 @@ tr:hover td { background: var(--paper-warm); }
     display: block;
     position: static;
     width: auto;
-    max-width: 1440px;
+    max-width: none;
     height: auto;
     margin: 0 0 0 220px;
     background: none;
