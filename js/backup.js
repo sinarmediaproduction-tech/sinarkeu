@@ -37,7 +37,35 @@ window.createBackup = function() {
     window.renderBackupList();
     window.showToast("Snapshot cadangan berhasil dibuat");
 };
-window.restoreFromIndex = function(i) {
+// [BUG FIX - SALDO SALAH SETELAH RESTORE BACKUP] Snapshot backup (baik manual
+// lokal via createBackup(), maupun cloud via pushBackupToSupabaseForBook())
+// cuma berisi window.txs PADA SAAT backup dibuat -- yang sudah dibatasi
+// MAX_LOCAL_TXS (1000) transaksi terbaru (lihat trimAndSaveLocal di
+// transaction.js), bukan seluruh riwayat buku. Untuk buku dengan >1000
+// transaksi, window.saveTransactions(true) setelah restore akan memanggil
+// trimAndSaveLocal() dengan array 1000-an itu sebagai "seluruh data" --
+// remainder-nya kosong, sehingga balanceOffset lama (net dari transaksi lebih
+// tua yang sudah ter-trim) TERTIMPA jadi 0. Saldo yang tampil langsung salah
+// secara diam-diam sampai user kebetulan klik "Sinkron Penuh" berikutnya.
+//
+// Perbaikan: sama seperti window._fetchOlderTxsBalanceOffset yang sudah
+// dipakai pullFromCloudSilently/pullAllBooksFromCloud -- setelah restore,
+// tarik ulang offset yang SEBENARNYA dari baris-baris lama di cloud (kalau
+// online) dan timpa localStorage dengan nilai itu, baru render ulang.
+window._fixBalanceOffsetAfterRestore = async function(bookId) {
+    if (!window.isOnline() || typeof window._fetchOlderTxsBalanceOffset !== 'function') return;
+    try {
+        const trueOffset = await window._fetchOlderTxsBalanceOffset(bookId);
+        if (trueOffset !== null) {
+            localStorage.setItem('sk_balance_offset_' + bookId, String(trueOffset));
+            if (bookId === window.currentBookId) window.render();
+        }
+    } catch (e) {
+        console.warn('[Backup] Gagal memperbaiki balance offset setelah restore:', e);
+    }
+};
+
+window.restoreFromIndex = async function(i) {
     if (!window.requireOnline('memulihkan data dari snapshot')) return;
     let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + window.currentBookId) || '[]');
     if (localBackups[i] && confirm("Pulihkan data dari snapshot cadangan ini? Data saat ini akan diganti.")) {
@@ -45,6 +73,11 @@ window.restoreFromIndex = function(i) {
         // forceFullPush=true: restore sengaja mengganti seluruh data buku ini,
         // jadi semua baris harus di-push, bukan cuma yang "dirty".
         window.saveTransactions(true);
+        // [BUG FIX] lihat window._fixBalanceOffsetAfterRestore di atas -- snapshot
+        // ini mungkin cuma sebagian (≤1000 transaksi terbaru) dari buku yang lebih
+        // besar, jadi balanceOffset yang baru saja ditulis trimAndSaveLocal (0) perlu
+        // dikoreksi dengan yang sebenarnya dari cloud.
+        await window._fixBalanceOffsetAfterRestore(window.currentBookId);
         window.closeModal('backupModal');
         window.showToast("Data berhasil dipulihkan");
     }
@@ -169,6 +202,10 @@ window.restoreFromCloudBackup = async function(backupId) {
         window.txs = await window._decodeBackupData(rows[0].data);
         // forceFullPush=true: sama seperti restore lokal, seluruh data harus menang.
         window.saveTransactions(true);
+        // [BUG FIX] lihat window._fixBalanceOffsetAfterRestore di backup.js -- backup
+        // cloud ini juga cuma snapshot window.txs (≤1000 transaksi terbaru) pada saat
+        // dibuat, jadi balanceOffset perlu dikoreksi ulang dari cloud setelah restore.
+        await window._fixBalanceOffsetAfterRestore(window.currentBookId);
         window.closeModal('backupModal');
         window.showToast('Data berhasil dipulihkan dari cloud!', 'success');
         await window.addCloudLog('RESTORE', 'Restore dari cloud backup id: ' + backupId);
