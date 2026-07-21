@@ -27,8 +27,8 @@
   --warning-lt: #FAEEDA;
   --purple:     #5B3A8E;
   --purple-lt:  #F1EAFB;
-  --brand:      #14867A; /* teal hijau, lebih nyaman di mata dibanding merah icon */
-  --brand-dark: #0E655C;
+  --brand:      #1D4B36; /* selaras dengan --success */
+  --brand-dark: #163829;
   /* Extended palette */
   --fase:       #e53e8a;
   --fase-lt:    #fff0f7;
@@ -1198,6 +1198,7 @@ tr:hover td { background: var(--paper-warm); }
 
 @media (min-width: 1024px) {
   #setelanBtn { display: none !important; }
+  #reminderBtn { display: none !important; }
 
   #appSidebar {
     display: flex;
@@ -1239,6 +1240,17 @@ tr:hover td { background: var(--paper-warm); }
   .app-nav-item svg { stroke: currentColor; }
   .app-nav-item:hover { background: rgba(255, 255, 255, .14); color: #fff; }
   .app-nav-item.active { background: #fff; color: var(--brand); }
+  .app-nav-badge {
+    display: none;
+    margin-left: auto;
+    background: var(--danger);
+    color: #fff;
+    font-size: .62rem;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 1px 6px;
+    line-height: 1.5;
+  }
 
   /* Konten mengisi penuh sisa layar di sebelah kanan sidebar, tidak lagi
      terpotong oleh max-width:1440px bawaan .container yang menyisakan

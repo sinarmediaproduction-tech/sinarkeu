@@ -528,6 +528,7 @@ window.updatePaymentReminderBanner = function(list) {
     const bannerText = document.getElementById('paymentReminderBannerText');
     const badge = document.getElementById('reminderBadge');
     const drawerBadge = document.getElementById('drawerReminderBadge');
+    const sidebarBadge = document.getElementById('sidebarReminderBadge');
     
     if (urgent.length > 0) {
         if (banner) {
@@ -545,10 +546,12 @@ window.updatePaymentReminderBanner = function(list) {
         }
         if (badge) { badge.style.display = 'inline-block'; badge.textContent = urgent.length; }
         if (drawerBadge) { drawerBadge.style.display = 'inline-block'; drawerBadge.textContent = urgent.length + ' mendesak'; }
+        if (sidebarBadge) { sidebarBadge.style.display = 'inline-block'; sidebarBadge.textContent = urgent.length; }
     } else {
         if (banner) banner.style.display = 'none';
         if (badge) badge.style.display = 'none';
         if (drawerBadge) drawerBadge.style.display = 'none';
+        if (sidebarBadge) sidebarBadge.style.display = 'none';
     }
 };
 
