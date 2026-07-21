@@ -27,8 +27,8 @@
   --warning-lt: #FAEEDA;
   --purple:     #5B3A8E;
   --purple-lt:  #F1EAFB;
-  --brand:      #E61D4C; /* warna dominan icon aplikasi (icon-192.png / icon-512.png) */
-  --brand-dark: #B8163C;
+  --brand:      #14867A; /* teal hijau, lebih nyaman di mata dibanding merah icon */
+  --brand-dark: #0E655C;
   /* Extended palette */
   --fase:       #e53e8a;
   --fase-lt:    #fff0f7;
