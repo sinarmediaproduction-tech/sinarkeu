@@ -1,8 +1,8 @@
 /* ===================================================
    SINARKEU — Minimalist / Clean Redesign
-   Palette: White #FFFFFF, Ink #0D0D0D, Paper #F7F7F6,
+   Palette: White #FFFFFF, Ink #0D0D0D, Paper #FBF6EE,
             Muted #6B6B6B, Faint #B4B4B4, Rule #E8E8E5,
-            Accent #1B3A5C, Success #0F6E56, Danger #993C1D
+            Accent #1B3A5C, Success #1D4B36, Danger #993C1D
    Font: Inter (sudah ada di project)
 =================================================== */
 
@@ -15,11 +15,11 @@
                             jauh di bawah WCAG AA (4.5:1). #767676 = 4.54:1, tetap terasa
                             "faint" dibanding --ink-muted tapi masih terbaca jelas. */
   --paper:      #FFFFFF;
-  --paper-warm: #F7F7F6;
+  --paper-warm: #FBF6EE;
   --rule:       #E8E8E5;
   --accent:     #1B3A5C;
   --accent-lt:  #E6EFF7;
-  --success:    #0F6E56;
+  --success:    #1D4B36;
   --success-lt: #E1F5EE;
   --danger:     #993C1D;
   --danger-lt:  #FAECE7;

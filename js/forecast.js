@@ -100,7 +100,7 @@ window.renderForecastCard = function() {
     const rasio = avgInc > 0 ? avgExp / avgInc : 999;
     let status, statusColor, statusBg, statusIcon;
     if (rasio <= 0.7) {
-        status = 'Sehat'; statusColor = '#0F6E56'; statusBg = '#E1F5EE'; statusIcon = '●';
+        status = 'Sehat'; statusColor = '#1D4B36'; statusBg = '#E1F5EE'; statusIcon = '●';
     } else if (rasio <= 0.9) {
         status = 'Waspada'; statusColor = '#854F0B'; statusBg = '#FAEEDA'; statusIcon = '●';
     } else {
@@ -122,7 +122,7 @@ window.renderForecastCard = function() {
 
     // ── Render ──
     const trenHTML = tren !== null
-        ? `<span style="font-size:.65rem; font-weight:600; color:${tren > 0 ? '#993C1D' : '#0F6E56'};">
+        ? `<span style="font-size:.65rem; font-weight:600; color:${tren > 0 ? '#993C1D' : '#1D4B36'};">
             ${tren > 0 ? '▲' : '▼'} ${Math.abs(tren).toFixed(0)}% vs bln lalu
            </span>`
         : '';
@@ -133,7 +133,7 @@ window.renderForecastCard = function() {
           ).join('')
         : '<span class="fc-tag" style="color:#aaa;">—</span>';
 
-    const proyeksiColor = proyeksiBulan >= 6 ? '#0F6E56' : proyeksiBulan >= 3 ? '#854F0B' : '#993C1D';
+    const proyeksiColor = proyeksiBulan >= 6 ? '#1D4B36' : proyeksiBulan >= 3 ? '#854F0B' : '#993C1D';
     const basisSubLabel = basisIncludesCurrent
         ? `per bulan (bulan berjalan, belum lengkap)`
         : `per bulan (${basis.length} bln terakhir)`;
@@ -152,7 +152,7 @@ window.renderForecastCard = function() {
             <div class="fc-row">
                 <div class="fc-metric">
                     <div class="fc-metric-label">Rata-rata Pemasukan</div>
-                    <div class="fc-metric-value" style="color:#0F6E56;">${window.rp ? window.rp(avgInc) : avgInc}</div>
+                    <div class="fc-metric-value" style="color:#1D4B36;">${window.rp ? window.rp(avgInc) : avgInc}</div>
                     <div class="fc-metric-sub">${basisSubLabel}</div>
                 </div>
                 <div class="fc-metric">
@@ -164,7 +164,7 @@ window.renderForecastCard = function() {
             <div class="fc-row">
                 <div class="fc-metric">
                     <div class="fc-metric-label">Surplus / Defisit</div>
-                    <div class="fc-metric-value" style="color:${avgSurplus >= 0 ? '#0F6E56' : '#993C1D'};">
+                    <div class="fc-metric-value" style="color:${avgSurplus >= 0 ? '#1D4B36' : '#993C1D'};">
                         ${avgSurplus >= 0 ? '+' : ''}${window.rp ? window.rp(avgSurplus) : avgSurplus}
                     </div>
                     <div class="fc-metric-sub">estimasi per bulan</div>
