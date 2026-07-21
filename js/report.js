@@ -50,12 +50,12 @@ async function generateMonthlyReport() {
     if (reportContentEl) reportContentEl.innerHTML = '<div style="padding:24px;text-align:center;color:#888;">Memuat laporan...</div>';
     const cloudTx = await window.fetchMonthTransactionsFromCloud(window.currentBookId, year, month);
     allTx = cloudTx !== null ? cloudTx : (window.txs || []).filter(t => {
-      const d = new Date(t.date);
+      const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
       return d.getFullYear() === year && (d.getMonth() + 1) === month;
     });
   } else {
     allTx = (window.txs || []).filter(t => {
-      const d = new Date(t.date);
+      const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
       return d.getFullYear() === year && (d.getMonth() + 1) === month;
     });
   }
@@ -227,12 +227,12 @@ async function exportReportAsPDF() {
   if (window.isOnline() && typeof window.fetchMonthTransactionsFromCloud === 'function') {
     const cloudTx = await window.fetchMonthTransactionsFromCloud(window.currentBookId, year, month);
     allTx = cloudTx !== null ? cloudTx : (window.txs || []).filter(t => {
-      const d = new Date(t.date);
+      const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
       return d.getFullYear() === year && (d.getMonth() + 1) === month;
     });
   } else {
     allTx = (window.txs || []).filter(t => {
-      const d = new Date(t.date);
+      const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
       return d.getFullYear() === year && (d.getMonth() + 1) === month;
     });
   }

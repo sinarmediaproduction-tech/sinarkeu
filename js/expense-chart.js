@@ -38,7 +38,7 @@ window.renderExpenseChart = function() {
     let source = window.txs.filter(t => t.type === 'expense');
     if (window.expenseChartMode === 'month') {
         source = source.filter(t => {
-            const d = new Date(t.date);
+            const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
             return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
         });
     }

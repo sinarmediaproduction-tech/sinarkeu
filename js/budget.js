@@ -99,7 +99,7 @@ window.renderBudget = function() {
     let totalActual = 0;
     window.txs.forEach(t => {
         if (t.type === 'expense') {
-            let d = new Date(t.date);
+            let d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
             if ((d.getMonth() + 1) == m && d.getFullYear() == y) {
                 totalActual += (Number(t.amount) || 0);
             }
@@ -307,7 +307,7 @@ window.checkBudgetWarningAfterSave = function(date, category) {
     window.EXPENSE_CATEGORIES.forEach(c => totalTarget += (currentBudget[c] || 0));
     window.txs.forEach(t => {
         if (t.type !== 'expense') return;
-        let td = new Date(t.date);
+        let td = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
         if ((td.getMonth() + 1) == m && td.getFullYear() == y) {
             totalBulan += (Number(t.amount) || 0);
             if (t.category === category) totalKat += (Number(t.amount) || 0);

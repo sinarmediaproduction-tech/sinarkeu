@@ -188,7 +188,7 @@ window.sendDailySummaryToTelegram = async function() {
     });
     let incBulan = 0, expBulan = 0;
     window.txs.forEach(t => {
-        let d = new Date(t.date);
+        let d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
         if ((d.getMonth() + 1) === m && d.getFullYear() === y) {
             let amt = Number(t.amount) || 0;
             if (t.type === 'income') incBulan += amt;
