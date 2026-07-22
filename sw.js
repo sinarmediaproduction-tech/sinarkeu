@@ -1,111 +1,151 @@
-/**
- * sw.js — Service Worker Sinarkeu v8
- * Strategi:
- *   - App shell (HTML/CSS/JS lokal) → Cache First
- *   - CDN eksternal (chart.js, html2pdf, fonts) → Cache First + fallback
- *   - Supabase & Telegram API → Network Only (data real-time, jangan di-cache)
- */
+/* ============================================================
+   SERVICE WORKER — Buku Keuangan Karang Taruna
+   Cuma nge-cache "app shell" (HTML/CSS/JS/ikon) supaya aplikasi
+   tetap bisa dibuka walau sinyal jelek/offline. Data (Supabase)
+   TIDAK di-cache di sini — selalu ambil langsung dari jaringan,
+   supaya saldo/anggota/dll yang ditampilkan selalu data terbaru.
 
-const CACHE_NAME = 'sinarkeu-v9-cache-v8';
-const STATIC_CDN = [
-  'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js',
-  'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
+   NAIKKAN CACHE_VERSION setiap kali index.html/style.css/js/*
+   diupdate, supaya HP pengguna otomatis ambil versi baru.
+   ============================================================ */
+const CACHE_VERSION = 'v44';
+const CACHE_NAME = `kt-shell-${CACHE_VERSION}`;
+
+// script.js lama sudah dipecah jadi banyak file per modul di folder js/
+// (lihat index.html) — semuanya harus di-precache juga supaya app tetap
+// bisa dibuka utuh saat offline.
+const APP_SHELL = [
+  './',
+  './index.html',
+  './style.css',
+  './js/00-config.js',
+  './js/01-utils-currency.js',
+  './js/02-auth.js',
+  './js/03-db-core.js',
+  './js/04-event-settings.js',
+  './js/05-navigation.js',
+  './js/06-login-users.js',
+  './js/07-dashboard.js',
+  './js/08-anggota.js',
+  './js/09-donatur-transaksi-operasional.js',
+  './js/10-lomba.js',
+  './js/11-belanja.js',
+  './js/12-jadwal-agenda-kas.js',
+  './js/13-lpj.js',
+  './js/14-dokumen.js',
+  './js/15-pengaturan-event.js',
+  './js/16-ui-helpers.js',
+  './js/17a-gudang-core.js',
+  './js/17b-gudang-pinjam.js',
+  './js/17c-gudang-histori-kelola.js',
+  './js/18-getters-refresh.js',
+  './js/24-bookmark.js',
+  './js/22-dana-sosial.js',
+  './js/20-panduan.js',
+  './js/21-icons-lucide.js',
+  './js/19-init.js',
+  './vendor/supabase.js',
+  './manifest.json',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/lucide-icons.local.js',
 ];
 
-// ── Install: pre-cache resource CDN ──
-self.addEventListener('install', event => {
-  self.skipWaiting();
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(STATIC_CDN).catch(err => {
-        // Gagal cache CDN tidak bloking install
-        console.warn('[SW] Gagal pre-cache beberapa resource CDN:', err.message);
-      });
-    })
+    caches.open(CACHE_NAME)
+      // {cache:'reload'} supaya fetch awal ini juga tidak diam-diam diambil dari
+      // HTTP cache browser/CDN (lihat penjelasan lengkap di listener 'fetch' di bawah).
+      .then((cache) => cache.addAll(APP_SHELL.map((url) => new Request(url, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
   );
 });
 
-// ── Activate: hapus cache lama ──
-self.addEventListener('activate', event => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys =>
+    caches.keys().then((names) =>
       Promise.all(
-        keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => {
-            console.log('[SW] Hapus cache lama:', key);
-            return caches.delete(key);
-          })
+        names.filter((n) => n.startsWith('kt-shell-') && n !== CACHE_NAME)
+             .map((n) => caches.delete(n))
       )
     ).then(() => self.clients.claim())
   );
 });
 
-// ── Fetch: routing strategi ──
-self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
 
-  // 1. Supabase & Telegram → Network Only (jangan pernah cache)
-  if (
-    url.hostname.includes('supabase.co') ||
-    url.hostname.includes('supabase.com') ||
-    url.hostname === 'api.telegram.org' ||
-    url.pathname.includes('/functions/v1/')
-  ) {
-    return; // biarkan browser handle langsung
-  }
-
-  // 2. File app utama (index.html & aset lokal) → Network First, fallback cache
-  // cache:'no-store' agar tidak terjebak HTTP cache browser saat online,
-  // supaya perubahan kode (mis. JS file) langsung kepakai tanpa stale.
-  if (url.origin === self.location.origin) {
-    event.respondWith(
-      fetch(event.request, { cache: 'no-store' })
-        .then(response => {
-          if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => caches.match(event.request))
-    );
+  // Cuma tangani GET same-origin. Request ke Supabase, font Google,
+  // CDN supabase-js, dll dibiarkan lewat jaringan seperti biasa
+  // (tidak di-cache) supaya data selalu fresh.
+  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) {
     return;
   }
 
-  // 3. Resource CDN eksternal → Cache First, fallback network
-  if (
-    url.hostname.includes('cdnjs.cloudflare.com') ||
-    url.hostname.includes('cdn.jsdelivr.net') ||
-    url.hostname.includes('fonts.googleapis.com') ||
-    url.hostname.includes('fonts.gstatic.com')
-  ) {
-    event.respondWith(
-      caches.match(event.request).then(cached => {
-        if (cached) return cached;
-        return fetch(event.request).then(response => {
-          if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          }
-          return response;
-        });
+  // Network-first untuk app shell: kalau online, selalu pakai versi
+  // terbaru dari server + update cache. Kalau offline, baru fallback
+  // ke cache supaya aplikasi tetap bisa dibuka.
+  //
+  // CATATAN PENTING: `fetch(req)` biasa TETAP BISA diam-diam dijawab dari
+  // HTTP cache bawaan browser/CDN (bukan Cache Storage kita), tergantung
+  // header Cache-Control dari hosting — jadi walau kode di sini sudah
+  // "network-first", device tertentu masih bisa dapat file lama beberapa
+  // saat kalau layer cache HTTP itu belum kadaluarsa. `cache:'no-store'`
+  // memaksa permintaan ini betul-betul ke jaringan, tidak boleh dijawab
+  // dari cache manapun selain Cache Storage kita sendiri sebagai fallback.
+  // FALLBACK TERAKHIR: Response buatan tangan, dipakai kalau semua upaya
+  // lain (fetch jaringan MAUPUN baca dari Cache Storage) gagal total.
+  const fallbackResponse = () => new Response(
+    '<h1>Sedang offline</h1><p>Tidak bisa memuat halaman ini dan belum ada salinan tersimpan. Coba lagi setelah koneksi kembali.</p>',
+    { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+  );
+
+  event.respondWith(
+    fetch(req.url, { cache: 'no-store' })
+      .then((res) => {
+        const resClone = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone)).catch(() => {});
+
+        // FIX: kalau server (Cloudflare) redirect request ini (mis. "/" -> "/index.html",
+        // http -> https, atau strip/tambah trailing slash), `res.redirected` jadi true.
+        // Untuk request navigasi (buka halaman), Chrome MENOLAK meneruskan Response yang
+        // bertanda "redirected" lewat respondWith() — persis pesan error "a redirected
+        // response was used for a request whose redirect mode is not 'follow'" — dan
+        // seluruh halaman gagal dimuat. Solusinya: bikin Response baru dari body yang
+        // sama supaya flag .redirected hilang, isi/status/header tetap identik.
+        if (!res.redirected) return res;
+        return res.blob().then((blob) => new Response(blob, {
+          status: res.status,
+          statusText: res.statusText,
+          headers: res.headers
+        }));
       })
-    );
-    return;
-  }
-
-  // 4. Semua request lain → biarkan browser handle
-});
-
-// ── Push notification handler (opsional, untuk masa depan) ──
-self.addEventListener('push', event => {
-  if (!event.data) return;
-  const data = event.data.json();
-  self.registration.showNotification(data.title || 'Sinarkeu', {
-    body: data.body || '',
-    icon: 'icon-192.png',
-    badge: 'icon-192.png'
-  });
+      .catch(() =>
+        // PENTING: rantai fallback ini HARUS selalu berakhir dengan sebuah
+        // Response yang valid. Kalau fetch gagal (koneksi jelek/putus) DAN
+        // request ini kebetulan tidak ada di cache DAN './index.html' juga
+        // entah kenapa tidak ke-cache, hasilnya bisa `undefined` —
+        // respondWith(undefined) bikin Chrome melempar net::ERR_FAILED dan
+        // seluruh halaman gagal total sampai di-hard-refresh. Response
+        // buatan tangan di baris terakhir ini mencegah itu: dalam skenario
+        // terburuk sekalipun, user tetap dapat pesan yang jelas, bukan
+        // error jaringan yang bikin bingung.
+        //
+        // CATATAN TAMBAHAN (penting!): caches.match() DI BAWAH INI JUGA BISA
+        // REJECT sendiri, bukan cuma "tidak ketemu" — misalnya kalau Cache
+        // Storage di device rusak/korup atau kena quota exceeded (pernah
+        // terjadi di Chrome Android). Kalau reject ini tidak ditangkap,
+        // dia akan ikut membuat promise respondWith() reject juga, dan
+        // hasilnya net::ERR_FAILED persis seperti skenario di atas — inilah
+        // penyebab bug "harus hapus data & cache dulu baru bisa akses".
+        // Makanya seluruh chain ini dibungkus .catch() lagi supaya APAPUN
+        // yang gagal (fetch atau Cache API itu sendiri), user tetap dapat
+        // Response yang valid, bukan promise yang reject.
+        caches.match(req)
+          .then((cached) => cached || caches.match('./index.html'))
+          .then((cached) => cached || fallbackResponse())
+          .catch(() => fallbackResponse())
+      )
+      .catch(() => fallbackResponse())
+  );
 });
