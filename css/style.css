@@ -786,6 +786,7 @@ canvas { max-height: 260px; width: 100%; }
 
 /* ── Actions / Buttons ── */
 .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.actions .btn { border-radius: var(--radius-sm); }
 
 button, .btn, .btn-secondary {
   padding: 6px 14px;
