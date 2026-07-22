@@ -89,12 +89,6 @@ window.openSetelanModal = function(initialTab) {
     window.openModal('setelanModal');
     window.switchSetelanTab(initialTab || 'lang');
 
-    // Sidebar mobile ikut menutup begitu menu "Pengaturan" dipilih (selaras
-    // dengan pola goSection() di merdeka-main yang selalu menutup sidebar
-    // mobile setiap kali pindah halaman). Tidak berefek di desktop karena
-    // sidebar di sana memang selalu terbuka lewat CSS.
-    if (typeof window.closeMobileDrawer === 'function') window.closeMobileDrawer();
-
     // Di layar desktop, Setelan tampil sebagai halaman penuh di area utama
     // (bukan modal) -- sembunyikan dashboard & tandai menu sidebar aktif.
     if (window.matchMedia('(min-width: 1024px)').matches) {
@@ -112,10 +106,6 @@ window.showSetelanView = function(initialTab) {
 window.showDashboardView = function() {
     document.body.classList.remove('view-settings');
     window.updateAppSidebarNav('dashboard');
-    // Kalau lagi buka Setelan sebagai modal (mode mobile), tutup juga saat
-    // pindah ke menu Dashboard di sidebar.
-    if (typeof window.closeModal === 'function') window.closeModal('setelanModal');
-    if (typeof window.closeMobileDrawer === 'function') window.closeMobileDrawer();
 };
 
 window.updateAppSidebarNav = function(which) {

@@ -338,16 +338,28 @@ window.toggleManual = function() {
     }
 };
 
-// Sidebar (mobile: slide-in dari kiri; desktop: selalu terbuka via CSS)
+// Drawer
 window.openMobileDrawer = function() {
+    const src = document.getElementById('activeAccountLabel');
+    const dst = document.getElementById('drawerAccountLabel');
+    if (src && dst) dst.textContent = src.textContent;
+    // Sync dark mode label
+    var drawerLabel = document.getElementById('drawerDarkLabel');
+    if (drawerLabel) {
+        drawerLabel.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️ Mode Terang' : '🌙 Mode Gelap';
+    }
     document.getElementById("mobileDrawerOverlay").style.opacity = "1";
     document.getElementById("mobileDrawerOverlay").style.pointerEvents = "auto";
-    document.getElementById("appSidebar").classList.add("open");
+    document.getElementById("mobileDrawer").style.transform = "translateX(0)";
 };
 window.closeMobileDrawer = function() {
     document.getElementById("mobileDrawerOverlay").style.opacity = "0";
     document.getElementById("mobileDrawerOverlay").style.pointerEvents = "none";
-    document.getElementById("appSidebar").classList.remove("open");
+    document.getElementById("mobileDrawer").style.transform = "translateX(-100%)";
+};
+window.drawerAction = function(fn) {
+    window.closeMobileDrawer();
+    setTimeout(fn, 180);
 };
 window.toggleAuditLogInline = function() {
     const body = document.getElementById('auditLogInlineBody');
