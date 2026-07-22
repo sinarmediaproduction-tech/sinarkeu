@@ -844,16 +844,17 @@ button:disabled, .btn:disabled,
 
 .mdrawer {
   position: fixed;
-  top: 0; right: 0;
+  top: 0; left: 0;
   height: 100%;
   width: 82%;
   max-width: 300px;
   background: var(--paper);
   z-index: 3001;
-  box-shadow: -4px 0 24px rgba(0,0,0,0.18);
-  border-left: 1.5px solid var(--rule);
+  box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+  border-right: 1.5px solid var(--rule);
+  border-left: none;
   overflow-y: auto;
-  transform: translateX(100%);
+  transform: translateX(-100%);
   transition: transform 0.25s cubic-bezier(.4,0,.2,1);
   display: flex;
   flex-direction: column;

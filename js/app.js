@@ -355,7 +355,7 @@ window.openMobileDrawer = function() {
 window.closeMobileDrawer = function() {
     document.getElementById("mobileDrawerOverlay").style.opacity = "0";
     document.getElementById("mobileDrawerOverlay").style.pointerEvents = "none";
-    document.getElementById("mobileDrawer").style.transform = "translateX(100%)";
+    document.getElementById("mobileDrawer").style.transform = "translateX(-100%)";
 };
 window.drawerAction = function(fn) {
     window.closeMobileDrawer();
