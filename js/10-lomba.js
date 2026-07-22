@@ -895,6 +895,7 @@ function openHadiahModal(id){
 function checkDuplikatPaketHadiah(editingId, originalKP, originalJuara){
   const kpEl=document.getElementById('f-kp'); const jEl=document.getElementById('f-juara');
   const warnEl=document.getElementById('paket-move-warning');
+  const container=document.getElementById('items-container');
   if(!kpEl||!jEl) return;
   const kategori_peserta=kpEl.value; const juara_ke=jEl.value;
   const existing=gHadiahKategori().find(h=>h.kategori_peserta===kategori_peserta && h.juara_ke===juara_ke && h.id!==editingId);
@@ -903,6 +904,16 @@ function checkDuplikatPaketHadiah(editingId, originalKP, originalJuara){
     toast(`Paket ${labelPeserta(kategori_peserta)} - ${labelJuara(juara_ke)} sudah ada, dialihkan ke paket tersebut`);
     closeModal(); openHadiahModal(existing.id);
     return;
+  }
+  // Mode TAMBAH PAKET BARU (editingId kosong): kalau kombinasi kategori/juara
+  // yang lagi dipilih belum punya paket, form ini mewakili paket yang MASIH
+  // KOSONG. Kalau item-item yang sempat diketik untuk kombinasi sebelumnya
+  // (mis. Juara 1) masih nempel di form pas dropdown diganti ke kombinasi lain
+  // yang belum ada paketnya (mis. Juara 2), item-item itu bisa ikut kesimpan
+  // di paket yang salah kombinasinya. Makanya form item dikosongkan setiap kali
+  // kombinasi berubah ke kombinasi yang belum ada paketnya.
+  if(!editingId && container){
+    container.innerHTML = '';
   }
   // Kalau lagi EDIT paket yang sudah ada dan kategori/juara diganti ke kombinasi
   // lain yang belum ada paketnya: ini akan MEMINDAHKAN paket ini (beserta semua
