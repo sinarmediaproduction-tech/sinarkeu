@@ -95,12 +95,12 @@ window.openSetelanModal = function(initialTab) {
     // sidebar di sana memang selalu terbuka lewat CSS.
     if (typeof window.closeMobileDrawer === 'function') window.closeMobileDrawer();
 
-    // Di layar desktop, Setelan tampil sebagai halaman penuh di area utama
-    // (bukan modal) -- sembunyikan dashboard & tandai menu sidebar aktif.
-    if (window.matchMedia('(min-width: 1024px)').matches) {
-        document.body.classList.add('view-settings');
-        window.updateAppSidebarNav('setelan');
-    }
+    // Setelan tampil sebagai halaman penuh di area utama (bukan modal
+    // mengambang) di semua ukuran layar -- sembunyikan dashboard & tandai
+    // menu sidebar aktif. Di layar sempit (hp), tampil full-screen; di
+    // layar lebar (desktop), tampil di sebelah sidebar (lihat CSS).
+    document.body.classList.add('view-settings');
+    window.updateAppSidebarNav('setelan');
 };
 
 // Alias supaya tombol menu sidebar "Setelan" bisa langsung memicu logika

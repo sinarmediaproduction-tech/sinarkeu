@@ -1263,6 +1263,49 @@ tr:hover td { background: var(--accent-lt); }
   line-height: 1.5;
 }
 
+@media (max-width: 1023px) {
+  /* Setelan di hp: tampil full-screen sebagai halaman biasa, bukan kotak
+     dialog mengambang dengan latar gelap (pola sama dengan versi desktop
+     di bawah, disesuaikan untuk layar sempit tanpa sidebar permanen). */
+  body.view-settings .container { display: none; }
+  body.view-settings #setelanModal {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    background: var(--paper);
+    z-index: 2000;
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+  body.view-settings #setelanModal .setelan-modal-content {
+    width: 100%;
+    max-width: none !important;
+    height: 100%;
+    max-height: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  body.view-settings #setelanModal .modal-header {
+    position: sticky;
+    top: 0;
+    background: var(--paper);
+    z-index: 1;
+    padding: 16px 16px 12px;
+    margin: 0 0 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  body.view-settings #setelanModal .setelan-tabs,
+  body.view-settings #setelanModal .setelan-tab-content {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
 @media (min-width: 1024px) {
   #appSidebar {
     width: 220px;

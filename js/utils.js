@@ -193,6 +193,10 @@ window.closeModal = function(id) {
         if (editingId) window.clearEditBaseline(editingId);
     }
     document.getElementById(id).classList.remove('show');
+    if (id === 'setelanModal') {
+        document.body.classList.remove('view-settings');
+        if (typeof window.updateAppSidebarNav === 'function') window.updateAppSidebarNav('dashboard');
+    }
 };
 
 window.getCloudUrl = function() { return window.globalSupabaseUrl || ''; };
