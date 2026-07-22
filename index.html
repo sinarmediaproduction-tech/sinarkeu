@@ -1,150 +1,112 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Taruna Inti</title>
+-- ============================================================
+-- HARDENING: Enkripsi field sensitif transaksi & backup
+-- Jalankan SEKALI di Supabase SQL Editor, SEBELUM men-deploy kode
+-- js/ yang baru (crypto.js, transaction.js, backup.js versi audit ini).
+-- ============================================================
+--
+-- MASALAH YANG DIPERBAIKI:
+-- Selama ini kolom `amount`, `category`, `description`, `attachment`, `type`
+-- di tabel `transactions`, dan kolom `data` di tabel `backups`, berisi data
+-- keuangan ASLI dalam bentuk PLAINTEXT. Hanya kredensial Supabase & tabel
+-- `settings` yang sudah dienkripsi client-side. Siapa pun yang bisa membaca
+-- database ini secara langsung (service-role key bocor, RLS salah setup,
+-- akses dashboard Supabase oleh pihak lain, dst) bisa melihat seluruh
+-- riwayat keuangan pengguna secara terbuka.
+--
+-- PERBAIKAN:
+-- Kode aplikasi sekarang mengenkripsi amount/category/description/attachment/
+-- type jadi SATU kolom `enc_payload` (AES-GCM, kunci diturunkan dari password
+-- pengguna, tidak pernah dikirim ke server) sebelum push. Kolom lama dibuat
+-- NULLABLE (dan tidak lagi diisi data asli) supaya insert tidak gagal.
+-- Baris LAMA (sebelum migrasi ini) tetap bisa dibaca -- kode punya fallback
+-- baca plaintext lama jika enc_payload kosong (lihat window.decodeCloudTxRow).
+--
+-- CATATAN PENTING SOAL RLS:
+-- Migrasi ini TIDAK membuat isolasi antar-user yang sesungguhnya di level
+-- database -- app ini memakai SATU anon key untuk semua request (tidak ada
+-- Supabase Auth), jadi Postgres tidak bisa tahu "siapa" yang sedang meminta.
+-- `account_tag` hanyalah kesepakatan di sisi APLIKASI, bukan pagar keamanan;
+-- siapa pun yang punya URL + anon key project ini bisa membaca/menulis semua
+-- baris lewat REST API langsung, terlepas dari account_tag. Enkripsi di
+-- migrasi inilah yang jadi garis pertahanan sesungguhnya untuk isi data.
+-- Untuk isolasi per-user yang sebenarnya di level database, perlu migrasi ke
+-- Supabase Auth + RLS berbasis auth.uid() -- lihat SECURITY_AUDIT.md bagian
+-- "Roadmap Multiuser Sesungguhnya".
+-- ============================================================
 
-<!-- PWA -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1D4B36">
-<meta name="background-color" content="#FBF6EE">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Taruna Inti">
-<link rel="icon" href="favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+-- ── TABEL: transactions ──────────────────────────────────────
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS enc_payload TEXT DEFAULT NULL;
+ALTER TABLE transactions ALTER COLUMN amount DROP NOT NULL;
+ALTER TABLE transactions ALTER COLUMN category DROP NOT NULL;
+ALTER TABLE transactions ALTER COLUMN description DROP NOT NULL;
+ALTER TABLE transactions ALTER COLUMN attachment DROP NOT NULL;
+ALTER TABLE transactions ALTER COLUMN type DROP NOT NULL;
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
+-- ── TABEL: backups ───────────────────────────────────────────
+-- Kolom `data` sudah TEXT, tidak perlu diubah tipenya -- sekarang berisi
+-- ciphertext base64 (AES-GCM) alih-alih JSON plaintext untuk backup baru.
 
-<div class="app">
-  <aside class="sidebar" id="sidebar">
-    <button class="sidebar-close" id="sidebar-close" type="button" aria-label="Tutup menu">✕</button>
-    <div class="brand">
-      <div class="eyebrow">Management</div>
-      <h1>KEGIATAN INTI</h1>
-    </div>
-    
-    <!-- USER INFO -->
-    <div class="user-info" id="user-info">
-      <div class="name" id="user-name-display">
-        <span id="user-icon">👤</span>
-        <span id="user-name-text">Anggota</span>
-      </div>
-      <button class="btn-login" id="btn-login" onclick="openLoginModal()">Login</button>
-      <button class="btn-logout" id="btn-logout" onclick="logout()" style="display:none;">Logout</button>
-    </div>
-    
-    <nav class="nav nav-global" id="nav-global"></nav>
-    <div class="event-block">
-      <label>Kegiatan Aktif</label>
-      <select class="event-select" id="event-select"></select>
-      <button class="btn-ghost-light" id="btn-new-event" type="button" style="display:none;">+ Event Baru</button>
-    </div>
-    <nav class="nav" id="nav"></nav>
-  </aside>
+-- ── TABEL: payment_reminders (jalankan HANYA jika tabel ini ada) ──
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payment_reminders') THEN
+        EXECUTE 'ALTER TABLE payment_reminders ADD COLUMN IF NOT EXISTS enc_payload TEXT DEFAULT NULL';
+        EXECUTE 'ALTER TABLE payment_reminders ALTER COLUMN name DROP NOT NULL';
+        EXECUTE 'ALTER TABLE payment_reminders ALTER COLUMN day DROP NOT NULL';
+        EXECUTE 'ALTER TABLE payment_reminders ALTER COLUMN recurrence DROP NOT NULL';
+        EXECUTE 'ALTER TABLE payment_reminders ALTER COLUMN month DROP NOT NULL';
+        EXECUTE 'ALTER TABLE payment_reminders ALTER COLUMN note DROP NOT NULL';
+    END IF;
+END $$;
 
-  <main class="main">
-    <div class="topbar">
-      <div class="left">
-        <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Menu">☰</button>
-        <div>
-          <h2 id="page-title">Buku Kegiatan</h2>
-          <div class="sub" id="page-sub"></div>
-        </div>
-      </div>
-      <div class="saldo-chip" id="saldo-chip" title="Proyeksi anggaran: sudah termasuk kebutuhan &amp; hadiah yang direncanakan, belum tentu sudah dibelanjakan.">
-        <span class="lbl">Proyeksi Saldo</span>
-        <span class="val mono" id="saldo-val">Rp 0</span>
-      </div>
-    </div>
-    <div id="content"></div>
-    <footer class="app-footer">
-      <div class="app-footer-quote">&ldquo;Senyum adalah buah dari pemahaman&rdquo;</div>
-    </footer>
-  </main>
-</div>
+-- ── ENABLE RLS (baseline, lihat catatan di atas) ─────────────
+-- Mengaktifkan RLS tanpa Supabase Auth tidak menambah isolasi antar-user,
+-- tapi tetap praktik baik: memastikan hanya kebijakan eksplisit di bawah
+-- ini yang berlaku, bukan grant default yang lebih longgar. Jalankan bagian
+-- ini HANYA jika belum pernah RLS aktif di tabel-tabel ini (aman dijalankan
+-- berkali-kali karena pakai DROP POLICY IF EXISTS + CREATE POLICY).
+ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE backups ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payment_reminders') THEN
+        EXECUTE 'ALTER TABLE payment_reminders ENABLE ROW LEVEL SECURITY';
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'audit_logs') THEN
+        EXECUTE 'ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY';
+    END IF;
+END $$;
 
-<div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+DROP POLICY IF EXISTS anon_full_access ON transactions;
+CREATE POLICY anon_full_access ON transactions FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS anon_full_access ON settings;
+CREATE POLICY anon_full_access ON settings FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS anon_full_access ON backups;
+CREATE POLICY anon_full_access ON backups FOR ALL TO anon USING (true) WITH CHECK (true);
+-- PENTING: RLS di atas sudah diaktifkan untuk payment_reminders & audit_logs
+-- (kalau ada) tanpa policy sama sekali -- itu artinya SEMUA akses akan
+-- ditolak (default-deny Postgres) sampai policy berikut dibuat. Jangan
+-- lewati blok ini kalau tabel-tabel tersebut ada di project Anda.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payment_reminders') THEN
+        EXECUTE 'DROP POLICY IF EXISTS anon_full_access ON payment_reminders';
+        EXECUTE 'CREATE POLICY anon_full_access ON payment_reminders FOR ALL TO anon USING (true) WITH CHECK (true)';
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'audit_logs') THEN
+        EXECUTE 'DROP POLICY IF EXISTS anon_full_access ON audit_logs';
+        EXECUTE 'CREATE POLICY anon_full_access ON audit_logs FOR ALL TO anon USING (true) WITH CHECK (true)';
+    END IF;
+END $$;
 
-<div class="overlay" id="overlay">
-  <div class="modal">
-    <div class="modal-head">
-      <h3 id="modal-title">Judul</h3>
-      <button class="close-x" id="modal-close" type="button">✕</button>
-    </div>
-    <div class="modal-body" id="modal-body"></div>
-    <div class="modal-foot" id="modal-foot"></div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<!-- OFFLINE GUARD: layar buram + peringatan saat device tidak ada koneksi internet,
-     supaya user tidak bisa input data (mencegah konflik data antar perangkat saat
-     koneksi kembali & proses sinkronisasi berjalan). -->
-<div class="offline-overlay" id="offline-overlay" aria-hidden="true">
-  <div class="offline-box">
-    <div class="offline-icon">📡</div>
-    <h3>Tidak Ada Akses Internet</h3>
-    <p>Koneksi internet perangkat ini terputus. Input dinonaktifkan sementara agar data tidak bentrok dengan perangkat lain.</p>
-    <div class="offline-status" id="offline-status">
-      <span class="offline-dot"></span> Menunggu koneksi kembali&hellip;
-    </div>
-  </div>
-</div>
-
-<script src="vendor/supabase.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="icons/lucide-icons.local.js"></script>
-
-<!-- script.js dipecah jadi beberapa file per modul (lihat folder js/).
-     PENTING: urutan load di bawah ini HARUS sama seperti urutan di
-     script.js semula, karena modul-modul ini saling bergantung lewat
-     variabel/fungsi global bersama (bukan ES module dengan import/export) -->
-<script src="js/00-config.js"></script>
-<script src="js/01-utils-currency.js"></script>
-<script src="js/02-auth.js"></script>
-<script src="js/03-db-core.js"></script>
-<script src="js/04-event-settings.js"></script>
-<script src="js/05-navigation.js"></script>
-<script src="js/06-login-users.js"></script>
-<script src="js/07-dashboard.js"></script>
-<script src="js/08-anggota.js"></script>
-<script src="js/09-donatur-transaksi-operasional.js"></script>
-<script src="js/10-lomba.js"></script>
-<script src="js/11-belanja.js"></script>
-<script src="js/12-jadwal-agenda-kas.js"></script>
-<script src="js/13-lpj.js"></script>
-<script src="js/14-dokumen.js"></script>
-<script src="js/15-pengaturan-event.js"></script>
-<script src="js/16-ui-helpers.js"></script>
-<script src="js/17a-gudang-core.js"></script>
-<script src="js/17b-gudang-pinjam.js"></script>
-<script src="js/17c-gudang-histori-kelola.js"></script>
-<script src="js/18-getters-refresh.js"></script>
-<script src="js/24-bookmark.js"></script>
-<script src="js/22-dana-sosial.js"></script>
-<script src="js/20-panduan.js"></script>
-<script src="js/21-icons-lucide.js"></script>
-<script src="js/23-install-prompt.js"></script>
-<script src="js/19-init.js"></script>
-<script>
-  // Daftarkan service worker supaya aplikasi bisa di-"Add to Home Screen"
-  // dan tetap bisa dibuka walau koneksi sedang jelek/offline.
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch((err) => {
-        console.error('Gagal mendaftarkan service worker:', err);
-      });
-    });
-  }
-</script>
-</body>
-</html>
+-- ============================================================
+-- OPSIONAL, JALANKAN BELAKANGAN (setelah yakin semua device sudah update
+-- ke kode baru dan enc_payload terisi untuk semua baris aktif): bersihkan
+-- sisa data plaintext lama dari baris yang SUDAH punya enc_payload, supaya
+-- tidak ada duplikat data sensitif di kolom lama.
+--
+-- UPDATE transactions
+-- SET amount = NULL, category = NULL, description = NULL, attachment = NULL, type = NULL
+-- WHERE enc_payload IS NOT NULL;
+-- ============================================================

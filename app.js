@@ -1,0 +1,616 @@
+// ==================== SUPABASE API ====================
+window.callSupabaseAPI = async function(table, method, body = null, queryString = '', options = null) {
+    const baseUrl = window.getCloudUrl();
+    const apiKey = window.getSupabaseKey();
+    if (!baseUrl || !apiKey) return null;
+    let url = `${baseUrl}/rest/v1/${table}`;
+    if (queryString) url += queryString;
+    const headers = { 'apikey': apiKey, 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
+    if (method === 'POST') headers['Prefer'] = 'resolution=merge-duplicates,return=representation';
+    // [MULTI-DEVICE CONFLICT DETECTION] PATCH biasa (mis. soft-delete) tidak
+    // butuh body baris hasil update -- PostgREST defaultnya balas 204 kosong.
+    // Tapi untuk PATCH kondisional (window._pushSingleTxConditional di
+    // js/sync-conflict.js), kita HARUS tahu persis berapa baris yang kena
+    // filter (0 = kondisi tidak cocok = row sudah berubah di device lain
+    // sejak terakhir kita lihat -> konflik; 1 = update kita berhasil bersih).
+    // options.returnRepresentation memaksa PostgREST mengembalikan baris yang
+    // benar-benar ter-update, supaya panjang array itu bisa dipakai sebagai
+    // sinyal konflik yang pasti (bukan asumsi).
+    if (options && options.returnRepresentation) headers['Prefer'] = 'return=representation';
+    const config = { method: method, headers: headers };
+    if (body) config.body = JSON.stringify(body);
+    try {
+        const res = await fetch(url, config);
+        if (!res.ok) {
+            const errText = await res.text();
+            const err = new Error(errText);
+            err.status = res.status;
+            throw err;
+        }
+        const text = await res.text();
+        return text ? JSON.parse(text) : true;
+    } catch (e) {
+        console.error(`Supabase API Error (${table}):`, e);
+        // [FIX] Sebelumnya kegagalan (selain offline) selalu diam-diam --
+        // cuma masuk console, tidak pernah kelihatan oleh user. Ini yang
+        // membuat masalah seperti "constraint on_conflict tidak ada di
+        // database" (lihat fix_settings_upsert.sql) tidak pernah ketahuan
+        // dan hanya terasa sebagai "data acak/tidak sinkron". Tampilkan
+        // toast (di-throttle 15 detik) supaya user tahu ada push/pull yang
+        // gagal, bukan cuma "kelihatan aneh".
+        if (window.isOnline() && window.showToast) {
+            const now = Date.now();
+            if (!window._lastSyncErrorToastAt || now - window._lastSyncErrorToastAt > 15000) {
+                window._lastSyncErrorToastAt = now;
+                const isConflictErr = e && e.status === 400 && /on conflict|constraint/i.test(e.message || '');
+                const msg = isConflictErr
+                    ? `Gagal sinkron tabel '${table}': constraint database belum di-setup. Jalankan fix_settings_upsert.sql di Supabase SQL Editor.`
+                    : `Gagal sinkron tabel '${table}' (${e && e.status ? e.status : 'network'}). Cek koneksi/URL/API key.`;
+                window.showToast(msg, 'error');
+            }
+        }
+        return null;
+    }
+};
+
+// ==================== ACCOUNT ISOLATION TAG ====================
+// Menghasilkan tag 8-karakter dari crypto_salt akun yang sedang aktif.
+// Tag ini di-embed ke setiap baris settings di Supabase, sehingga dua akun
+// berbeda yang menggunakan Supabase yang sama (URL + API key sama) tidak
+// bisa saling membaca data satu sama lain.
+//
+// Kenapa pakai salt? Karena salt sudah ada, unik per akun, dan sudah
+// tersimpan di cloud (tabel settings, key 'crypto_salt'). Tidak perlu
+// skema baru atau kolom tambahan di Supabase.
+//
+// Tag TIDAK dienkripsi (tidak perlu); nilai salt sendiri bukan rahasia —
+// yang rahasia adalah password yang dipakai untuk menurunkan AES key dari
+// salt itu.
+// Diekstrak dari getAccountTag() supaya bisa dipakai untuk salt akun MANAPUN
+// (tidak harus akun aktif) -- dibutuhkan oleh verifikasi password-terbaru
+// saat unlock akun lain yang sedang terkunci (lihat submitAccountUnlock di
+// account.js).
+window._accountTagFromSalt = function(saltB64) {
+    if (!saltB64) return null;
+    // Ambil 6 byte pertama dari salt (sudah 16 byte random), encode base64url
+    // tanpa padding -> 8 karakter yang URL-safe dan stabil selama salt tidak
+    // berubah. Cukup untuk isolasi; bukan secret.
+    try {
+        const bytes = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+        const slice = bytes.slice(0, 6);
+        const b64 = btoa(String.fromCharCode(...slice));
+        return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    } catch { return null; }
+};
+window.getAccountTag = function() {
+    return window._accountTagFromSalt(localStorage.getItem('sk_crypto_salt'));
+};
+
+// ==================== FIX: OR-NULL FILTER UNTUK BACA DATA ====================
+// SEBELUM PERBAIKAN INI: banyak query GET memakai `tag ? '&account_tag=eq.'+tag : ''`.
+// Itu BUKAN filter OR walau komentarnya bilang begitu -- PostgREST meng-AND-kan semua
+// parameter query, jadi begitu device mana pun sudah punya tag (hampir selalu, sejak
+// crypto_salt lokal ada), semua baris lama yang account_tag-nya masih NULL (dibuat
+// sebelum kolom ini ditambahkan, dan tidak pernah di-backfill) langsung tersaring habis
+// dan tidak pernah muncul lagi -- termasuk saat device baru join backend yang sama.
+//
+// window.tagOrFilter(tag) menghasilkan filter PostgREST yang benar-benar OR:
+// baris ber-tag SAMA milik akun ini, ATAU baris lama tanpa tag sama sekali.
+// Dipakai di semua query GET (baca) yang sebelumnya cuma AND-tag. Untuk operasi
+// DELETE/PATCH massal tetap sengaja pakai AND-tag saja (lebih aman kalau satu
+// backend Supabase dipakai lebih dari satu akun/password berbeda).
+window.tagOrFilter = function(tag) {
+    return tag ? `&or=(account_tag.eq.${tag},account_tag.is.null)` : '';
+};
+
+// ==================== MULTI-DEVICE CRYPTO BOOTSTRAP ====================
+// Salt PBKDF2 + nilai "check" terenkripsi disimpan di cloud (tabel `settings`,
+// book_id='global') TANPA dienkripsi ulang oleh sesi (memang tidak perlu:
+// salt bukan rahasia, dan checkB64 sudah berupa ciphertext AES-GCM yang
+// fungsinya sendiri adalah verifikasi password — lihat window.bootstrapCryptoForBackend
+// di crypto.js). Ini yang membuat semua perangkat yang memakai password sama
+// bisa menurunkan AES key yang SAMA, alih-alih masing-masing generate salt
+// acak sendiri (yang menyebabkan setting tidak pernah bisa saling didekripsi
+// lintas perangkat).
+window.pushCryptoSaltCheck = async function(saltB64, checkB64) {
+    if (!window.isOnline()) return false;
+    const now = new Date().toISOString();
+    const tag = window.getAccountTag();
+    const payload = [
+        { book_id: 'global', key: 'crypto_salt', value: saltB64, updated_at: now, ...(tag ? { account_tag: tag } : {}) },
+        { book_id: 'global', key: 'crypto_check', value: checkB64, updated_at: now, ...(tag ? { account_tag: tag } : {}) }
+    ];
+    // FIX PERMANEN: setelah unique constraint settings_unique_row (book_id, key,
+    // account_tag) dibuat di Supabase (lihat fix_settings_upsert.sql), parameter
+    // on_conflict di bawah membuat POST ini benar-benar meng-UPDATE baris yang
+    // sudah ada untuk tag ini, bukan selalu INSERT baris baru seperti sebelumnya.
+    // Kalau tag kosong (kasus push salt PERTAMA kali sebelum salt tersimpan ke
+    // localStorage, lihat bootstrapCryptoForBackend), tetap INSERT biasa seperti
+    // semula -- aman karena baris ber-tag NULL tidak dibatasi unique constraint.
+    const onConflict = tag ? '?on_conflict=book_id,key,account_tag' : '';
+    const result = await window.callSupabaseAPI('settings', 'POST', payload, onConflict);
+    return result !== null;
+};
+
+window.pullCryptoSaltCheck = async function(tagOverride) {
+    if (!window.isOnline()) return null;
+    const tag = tagOverride !== undefined ? tagOverride : window.getAccountTag();
+    // OR filter: ambil baris ber-tag milik akun ini ATAU baris lama tanpa tag.
+    // Penting untuk bootstrap multi-device: baris crypto_salt/check lama (NULL)
+    // harus bisa dibaca sebelum migrasi men-tag ulang baris tersebut.
+    const tagFilter = window.tagOrFilter(tag);
+    // FIX: tabel `settings` tidak punya unique constraint dan push selalu INSERT
+    // baris baru (bukan upsert sungguhan -- lihat catatan di pullAllSettings/
+    // reEncryptAllCloudSettings). Kalau setup/ganti password pernah tersubmit
+    // lebih dari sekali, bisa ada BEBERAPA baris crypto_salt/crypto_check untuk
+    // tag yang sama. Tanpa ORDER BY, rows.find() bisa mengambil baris LAMA/SALAH
+    // -- inilah penyebab device baru menurunkan AES key dari salt yang keliru
+    // walau url/anonkey/password sudah sama persis. order=updated_at.desc
+    // memastikan baris PERTAMA yang cocok untuk tiap key selalu yang terbaru.
+    const rows = await window.callSupabaseAPI('settings', 'GET', null, `?book_id=eq.global&key=in.(crypto_salt,crypto_check)${tagFilter}&order=updated_at.desc`);
+    if (!rows || !Array.isArray(rows) || rows.length === 0) return null;
+    const saltRow = rows.find(r => r.key === 'crypto_salt');
+    const checkRow = rows.find(r => r.key === 'crypto_check');
+    if (!saltRow || !checkRow || !saltRow.value || !checkRow.value) return null;
+    return { salt: saltRow.value, check: checkRow.value };
+};
+
+// ==================== VARIAN STRICT: bedakan "cloud kosong" vs "gagal cek" ====================
+// Dipakai KHUSUS oleh window.bootstrapCryptoForBackend (crypto.js) saat
+// memutuskan apakah boleh generate salt baru. pullCryptoSaltCheck() biasa di
+// atas mengembalikan null untuk 3 kondisi sekaligus: offline, request gagal,
+// ATAU memang belum ada data -- ambigu, dan berbahaya kalau dipakai untuk
+// memutuskan "generate salt baru": device yang sebenarnya cuma gagal konek
+// bisa keliru mengira dirinya device pertama, lalu bikin salt sendiri yang
+// berbeda dari salt asli yang sebenarnya sudah ada di cloud (persis kejadian
+// yang sudah pernah terjadi).
+//
+// Varian ini MELEMPAR Error (bukan diam-diam return null) untuk kondisi
+// offline/gagal cek, supaya pemanggil berhenti dan menampilkan pesan error
+// yang jelas ke user -- bukan lanjut generate salt baru. null hanya
+// dikembalikan kalau query ke Supabase BENAR-BENAR sukses dan hasilnya nol
+// baris (device pertama yang sah, aman generate salt baru).
+window.pullCryptoSaltCheckStrict = async function(tagOverride) {
+    if (!window.isOnline()) {
+        const err = new Error('Tidak ada koneksi internet -- tidak bisa memastikan apakah backend ini sudah pernah disetup dari device lain. Sambungkan internet dulu sebelum lanjut setup.');
+        err.code = 'OFFLINE';
+        throw err;
+    }
+    const tag = tagOverride !== undefined ? tagOverride : window.getAccountTag();
+    const tagFilter = window.tagOrFilter(tag);
+    const rows = await window.callSupabaseAPI('settings', 'GET', null, `?book_id=eq.global&key=in.(crypto_salt,crypto_check)${tagFilter}&order=updated_at.desc`);
+    if (rows === null) {
+        // callSupabaseAPI mengembalikan null saat request gagal (network error,
+        // Supabase down, url/anonkey salah, dll) -- BUKAN berarti tabelnya kosong.
+        const err = new Error('Gagal menghubungi Supabase untuk mengecek salt yang sudah ada. Cek lagi koneksi/URL/API key, jangan lanjutkan setup sampai ini berhasil.');
+        err.code = 'CHECK_FAILED';
+        throw err;
+    }
+    if (!Array.isArray(rows) || rows.length === 0) return null; // benar-benar kosong, aman generate salt baru
+    const saltRow = rows.find(r => r.key === 'crypto_salt');
+    const checkRow = rows.find(r => r.key === 'crypto_check');
+    if (!saltRow || !checkRow || !saltRow.value || !checkRow.value) return null;
+    return { salt: saltRow.value, check: checkRow.value };
+};
+
+// ==================== PUSH SETTINGS ====================
+// Semua nilai dienkripsi (AES-GCM) dengan kunci sesi sebelum dikirim ke cloud,
+// supaya isi tabel `settings` di Supabase tidak pernah berupa plain text
+// (sebelumnya hanya kredensial koneksi yang dienkripsi, isi setting tidak).
+//
+// PENTING: fungsi ini SEKARANG mengembalikan true/false sesuai hasil push
+// yang sebenarnya. Sebelumnya fungsi ini tidak pernah `return` apa pun,
+// sehingga semua pemanggil (saveDefaultBudgetToCloud, dst.) selalu menganggap
+// hasilnya gagal (`undefined` -> falsy) walau push-nya sebenarnya sukses.
+// Pemanggil yang melakukan `await window.pushSetting(...)` sekarang bisa
+// mempercayai nilai return-nya untuk menampilkan status yang akurat ke user.
+window.pushSetting = async function(key, value, bookId) {
+    if (!window.isOnline()) return false;
+    if (!window._sessionCryptoKey) {
+        console.warn(`[Sync] Crypto key sesi tidak tersedia, push '${key}' dibatalkan (mencegah kebocoran plain text ke cloud).`);
+        return false;
+    }
+    const plainJson = JSON.stringify(value);
+    const encryptedValue = await window.encryptStr(window._sessionCryptoKey, plainJson);
+    const tag = window.getAccountTag();
+    const payload = [{
+        book_id: bookId || window.currentBookId,
+        key: key,
+        value: encryptedValue,
+        updated_at: new Date().toISOString(),
+        ...(tag ? { account_tag: tag } : {})
+    }];
+    // FIX PERMANEN: sama seperti pushCryptoSaltCheck di atas -- setelah unique
+    // constraint settings_unique_row (book_id, key, account_tag) dibuat di
+    // Supabase (lihat fix_settings_upsert.sql), on_conflict membuat push ini
+    // benar-benar UPDATE baris yang sudah ada, bukan numpuk snapshot baru tiap
+    // kali. Ini yang menyebabkan bug "buku Debugging menutupi 7 buku asli":
+    // versi 'books' TERBARU (berdasar updated_at) selalu menang saat pull,
+    // padahal "terbaru" seharusnya = "hasil edit paling baru", bukan sekadar
+    // baris mana yang kebetulan ter-insert belakangan dari device manapun.
+    const onConflict = tag ? '?on_conflict=book_id,key,account_tag' : '';
+    const result = await window.callSupabaseAPI('settings', 'POST', payload, onConflict);
+    // callSupabaseAPI mengembalikan null kalau request gagal (lihat fungsi di atas).
+    // [FIX] Dulu fungsi ini cuma balikin true/false. Sekarang balikin `result`
+    // apa adanya (array baris hasil representasi server, atau null kalau
+    // gagal) -- tetap truthy/falsy sama seperti boolean lama (jadi semua
+    // pemanggil existing yang cuma cek `if (hasil)` tidak perlu diubah), TAPI
+    // pemanggil yang butuh nilai `updated_at` OTORITATIF dari SERVER (bukan
+    // `new Date()` milik device sendiri) sekarang bisa mengambilnya dari
+    // result[0].updated_at. Dipakai oleh saveFaseKehidupan() di render.js --
+    // lihat catatan di sana untuk kenapa ini penting (clock skew antar-device).
+    return result;
+};
+
+window.pushSettingBooks = async function() {
+    if (!window.isOnline()) return;
+    await window.pushSetting('books', window.books, 'global');
+    console.log('[Sync] Books saved to cloud:', window.books.length);
+};
+
+window.pushSettingBudgets = async function() {
+    if (!window.isOnline()) return;
+    const bud = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
+    await window.pushSetting('budgets', bud, window.currentBookId);
+    await window.pushSettingDefaultBudget();
+};
+
+window.pushSettingDefaultBudget = async function() {
+    if (!window.isOnline()) return;
+    const defaultBudget = window.getDefaultBudget(window.currentBookId);
+    await window.pushSetting('default_budget', defaultBudget, window.currentBookId);
+};
+
+window.pushSettingTelegram = async function() {
+    if (!window.isOnline()) return;
+    const cfg = await window.getTgConfig();
+    await window.pushSetting('telegram_config', { token: cfg.token, chatId: cfg.chatId, edgeUrl: cfg.edgeUrl }, 'global');
+};
+
+// ==================== RE-ENCRYPT SETTINGS (setelah ganti password) ====================
+// Dipanggil setelah window.setupNewPassword() mengganti salt + kunci sesi
+// (lihat changePassword() di settings.js dan saveNewAccount() di account.js).
+//
+// MASALAH yang diperbaiki: setupNewPassword() hanya meng-enkripsi-ulang
+// kredensial Supabase lokal. Baris-baris di tabel `settings` cloud (books,
+// budgets, default_budget, telegram_config) yang sudah terlanjur dienkripsi
+// dengan kunci LAMA tidak ikut diperbarui. Akibatnya pullAllSettings() ->
+// _decryptSettingValue() akan selalu gagal (OperationError) untuk baris
+// tersebut selamanya, lalu baris itu dilewati (JSON.parse gagal karena
+// hasil fallback bukan plain text, melainkan ciphertext lama) -> setting
+// itu berhenti tersinkron dari cloud sampai ada push baru di key yang sama.
+//
+// Fungsi ini mem-push ulang semua setting yang diketahui secara lokal,
+// dienkripsi dengan window._sessionCryptoKey yang BARU, supaya cloud
+// langsung konsisten dengan kunci yang baru saja diganti.
+window.reEncryptAllCloudSettings = async function() {
+    if (!window.isOnline() || !window._sessionCryptoKey) return;
+    try {
+        await window.pushSettingBooks();
+        const books = Array.isArray(window.books) ? window.books : [];
+        for (const b of books) {
+            const bud = JSON.parse(localStorage.getItem('sk_budgets_' + b.id) || '{}');
+            await window.pushSetting('budgets', bud, b.id);
+            const defBud = window.getDefaultBudget(b.id);
+            await window.pushSetting('default_budget', defBud, b.id);
+            const annBud = window.getAnnualBudget(b.id);
+            await window.pushSetting('annual_budget', annBud, b.id);
+            const hiddenCards = window.getHiddenCards ? window.getHiddenCards(b.id) : [];
+            await window.pushSetting('hidden_cards', hiddenCards, b.id);
+        }
+        await window.pushSettingTelegram();
+        console.log('[Sync] Re-enkripsi & push ulang semua setting ke cloud selesai (kunci baru).');
+    } catch (e) {
+        console.warn('[Sync] Gagal re-enkripsi setting cloud setelah ganti password:', e);
+    }
+};
+
+// ==================== HEAL STALE CLOUD SETTING ====================
+// Dipanggil saat load*FromCloud gagal JSON.parse hasil dekripsi (lihat
+// catatan di reEncryptAllCloudSettings di atas: baris cloud masih
+// terenkripsi kunci sesi LAMA, sehingga _decryptSettingValue() fallback
+// ke ciphertext mentah yang bukan JSON valid). Daripada baris itu macet
+// permanen sampai ada push manual, kita re-push data lokal yang masih
+// utuh (tidak terenkripsi password lama, localStorage selalu plain JSON)
+// ke cloud dengan kunci sesi SAAT INI, supaya percobaan load berikutnya
+// (atau dari device lain) langsung berhasil.
+window._healStaleCloudSetting = async function(key, bookId, localValue) {
+    if (!window.isOnline() || !window._sessionCryptoKey) return;
+    try {
+        const ok = await window.pushSetting(key, localValue, bookId);
+        if (ok) {
+            console.log(`[Sync] Heal: '${key}' (book ${bookId}) berhasil di-push ulang dengan kunci sesi saat ini.`);
+        }
+    } catch (e) {
+        console.warn(`[Sync] Heal gagal untuk '${key}' (book ${bookId}):`, e);
+    }
+};
+
+// ==================== PULL SETTINGS ====================
+// Mencoba dekripsi nilai dari cloud dengan kunci sesi. Jika gagal (data lama
+// dari sebelum migrasi enkripsi, masih plain text), pakai apa adanya sebagai
+// fallback supaya tidak memutus kompatibilitas dengan data yang sudah ada.
+window._decryptSettingValue = async function(rawValue) {
+    if (window._sessionCryptoKey) {
+        try {
+            return await window.decryptStr(window._sessionCryptoKey, rawValue);
+        } catch (e) {
+            console.log('[Sync] Data cloud terenkripsi kunci lama, akan di-heal otomatis.');
+        }
+    }
+    // Fallback: cek apakah rawValue adalah JSON valid (data lama sebelum enkripsi).
+    // Kalau bukan (masih ciphertext dari kunci lama), return null supaya pemanggil
+    // bisa skip / trigger heal — daripada melempar SyntaxError di JSON.parse().
+    try {
+        JSON.parse(rawValue);
+        return rawValue; // memang plain JSON (data lama, sebelum fitur enkripsi)
+    } catch {
+        console.log('[Sync] rawValue kunci lama (bukan JSON valid), return null — akan di-heal.');
+        return null;
+    }
+};
+
+window.pullAllSettings = async function() {
+    if (!window.isOnline()) return;
+    const tag = window.getAccountTag();
+    // OR filter: baris ber-tag milik akun ini ATAU baris lama tanpa tag (data sebelum
+    // fitur account_tag). Setelah migrasi selesai, semua baris sudah punya tag dan
+    // baris NULL tidak akan muncul lagi — filter ini aman dipakai permanen.
+    const tagFilter = window.tagOrFilter(tag);
+    const allRows = await window.callSupabaseAPI('settings', 'GET', null, `?order=updated_at.desc${tagFilter}`);
+    if (allRows && Array.isArray(allRows)) {
+        let booksUpdated = false;
+        let telegramUpdated = false;
+        let budgetUpdated = false;
+        let hasStaleRows = false; // ada baris cloud terenkripsi kunci lama
+        // ==== FIX: cegah baris riwayat lama menimpa balik data terbaru ====
+        // Tabel `settings` di sini TIDAK melakukan upsert sungguhan (lihat
+        // callSupabaseAPI: header 'Prefer: resolution=merge-duplicates' tanpa
+        // parameter 'on_conflict', dan payload push tidak pernah menyertakan
+        // 'id'). Akibatnya SETIAP penyimpanan (books, budgets, dst.) selalu
+        // INSERT baris baru, bukan menimpa baris lama -- jadi tabel ini bisa
+        // berisi banyak snapshot historis untuk (book_id, key) yang sama.
+        // Query di atas sudah diurutkan `updated_at.desc` (terbaru duluan),
+        // jadi baris PERTAMA yang ditemukan untuk kombinasi (book_id, key)
+        // tertentu adalah yang paling baru -- baris berikutnya untuk
+        // kombinasi yang sama WAJIB dilewati, kalau tidak, snapshot lama bisa
+        // menimpa balik data terbaru di akhir loop (mis. buku yang sudah
+        // dihapus muncul lagi).
+        const _seenSettingKeys = new Set();
+        for (const row of allRows) {
+            // crypto_salt & crypto_check bukan setting JSON terenkripsi biasa
+            // (lihat window.pushCryptoSaltCheck) -- jangan diproses di sini,
+            // supaya tidak memicu warning dekripsi & JSON.parse yang sia-sia.
+            if (row.key === 'crypto_salt' || row.key === 'crypto_check') continue;
+            const _rowDedupKey = (row.book_id || '') + '::' + row.key;
+            if (_seenSettingKeys.has(_rowDedupKey)) continue; // sudah ada versi lebih baru
+            _seenSettingKeys.add(_rowDedupKey);
+            let parsed;
+            const decryptedValue = await window._decryptSettingValue(row.value);
+            if (decryptedValue === null) {
+                // Baris ini terenkripsi kunci lama — tandai untuk heal setelah loop.
+                hasStaleRows = true;
+                continue;
+            }
+            try { parsed = JSON.parse(decryptedValue); } catch { continue; }
+            if (parsed === null || typeof parsed === 'undefined') { continue; } // JSON.parse(null) = null, skip
+            if (row.key === 'books' && Array.isArray(parsed) && parsed.length > 0) {
+                const cloudIds = new Set(parsed.map(b => b.id));
+                const localIds = new Set(window.books.map(b => b.id));
+                let changed = false;
+                let merged = parsed.map(cb => {
+                    const localBook = window.books.find(b => b.id === cb.id);
+                    if (!localBook) { changed = true; }
+                    else if (localBook.name !== cb.name) { changed = true; }
+                    return cb;
+                });
+                window.books.forEach(lb => {
+                    if (!cloudIds.has(lb.id)) {
+                        console.log('[Sync] Buku dihapus dari cloud, hapus lokal:', lb.name);
+                        localStorage.removeItem('sk_txs_' + lb.id);
+                        localStorage.removeItem('sk_budgets_' + lb.id);
+                        localStorage.removeItem('sk_logs_' + lb.id);
+                        localStorage.removeItem('sk_default_budget_' + lb.id);
+                        changed = true;
+                    }
+                });
+                if (changed) {
+                    window.books = merged;
+                    localStorage.setItem('sk_books', JSON.stringify(window.books));
+                    booksUpdated = true;
+                    if (!window.books.find(b => b.id === window.currentBookId) && window.books.length > 0) {
+                        window.currentBookId = window.books[0].id;
+                        localStorage.setItem('sk_current_book_id', window.currentBookId);
+                    }
+                }
+            }
+            if (row.key === 'telegram_config') {
+                // Simpan ke encrypted storage, bukan plain-text
+                await window.saveTelegramConfigEncrypted(
+                    parsed.token  || '',
+                    parsed.chatId || '',
+                    parsed.edgeUrl || ''
+                );
+                telegramUpdated = true;
+                window.updateTgStatusBadge();
+            }
+            if (row.key === 'budgets') {
+                // Guard: pastikan parsed adalah object valid, bukan null/primitive
+                const safeParsed = (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+                localStorage.setItem('sk_budgets_' + row.book_id, JSON.stringify(safeParsed));
+                if (row.book_id === window.currentBookId) {
+                    window.budgets = safeParsed;
+                    budgetUpdated = true;
+                }
+            }
+            if (row.key === 'default_budget') {
+                window.saveDefaultBudgetToLocal(row.book_id, parsed);
+                if (row.book_id === window.currentBookId) {
+                    budgetUpdated = true;
+                }
+            }
+            if (row.key === 'annual_budget') {
+                window.saveAnnualBudgetToLocal(row.book_id, parsed);
+                if (row.book_id === window.currentBookId) {
+                    budgetUpdated = true;
+                }
+            }
+            if (row.key === 'emergency_fund_months') {
+                const months = parseInt(parsed);
+                if (!isNaN(months) && months > 0) {
+                    localStorage.setItem('sk_emergency_fund_months_' + row.book_id, String(months));
+                    if (row.book_id === window.currentBookId) {
+                        budgetUpdated = true;
+                    }
+                }
+            }
+            if (row.key === 'hidden_cards') {
+                if (Array.isArray(parsed)) {
+                    localStorage.setItem('sk_hidden_cards_' + row.book_id, JSON.stringify(parsed));
+                    if (row.book_id === window.currentBookId) {
+                        budgetUpdated = true;
+                    }
+                }
+            }
+            if (row.key === 'fase_kehidupan') {
+                if (parsed && typeof parsed === 'object') {
+                    // [FIX CLOCK SKEW] Sebelumnya perbandingan "versi mana yang
+                    // menang" pakai parsed.updatedAt -- field DI DALAM JSON,
+                    // di-set dari jam DEVICE saat disimpan (new Date() di
+                    // render.js). Field itu tidak ke-cover trigger DB (trigger
+                    // cuma menjamin kolom updated_at di level BARIS, bukan isi
+                    // JSON-nya), jadi bug clock-skew yang sama seperti pada
+                    // transaksi/settings lain masih bisa terjadi di sini.
+                    // Sekarang pakai row.updated_at -- kolom asli tabel
+                    // `settings`, sudah dijamin server (lihat
+                    // sql/fix_server_side_updated_at.sql) -- dan disimpan
+                    // sebagai _serverUpdatedAt di cache lokal supaya
+                    // perbandingan berikutnya (termasuk saat push, lihat
+                    // saveFaseKehidupan di render.js) konsisten pakai jam yang
+                    // sama untuk semua device.
+                    const localRaw = localStorage.getItem('sk_fase_kehidupan_' + row.book_id);
+                    const localFase = localRaw ? JSON.parse(localRaw) : null;
+                    const localServerTime = localFase && localFase._serverUpdatedAt;
+                    if (!localFase || !localServerTime || row.updated_at > localServerTime) {
+                        localStorage.setItem('sk_fase_kehidupan_' + row.book_id, JSON.stringify({ ...parsed, _serverUpdatedAt: row.updated_at }));
+                        if (row.book_id === window.currentBookId) {
+                            budgetUpdated = true;
+                        }
+                    }
+                }
+            }
+            if (row.key === 'google_sheets_url') {
+                if (typeof parsed === 'string' && parsed) {
+                    localStorage.setItem('sk_google_sheets_url', parsed);
+                    const gsInput = document.getElementById('googleSheetsUrlInput');
+                    if (gsInput) gsInput.value = parsed;
+                } else {
+                    localStorage.removeItem('sk_google_sheets_url');
+                }
+            }
+        }
+        if (booksUpdated) {
+            window.updateBookSelectDropdown();
+        }
+        if (budgetUpdated) {
+            window.renderBudget();
+            window.updateFinancialCards && window.updateFinancialCards();
+            if (typeof window.updateFaseCard === 'function') window.updateFaseCard();
+            if (typeof window.renderForecastCard === 'function') window.renderForecastCard();
+            if (document.getElementById('budgetModal').classList.contains('show')) {
+                window.renderBudgetFormFields();
+            }
+        }
+        // Ada baris cloud yang terenkripsi kunci lama dan tidak bisa didekripsi.
+        // Push ulang semua setting dari localStorage ke cloud dengan kunci sesi saat ini,
+        // supaya baris-baris itu tertimpa dan pull berikutnya tidak memicu warning lagi.
+        if (hasStaleRows && window._sessionCryptoKey) {
+            console.log('[Sync] Terdeteksi data cloud kunci lama — memulai re-enkripsi otomatis...');
+            window.reEncryptAllCloudSettings().then(() => {
+                console.log('[Sync] Re-enkripsi otomatis selesai. Pull berikutnya tidak akan ada warning kunci lama.');
+            }).catch(e => {
+                console.warn('[Sync] Re-enkripsi otomatis gagal:', e);
+            });
+        }
+
+    }
+    window.updateSettingsSyncStatus('pull');
+};
+
+window.updateSettingsSyncStatus = function(direction) {
+    const el = document.getElementById('settingsSyncStatus');
+    if (!el) return;
+    const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const label = direction === 'pull' ? 'Ditarik dari cloud' : 'Disimpan ke cloud';
+    el.innerText = `Terakhir ${label}: ${now}`;
+};
+
+// ==================== MIGRASI ACCOUNT_TAG ====================
+// Dipanggil satu kali saat pertama kali user membuka app setelah update
+// ============================================================
+// DB.JS - FUNGSI KHUSUS UNTUK PAYMENT REMINDERS
+// ============================================================
+
+// ── PUSH PAYMENT REMINDER KE CLOUD ──
+window.pushPaymentReminderToCloud = async function(bookId, reminderData) {
+    if (!window.isOnline() || !bookId) return false;
+    
+    try {
+        const tag = window.getAccountTag ? window.getAccountTag() : null;
+        // [SECURITY] Enkripsi field sensitif -- lihat window.encodeCloudReminderPayload
+        // di crypto.js (fungsi ini tampaknya tidak lagi dipanggil di mana pun,
+        // sudah digantikan window.savePaymentReminder di payment-reminder.js,
+        // tapi tetap diamankan untuk berjaga-jaga).
+        const encPayload = window.encodeCloudReminderPayload ? await window.encodeCloudReminderPayload(reminderData) : null;
+        const payload = encPayload
+            ? { id: reminderData.id, book_id: bookId, enc_payload: encPayload, name: null, day: null, recurrence: null, month: null, note: null, created_at: reminderData.created_at, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) }
+            : { ...reminderData, book_id: bookId, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) };
+        
+        const result = await window.callSupabaseAPI('payment_reminders', 'POST', [payload]);
+        return !!result;
+    } catch (e) {
+        console.error('[DB] Gagal push payment reminder:', e);
+        return false;
+    }
+};
+
+// ── PULL PAYMENT REMINDER DARI CLOUD ──
+window.pullPaymentRemindersFromCloud = async function(bookId) {
+    if (!window.isOnline() || !bookId) return null;
+    
+    try {
+        const result = await window.callSupabaseAPI(
+            'payment_reminders',
+            'GET',
+            null,
+            `?book_id=eq.${bookId}&order=created_at.desc${window.tagOrFilter(window.getAccountTag ? window.getAccountTag() : null)}`
+        );
+        
+        if (result && Array.isArray(result)) {
+            localStorage.setItem('sk_payment_reminders_' + bookId, JSON.stringify(result));
+            return result;
+        }
+        return null;
+    } catch (e) {
+        console.error('[DB] Gagal pull payment reminders:', e);
+        return null;
+    }
+};
+
+// ── DELETE PAYMENT REMINDER DARI CLOUD ──
+window.deletePaymentReminderFromCloud = async function(reminderId, bookId) {
+    if (!window.isOnline() || !bookId) return false;
+    
+    try {
+        const result = await window.callSupabaseAPI(
+            'payment_reminders',
+            'DELETE',
+            null,
+            `?id=eq.${reminderId}&book_id=eq.${bookId}${(window.getAccountTag && window.getAccountTag()) ? '&account_tag=eq.' + window.getAccountTag() : ''}`
+        );
+        return !!result;
+    } catch (e) {
+        console.error('[DB] Gagal delete payment reminder:', e);
+        return false;
+    }
+};
