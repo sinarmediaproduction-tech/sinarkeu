@@ -188,7 +188,7 @@ window.renderCloudBackupList = function(backups) {
     if (!backups || backups.length === 0) { container.innerHTML = '<div style="color:var(--ink-faint); font-size:.7rem; text-align:center; padding:8px;">Belum ada cadangan cloud</div>'; return; }
     container.innerHTML = '';
     backups.forEach((b) => {
-        let typeBadge = b.backup_type === 'AUTO' ? '<span style="background:var(--success-lt);color:var(--success);padding:1px 6px;border-radius:8px;font-size:.6rem;font-weight:700;">AUTO</span>' : '<span style="background:var(--info-lt);color:var(--info);padding:1px 6px;border-radius:8px;font-size:.6rem;font-weight:700;">MANUAL</span>';
+        let typeBadge = b.backup_type === 'AUTO' ? '<span style="background:var(--success-lt);color:var(--success);padding:1px 6px;border-radius: var(--radius-sm);font-size:.6rem;font-weight:700;">AUTO</span>' : '<span style="background:var(--info-lt);color:var(--info);padding:1px 6px;border-radius: var(--radius-sm);font-size:.6rem;font-weight:700;">MANUAL</span>';
         let div = document.createElement('div');
         div.style = 'display:flex; justify-content:space-between; align-items:center; font-size:.7rem; padding:7px 0; border-bottom:1px solid var(--rule);';
         div.innerHTML = `<span>${window.escapeHtml(window.formatDateTime(b.created_at))} ${typeBadge} (${window.escapeHtml(String(b.tx_count))} Txs)</span><button class="btn-mini" onclick="window.restoreFromCloudBackup('${b.id}')">Restore</button>`;

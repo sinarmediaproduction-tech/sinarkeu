@@ -205,7 +205,7 @@ window.renderBudgetFormFields = function() {
     const currentBudget = effective.budget;
     const source = effective.source;
     const infoDiv = document.createElement('div');
-    infoDiv.style.cssText = 'font-size:.72rem; color:#666; margin-bottom:12px; padding:8px 12px; border-radius:6px; background:#f5f5f5;';
+    infoDiv.style.cssText = 'font-size:.72rem; color:#666; margin-bottom:12px; padding:8px 12px; border-radius: var(--radius-sm); background:#f5f5f5;';
     if (source === 'default') {
         infoDiv.innerHTML = '<b>Menggunakan Anggaran Bulanan</b> — Anda dapat mengubahnya di sini untuk membuat versi khusus bulan ini.';
         infoDiv.style.background = '#e3fcef';
@@ -446,7 +446,7 @@ window._renderAnnualRow = function(idx) {
             value="${row.amount ? Number(row.amount).toLocaleString('id-ID') : ''}"
             oninput="window.formatRupiah(this); window._annualBudgetRows[${idx}].amount = window.unRp(this.value); window.updateAnnualBudgetSummary();">
         ${isOnlyRow ? '' : `<button onclick="window.removeAnnualBudgetRow(${idx})" 
-            style="background:none; border:1.5px solid #de350b; color:#de350b; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:.85rem; flex-shrink:0;">Hapus</button>`}
+            style="background:none; border:1.5px solid #de350b; color:#de350b; border-radius: var(--radius-sm); padding:4px 10px; cursor:pointer; font-size:.85rem; flex-shrink:0;">Hapus</button>`}
     `;
     container.appendChild(div);
 };

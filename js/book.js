@@ -298,8 +298,8 @@ window.renderStorageBar = function(usedBytes, totalBytes, label) {
                 <span style="font-size:.7rem; font-weight:600; color:#333;">${label}</span>
                 <span style="font-size:.68rem; color:#555;">${window.formatBytes(usedBytes)} / ${window.formatBytes(totalBytes)} &nbsp;·&nbsp; <b style="color:${colorClass}">${pct.toFixed(1)}%</b></span>
             </div>
-            <div style="height:8px; background:#dde8ff; border-radius:4px; overflow:hidden;">
-                <div style="height:100%; width:${pct}%; background:${colorClass}; border-radius:4px; transition:width .4s;"></div>
+            <div style="height:8px; background:#dde8ff; border-radius: var(--radius-sm); overflow:hidden;">
+                <div style="height:100%; width:${pct}%; background:${colorClass}; border-radius: var(--radius-sm); transition:width .4s;"></div>
             </div>
             <div style="font-size:.63rem; color:#888; margin-top:3px; text-align:right;">Sisa: ${window.formatBytes(totalBytes - usedBytes)}</div>
         </div>`;
@@ -328,7 +328,7 @@ window.refreshStorageEstimate = async function() {
                                        'Kapasitas masih aman.';
     el.innerHTML = `
         ${dbBar}
-        <div style="background:#f5f5f5; border-radius:8px; padding:10px 12px; font-size:.68rem; color:#444; line-height:1.8; margin-bottom:10px;">
+        <div style="background:#f5f5f5; border-radius: var(--radius-sm); padding:10px 12px; font-size:.68rem; color:#444; line-height:1.8; margin-bottom:10px;">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px 16px;">
                 <span>Transaksi</span><b>${txCount.toLocaleString('id-ID')} baris</b>
                 <span>Log Aktivitas</span><b>${logCount.toLocaleString('id-ID')} baris</b>
@@ -336,7 +336,7 @@ window.refreshStorageEstimate = async function() {
                 <span>Total Baris</span><b>${totalRows.toLocaleString('id-ID')} baris</b>
             </div>
         </div>
-        <div style="font-size:.68rem; color:${statusColor}; font-weight:600; text-align:center; padding:4px 8px; background:${pctNum>=90?'#fff5f5':pctNum>=70?'#fffbeb':'#e3fcef'}; border-radius:6px;">
+        <div style="font-size:.68rem; color:${statusColor}; font-weight:600; text-align:center; padding:4px 8px; background:${pctNum>=90?'#fff5f5':pctNum>=70?'#fffbeb':'#e3fcef'}; border-radius: var(--radius-sm);">
             ${statusText}
         </div>
         <div style="font-size:.6rem; color:#aaa; margin-top:8px; text-align:right;">
@@ -429,13 +429,13 @@ window.openTutupAnakBuku = function() {
     if (el) {
         if (txCount === 0) {
             el.innerHTML = `
-                <div style="background:#fff7e6; border:1px solid #ffd591; border-radius:8px; padding:12px 14px; font-size:.78rem; line-height:1.8; color:#946200;">
+                <div style="background:#fff7e6; border:1px solid #ffd591; border-radius: var(--radius-sm); padding:12px 14px; font-size:.78rem; line-height:1.8; color:#946200;">
                     Tidak ada transaksi baru ${window.escapeHtml(sinceLabel)}. Tidak ada yang perlu dikirim ke buku induk.
                 </div>
             `;
         } else {
             el.innerHTML = `
-                <div style="background:#f3e8ff; border:1px solid #d6bcfa; border-radius:8px; padding:12px 14px; font-size:.78rem; line-height:1.8;">
+                <div style="background:#f3e8ff; border:1px solid #d6bcfa; border-radius: var(--radius-sm); padding:12px 14px; font-size:.78rem; line-height:1.8;">
                     <div><b>Anak Buku:</b> ${window.escapeHtml(book.name)}</div>
                     <div><b>Kirim ke Induk:</b> ${window.escapeHtml(parentBook.name)}</div>
                     <div style="font-size:.68rem; color:#6b46c1; margin-top:2px;">Dihitung ${window.escapeHtml(sinceLabel)}</div>

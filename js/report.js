@@ -117,8 +117,8 @@ async function generateMonthlyReport() {
         const budget = budgets[c] || 0;
         const pct    = budget > 0 ? Math.min(100, Math.round(v / budget * 100)) : null;
         const bar    = budget > 0
-          ? `<div style="height:6px;border-radius:3px;background:${C.barBg};margin-top:3px;">
-               <div style="height:6px;border-radius:3px;background:${pct >= 100 ? C.expTxt : pct >= 80 ? (dk ? '#E0A850' : '#ff991f') : C.incTxt};width:${pct}%;"></div>
+          ? `<div style="height:6px;border-radius: var(--radius-sm);background:${C.barBg};margin-top:3px;">
+               <div style="height:6px;border-radius: var(--radius-sm);background:${pct >= 100 ? C.expTxt : pct >= 80 ? (dk ? '#E0A850' : '#ff991f') : C.incTxt};width:${pct}%;"></div>
              </div>` : '';
         return `<tr>
           <td style="padding:8px 10px; color:${C.ink};">${c}</td>
@@ -141,22 +141,22 @@ async function generateMonthlyReport() {
 
       <!-- Summary cards -->
       <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px;">
-        <div style="background:${C.incBg}; border:1.5px solid ${C.incBd}; border-radius:10px; padding:14px 16px;">
+        <div style="background:${C.incBg}; border:1.5px solid ${C.incBd}; border-radius: var(--radius-sm); padding:14px 16px;">
           <div style="font-size:.65rem; color:${C.incTxt}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Total Pemasukan</div>
           <div style="font-size:1rem; font-weight:700; color:${C.incTxt}; margin-top:4px;">${fmtRp(income)}</div>
         </div>
-        <div style="background:${C.expBg}; border:1.5px solid ${C.expBd}; border-radius:10px; padding:14px 16px;">
+        <div style="background:${C.expBg}; border:1.5px solid ${C.expBd}; border-radius: var(--radius-sm); padding:14px 16px;">
           <div style="font-size:.65rem; color:${C.expTxt}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Total Pengeluaran</div>
           <div style="font-size:1rem; font-weight:700; color:${C.expTxt}; margin-top:4px;">${fmtRp(expense)}</div>
         </div>
-        <div style="background:${balance >= 0 ? C.balPosBg : C.expBg}; border:1.5px solid ${balance >= 0 ? C.balPosBd : C.expBd}; border-radius:10px; padding:14px 16px;">
+        <div style="background:${balance >= 0 ? C.balPosBg : C.expBg}; border:1.5px solid ${balance >= 0 ? C.balPosBd : C.expBd}; border-radius: var(--radius-sm); padding:14px 16px;">
           <div style="font-size:.65rem; color:${balance >= 0 ? C.balPosTxt : C.expTxt}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Saldo Bersih</div>
           <div style="font-size:1rem; font-weight:700; color:${balance >= 0 ? C.balPosTxt : C.expTxt}; margin-top:4px;">${fmtRp(balance)}</div>
         </div>
       </div>
 
       ${totalBudget > 0 ? `
-      <div style="background:${C.budgetBg}; border:1.5px solid ${C.budgetBd}; border-radius:10px; padding:12px 16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+      <div style="background:${C.budgetBg}; border:1.5px solid ${C.budgetBd}; border-radius: var(--radius-sm); padding:12px 16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
         <div>
           <div style="font-size:.65rem; color:${C.budgetTxt}; font-weight:600;">Total Anggaran Bulan Ini</div>
           <div style="font-size:.95rem; font-weight:700; color:${C.budgetTxt};">${fmtRp(totalBudget)}</div>
@@ -169,7 +169,7 @@ async function generateMonthlyReport() {
 
       <!-- Kategori -->
       <div style="font-size:.78rem; font-weight:700; margin-bottom:8px; color:${C.inkMuted}; text-transform:uppercase; letter-spacing:.5px;">Pengeluaran per Kategori</div>
-      <div style="border:1.5px solid ${C.rule}; border-radius:10px; overflow:hidden; margin-bottom:20px;">
+      <div style="border:1.5px solid ${C.rule}; border-radius: var(--radius-sm); overflow:hidden; margin-bottom:20px;">
         <table style="width:100%; border-collapse:collapse; font-size:.78rem;">
           <thead>
             <tr style="background:${C.thead}; text-align:left;">
@@ -185,7 +185,7 @@ async function generateMonthlyReport() {
 
       <!-- Daftar transaksi -->
       <div style="font-size:.78rem; font-weight:700; margin-bottom:8px; color:${C.inkMuted}; text-transform:uppercase; letter-spacing:.5px;">Daftar Transaksi (${allTx.length} transaksi)</div>
-      <div style="border:1.5px solid ${C.rule}; border-radius:10px; overflow:hidden;">
+      <div style="border:1.5px solid ${C.rule}; border-radius: var(--radius-sm); overflow:hidden;">
         <table style="width:100%; border-collapse:collapse; font-size:.75rem;">
           <thead>
             <tr style="background:${C.thead};">
@@ -297,8 +297,8 @@ async function exportReportAsPDF() {
         <td class="money">${bud > 0 ? fmtRp(bud) : '—'}</td>
         <td class="center">${bud > 0 ? `${pct}%` : '—'}</td>
         <td style="padding:5.5px 6px;">
-          ${bud > 0 ? `<div style="height:7px;border-radius:4px;background:${CPDF.barBg};">
-            <div style="height:7px;border-radius:4px;background:${barColor};width:${pct}%;"></div>
+          ${bud > 0 ? `<div style="height:7px;border-radius: var(--radius-sm);background:${CPDF.barBg};">
+            <div style="height:7px;border-radius: var(--radius-sm);background:${barColor};width:${pct}%;"></div>
           </div>` : ''}
         </td>
       </tr>`;
@@ -395,7 +395,7 @@ async function exportReportAsPDF() {
     margin-bottom: 4px;
   }
   .kpi {
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 12px 14px;
     border-left: 3px solid transparent;
   }
@@ -424,7 +424,7 @@ async function exportReportAsPDF() {
   .budget-alert {
     background: #fffbe6;
     border: 1px solid #ffe58f;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     padding: 10px 14px;
     margin: 10px 0;
     display: flex;
@@ -468,7 +468,7 @@ async function exportReportAsPDF() {
   /* ── Table wrapper ── */
   .tbl-wrap {
     border: 1.5px solid #e0e0e0;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
   }
 

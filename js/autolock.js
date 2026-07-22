@@ -31,7 +31,7 @@
             'background:#1a1a1a',
             'color:#fff',
             'padding:10px 18px',
-            'border-radius:10px',
+            'border-radius: var(--radius-sm)',
             'font-size:.78rem',
             'font-weight:600',
             'z-index:9999',

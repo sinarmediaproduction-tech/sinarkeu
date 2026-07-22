@@ -415,7 +415,7 @@ window.renderPaymentReminders = async function() {
         const dayLabel = days === 0 ? 'Hari ini!' : `${days} hari lagi`;
         
         const el = document.createElement('div');
-        el.style.cssText = `display:flex; align-items:center; gap:10px; background:${isUrgent ? 'var(--warning-lt)' : 'var(--paper-warm)'}; border:1.5px solid ${isUrgent ? 'var(--warning)' : 'var(--rule)'}; border-radius:8px; padding:10px 12px;`;
+        el.style.cssText = `display:flex; align-items:center; gap:10px; background:${isUrgent ? 'var(--warning-lt)' : 'var(--paper-warm)'}; border:1.5px solid ${isUrgent ? 'var(--warning)' : 'var(--rule)'}; border-radius: var(--radius-sm); padding:10px 12px;`;
         el.innerHTML = `
             <div style="flex:1; min-width:0;">
                 <div style="font-size:.8rem; font-weight:700; color:var(--ink);">${window.escapeHtml(item.name)}</div>
@@ -424,8 +424,8 @@ window.renderPaymentReminders = async function() {
             </div>
             <div style="font-size:.68rem; font-weight:700; white-space:nowrap; color:${isUrgent ? 'var(--warning)' : 'var(--ink-muted)'};">${dayLabel}</div>
             <div style="display:flex; gap:4px;">
-                <button onclick="window.editPaymentReminder('${item.id}')" style="background:none; border:1px solid var(--rule); border-radius:5px; padding:3px 7px; cursor:pointer; font-size:.7rem; color:var(--ink-muted);" title="Edit">Edit</button>
-                <button onclick="window.deletePaymentReminderHandler('${item.id}')" style="background:none; border:1px solid var(--danger-lt); border-radius:5px; padding:3px 7px; cursor:pointer; font-size:.7rem; color:var(--danger);" title="Hapus">Hapus</button>
+                <button onclick="window.editPaymentReminder('${item.id}')" style="background:none; border:1px solid var(--rule); border-radius: var(--radius-sm); padding:3px 7px; cursor:pointer; font-size:.7rem; color:var(--ink-muted);" title="Edit">Edit</button>
+                <button onclick="window.deletePaymentReminderHandler('${item.id}')" style="background:none; border:1px solid var(--danger-lt); border-radius: var(--radius-sm); padding:3px 7px; cursor:pointer; font-size:.7rem; color:var(--danger);" title="Hapus">Hapus</button>
             </div>
         `;
         container.appendChild(el);
