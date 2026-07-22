@@ -1468,28 +1468,6 @@ alter table public.settings
 
 <!-- ===== MOBILE DRAWER ===== -->
 <div id="mobileDrawerOverlay" class="mdrawer-overlay" onclick="closeMobileDrawer()"></div>
-<div id="mobileDrawer" class="mdrawer">
-    <div class="mdrawer-header">
-        <span class="mdrawer-header-title" data-i18n="menu">Menu</span>
-        <button class="mdrawer-close" onclick="closeMobileDrawer()" aria-label="Tutup">×</button>
-    </div>
-    <div class="mdrawer-account">
-        <div class="mdrawer-account-label">Akun Aktif</div>
-        <div id="drawerAccountLabel" class="mdrawer-account-value">—</div>
-    </div>
-    <div class="mdrawer-body">
-        <button class="mdrawer-btn mdrawer-btn-primary" onclick="drawerAction(openBookManager)" data-i18n="manage_book">Kelola Buku</button>
-        <button class="mdrawer-btn mdrawer-btn-success" onclick="drawerAction(forceFullSync)" data-i18n="sync">Sinkronisasi</button>
-        <button class="mdrawer-btn mdrawer-btn-neutral" onclick="drawerAction(openSetelanModal)" data-i18n="settings">Setelan</button>
-        <button class="mdrawer-btn mdrawer-btn-warning" onclick="drawerAction(openPaymentReminderModal)">
-            <span data-i18n="payment_reminder">Pengingat Pembayaran</span>
-            <span id="drawerReminderBadge" class="mdrawer-badge"></span>
-        </button>
-        <div class="mdrawer-divider"></div>
-        <button class="mdrawer-btn mdrawer-btn-outline" onclick="drawerAction(logoutToLockScreen)" data-i18n="switch_account">Ganti Akun</button>
-        <button class="mdrawer-btn mdrawer-btn-outline" id="drawerDarkBtn" onclick="window.toggleDarkMode(); document.getElementById('drawerDarkLabel').textContent = document.documentElement.getAttribute('data-theme')==='dark' ? '☀️ Mode Terang' : '🌙 Mode Gelap';"><span id="drawerDarkLabel">🌙 Mode Gelap</span></button>
-    </div>
-</div>
 
 <!-- ===== MODAL PENGINGAT PEMBAYARAN ===== -->
 <div id="paymentReminderModal" class="modal" style="z-index:2000;">
