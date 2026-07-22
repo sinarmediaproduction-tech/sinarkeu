@@ -98,14 +98,15 @@ window.render = function() {
 // Memungkinkan setiap card di bagian "FINANCIAL PLANNING CARDS" dinonaktifkan
 // (disembunyikan) secara independen untuk buku tertentu. Disimpan & disinkronkan
 // dengan pola yang sama seperti window.getEmergencyFundMonths() di bawah.
-window.FINANCIAL_CARD_IDS = ['cardAnggaranBulanan', 'cardAnggaranTahunan', 'cardDanaDarurat', 'cardKebutuhanSetahun', 'cardFaseKehidupan', 'cardDanaSalingJaga'];
+window.FINANCIAL_CARD_IDS = ['cardAnggaranBulanan', 'cardAnggaranTahunan', 'cardDanaDarurat', 'cardKebutuhanSetahun', 'cardFaseKehidupan', 'cardDanaSalingJaga', 'forecastCard'];
 window.FINANCIAL_CARD_LABELS = {
     cardAnggaranBulanan: 'monthly_budget',
     cardAnggaranTahunan: 'annual_budget',
     cardDanaDarurat: 'emergency_fund',
     cardKebutuhanSetahun: 'annual_needs',
     cardFaseKehidupan: 'life_phase',
-    cardDanaSalingJaga: 'mutual_fund'
+    cardDanaSalingJaga: 'mutual_fund',
+    forecastCard: 'financial_estimate'
 };
 window.getHiddenCards = function(bookId) {
     const raw = localStorage.getItem('sk_hidden_cards_' + (bookId || window.currentBookId));
