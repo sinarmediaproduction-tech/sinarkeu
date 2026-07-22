@@ -1147,18 +1147,29 @@ tr:hover td { background: var(--paper-warm); }
 }
 .setelan-modal-content .modal-header { flex: 0 0 auto; }
 
+.setelan-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .setelan-tabs {
   flex: 0 0 auto;
   display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 34vh;
   padding: 2px 2px 12px;
-  margin-bottom: 16px;
+  margin-bottom: 0;
   border-bottom: 1px solid var(--rule);
   scrollbar-width: thin;
 }
-.setelan-tabs::-webkit-scrollbar { height: 4px; }
+.setelan-tabs::-webkit-scrollbar { width: 4px; }
 .setelan-tabs::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 4px; }
 
 .setelan-tab-btn {
@@ -1166,14 +1177,16 @@ tr:hover td { background: var(--paper-warm); }
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  width: 100%;
+  padding: 9px 14px;
   font-size: .68rem;
   font-weight: 600;
   font-family: inherit;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: left;
   background: var(--paper-warm);
   border: 1px solid var(--rule);
-  border-radius: 20px;
+  border-radius: 6px;
   color: var(--ink-muted);
   cursor: pointer;
   transition: background .15s, color .15s, border-color .15s;
@@ -1193,6 +1206,21 @@ tr:hover td { background: var(--paper-warm); }
 
 .setelan-tab-panel { display: none; }
 .setelan-tab-panel.active { display: block; }
+
+@media (min-width: 768px) {
+  .setelan-body {
+    flex-direction: row;
+    gap: 20px;
+  }
+  .setelan-tabs {
+    flex: 0 0 200px;
+    max-height: none;
+    padding: 2px 12px 2px 2px;
+    border-bottom: none;
+    border-right: 1px solid var(--rule);
+  }
+  .setelan-tab-content { padding-left: 4px; }
+}
 
 /* ── App Sidebar: Dashboard / Pengaturan (Desktop, >=1024px) ── */
 #appSidebar { display: none; }
@@ -1290,16 +1318,13 @@ tr:hover td { background: var(--paper-warm); }
     display: block;
   }
   body.view-settings #setelanModal .modal-close { display: none; }
-  body.view-settings #setelanModal .setelan-tabs {
-    flex-direction: row;
-    overflow-x: auto;
-    overflow-y: visible;
-    max-height: none;
-    border-right: none;
+  body.view-settings #setelanModal .setelan-body {
+    align-items: flex-start;
   }
-  body.view-settings #setelanModal .setelan-tab-btn {
-    width: auto;
-    white-space: nowrap;
+  body.view-settings #setelanModal .setelan-tabs {
+    max-height: none;
+    position: sticky;
+    top: 0;
   }
   body.view-settings #setelanModal .setelan-tab-content { max-height: none; }
 }
