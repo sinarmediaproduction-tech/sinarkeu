@@ -507,26 +507,26 @@ alter table public.settings
             <div class="stat-label" data-i18n="total_expense">Total Pengeluaran</div>
             <div class="stat-value" id="statExpense">Rp 0</div>
         </div>
-        <div class="stat-card" id="forexCard" style="border-color:var(--info);">
-            <div class="stat-label" style="color:var(--info);" data-i18n="usd_rate">Kurs USD/IDR</div>
-            <div class="stat-value" id="forexRate" style="color:var(--info); font-size:1.333rem;">Memuat...</div>
+        <div class="stat-card" id="forexCard">
+            <div class="stat-label" data-i18n="usd_rate">Kurs USD/IDR</div>
+            <div class="stat-value" id="forexRate" style="font-size:1.333rem;">Memuat...</div>
             <div style="font-size:.6rem; color:var(--ink-faint); margin-top:4px;" id="forexSource"></div>
         </div>
-        <div class="stat-card" id="goldCard" style="border-color:var(--warning);">
-            <div class="stat-label" style="color:var(--warning);" data-i18n="gold_per_gram">Emas / gram</div>
-            <div class="stat-value" id="goldPrice" style="color:var(--warning); font-size:1.333rem;">Memuat...</div>
+        <div class="stat-card" id="goldCard">
+            <div class="stat-label" data-i18n="gold_per_gram">Emas / gram</div>
+            <div class="stat-value" id="goldPrice" style="font-size:1.333rem;">Memuat...</div>
             <div style="font-size:.6rem; color:var(--ink-faint); margin-top:4px;">
                 <span id="goldSource"></span>
-                <span id="goldRefreshBtn" onclick="window.fetchGoldPrice(true)" title="Perbarui sekarang (memakai kuota API)" style="cursor:pointer; color:var(--warning); margin-left:4px; display:none;">⟳</span>
+                <span id="goldRefreshBtn" onclick="window.fetchGoldPrice(true)" title="Perbarui sekarang (memakai kuota API)" style="cursor:pointer; color:var(--ink-muted); margin-left:4px; display:none;">⟳</span>
             </div>
-            <div id="goldValueRow" style="display:none; margin-top:6px; padding-top:6px; border-top:1px dashed var(--warning);">
-                <div style="font-size:.6rem; color:var(--warning); font-weight:600;" id="goldValueLabel"></div>
-                <div style="font-size:.85rem; font-weight:700; color:var(--warning);" id="goldValue"></div>
+            <div id="goldValueRow" style="display:none; margin-top:6px; padding-top:6px; border-top:1px dashed var(--rule);">
+                <div style="font-size:.6rem; color:var(--ink-muted); font-weight:600;" id="goldValueLabel"></div>
+                <div style="font-size:.85rem; font-weight:700; color:var(--ink);" id="goldValue"></div>
             </div>
         </div>
-        <div class="stat-card" id="zakatCard" style="border-color:var(--success); display:none;">
-            <div class="stat-label" style="color:var(--success);" data-i18n="charity_fund">Dana Sedekah</div>
-            <div class="stat-value" id="zakatValue" style="color:var(--success); font-size:1.333rem;">Rp 0</div>
+        <div class="stat-card" id="zakatCard" style="display:none;">
+            <div class="stat-label" data-i18n="charity_fund">Dana Sedekah</div>
+            <div class="stat-value" id="zakatValue" style="font-size:1.333rem;">Rp 0</div>
             <div style="font-size:.6rem; color:var(--ink-faint); margin-top:4px;" id="zakatSource"></div>
         </div>
     </div>
