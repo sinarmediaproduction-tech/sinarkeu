@@ -44,7 +44,7 @@
   --row-alt:    #FAF7F2;
   /* Shape & elevation */
   --radius-sm:  10px;
-  --radius:     16px;
+  --radius:     6px;
   --radius-lg:  22px;
   --radius-pill: 999px;
   --shadow-sm:  0 2px 8px rgba(120,104,90,0.06);

@@ -533,40 +533,40 @@ alter table public.settings
 
     <!-- ===== FINANCIAL PLANNING CARDS ===== -->
     <div class="stats-grid" style="margin-top:10px;">
-        <div class="stat-card" id="cardAnggaranBulanan" style="border-top:3px solid var(--info); cursor:pointer;" onclick="window.openDefaultBudgetModal()" title="Klik untuk atur anggaran bulanan">
-            <div class="stat-label"><span data-i18n="monthly_budget">Anggaran Bulanan</span> <span style="font-size:.6rem; background:var(--info-lt); color:var(--info); padding:1px 6px; border-radius: var(--radius-sm); margin-left:4px;" data-i18n="set">Atur</span></div>
-            <div class="stat-value" id="fcAnggaranBulanan" style="color:var(--info);">Rp 0</div>
+        <div class="stat-card" id="cardAnggaranBulanan" style="cursor:pointer;" onclick="window.openDefaultBudgetModal()" title="Klik untuk atur anggaran bulanan">
+            <div class="stat-label"><span data-i18n="monthly_budget">Anggaran Bulanan</span> <span style="font-size:.6rem; background:var(--rule); color:var(--ink-muted); padding:1px 6px; border-radius: var(--radius-sm); margin-left:4px;" data-i18n="set">Atur</span></div>
+            <div class="stat-value" id="fcAnggaranBulanan">Rp 0</div>
             <div style="font-size:.65rem; color:var(--ink-faint); margin-top:4px;" data-i18n="monthly_template">Template per kategori, berlaku tiap bulan</div>
         </div>
-        <div class="stat-card" id="cardAnggaranTahunan" style="border-top:3px solid var(--purple); cursor:pointer;" onclick="openAnnualBudgetModal()" title="Klik untuk atur anggaran tahunan">
-            <div class="stat-label"><span data-i18n="annual_budget">Anggaran Tahunan</span> <span style="font-size:.6rem; background:var(--purple-lt); color:var(--purple); padding:1px 6px; border-radius: var(--radius-sm); margin-left:4px;" data-i18n="set">Atur</span></div>
-            <div class="stat-value" id="fcAnggaranTahunan" style="color:var(--purple);">Rp 0</div>
+        <div class="stat-card" id="cardAnggaranTahunan" style="cursor:pointer;" onclick="openAnnualBudgetModal()" title="Klik untuk atur anggaran tahunan">
+            <div class="stat-label"><span data-i18n="annual_budget">Anggaran Tahunan</span> <span style="font-size:.6rem; background:var(--rule); color:var(--ink-muted); padding:1px 6px; border-radius: var(--radius-sm); margin-left:4px;" data-i18n="set">Atur</span></div>
+            <div class="stat-value" id="fcAnggaranTahunan">Rp 0</div>
             <div style="font-size:.65rem; color:var(--ink-faint); margin-top:4px;" data-i18n="annual_costs">Biaya tahunan: hari raya, pajak, dll</div>
         </div>
-        <div class="stat-card" id="cardDanaDarurat" style="border-top:3px solid var(--warning); cursor:pointer;" onclick="window.openEmergencyFundModal()" title="Klik untuk atur target dana darurat">
-            <div class="stat-label"><span data-i18n="emergency_fund">Dana Darurat</span> <span style="font-size:.6rem; background:var(--warning-lt); color:var(--warning); padding:1px 6px; border-radius: var(--radius-sm); margin-left:4px;" data-i18n="set">Atur</span></div>
-            <div class="stat-value" id="fcDanaDarurat" style="color:var(--warning);">Rp 0</div>
+        <div class="stat-card" id="cardDanaDarurat" style="cursor:pointer;" onclick="window.openEmergencyFundModal()" title="Klik untuk atur target dana darurat">
+            <div class="stat-label"><span data-i18n="emergency_fund">Dana Darurat</span> <span style="font-size:.6rem; background:var(--rule); color:var(--ink-muted); padding:1px 6px; border-radius: var(--radius-sm); margin-left:4px;" data-i18n="set">Atur</span></div>
+            <div class="stat-value" id="fcDanaDarurat">Rp 0</div>
             <div style="font-size:.65rem; color:var(--ink-faint); margin-top:4px;" id="fcDanaDaruratNote" data-i18n="emergency_ideal">12× anggaran bulanan (target ideal)</div>
         </div>
         <!-- ===== CARD CADANGAN WAJIB ===== -->
-        <div class="stat-card" id="cardKebutuhanSetahun" style="border-top:3px solid var(--warning);">
+        <div class="stat-card" id="cardKebutuhanSetahun">
             <div class="stat-label" data-i18n="annual_needs">Cadangan Wajib</div>
-            <div class="stat-value" id="fcKebutuhanSetahun" style="color:var(--warning);">Rp 0</div>
+            <div class="stat-value" id="fcKebutuhanSetahun">Rp 0</div>
             <div style="font-size:.65rem; color:var(--ink-faint); margin-top:4px;" data-i18n="annual_need_desc">Dana darurat + anggaran tahunan</div>
             <div id="fcKSGapInfo" style="display:none; margin-top:7px; padding:4px 8px; border-radius: var(--radius-sm); font-size:.65rem; font-weight:600; line-height:1.4;"></div>
         </div>
         <!-- ===== CARD FASE KEHIDUPAN ===== -->
-        <div class="stat-card" id="cardFaseKehidupan" style="border-top:3px solid var(--fase); cursor:pointer;" onclick="window.openFaseKehidupanModal()" title="Klik untuk atur fase kehidupan">
-            <div class="stat-label"><span data-i18n="life_phase">Fase Kehidupan</span> <span style="font-size:.6rem; background:var(--fase-lt); color:var(--fase); padding:1px 6px; border-radius: var(--radius-sm); margin-left:4px;" data-i18n="set">Atur</span></div>
-            <div style="font-size:1rem; font-weight:700; color:var(--fase); margin-top:4px; min-height:20px;" id="fcFaseNama" data-i18n="life_phase_not_set">Belum diatur</div>
+        <div class="stat-card" id="cardFaseKehidupan" style="cursor:pointer;" onclick="window.openFaseKehidupanModal()" title="Klik untuk atur fase kehidupan">
+            <div class="stat-label"><span data-i18n="life_phase">Fase Kehidupan</span> <span style="font-size:.6rem; background:var(--rule); color:var(--ink-muted); padding:1px 6px; border-radius: var(--radius-sm); margin-left:4px;" data-i18n="set">Atur</span></div>
+            <div style="font-size:1rem; font-weight:700; margin-top:4px; min-height:20px;" id="fcFaseNama" data-i18n="life_phase_not_set">Belum diatur</div>
             <div style="font-size:.62rem; color:var(--ink-faint); margin-top:4px; line-height:1.5;" id="fcFaseDesc" data-i18n="life_phase_click">Klik untuk mengatur fase kehidupan pernikahan Anda</div>
             <div style="margin-top:8px;">
-                <button onclick="event.stopPropagation(); window.runFaseAIAnalysis()" id="faseAIBtn" class="btn" style="font-size:.65rem; padding:3px 10px; background:var(--fase); color:#fff; border-color:var(--fase); display:none;">Analisis AI</button>
+                <button onclick="event.stopPropagation(); window.runFaseAIAnalysis()" id="faseAIBtn" class="btn" style="font-size:.65rem; padding:3px 10px; display:none;">Analisis AI</button>
             </div>
         </div>
-        <div class="stat-card" id="cardDanaSalingJaga" style="border-top:3px solid var(--success);">
+        <div class="stat-card" id="cardDanaSalingJaga">
             <div class="stat-label" data-i18n="mutual_fund">Dana Saling Jaga</div>
-            <div class="stat-value" id="fcDanaSalingJaga" style="color:var(--success);">Rp 0</div>
+            <div class="stat-value" id="fcDanaSalingJaga">Rp 0</div>
             <div style="font-size:.65rem; color:var(--ink-faint); margin-top:4px;" id="fcDSJNote" data-i18n="dsj_note">30% dari saldo setelah dana darurat</div>
         </div>
     </div>
