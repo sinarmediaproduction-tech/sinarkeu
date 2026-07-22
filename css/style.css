@@ -502,10 +502,8 @@ h1, h2, h3, h4,
   color: var(--ink);
 }
 
-.stat-card.income { border-top: 3px solid var(--success); }
-.stat-card.income .stat-value { color: var(--success); }
-.stat-card.expense { border-top: 3px solid var(--danger); }
-.stat-card.expense .stat-value { color: var(--danger); }
+.stat-card.income .stat-value,
+.stat-card.expense .stat-value { color: var(--ink); }
 
 /* ── Expense Chart Section ── */
 /* ── Forecast Card ── */
