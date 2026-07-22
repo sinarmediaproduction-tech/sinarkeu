@@ -415,11 +415,6 @@ alter table public.settings
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852 1 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         <span data-i18n="settings_title">Setelan</span>
     </button>
-    <button type="button" class="app-nav-item" id="navReminderBtn" onclick="openPaymentReminderModal()" style="position:relative;">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-        <span data-i18n="payment_reminder">Pengingat Pembayaran</span>
-        <span id="sidebarReminderBadge" class="app-nav-badge"></span>
-    </button>
 </div>
 
 <!-- ===== ACCOUNT BAR ===== -->
@@ -444,23 +439,22 @@ alter table public.settings
                 <button class="header-ai-btn" onclick="window.submitHeaderAI()" title="Kirim">→</button>
             </div>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
-            <button class="manage-books-btn desktop-only" id="kelolaBukuBtn" onclick="openBookManager()" data-i18n="manage_book">Kelola</button>
-            <button class="manage-books-btn desktop-only icon-btn" id="manualSyncBtn" style="background:none; border-color:transparent; color:var(--ink-faint);" onclick="forceFullSync()" title="Sinkronisasi" aria-label="Sinkronisasi">
+            <button class="manage-books-btn" id="kelolaBukuBtn" onclick="openBookManager()" data-i18n="manage_book">Kelola</button>
+            <button class="manage-books-btn icon-btn" id="manualSyncBtn" style="background:none; border-color:transparent; color:var(--ink-faint);" onclick="forceFullSync()" title="Sinkronisasi" aria-label="Sinkronisasi">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path></svg>
             </button>
-            <button class="manage-books-btn desktop-only icon-btn" id="darkModeToggle" onclick="window.toggleDarkMode()" title="Mode Gelap" aria-label="Mode Gelap">
+            <button class="manage-books-btn icon-btn" id="darkModeToggle" onclick="window.toggleDarkMode()" title="Mode Gelap" aria-label="Mode Gelap">
                 <svg id="darkModeIcon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
             </button>
-            <button class="manage-books-btn desktop-only icon-btn" id="setelanBtn" onclick="openSetelanModal()" style="background:none; border-color:transparent; color:var(--ink-faint);" title="Setelan" aria-label="Setelan">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852 1 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            </button>
-            <button class="manage-books-btn desktop-only icon-btn" id="reminderBtn" onclick="openPaymentReminderModal()" style="background:none; border-color:transparent; color:var(--ink-faint); position:relative;" title="Pengingat Pembayaran" aria-label="Pengingat Pembayaran">
+            <button class="manage-books-btn icon-btn" id="reminderBtn" onclick="openPaymentReminderModal()" style="background:none; border-color:transparent; color:var(--ink-faint); position:relative;" title="Pengingat Pembayaran" aria-label="Pengingat Pembayaran">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                 <span id="reminderBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:#fff; font-size:.55rem; font-weight:700; border-radius:50%; width:16px; height:16px; line-height:16px; text-align:center;"></span>
             </button>
-            <!-- [UI] Tombol "Ganti Akun" dihapus dari top bar desktop sesuai permintaan.
-                 Fungsi ganti akun tetap tersedia lewat menu mobile drawer (lihat index.html
-                 sekitar baris 1385, tombol dengan data-i18n="switch_account" yang sama). -->
+            <!-- [UI] Tombol "Setelan" topbar dihapus -- sudah digantikan menu "Pengaturan"
+                 di app sidebar (kiri), yang sekarang tampil di semua ukuran layar. -->
+            <!-- [UI] Tombol "Ganti Akun" tidak ada di topbar; tetap tersedia lewat
+                 Setelan > Perangkat Terhubung (lihat index.html sekitar baris 1385,
+                 tombol dengan data-i18n="switch_account"). -->
             <!-- [UI] Tombol hamburger dipindah ke posisi paling kiri top bar (lihat
                  di bawah, sekarang jadi elemen pertama dalam .book-selector) supaya
                  arahnya konsisten dengan drawer mobile yang sekarang membuka dari kiri. -->
@@ -1468,30 +1462,8 @@ alter table public.settings
     </div>
 </div>
 
-<!-- ===== MOBILE DRAWER ===== -->
+<!-- ===== OVERLAY SIDEBAR (mobile) ===== -->
 <div id="mobileDrawerOverlay" class="mdrawer-overlay" onclick="closeMobileDrawer()"></div>
-<div id="mobileDrawer" class="mdrawer">
-    <div class="mdrawer-header">
-        <span class="mdrawer-header-title" data-i18n="menu">Menu</span>
-        <button class="mdrawer-close" onclick="closeMobileDrawer()" aria-label="Tutup">×</button>
-    </div>
-    <div class="mdrawer-account">
-        <div class="mdrawer-account-label">Akun Aktif</div>
-        <div id="drawerAccountLabel" class="mdrawer-account-value">—</div>
-    </div>
-    <div class="mdrawer-body">
-        <button class="mdrawer-btn mdrawer-btn-primary" onclick="drawerAction(openBookManager)" data-i18n="manage_book">Kelola Buku</button>
-        <button class="mdrawer-btn mdrawer-btn-success" onclick="drawerAction(forceFullSync)" data-i18n="sync">Sinkronisasi</button>
-        <button class="mdrawer-btn mdrawer-btn-neutral" onclick="drawerAction(openSetelanModal)" data-i18n="settings">Setelan</button>
-        <button class="mdrawer-btn mdrawer-btn-warning" onclick="drawerAction(openPaymentReminderModal)">
-            <span data-i18n="payment_reminder">Pengingat Pembayaran</span>
-            <span id="drawerReminderBadge" class="mdrawer-badge"></span>
-        </button>
-        <div class="mdrawer-divider"></div>
-        <button class="mdrawer-btn mdrawer-btn-outline" onclick="drawerAction(logoutToLockScreen)" data-i18n="switch_account">Ganti Akun</button>
-        <button class="mdrawer-btn mdrawer-btn-outline" id="drawerDarkBtn" onclick="window.toggleDarkMode(); document.getElementById('drawerDarkLabel').textContent = document.documentElement.getAttribute('data-theme')==='dark' ? '☀️ Mode Terang' : '🌙 Mode Gelap';"><span id="drawerDarkLabel">🌙 Mode Gelap</span></button>
-    </div>
-</div>
 
 <!-- ===== MODAL PENGINGAT PEMBAYARAN ===== -->
 <div id="paymentReminderModal" class="modal" style="z-index:2000;">

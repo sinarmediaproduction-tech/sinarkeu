@@ -830,7 +830,24 @@ button:disabled, .btn:disabled,
 .hamburger-btn:hover { background: var(--paper-warm); border-color: var(--ink-faint); }
 .hamburger-btn:active { background: var(--rule); }
 
-/* ── Mobile Drawer ── */
+/* Tombol pemicu sidebar (hamburger) dipakai di rentang lebar 0-1023px,
+   mengikuti breakpoint sidebar (bukan breakpoint umum .mobile-only 640px) --
+   supaya tidak ada celah lebar tablet (641-1023px) tanpa cara membuka
+   sidebar untuk pindah ke menu Pengaturan. */
+.hamburger-btn-icon { display: inline-flex !important; }
+.hamburger-btn-icon {
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  flex-shrink: 0;
+}
+@media (min-width: 1024px) {
+  .hamburger-btn-icon { display: none !important; }
+}
+
+/* ── Sidebar Mobile Overlay (backdrop saat #appSidebar dibuka di layar sempit) ── */
 .mdrawer-overlay {
   position: fixed;
   inset: 0;
@@ -842,120 +859,6 @@ button:disabled, .btn:disabled,
   transition: opacity 0.25s;
 }
 
-.mdrawer {
-  position: fixed;
-  top: 0; left: 0;
-  height: 100%;
-  width: 82%;
-  max-width: 300px;
-  background: var(--paper);
-  z-index: 3001;
-  box-shadow: 4px 0 24px rgba(0,0,0,0.18);
-  border-right: 1.5px solid var(--rule);
-  border-left: none;
-  overflow-y: auto;
-  transform: translateX(-100%);
-  transition: transform 0.25s cubic-bezier(.4,0,.2,1);
-  display: flex;
-  flex-direction: column;
-}
-
-.mdrawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 18px 14px;
-  background: var(--ink);
-  color: var(--paper);
-  flex-shrink: 0;
-}
-.mdrawer-header-title { font-size: .9rem; font-weight: 700; }
-.mdrawer-close {
-  background: none;
-  border: none;
-  font-size: 1.4rem;
-  cursor: pointer;
-  color: inherit;
-  line-height: 1;
-  opacity: 0.85;
-}
-.mdrawer-close:hover { opacity: 1; }
-
-.mdrawer-account {
-  padding: 14px 18px;
-  background: var(--accent-lt);
-  border-bottom: 1px solid var(--accent);
-  flex-shrink: 0;
-}
-.mdrawer-account-label {
-  font-size: .62rem;
-  font-weight: 600;
-  color: var(--ink-muted);
-  text-transform: uppercase;
-  letter-spacing: .4px;
-  margin-bottom: 4px;
-}
-.mdrawer-account-value { font-size: .8rem; font-weight: 700; color: var(--ink); }
-
-.mdrawer-body {
-  padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  flex: 1;
-}
-
-.mdrawer-btn {
-  width: 100%;
-  padding: 13px 16px;
-  font-size: .85rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: inherit;
-  transition: background 0.15s, border-color 0.15s;
-  position: relative;
-}
-
-.mdrawer-btn-primary { background: var(--ink); color: var(--paper); }
-.mdrawer-btn-primary:hover { background: var(--ink-muted); }
-
-.mdrawer-btn-success { background: var(--success); color: var(--paper); }
-.mdrawer-btn-success:hover { filter: brightness(0.93); }
-
-.mdrawer-btn-neutral { background: var(--ink-muted); color: var(--paper); }
-.mdrawer-btn-neutral:hover { filter: brightness(0.93); }
-
-.mdrawer-btn-warning { background: var(--warning); color: var(--paper); }
-.mdrawer-btn-warning:hover { filter: brightness(0.93); }
-
-.mdrawer-btn-outline {
-  background: var(--paper-warm);
-  color: var(--ink);
-  border: 1.5px solid var(--rule);
-}
-.mdrawer-btn-outline:hover { background: var(--rule); }
-
-.mdrawer-divider { height: 1px; background: var(--rule); margin: 4px 0; flex-shrink: 0; }
-
-.mdrawer-badge {
-  display: none;
-  position: absolute;
-  top: 50%;
-  right: 14px;
-  transform: translateY(-50%);
-  background: var(--danger);
-  color: var(--paper);
-  font-size: .6rem;
-  font-weight: 700;
-  border-radius: 10px;
-  padding: 1px 6px;
-}
 
 /* ── Table ── */
 .table-container {
@@ -1222,63 +1125,69 @@ tr:hover td { background: var(--paper-warm); }
   .setelan-tab-content { padding-left: 4px; }
 }
 
-/* ── App Sidebar: Dashboard / Pengaturan (Desktop, >=1024px) ── */
-#appSidebar { display: none; }
+/* ── App Sidebar: Dashboard / Pengaturan (Mobile + Desktop) ── */
+#appSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: fixed;
+  top: 0; left: 0;
+  width: 240px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--brand) 0%, var(--brand-dark) 100%);
+  z-index: 3001;
+  padding: 20px 14px;
+  overflow-y: auto;
+  box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+  transform: translateX(-100%);
+  transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+}
+#appSidebar.open { transform: translateX(0); }
+
+.app-sidebar-brand {
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: #fff;
+  padding: 4px 10px 16px;
+}
+.app-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: .74rem;
+  font-weight: 600;
+  text-align: left;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, .8);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.app-nav-item svg { stroke: currentColor; }
+.app-nav-item:hover { background: rgba(255, 255, 255, .14); color: #fff; }
+.app-nav-item.active { background: #fff; color: var(--brand); }
+.app-nav-badge {
+  display: none;
+  margin-left: auto;
+  background: var(--danger);
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 1px 6px;
+  line-height: 1.5;
+}
 
 @media (min-width: 1024px) {
-  #setelanBtn { display: none !important; }
-  #reminderBtn { display: none !important; }
-
   #appSidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    position: fixed;
-    top: 0; left: 0;
     width: 220px;
-    height: 100vh;
-    background: linear-gradient(180deg, var(--brand) 0%, var(--brand-dark) 100%);
-    border-right: none;
-    z-index: 500;
-    padding: 20px 14px;
-  }
-  .app-sidebar-brand {
-    font-size: .78rem;
-    font-weight: 700;
-    letter-spacing: .02em;
-    color: #fff;
-    padding: 4px 10px 16px;
-  }
-  .app-nav-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 10px 12px;
-    font-family: inherit;
-    font-size: .74rem;
-    font-weight: 600;
-    text-align: left;
-    background: none;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    color: rgba(255, 255, 255, .8);
-    cursor: pointer;
-    transition: background .15s, color .15s;
-  }
-  .app-nav-item svg { stroke: currentColor; }
-  .app-nav-item:hover { background: rgba(255, 255, 255, .14); color: #fff; }
-  .app-nav-item.active { background: #fff; color: var(--brand); }
-  .app-nav-badge {
-    display: none;
-    margin-left: auto;
-    background: var(--danger);
-    color: #fff;
-    font-size: .62rem;
-    font-weight: 700;
-    border-radius: 10px;
-    padding: 1px 6px;
-    line-height: 1.5;
+    transform: translateX(0);
+    box-shadow: none;
   }
 
   /* Konten mengisi penuh sisa layar di sebelah kanan sidebar, tidak lagi
@@ -2141,17 +2050,10 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
     width: 100%;
   }
 
-  /* [UI] Tombol Menu di hape jadi icon 3 garis (bukan teks), warna mengikuti
-     tema (terang = bg terang, gelap = bg gelap) dan bentuk lebih rounded. */
-  .hamburger-btn-icon {
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    flex-shrink: 0;
-  }
+  /* [UI] Tombol Menu jadi icon 3 garis (bukan teks) sejak lebar 0-1023px
+     (lihat aturan .hamburger-btn-icon unconditional di dekat definisi
+     .hamburger-btn), warna mengikuti tema (terang = bg terang, gelap = bg
+     gelap) dan bentuk lebih rounded. */
 
   /* [UI] Tabel transaksi di hape: tampilkan hanya kolom Tanggal, Deskripsi,
      Pemasukan, Pengeluaran, Aksi. Sembunyikan No, Kategori, Saldo, Nota. */
