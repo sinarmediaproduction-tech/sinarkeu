@@ -1,112 +1,2274 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Sinarkeu - Buku Kas Digital</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <meta name="theme-color" content="#1D4B36">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- [SECURITY] Baseline hardening headers. CSP dibatasi ke sumber yang
+         benar-benar dipakai app ini; connect-src ke https: umum karena URL
+         Supabase bersifat dinamis (diisi tiap pengguna), tidak bisa
+         di-whitelist per-domain. Untuk header yang tidak bisa diset lewat
+         meta tag (X-Frame-Options, Strict-Transport-Security), atur di level
+         Cloudflare Worker/Pages -- lihat SECURITY_AUDIT.md. -->
+    <!-- [FIX] frame-ancestors DIHAPUS dari sini -- spesifikasi CSP secara eksplisit
+         mengabaikan frame-ancestors (juga sandbox & report-uri) kalau dikirim lewat
+         <meta>, browser modern akan mencatatnya sebagai warning di console dan TIDAK
+         benar-benar menerapkannya. Directive ini sekarang dikirim lewat HTTP header
+         asli di file _headers (Cloudflare Pages), lihat root proyek. -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;
+        img-src 'self' data: blob: https:;
+        connect-src 'self' https: wss:;
+        object-src 'none';
+        base-uri 'self';
+    ">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <script>
+        // Anti-flash: apply dark mode sebelum CSS render
+        (function() {
+            if (localStorage.getItem('sk_dark_mode') === '1') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
+</head>
+<body>
+
+<!-- ===== PASSWORD LOCK SCREEN ===== -->
+<div id="passwordLockScreen">
+    <div class="lock-card">
+        <div class="lock-title">Sinarkeu</div>
+        <div class="lock-subtitle" id="lockSubtitle">Pilih akun dan masukkan password</div>
+        <div class="lock-account-picker" id="lockAccountPicker"></div>
+        <div class="lock-input-wrap">
+            <input type="password" id="lockPasswordInput" class="lock-input"
+                   placeholder="Password" disabled
+                   onkeydown="if(event.key==='Enter') submitLockPassword()"
+                   oninput="clearLockError()">
+            <button class="lock-eye-btn" onclick="toggleLockEye()" id="lockEyeBtn" title="Tampilkan/sembunyikan" disabled>Lihat</button>
+        </div>
+        <div style="margin-top:14px;">
+            <button class="lock-btn" id="lockSubmitBtn" onclick="submitLockPassword()" disabled>Buka</button>
+        </div>
+        <div class="lock-status" id="lockStatus"></div>
+        <button class="lock-add-account" onclick="openAccountManagerFromLock()">＋ Tambah akun baru</button>
+        <button class="lock-manual-btn" onclick="toggleManual()">Panduan Pengguna</button>
+    </div>
+</div>
+
+<!-- ===== MANUAL PENGGUNA MODAL ===== -->
+<div id="manualModal" class="modal" style="z-index:9999;">
+    <div class="modal-content report" style="max-width:780px; max-height:90vh; padding:20px;">
+        <div class="modal-header">
+            <h3>Panduan Lengkap Sinarkeu</h3>
+            <button class="modal-close" onclick="closeModal('manualModal')">×</button>
+        </div>
+        <div style="overflow-y:auto; max-height:70vh; padding-right:6px; font-size:.82rem; line-height:1.7; color:var(--ink);">
+            <h4 style="margin-top:0;">Selamat datang di Sinarkeu!</h4>
+            <p>Aplikasi ini adalah buku kas digital multi‑akun yang bisa disinkronkan ke database Supabase milik Anda sendiri. Kredensial koneksi dan seluruh data pengaturan (anggaran, konfigurasi Telegram, dll.) dienkripsi dengan password pribadi Anda sebelum dikirim ke cloud.</p>
+            <hr style="margin:14px 0;">
+
+            <h5>1. Setup Awal</h5>
+            <ul>
+                <li><strong>Supabase URL &amp; Anon Key</strong> – Dapatkan dari dashboard Supabase Anda. Masukkan di form setup pertama kali.</li>
+                <li><strong>Password Enkripsi</strong> – Buat password minimal 6 karakter. <strong>Simpan baik‑baik</strong>, karena tidak bisa dipulihkan. Password ini digunakan untuk membuka kunci aplikasi setiap kali.</li>
+                <li><strong>Apa yang dilindungi password ini?</strong> Password enkripsi melindungi kredensial Supabase Anda dan seluruh data pengaturan (anggaran, Telegram, dll.) saat disimpan maupun dikirim ke cloud. Keamanan data transaksi di database Supabase Anda sendiri ditentukan oleh aturan akses (Row Level Security) yang Anda atur di project Supabase tersebut, bukan oleh password ini.</li>
+            </ul>
+
+            <h5>1a. Setup Database Supabase (Sekali Saja, untuk Akun/Project Baru)</h5>
+            <p>Sebelum mengisi Supabase URL &amp; Anon Key di atas, siapkan dulu tabel-tabelnya: buat project Supabase baru (kosong), buka <strong>SQL Editor → New query</strong>, tempel skrip di bawah ini, lalu klik <strong>Run</strong>. Setelah berhasil, langsung isi Project URL &amp; Anon Key seperti biasa — tidak ada langkah tambahan lain di dashboard Supabase.</p>
+            <div style="position:relative; margin-bottom:8px;">
+                <button class="btn-mini" style="position:absolute; top:8px; right:8px; background:#238636; color:#fff; border:1px solid #2ea043;" onclick="window.copySupabaseSetupSql()">Copy SQL</button>
+                <pre id="supabaseSetupSqlBlock" style="background:#0d1117; color:#c9d1d9; font-size:.66rem; line-height:1.55; padding:14px; padding-right:80px; border-radius:8px; overflow-x:auto; white-space:pre; max-height:340px; margin:0;">-- ============================================================
+-- SINARKEU — SETUP SUPABASE UNTUK AKUN/PROJECT BARU
 -- ============================================================
--- HARDENING: Enkripsi field sensitif transaksi & backup
--- Jalankan SEKALI di Supabase SQL Editor, SEBELUM men-deploy kode
--- js/ yang baru (crypto.js, transaction.js, backup.js versi audit ini).
--- ============================================================
+-- Jalankan SELURUH file ini SEKALI di Supabase Dashboard &gt;
+-- SQL Editor &gt; New query &gt; Run, pada project Supabase yang
+-- masih KOSONG (baru dibuat).
 --
--- MASALAH YANG DIPERBAIKI:
--- Selama ini kolom `amount`, `category`, `description`, `attachment`, `type`
--- di tabel `transactions`, dan kolom `data` di tabel `backups`, berisi data
--- keuangan ASLI dalam bentuk PLAINTEXT. Hanya kredensial Supabase & tabel
--- `settings` yang sudah dienkripsi client-side. Siapa pun yang bisa membaca
--- database ini secara langsung (service-role key bocor, RLS salah setup,
--- akses dashboard Supabase oleh pihak lain, dst) bisa melihat seluruh
--- riwayat keuangan pengguna secara terbuka.
+-- Setelah berhasil, buka aplikasi SinarKeu &gt; Setelan &gt; Koneksi
+-- Cloud, lalu isi:
+--   - Project URL   (Settings &gt; Data API di dashboard Supabase)
+--   - anon public key (Settings &gt; API Keys)
+-- Aplikasi akan langsung bisa dipakai tanpa langkah tambahan.
 --
--- PERBAIKAN:
--- Kode aplikasi sekarang mengenkripsi amount/category/description/attachment/
--- type jadi SATU kolom `enc_payload` (AES-GCM, kunci diturunkan dari password
--- pengguna, tidak pernah dikirim ke server) sebelum push. Kolom lama dibuat
--- NULLABLE (dan tidak lagi diisi data asli) supaya insert tidak gagal.
--- Baris LAMA (sebelum migrasi ini) tetap bisa dibaca -- kode punya fallback
--- baca plaintext lama jika enc_payload kosong (lihat window.decodeCloudTxRow).
+-- CATATAN PENTING (berlaku untuk project Supabase yang dibuat
+-- per 30 Mei 2026 ke atas): Supabase TIDAK LAGI otomatis
+-- mengekspos tabel baru ke Data API (REST). Karena itu, setiap
+-- tabel di bawah diberi GRANT eksplisit ke role "anon" &amp;
+-- "authenticated" — tanpa ini, aplikasi akan mendapat error
+-- "permission denied" walau tabelnya sudah ada.
 --
--- CATATAN PENTING SOAL RLS:
--- Migrasi ini TIDAK membuat isolasi antar-user yang sesungguhnya di level
--- database -- app ini memakai SATU anon key untuk semua request (tidak ada
--- Supabase Auth), jadi Postgres tidak bisa tahu "siapa" yang sedang meminta.
--- `account_tag` hanyalah kesepakatan di sisi APLIKASI, bukan pagar keamanan;
--- siapa pun yang punya URL + anon key project ini bisa membaca/menulis semua
--- baris lewat REST API langsung, terlepas dari account_tag. Enkripsi di
--- migrasi inilah yang jadi garis pertahanan sesungguhnya untuk isi data.
--- Untuk isolasi per-user yang sebenarnya di level database, perlu migrasi ke
--- Supabase Auth + RLS berbasis auth.uid() -- lihat SECURITY_AUDIT.md bagian
--- "Roadmap Multiuser Sesungguhnya".
+-- Row Level Security (RLS) SENGAJA TIDAK diaktifkan, karena
+-- aplikasi ini tidak memakai Supabase Auth (tidak ada login
+-- user ke Supabase) — keamanan data mengandalkan enkripsi
+-- AES-GCM di sisi browser dengan password yang Anda buat saat
+-- setup akun (lihat js/crypto.js), bukan policy RLS di database.
+-- Jaga URL + anon key project ini agar tidak disebar ke publik.
 -- ============================================================
 
--- ── TABEL: transactions ──────────────────────────────────────
-ALTER TABLE transactions ADD COLUMN IF NOT EXISTS enc_payload TEXT DEFAULT NULL;
-ALTER TABLE transactions ALTER COLUMN amount DROP NOT NULL;
-ALTER TABLE transactions ALTER COLUMN category DROP NOT NULL;
-ALTER TABLE transactions ALTER COLUMN description DROP NOT NULL;
-ALTER TABLE transactions ALTER COLUMN attachment DROP NOT NULL;
-ALTER TABLE transactions ALTER COLUMN type DROP NOT NULL;
+create extension if not exists pgcrypto;
 
--- ── TABEL: backups ───────────────────────────────────────────
--- Kolom `data` sudah TEXT, tidak perlu diubah tipenya -- sekarang berisi
--- ciphertext base64 (AES-GCM) alih-alih JSON plaintext untuk backup baru.
+grant usage on schema public to anon, authenticated;
 
--- ── TABEL: payment_reminders (jalankan HANYA jika tabel ini ada) ──
-DO $$
-BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payment_reminders') THEN
-        EXECUTE 'ALTER TABLE payment_reminders ADD COLUMN IF NOT EXISTS enc_payload TEXT DEFAULT NULL';
-        EXECUTE 'ALTER TABLE payment_reminders ALTER COLUMN name DROP NOT NULL';
-        EXECUTE 'ALTER TABLE payment_reminders ALTER COLUMN day DROP NOT NULL';
-        EXECUTE 'ALTER TABLE payment_reminders ALTER COLUMN recurrence DROP NOT NULL';
-        EXECUTE 'ALTER TABLE payment_reminders ALTER COLUMN month DROP NOT NULL';
-        EXECUTE 'ALTER TABLE payment_reminders ALTER COLUMN note DROP NOT NULL';
-    END IF;
-END $$;
+-- ── 1. TRANSACTIONS ─────────────────────────────────────────
+-- Transaksi pemasukan/pengeluaran per buku. id dibuat di sisi
+-- aplikasi (format "tx_..."), bukan auto-generate, supaya push
+-- ulang (sinkron antar device) otomatis ter-upsert via id ini.
+create table if not exists public.transactions (
+    id           text primary key,
+    book_id      text not null,
+    device_id    text,
+    type         text not null check (type in ('income','expense')),
+    amount       numeric not null default 0,
+    category     text,
+    description  text,
+    date         timestamptz not null,
+    attachment   text,
+    is_deleted   boolean not null default false,
+    account_tag  text,
+    updated_at   timestamptz not null default now(),
+    created_at   timestamptz not null default now()
+);
 
--- ── ENABLE RLS (baseline, lihat catatan di atas) ─────────────
--- Mengaktifkan RLS tanpa Supabase Auth tidak menambah isolasi antar-user,
--- tapi tetap praktik baik: memastikan hanya kebijakan eksplisit di bawah
--- ini yang berlaku, bukan grant default yang lebih longgar. Jalankan bagian
--- ini HANYA jika belum pernah RLS aktif di tabel-tabel ini (aman dijalankan
--- berkali-kali karena pakai DROP POLICY IF EXISTS + CREATE POLICY).
-ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE backups ENABLE ROW LEVEL SECURITY;
-DO $$
-BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payment_reminders') THEN
-        EXECUTE 'ALTER TABLE payment_reminders ENABLE ROW LEVEL SECURITY';
-    END IF;
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'audit_logs') THEN
-        EXECUTE 'ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY';
-    END IF;
-END $$;
+create index if not exists idx_tx_book        on public.transactions (book_id);
+create index if not exists idx_tx_book_date   on public.transactions (book_id, date desc);
+create index if not exists idx_tx_book_upd    on public.transactions (book_id, updated_at desc);
+create index if not exists idx_tx_tag         on public.transactions (account_tag) where account_tag is not null;
+create index if not exists idx_tx_tag_book_dt on public.transactions (account_tag, book_id, date desc) where account_tag is not null;
 
-DROP POLICY IF EXISTS anon_full_access ON transactions;
-CREATE POLICY anon_full_access ON transactions FOR ALL TO anon USING (true) WITH CHECK (true);
-DROP POLICY IF EXISTS anon_full_access ON settings;
-CREATE POLICY anon_full_access ON settings FOR ALL TO anon USING (true) WITH CHECK (true);
-DROP POLICY IF EXISTS anon_full_access ON backups;
-CREATE POLICY anon_full_access ON backups FOR ALL TO anon USING (true) WITH CHECK (true);
--- PENTING: RLS di atas sudah diaktifkan untuk payment_reminders & audit_logs
--- (kalau ada) tanpa policy sama sekali -- itu artinya SEMUA akses akan
--- ditolak (default-deny Postgres) sampai policy berikut dibuat. Jangan
--- lewati blok ini kalau tabel-tabel tersebut ada di project Anda.
-DO $$
-BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payment_reminders') THEN
-        EXECUTE 'DROP POLICY IF EXISTS anon_full_access ON payment_reminders';
-        EXECUTE 'CREATE POLICY anon_full_access ON payment_reminders FOR ALL TO anon USING (true) WITH CHECK (true)';
-    END IF;
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'audit_logs') THEN
-        EXECUTE 'DROP POLICY IF EXISTS anon_full_access ON audit_logs';
-        EXECUTE 'CREATE POLICY anon_full_access ON audit_logs FOR ALL TO anon USING (true) WITH CHECK (true)';
-    END IF;
-END $$;
+grant select, insert, update, delete on public.transactions to anon, authenticated;
+
+-- ── 2. SETTINGS ──────────────────────────────────────────────
+-- Tempat semua "setting" tersimpan: anggaran (default/bulanan/
+-- tahunan), target dana darurat, fase kehidupan, card yang
+-- disembunyikan, daftar buku, konfigurasi Telegram, salt/cek
+-- enkripsi, dsb. Satu baris = satu pasangan (book_id, key) per
+-- akun (account_tag), sehingga push baru otomatis MENIMPA baris
+-- lama yang sama (upsert) — bukan menumpuk baris duplikat.
+create table if not exists public.settings (
+    book_id      text not null,
+    key          text not null,
+    value        text,
+    account_tag  text not null default '',
+    updated_at   timestamptz not null default now(),
+    created_at   timestamptz not null default now(),
+    primary key (book_id, key, account_tag)
+);
+
+create index if not exists idx_settings_tag          on public.settings (account_tag);
+create index if not exists idx_settings_tag_book_key on public.settings (account_tag, book_id, key);
+
+grant select, insert, update, delete on public.settings to anon, authenticated;
+
+-- ── 3. AUDIT_LOGS ────────────────────────────────────────────
+-- Log aktivitas (tambah/edit/hapus transaksi, restore, dll) per
+-- buku &amp; perangkat. Selalu insert baris baru, tidak pernah
+-- diupdate — id auto-generate (uuid) sudah cukup.
+create table if not exists public.audit_logs (
+    id           uuid primary key default gen_random_uuid(),
+    book_id      text not null,
+    device_id    text,
+    action       text,
+    details      text,
+    account_tag  text,
+    timestamp    timestamptz not null default now()
+);
+
+create index if not exists idx_audit_book        on public.audit_logs (book_id);
+create index if not exists idx_audit_tag         on public.audit_logs (account_tag) where account_tag is not null;
+create index if not exists idx_audit_tag_book_ts on public.audit_logs (account_tag, book_id, timestamp desc) where account_tag is not null;
+
+grant select, insert, update, delete on public.audit_logs to anon, authenticated;
+
+-- ── 4. BACKUPS ───────────────────────────────────────────────
+-- Cadangan (snapshot) seluruh transaksi suatu buku dalam bentuk
+-- JSON (kolom data berupa teks hasil JSON.stringify dari app).
+-- backup_type berisi 'MANUAL' atau 'AUTO'.
+create table if not exists public.backups (
+    id           uuid primary key default gen_random_uuid(),
+    book_id      text not null,
+    device_id    text,
+    backup_type  text,
+    tx_count     integer default 0,
+    data         text,
+    account_tag  text,
+    created_at   timestamptz not null default now()
+);
+
+create index if not exists idx_backups_book on public.backups (book_id, created_at desc);
+create index if not exists idx_backups_tag  on public.backups (account_tag) where account_tag is not null;
+
+grant select, insert, update, delete on public.backups to anon, authenticated;
+
+-- ── 5. PAYMENT_REMINDERS ─────────────────────────────────────
+-- Jadwal pengingat pembayaran berulang (bulanan/tahunan) per
+-- buku. id dibuat di sisi aplikasi (format "pr_..."), sama
+-- seperti transactions, supaya edit/replace otomatis ter-upsert.
+create table if not exists public.payment_reminders (
+    id           text primary key,
+    book_id      text not null,
+    name         text,
+    day          integer,
+    recurrence   text,
+    month        integer,
+    note         text,
+    account_tag  text,
+    created_at   timestamptz not null default now(),
+    updated_at   timestamptz not null default now()
+);
+
+create index if not exists idx_pr_book on public.payment_reminders (book_id, created_at desc);
+create index if not exists idx_pr_tag  on public.payment_reminders (account_tag) where account_tag is not null;
+
+grant select, insert, update, delete on public.payment_reminders to anon, authenticated;
+
+-- ── 6. STORAGE BUCKET: attachments ──────────────────────────
+-- Untuk fitur lampiran foto nota pada transaksi. Foto diunggah
+-- ke bucket ini lalu URL-nya disimpan di kolom attachment pada
+-- tabel transactions. Jika bucket tidak ada, aplikasi tetap
+-- berjalan (fallback ke base64) tapi foto tidak tersimpan di
+-- Storage.
+insert into storage.buckets (id, name, public)
+values ('attachments', 'attachments', true)
+on conflict (id) do nothing;
+
+-- Izinkan anon mengunggah foto nota
+create policy if not exists "anon upload attachments"
+on storage.objects for insert to anon
+with check (bucket_id = 'attachments');
+
+-- Izinkan siapa saja membaca foto nota (public bucket)
+create policy if not exists "public read attachments"
+on storage.objects for select to anon
+using (bucket_id = 'attachments');
 
 -- ============================================================
--- OPSIONAL, JALANKAN BELAKANGAN (setelah yakin semua device sudah update
--- ke kode baru dan enc_payload terisi untuk semua baris aktif): bersihkan
--- sisa data plaintext lama dari baris yang SUDAH punya enc_payload, supaya
--- tidak ada duplikat data sensitif di kolom lama.
+-- SELESAI. Lima tabel (transactions, settings, audit_logs,
+-- backups, payment_reminders) + 1 Storage bucket (attachments)
+-- sudah siap dan langsung bisa diakses lewat anon key —
+-- tidak perlu langkah manual lain di dashboard Supabase.
+-- ============================================================</pre>
+            </div>
+            <p style="color:#888; font-size:.7rem;">Catatan: skrip ini sengaja <strong>tidak</strong> mengaktifkan Row Level Security (RLS) karena aplikasi ini tidak memakai Supabase Auth — keamanan data mengandalkan enkripsi AES‑GCM di sisi browser dengan password akun Anda, bukan policy RLS. Jaga URL &amp; Anon Key project agar tidak tersebar ke publik.</p>
+
+            <h5>1b. Migrasi untuk Project Lama (Sudah Pernah Setup Sebelumnya)</h5>
+            <p>Kalau project Supabase Anda sudah dipakai <strong>sebelum</strong> kolom <code>account_tag</code> ditambahkan ke aplikasi, tabel <code>settings</code> bisa saja masih menyimpan constraint versi lama (misalnya <code>settings_book_id_key_key</code>, <code>settings_pkey</code>, atau <code>settings_book_id_key_unique</code> — semuanya cuma di kolom <code>book_id, key</code> tanpa <code>account_tag</code>). Ini menyebabkan error <code>409 Conflict</code> / <code>duplicate key value violates unique constraint</code> saat menyimpan data (misalnya anggaran) dari akun/device baru. Jalankan skrip ini <strong>sekali</strong> di SQL Editor untuk membersihkan constraint lama tersebut — aman dijalankan berkali-kali dan tidak menghapus data.</p>
+            <div style="position:relative; margin-bottom:8px;">
+                <button class="btn-mini" style="position:absolute; top:8px; right:8px; background:#238636; color:#fff; border:1px solid #2ea043;" onclick="window.copySqlBlock('settingsMigrationSqlBlock')">Copy SQL</button>
+                <pre id="settingsMigrationSqlBlock" style="background:#0d1117; color:#c9d1d9; font-size:.66rem; line-height:1.55; padding:14px; padding-right:80px; border-radius:8px; overflow-x:auto; white-space:pre; max-height:340px; margin:0;">-- ============================================================
+-- SINARKEU — MIGRASI CONSTRAINT `settings` UNTUK PROJECT LAMA
+-- ============================================================
+-- Jalankan SEKALI di Supabase SQL Editor kalau muncul error
+-- 409 / "duplicate key value violates unique constraint" saat
+-- menyimpan data (settings) dari akun atau device baru.
 --
--- UPDATE transactions
--- SET amount = NULL, category = NULL, description = NULL, attachment = NULL, type = NULL
--- WHERE enc_payload IS NOT NULL;
+-- Constraint yang benar (dipakai kode aplikasi lewat parameter
+-- on_conflict=book_id,key,account_tag) adalah UNIQUE gabungan
+-- ketiga kolom itu. Skrip ini menghapus semua bentuk constraint
+-- lama yang cuma mencakup (book_id, key) tanpa account_tag, lalu
+-- memastikan hanya settings_unique_row yang tersisa.
 -- ============================================================
+
+alter table public.settings drop constraint if exists settings_pkey;
+alter table public.settings drop constraint if exists settings_book_id_key_key;
+alter table public.settings drop constraint if exists settings_unique_row;
+drop index if exists public.settings_book_id_key_unique;
+
+alter table public.settings
+    add constraint settings_unique_row unique (book_id, key, account_tag);</pre>
+            </div>
+            <p style="color:#888; font-size:.7rem;">Skrip ini aman dijalankan berkali-kali (idempotent) dan tidak menghapus data apa pun — hanya mengganti definisi constraint di tabel <code>settings</code>.</p>
+
+            <h5>2. Manajemen Akun</h5>
+            <ul>
+                <li>Klik tombol <strong>"Ganti Akun"</strong> di pojok kanan atas.</li>
+                <li>Setiap akun terhubung ke <em>database Supabase yang berbeda</em>. Cocok untuk memisahkan keuangan pribadi, bisnis, atau keluarga.</li>
+                <li>Untuk menambah akun, buka <strong>"Manajer Akun"</strong> dari layar kunci atau dari menu <strong>Setelan</strong>.</li>
+                <li>Setiap akun memiliki password enkripsi sendiri – Anda akan diminta saat beralih akun.</li>
+            </ul>
+
+            <h5>3. Buku Kas</h5>
+            <ul>
+                <li>Di dalam satu akun, Anda bisa membuat <strong>banyak buku kas</strong> (misal: "Bulanan", "Investasi", "Proyek A").</li>
+                <li>Gunakan dropdown <strong>"BUKU"</strong> di header untuk berpindah buku.</li>
+                <li>Kelola buku (tambah/hapus) melalui tombol <strong>"Kelola"</strong> atau menu <strong>Setelan</strong>.</li>
+                <li>Setiap buku punya anggaran, transaksi, dan lognya sendiri.</li>
+            </ul>
+
+            <h5>4. Transaksi</h5>
+            <ul>
+                <li>Tekan tombol <strong>"+ Transaksi"</strong> untuk mencatat pemasukan atau pengeluaran.</li>
+                <li>Isi <strong>jenis</strong>, <strong>kategori</strong> (untuk pengeluaran), <strong>deskripsi</strong>, dan <strong>jumlah</strong>.</li>
+                <li>Anda bisa <strong>melampirkan foto nota</strong> – gambar akan diunggah ke Supabase Storage.</li>
+                <li>Edit atau hapus transaksi dengan menekan tombol <strong>⋮</strong> di kolom Aksi.</li>
+                <li>Gunakan <strong>pencarian</strong>, <strong>filter jenis</strong>, dan <strong>filter tanggal</strong> untuk menemukan transaksi dengan cepat.</li>
+            </ul>
+
+            <h5>5. Anggaran</h5>
+            <ul>
+                <li><strong>Anggaran Dasar</strong> – Template yang berlaku otomatis untuk setiap bulan baru. Atur melalui tombol <strong>"Dasar"</strong> di panel anggaran.</li>
+                <li><strong>Anggaran Bulanan</strong> – Klik <strong>"Anggarkan"</strong> untuk mengatur anggaran khusus untuk bulan tertentu. Ini akan menimpa Anggaran Dasar hanya untuk bulan itu.</li>
+                <li>Progress anggaran terlihat di panel atas (target, realisasi, sisa).</li>
+                <li>Sistem memberi <strong>peringatan visual</strong> dan <strong>notifikasi Telegram</strong> saat anggaran mencapai 80% dan 100%.</li>
+            </ul>
+
+            <h5>6. Laporan &amp; Grafik</h5>
+            <ul>
+                <li>Panel <strong>"Pengeluaran per Kategori"</strong> menampilkan diagram donat – klik judulnya untuk membuka/tutup.</li>
+                <li>Tombol <strong>"Laporan"</strong> membuka laporan bulanan lengkap dengan tabel perbandingan target vs realisasi, serta grafik batang.</li>
+                <li>Laporan bisa diekspor ke <strong>PDF</strong> dengan tombol di dalam modal.</li>
+            </ul>
+
+            <h5>7. Analisis AI</h5>
+            <ul>
+                <li>Fitur ini membutuhkan <strong>URL Cloudflare Worker</strong> yang Anda deploy sendiri (gratis).</li>
+                <li>Masukkan URL di <strong>Setelan → Analisis AI</strong>.</li>
+                <li>Setelah dikonfigurasi, klik <strong>"Analisis AI"</strong> di dashboard, pilih periode dan jenis analisis, lalu dapatkan wawasan dari Groq AI (LLaMA).</li>
+            </ul>
+
+            <h5>7b. Tanya AI</h5>
+            <ul>
+                <li>Pakai Worker URL yang sama dengan Analisis AI (<strong>Setelan → Analisis AI</strong>).</li>
+                <li>Klik <strong>"Tanya AI"</strong> di dashboard, lalu ketik pertanyaan bebas, misalnya: <i>"Pemasukan bulan Juni berapa?"</i> atau <i>"Listrik bulan lalu berapa?"</i>.</li>
+                <li>AI menjawab berdasarkan transaksi yang tersimpan di perangkat ini (maksimal 300 transaksi terbaru) dan akan menunjukkan rincian transaksi yang dipakai untuk menghitung, supaya bisa Anda cek ulang.</li>
+                <li>Untuk pertanyaan tentang transaksi yang lebih lama dari 300 transaksi terakhir, gunakan fitur Laporan agar datanya pasti lengkap.</li>
+            </ul>
+
+            <h5>8. Notifikasi Telegram</h5>
+            <ul>
+                <li>Buka <strong>Setelan → Notifikasi Telegram</strong>.</li>
+                <li>Isi <strong>Bot Token</strong> (dari @BotFather) dan <strong>Chat ID</strong> (dari @userinfobot).</li>
+                <li>Setelah disimpan, Anda akan menerima notifikasi untuk setiap transaksi, peringatan anggaran, dan ringkasan harian otomatis pukul 21:00.</li>
+            </ul>
+
+            <h5>9. Backup &amp; Restore</h5>
+            <ul>
+                <li><strong>Backup Lokal</strong> – Simpan snapshot data ke localStorage browser (maksimal 5 versi).</li>
+                <li><strong>Backup Cloud</strong> – Simpan ke tabel Supabase, bisa di-restore dari perangkat lain.</li>
+                <li><strong>Google Sheets</strong> – Masukkan URL Web App di <strong>Setelan</strong> untuk mengirim backup ke spreadsheet Google.</li>
+                <li>Semua backup otomatis berjalan setiap hari (untuk cloud) dan dapat dipicu manual.</li>
+            </ul>
+
+            <h5>10. Ekspor &amp; Impor Data</h5>
+            <ul>
+                <li>Ekspor ke <strong>CSV</strong> untuk dibuka di Excel, atau <strong>JSON</strong> untuk arsip.</li>
+                <li>Impor data dari file JSON (duplikat ID akan dilewati).</li>
+                <li>Fitur <strong>"Arsipkan JSON &amp; Kosongkan Database"</strong> di <strong>Setelan</strong> – berguna untuk membersihkan data lama dan tetap mempertahankan arsip.</li>
+            </ul>
+
+            <h5>11. Fitur Pendukung Lainnya</h5>
+            <ul>
+                <li><strong>Kurs USD/IDR</strong> – Ditampilkan secara otomatis dari beberapa sumber API.</li>
+                <li><strong>Harga Emas Antam</strong> – Bisa diaktifkan dengan API key dari <em>emas.maulanar.my.id</em> (gratis).</li>
+                <li><strong>Sedekah</strong> – Dihitung otomatis 2,5% dari pemasukan bulan kalender berjalan dan selalu tampil di dashboard.</li>
+                <li><strong>Log Audit</strong> – Semua aktivitas tercatat dan bisa dilihat di bawah tabel transaksi.</li>
+            </ul>
+
+            <h5>12. Mode Offline &amp; Sinkronisasi</h5>
+            <ul>
+                <li>Aplikasi bekerja <strong>offline</strong> dalam mode baca‑saja (tambah/edit/hapus dinonaktifkan).</li>
+                <li>Setiap kali koneksi pulih, sinkronisasi terjadi otomatis setiap 30 detik.</li>
+                <li>Tombol <strong>"Sinkronisasi"</strong> di header memicu sinkronisasi penuh manual (pull semua buku &amp; setelan).</li>
+            </ul>
+
+            <hr style="margin:14px 0;">
+            <p><strong>Tips:</strong> Gunakan password yang kuat dan simpan di tempat aman. Manfaatkan fitur notifikasi Telegram agar tidak ketinggalan perubahan.</p>
+            <p style="color:#888; font-size:.7rem;">Sinarkeu – v1.0 (Multi Akun &amp; Buku Kas)</p>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #eee; padding-top:12px; margin-top:12px;">
+            <button class="btn btn-secondary" onclick="closeModal('manualModal')">Tutup Panduan</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== APP SIDEBAR (Desktop) ===== -->
+<div id="appSidebar">
+    <div class="app-sidebar-brand">SinarKeu</div>
+    <button type="button" class="app-nav-item active" id="navDashboardBtn" onclick="window.showDashboardView()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+        <span>Dashboard</span>
+    </button>
+    <button type="button" class="app-nav-item" id="navSetelanBtn" onclick="window.showSetelanView()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852 1 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <span data-i18n="settings_title">Setelan</span>
+    </button>
+    <button type="button" class="app-nav-item" id="navReminderBtn" onclick="openPaymentReminderModal()" style="position:relative;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        <span data-i18n="payment_reminder">Pengingat Pembayaran</span>
+        <span id="sidebarReminderBadge" class="app-nav-badge"></span>
+    </button>
+</div>
+
+<!-- ===== ACCOUNT BAR ===== -->
+<div class="container">
+    <div class="header">
+        <div class="book-selector">
+            <button class="mobile-only hamburger-btn hamburger-btn-icon" onclick="openMobileDrawer()" title="Menu" aria-label="Menu">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <!-- [UI] Disembunyikan dari tampilan atas sesuai permintaan (bukan dihapus dari DOM):
+                 report.js (baris 62 & 201) dan openMobileDrawer() di app.js masih membaca
+                 textContent elemen ini untuk nama akun di laporan & label drawer mobile. -->
+            <span id="activeAccountLabel" style="display:none;font-size:.7rem;font-weight:700;color:#1a1a1a;padding:4px 10px;background:#e8f0fe;border-radius:6px;"></span>
+            <div id="syncStatusWrapper" class="sync-status-container offline">
+                <span id="syncStatusTag" class="sync-status-badge">CLOUD OFF</span>
+                <span id="deviceIdDisplay" class="device-id-badge">------</span>
+                <span id="syncTimeBadge" class="sync-time-badge">--:--:--</span>
+            </div>
+            <div id="headerAIBar" class="header-ai-bar desktop-only">
+                <span class="header-ai-icon">✦</span>
+                <input type="text" id="headerAIInput" class="header-ai-input" placeholder="Tanya AI keuangan..." data-i18n="ai_placeholder" data-i18n-attr="placeholder" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.submitHeaderAI();}" autocomplete="off">
+                <button class="header-ai-btn" onclick="window.submitHeaderAI()" title="Kirim">→</button>
+            </div>
+            <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
+            <button class="manage-books-btn desktop-only" id="kelolaBukuBtn" onclick="openBookManager()" data-i18n="manage_book">Kelola</button>
+            <button class="manage-books-btn desktop-only icon-btn" id="manualSyncBtn" style="background:none; border-color:transparent; color:var(--ink-faint);" onclick="forceFullSync()" title="Sinkronisasi" aria-label="Sinkronisasi">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path></svg>
+            </button>
+            <button class="manage-books-btn desktop-only icon-btn" id="darkModeToggle" onclick="window.toggleDarkMode()" title="Mode Gelap" aria-label="Mode Gelap">
+                <svg id="darkModeIcon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
+            <button class="manage-books-btn desktop-only icon-btn" id="setelanBtn" onclick="openSetelanModal()" style="background:none; border-color:transparent; color:var(--ink-faint);" title="Setelan" aria-label="Setelan">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852 1 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
+            <button class="manage-books-btn desktop-only icon-btn" id="reminderBtn" onclick="openPaymentReminderModal()" style="background:none; border-color:transparent; color:var(--ink-faint); position:relative;" title="Pengingat Pembayaran" aria-label="Pengingat Pembayaran">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                <span id="reminderBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:#fff; font-size:.55rem; font-weight:700; border-radius:50%; width:16px; height:16px; line-height:16px; text-align:center;"></span>
+            </button>
+            <!-- [UI] Tombol "Ganti Akun" dihapus dari top bar desktop sesuai permintaan.
+                 Fungsi ganti akun tetap tersedia lewat menu mobile drawer (lihat index.html
+                 sekitar baris 1385, tombol dengan data-i18n="switch_account" yang sama). -->
+            <!-- [UI] Tombol hamburger dipindah ke posisi paling kiri top bar (lihat
+                 di bawah, sekarang jadi elemen pertama dalam .book-selector) supaya
+                 arahnya konsisten dengan drawer mobile yang sekarang membuka dari kiri. -->
+        </div>
+    </div>
+
+    <div id="dashboardView">
+    <div class="offline-warning-bar" id="offlineWarningBar">
+        <span><strong data-i18n="offline_mode">Mode Baca Saja</strong> - <span data-i18n="offline_desc">Anda sedang offline. Untuk menambah/mengedit/menghapus data, sambungkan ke internet.</span></span>
+    </div>
+
+    <!-- ===== PAYMENT REMINDER NOTIFICATION BANNER ===== -->
+    <div id="paymentReminderBanner" class="pr-banner" style="display:none; border-radius:10px; padding:12px 16px; margin-bottom:10px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div>
+                    <div class="pr-banner-title" style="font-size:.78rem; font-weight:700;" data-i18n="payment_reminder_banner">Pengingat Pembayaran</div>
+                    <div id="paymentReminderBannerText" class="pr-banner-text" style="font-size:.72rem; line-height:1.6;"></div>
+                </div>
+            </div>
+            <button onclick="openPaymentReminderModal()" style="font-size:.7rem; padding:5px 12px; background:#d97706; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; white-space:nowrap;" data-i18n="see_all">Lihat Semua</button>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label" style="display:flex;align-items:center;gap:6px;">
+                <span data-i18n="final_balance">Saldo Akhir</span>
+                <button id="balanceToggleBtn" onclick="window.toggleBalancePrivacy()" title="Sembunyikan/Tampilkan saldo" style="background:none;border:none;padding:0;cursor:pointer;line-height:1;color:var(--ink-faint);">
+                    <svg id="balanceEyeIcon" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="stat-value" id="statBalance">Rp 0</div>
+        </div>
+        <div class="stat-card income">
+            <div class="stat-label" data-i18n="total_income">Total Pemasukan</div>
+            <div class="stat-value" id="statIncome">Rp 0</div>
+        </div>
+        <div class="stat-card expense">
+            <div class="stat-label" data-i18n="total_expense">Total Pengeluaran</div>
+            <div class="stat-value" id="statExpense">Rp 0</div>
+        </div>
+        <div class="stat-card" id="forexCard" style="border-color:#0052cc;">
+            <div class="stat-label" style="color:#0052cc;" data-i18n="usd_rate">Kurs USD/IDR</div>
+            <div class="stat-value" id="forexRate" style="color:#0052cc; font-size:1.333rem;">Memuat...</div>
+            <div style="font-size:.6rem; color:#999; margin-top:4px;" id="forexSource"></div>
+        </div>
+        <div class="stat-card" id="goldCard" style="border-color:#b7791f;">
+            <div class="stat-label" style="color:#b7791f;" data-i18n="gold_per_gram">Emas / gram</div>
+            <div class="stat-value" id="goldPrice" style="color:#b7791f; font-size:1.333rem;">Memuat...</div>
+            <div style="font-size:.6rem; color:#999; margin-top:4px;">
+                <span id="goldSource"></span>
+                <span id="goldRefreshBtn" onclick="window.fetchGoldPrice(true)" title="Perbarui sekarang (memakai kuota API)" style="cursor:pointer; color:#b7791f; margin-left:4px; display:none;">⟳</span>
+            </div>
+            <div id="goldValueRow" style="display:none; margin-top:6px; padding-top:6px; border-top:1px dashed #e9c46a;">
+                <div style="font-size:.6rem; color:#92400e; font-weight:600;" id="goldValueLabel"></div>
+                <div style="font-size:.85rem; font-weight:700; color:#92400e;" id="goldValue"></div>
+            </div>
+        </div>
+        <div class="stat-card" id="zakatCard" style="border-color:#276749; display:none;">
+            <div class="stat-label" style="color:#276749;" data-i18n="charity_fund">Dana Sedekah</div>
+            <div class="stat-value" id="zakatValue" style="color:#276749; font-size:1.333rem;">Rp 0</div>
+            <div style="font-size:.6rem; color:#999; margin-top:4px;" id="zakatSource"></div>
+        </div>
+    </div>
+
+    <!-- ===== FINANCIAL PLANNING CARDS ===== -->
+    <div class="stats-grid" style="margin-top:10px;">
+        <div class="stat-card" id="cardAnggaranBulanan" style="border-top:3px solid #1a56db; cursor:pointer;" onclick="window.openDefaultBudgetModal()" title="Klik untuk atur anggaran bulanan">
+            <div class="stat-label"><span data-i18n="monthly_budget">Anggaran Bulanan</span> <span style="font-size:.6rem; background:#ebf3ff; color:#1a56db; padding:1px 6px; border-radius:8px; margin-left:4px;" data-i18n="set">Atur</span></div>
+            <div class="stat-value" id="fcAnggaranBulanan" style="color:#1a56db; font-size:1rem;">Rp 0</div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;" data-i18n="monthly_template">Template per kategori, berlaku tiap bulan</div>
+        </div>
+        <div class="stat-card" id="cardAnggaranTahunan" style="border-top:3px solid #6b46c1; cursor:pointer;" onclick="openAnnualBudgetModal()" title="Klik untuk atur anggaran tahunan">
+            <div class="stat-label"><span data-i18n="annual_budget">Anggaran Tahunan</span> <span style="font-size:.6rem; background:#f3e8ff; color:#553c9a; padding:1px 6px; border-radius:8px; margin-left:4px;" data-i18n="set">Atur</span></div>
+            <div class="stat-value" id="fcAnggaranTahunan" style="color:#6b46c1; font-size:1rem;">Rp 0</div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;" data-i18n="annual_costs">Biaya tahunan: hari raya, pajak, dll</div>
+        </div>
+        <div class="stat-card" id="cardDanaDarurat" style="border-top:3px solid #cc7b00; cursor:pointer;" onclick="window.openEmergencyFundModal()" title="Klik untuk atur target dana darurat">
+            <div class="stat-label"><span data-i18n="emergency_fund">Dana Darurat</span> <span style="font-size:.6rem; background:#fff7e6; color:#cc7b00; padding:1px 6px; border-radius:8px; margin-left:4px;" data-i18n="set">Atur</span></div>
+            <div class="stat-value" id="fcDanaDarurat" style="color:#cc7b00; font-size:1rem;">Rp 0</div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;" id="fcDanaDaruratNote" data-i18n="emergency_ideal">12× anggaran bulanan (target ideal)</div>
+        </div>
+        <!-- ===== CARD CADANGAN WAJIB ===== -->
+        <div class="stat-card" id="cardKebutuhanSetahun" style="border-top:3px solid #d69e2e;">
+            <div class="stat-label" data-i18n="annual_needs">Cadangan Wajib</div>
+            <div class="stat-value" id="fcKebutuhanSetahun" style="color:#d69e2e; font-size:1rem;">Rp 0</div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;" data-i18n="annual_need_desc">Dana darurat + anggaran tahunan</div>
+            <div id="fcKSGapInfo" style="display:none; margin-top:7px; padding:4px 8px; border-radius:6px; font-size:.65rem; font-weight:600; line-height:1.4;"></div>
+        </div>
+        <!-- ===== CARD FASE KEHIDUPAN ===== -->
+        <div class="stat-card" id="cardFaseKehidupan" style="border-top:3px solid #e53e8a; cursor:pointer;" onclick="window.openFaseKehidupanModal()" title="Klik untuk atur fase kehidupan">
+            <div class="stat-label"><span data-i18n="life_phase">Fase Kehidupan</span> <span style="font-size:.6rem; background:#fff0f7; color:#e53e8a; padding:1px 6px; border-radius:8px; margin-left:4px;" data-i18n="set">Atur</span></div>
+            <div style="font-size:.88rem; font-weight:700; color:#e53e8a; margin-top:4px; min-height:20px;" id="fcFaseNama" data-i18n="life_phase_not_set">Belum diatur</div>
+            <div style="font-size:.62rem; color:#888; margin-top:4px; line-height:1.5;" id="fcFaseDesc" data-i18n="life_phase_click">Klik untuk mengatur fase kehidupan pernikahan Anda</div>
+            <div style="margin-top:8px;">
+                <button onclick="event.stopPropagation(); window.runFaseAIAnalysis()" id="faseAIBtn" class="btn" style="font-size:.65rem; padding:3px 10px; background:#e53e8a; color:#fff; border-color:#e53e8a; display:none;">Analisis AI</button>
+            </div>
+        </div>
+        <div class="stat-card" id="cardDanaSalingJaga" style="border-top:3px solid #00875a;">
+            <div class="stat-label" data-i18n="mutual_fund">Dana Saling Jaga</div>
+            <div class="stat-value" id="fcDanaSalingJaga" style="color:#00875a; font-size:1rem;">Rp 0</div>
+            <div style="font-size:.65rem; color:#888; margin-top:4px;" id="fcDSJNote" data-i18n="dsj_note">30% dari saldo setelah dana darurat</div>
+        </div>
+    </div>
+
+    <div class="budget-mini">
+        <div class="budget-mini-info">
+            <div class="budget-mini-item">
+                <select id="budgetMonth" class="budget-select" onchange="renderBudget()">
+                    <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
+                    <option value="4">Apr</option><option value="5">Mei</option><option value="6">Jun</option>
+                    <option value="7">Jul</option><option value="8">Agu</option><option value="9">Sep</option>
+                    <option value="10">Okt</option><option value="11">Nov</option><option value="12">Des</option>
+                </select>
+                <select id="budgetYear" class="budget-select" onchange="renderBudget()"></select>
+            </div>
+            <div class="budget-mini-item">
+                <span class="budget-mini-label" data-i18n="target">Target:</span>
+                <span class="budget-mini-value" id="budgetTargetDisplay">Rp 0</span>
+                <span id="budgetSourceTag" class="budget-source-tag none" data-i18n="no_budget">Tidak ada</span>
+            </div>
+            <div class="budget-mini-item">
+                <span class="budget-mini-label" data-i18n="actual">Realisasi:</span>
+                <span class="budget-mini-value" id="budgetActualDisplay">Rp 0</span>
+            </div>
+            <div class="budget-mini-item">
+                <span class="budget-mini-label" data-i18n="remaining">Sisa:</span>
+                <span class="budget-mini-value" id="budgetRemainingDisplay">Rp 0</span>
+            </div>
+            <div class="budget-mini-progress">
+                <div class="budget-mini-progress-fill" id="budgetProgressFill"></div>
+            </div>
+            <span id="budgetProgressPct" style="font-size:.75rem; font-weight:700; color:#666; min-width:36px;">0%</span>
+        </div>
+        <div class="budget-mini-progress-row" style="display:none;">
+            <div class="budget-mini-progress">
+                <div class="budget-mini-progress-fill" id="budgetProgressFill2"></div>
+            </div>
+            <span id="budgetProgressPct2" style="font-size:.78rem; font-weight:700; color:#666; min-width:38px; text-align:right;">0%</span>
+        </div>
+        <div class="budget-mini-actions">
+            <button class="btn-icon" id="anggaranBtn" onclick="openBudgetModal()" data-i18n="budget_btn">Anggarkan</button>
+            <button class="btn-icon" id="laporanBtn" onclick="openMonthlyReport()" data-i18n="report_btn">Laporan</button>
+            <button class="btn-icon" id="pdfBtn" onclick="generatePDFReport()" data-i18n="pdf_btn">PDF</button>
+        </div>
+    </div>
+
+    <!-- ===== FORECAST CARD ===== -->
+    <div class="forecast-card" id="forecastCard">
+        <div class="fc-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.6;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <span data-i18n="financial_estimate">Estimasi Keuangan</span>
+            </div>
+        </div>
+        <div style="padding:18px 0; text-align:center; color:var(--ink-faint); font-size:.72rem;">Memuat data...</div>
+    </div>
+
+    <div class="expense-chart-section" id="expenseChartSection">
+        <div class="expense-chart-header" onclick="toggleExpenseChart()" style="cursor:pointer; user-select:none;">
+            <span class="expense-chart-title" data-i18n="expense_by_category"> Pengeluaran per Kategori</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div class="expense-chart-toggle" id="expenseChartToggleButtons" style="display:none;" onclick="event.stopPropagation()">
+                    <button id="expChartBtnAll" class="active" onclick="setExpenseChartMode('all')" data-i18n="chart_all">Semua</button>
+                    <button id="expChartBtnMonth" onclick="setExpenseChartMode('month')" data-i18n="chart_month">Bulan Ini</button>
+                </div>
+                <span id="expenseChartArrow" style="font-size:.8rem; color:#999;" data-i18n="show">▼ Tampilkan</span>
+            </div>
+        </div>
+        <div class="expense-chart-body" id="expenseChartBody" style="display:none;">
+            <div class="expense-chart-empty">Belum ada data pengeluaran</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="filters">
+            <input type="text" id="searchInput" class="search-input" placeholder="Cari..." data-i18n="search" data-i18n-attr="placeholder" oninput="currentPage=1; render();">
+            <button class="filter-btn active" onclick="setFilter('all')" data-i18n="filter_all">Semua</button>
+            <button class="filter-btn" onclick="setFilter('income')" data-i18n="filter_income">Masuk</button>
+            <button class="filter-btn" onclick="setFilter('expense')" data-i18n="filter_expense">Keluar</button>
+            <div class="date-filter-box">
+                <input type="date" id="dateFilterStart" onchange="applyDateFilter()">
+                <span>-</span>
+                <input type="date" id="dateFilterEnd" onchange="applyDateFilter()">
+                <button class="date-clear-btn" style="display:none;" onclick="resetDateFilter()">×</button>
+            </div>
+        </div>
+        <div class="actions">
+            <button class="btn btn-primary" id="tambahTransaksiBtn" onclick="openModal('addModal')" data-i18n="add_transaction">+ Transaksi</button>
+            <button class="btn" style="background:#6b46c1; color:#fff; border-color:#6b46c1;" onclick="openAIAnalysis()" data-i18n="ai_analysis">Analisis AI</button>
+            <button class="btn" style="background:#0e7490; color:#fff; border-color:#0e7490;" onclick="window.openAIChatModal()" data-i18n="ask_ai">Tanya AI</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr><th class="col-no" data-i18n="col_no">No</th><th data-i18n="col_date">Tanggal</th><th class="col-category" data-i18n="col_category">Kategori</th><th data-i18n="col_description">Deskripsi</th><th data-i18n="col_income">Pemasukan</th><th data-i18n="col_expense">Pengeluaran</th><th class="col-saldo" data-i18n="col_balance">Saldo</th><th class="col-nota" data-i18n="col_receipt">Nota</th><th data-i18n="col_action">Aksi</th></tr>
+            </thead>
+            <tbody id="transactionTableBody"></tbody>
+        </table>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; justify-content:flex-end;">
+        <button class="btn" id="backupBtn" onclick="openBackupManager()" data-i18n="manage_backup">Kelola Backup</button>
+        <button class="btn" onclick="toggleAuditLogInline()"><span data-i18n="audit_log">Log Audit</span> <span id="auditLogInlineArrow">▼</span></button>
+    </div>
+    <div id="auditLogInlineBody" style="display:none; padding:10px 14px; border:1.5px solid #1a1a1a; border-radius:8px; margin-bottom:12px; background:#fff;">
+        <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+            <button class="btn" style="padding:4px 12px; font-size:.7rem;" onclick="refreshLogsFromCloud()">Refresh</button>
+        </div>
+        <div id="logSummaryArea" class="log-container-box">Memuat log...</div>
+    </div>
+
+    <div class="pagination-bar" id="paginationBar">
+        <div class="pagination-info" id="paginationInfo"></div>
+        <div class="pagination-controls" id="paginationControls"></div>
+    </div>
+
+    <div class="footer" style="border-top:1px solid #ddd; padding-top:12px; margin-top:16px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <div id="transactionCount">0 transaksi</div>
+    </div>
+    <div id="auditLogSection" style="display:none;"></div>
+    </div><!-- /dashboardView -->
+</div>
+
+<div id="toastMessage" class="toast-message"><span id="toastIcon"></span><span id="toastText"></span></div>
+
+<!-- Add Modal -->
+<div id="addModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>Transaksi Baru</h3><button class="modal-close" onclick="closeModal('addModal')">×</button></div>
+        <form id="addForm" onsubmit="handleSubmit(event)">
+            <div class="form-group"><label>Jenis</label><div class="radio-group"><label class="radio-label"><input type="radio" name="type" value="income" checked onchange="toggleCategoryField()"> Pemasukan</label><label class="radio-label"><input type="radio" name="type" value="expense" onchange="toggleCategoryField()"> Pengeluaran</label></div></div>
+            <div class="form-group" style="display:none"><label>Tanggal & Waktu</label><input type="datetime-local" id="txDate" class="form-control"></div>
+            <div class="form-group" id="incomeCategoryGroup"><label>Kategori</label><select id="txIncomeCategory" class="form-control"><option value="">-- Pilih Kategori --</option><option value="Gaji">Gaji</option><option value="Freelance">Freelance</option><option value="Bonus">Bonus</option><option value="THR">THR</option><option value="Hasil Investasi">Hasil Investasi</option><option value="Jual Aset">Jual Aset</option><option value="Hadiah">Hadiah</option><option value="Penjualan">Penjualan</option><option value="Jasa">Jasa</option><option value="Uang Muka">Uang Muka</option><option value="Pelunasan Piutang">Pelunasan Piutang</option><option value="Komisi">Komisi</option><option value="Pinjaman Diterima">Pinjaman Diterima</option><option value="Pengembalian Dana">Pengembalian Dana</option><option value="Subsidi &amp; Bantuan">Subsidi &amp; Bantuan</option><option value="Lainnya">Lainnya</option></select></div>
+            <div class="form-group" id="categoryGroup" style="display:none"><label>Kategori</label><select id="txCategory" class="form-control"><option value="">-- Pilih Kategori --</option><option value="Makanan & Minuman">Makanan & Minuman</option><option value="Tagihan">Tagihan</option><option value="Belanja">Belanja</option><option value="Kesehatan">Kesehatan</option><option value="Hiburan">Hiburan</option><option value="Pendidikan">Pendidikan</option><option value="Transportasi">Transportasi</option><option value="Investasi">Investasi</option><option value="Skin & Body Care">Skin & Body Care</option><option value="Kitchen">Kitchen</option><option value="Cleaning">Cleaning</option><option value="Pajak & Iuran">Pajak & Iuran</option><option value="Pertanian">Pertanian</option><option value="Sedekah">Sedekah</option><option value="Sumbangan">Sumbangan</option><option value="Pulsa">Pulsa</option><option value="Pakan Peliharaan">Pakan Peliharaan</option></select></div>
+            <div class="form-group"><label>Deskripsi</label><input type="text" id="txDesc" class="form-control" required></div>
+            <div class="form-group"><label>Jumlah (Rp)</label><input type="text" id="txAmount" class="form-control" oninput="formatRupiah(this)" required></div>
+            <div class="form-group"><label>Lampiran Nota</label><input type="file" id="txAttachment" accept="image/*" class="form-control" onchange="previewAttachment(this)"><img id="attachmentPreview" class="attachment-preview"></div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>Ubah Transaksi</h3><button class="modal-close" onclick="closeModal('editModal')">×</button></div>
+        <form id="editForm" onsubmit="handleEditSubmit(event)">
+            <input type="hidden" id="editId">
+            <div class="form-group"><label>Jenis</label><div class="radio-group"><label class="radio-label"><input type="radio" name="editType" value="income" id="editTypeIncome" onchange="toggleEditCategoryField()"> Pemasukan</label><label class="radio-label"><input type="radio" name="editType" value="expense" id="editTypeExpense" onchange="toggleEditCategoryField()"> Pengeluaran</label></div></div>
+            <div class="form-group" style="display:none"><label>Tanggal & Waktu</label><input type="datetime-local" id="editTxDate" class="form-control"></div>
+            <div class="form-group" id="editIncomeCategoryGroup" style="display:none"><label>Kategori</label><select id="editTxIncomeCategory" class="form-control"><option value="">-- Pilih Kategori --</option><option value="Gaji">Gaji</option><option value="Freelance">Freelance</option><option value="Bonus">Bonus</option><option value="THR">THR</option><option value="Hasil Investasi">Hasil Investasi</option><option value="Jual Aset">Jual Aset</option><option value="Hadiah">Hadiah</option><option value="Penjualan">Penjualan</option><option value="Jasa">Jasa</option><option value="Uang Muka">Uang Muka</option><option value="Pelunasan Piutang">Pelunasan Piutang</option><option value="Komisi">Komisi</option><option value="Pinjaman Diterima">Pinjaman Diterima</option><option value="Pengembalian Dana">Pengembalian Dana</option><option value="Subsidi &amp; Bantuan">Subsidi &amp; Bantuan</option><option value="Lainnya">Lainnya</option></select></div>
+            <div class="form-group" id="editCategoryGroup"><label>Kategori</label><select id="editTxCategory" class="form-control"><option value="">-- Pilih Kategori --</option><option value="Makanan & Minuman">Makanan & Minuman</option><option value="Tagihan">Tagihan</option><option value="Belanja">Belanja</option><option value="Kesehatan">Kesehatan</option><option value="Hiburan">Hiburan</option><option value="Pendidikan">Pendidikan</option><option value="Transportasi">Transportasi</option><option value="Investasi">Investasi</option><option value="Skin & Body Care">Skin & Body Care</option><option value="Kitchen">Kitchen</option><option value="Cleaning">Cleaning</option><option value="Pajak & Iuran">Pajak & Iuran</option><option value="Pertanian">Pertanian</option><option value="Sedekah">Sedekah</option><option value="Sumbangan">Sumbangan</option><option value="Pulsa">Pulsa</option><option value="Pakan Peliharaan">Pakan Peliharaan</option></select></div>
+            <div class="form-group"><label>Deskripsi</label><input type="text" id="editTxDesc" class="form-control" required></div>
+            <div class="form-group"><label>Jumlah (Rp)</label><input type="text" id="editTxAmount" class="form-control" oninput="formatRupiah(this)" required></div>
+            <div class="form-group"><label>Lampiran Nota</label><input type="file" id="editTxAttachment" accept="image/*" class="form-control" onchange="previewEditAttachment(this)"><div id="editAttachmentInfo" style="font-size:.65rem; color:#666; margin-top:4px;"></div><img id="editAttachmentPreview" class="attachment-preview"></div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div>
+        </form>
+    </div>
+</div>
+
+<!-- [KONFLIK MULTI-DEVICE] Banner muncul kalau ada transaksi yang diedit
+     bersamaan di lebih dari satu perangkat -- lihat js/sync-conflict.js. -->
+<div id="conflictBanner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; align-items:center; justify-content:center; gap:10px; background:var(--warning-lt); border-bottom:1px solid var(--warning); padding:9px 14px; font-size:.78rem; color:var(--warning); text-align:center; flex-wrap:wrap;">
+    <span id="conflictBannerText"></span>
+    <button onclick="window.openConflictReview()" style="background:var(--warning); color:#fff; border:none; border-radius:6px; padding:5px 12px; font-size:.75rem; font-weight:600; cursor:pointer;">Tinjau</button>
+</div>
+
+<!-- [KONFLIK MULTI-DEVICE] Modal perbandingan versi lokal vs cloud, dengan
+     pilihan mana yang mau dipakai. Lihat window.openConflictReview /
+     resolveConflictKeepMine / resolveConflictKeepCloud di js/sync-conflict.js. -->
+<div id="conflictModal" class="modal" style="z-index:10000;">
+    <div class="modal-content" style="max-width:440px;">
+        <div class="modal-header"><h3>Konflik Data<span id="conflictModalCount" style="font-weight:400; font-size:.75rem; color:var(--ink-faint);"></span></h3></div>
+        <p style="font-size:.78rem; color:var(--ink-muted); margin:0 0 12px; line-height:1.5;">Transaksi ini sempat diubah di dua perangkat sebelum sinkron. Pilih versi mana yang ingin disimpan.</p>
+        <div id="conflictModalBody" class="conflict-compare"></div>
+        <div class="modal-footer" style="flex-wrap:wrap;">
+            <button type="button" class="btn btn-secondary" id="conflictKeepCloudBtn" onclick="window.resolveConflictKeepCloud()">Pakai versi cloud</button>
+            <button type="button" class="btn btn-primary" id="conflictKeepMineBtn" onclick="window.resolveConflictKeepMine()">Simpan versi saya</button>
+        </div>
+    </div>
+</div>
+
+<!-- Action Menu Modal -->
+<div id="actionMenuModal" class="modal">
+    <div class="modal-content" style="max-width:260px">
+        <div class="modal-header"><h3>Pilihan Aksi</h3><button class="modal-close" onclick="closeModal('actionMenuModal')">×</button></div>
+        <ul style="list-style:none"><li style="margin-bottom:10px"><button id="actionEditBtn" style="width:100%; padding:10px; text-align:left; background:none; border:none; cursor:pointer; border-radius:6px; transition:background 0.2s;">Ubah Data</button></li><li><button id="actionDeleteBtn" style="width:100%; padding:10px; text-align:left; background:none; border:none; cursor:pointer; color:#de350b; border-radius:6px; transition:background 0.2s;">Hapus Transaksi</button></li></ul>
+    </div>
+</div>
+
+<!-- [FIX UX] Modal konfirmasi/prompt/alert kustom -- pengganti confirm()/
+     prompt()/alert() bawaan browser untuk aksi PERMANEN (hapus buku, reset
+     app, hapus akun). Satu markup dipakai ulang untuk ketiga jenis dialog,
+     dikendalikan oleh window.customConfirm/customPrompt/customAlert di
+     js/utils.js. Kenapa ini penting: dialog native tidak bisa dibedakan
+     visualnya (semua tombol OK terlihat sama, gampang ke-tap tanpa sengaja
+     di HP terutama saat ada beberapa dialog berantai), dan untuk pola
+     "ketik nama buku untuk konfirmasi" versi custom ini bisa kasih umpan
+     balik instan (tombol nonaktif sampai teksnya cocok) -- prompt() bawaan
+     browser tidak bisa begitu, baru ketahuan salah ketik SETELAH klik OK. -->
+<div id="customConfirmModal" class="modal" style="z-index:10000;">
+    <div class="modal-content" style="max-width:400px;">
+        <div class="modal-header"><h3 id="customConfirmTitle">Konfirmasi</h3><button class="modal-close" onclick="window._customConfirmResolve(false)">×</button></div>
+        <div style="padding:4px 2px 8px;">
+            <p id="customConfirmMessage" style="white-space:pre-line; font-size:.85rem; color:var(--ink-muted); line-height:1.5; margin:0 0 10px;"></p>
+            <input id="customConfirmInput" type="text" style="display:none; width:100%; padding:9px 10px; border:1.5px solid var(--rule); border-radius:6px; font-size:.85rem; background:var(--bg); color:var(--ink); box-sizing:border-box;" autocomplete="off" oninput="window._customConfirmValidateInput()">
+            <div id="customConfirmInputHint" style="display:none; font-size:.7rem; color:var(--ink-faint); margin-top:5px;"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="customConfirmCancelBtn" onclick="window._customConfirmResolve(false)">Batal</button>
+            <button type="button" class="btn btn-danger" id="customConfirmOkBtn" onclick="window._customConfirmResolve(true)">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Book Manager Modal -->
+<div id="bookManagerModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>Kelola Buku Kas</h3><button class="modal-close" onclick="closeModal('bookManagerModal')">×</button></div>
+        <div id="storageEstimPanel" style="background:#f0f8ff; border:1px solid #c5d8ff; border-radius:10px; padding:14px 16px; margin-bottom:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                <span style="font-size:.75rem; font-weight:700; color:#1a56db;">Estimasi Storage Supabase</span>
+                <button onclick="refreshStorageEstimate()" id="storageRefreshBtn" style="font-size:.65rem; padding:2px 10px; border:1px solid #c5d8ff; border-radius:6px; background:#e8f0fe; color:#1a56db; cursor:pointer; font-weight:600;">Refresh</button>
+            </div>
+            <div id="storageEstimContent">
+                <div style="font-size:.7rem; color:#888; text-align:center; padding:8px 0;">Memuat estimasi storage...</div>
+            </div>
+        </div>
+        <div id="bookListContainer"></div>
+        <form onsubmit="addNewBook(event)" style="border-top:1px solid #eee; padding-top:16px; margin-bottom:16px">
+            <input type="text" id="newBookName" class="form-control" placeholder="Nama buku baru..." required>
+            <div style="margin-top:8px;">
+                <label style="font-size:.7rem; color:#6b46c1; font-weight:600;">Jadikan anak dari buku (opsional)</label>
+                <select id="newBookParent" class="form-control" style="font-size:.75rem; margin-top:4px;">
+                    <option value="">— Buku mandiri (tidak ada induk) —</option>
+                </select>
+                <div style="font-size:.62rem; color:#888; margin-top:3px; line-height:1.5;">Anak buku bisa ditutup dan ringkasannya dikirim ke buku induk.</div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px">Buat Buku Baru</button>
+        </form>
+    </div>
+</div>
+
+<!-- Telegram Settings Modal -->
+<div id="telegramSettingsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>Notifikasi Telegram</h3><button class="modal-close" onclick="closeModal('telegramSettingsModal')">×</button></div>
+        <div class="form-group"><label style="display:flex; align-items:center; gap:8px;">Status <span id="tgStatusBadge" style="font-size:.6rem; padding:2px 8px; border-radius:10px; background:#eee; color:#666;">Belum dikonfigurasi</span></label></div>
+        <div style="background:#f9f9f9; border:1px solid #e0e0e0; border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:.72rem; line-height:1.8; color:#444;">
+            <b>Cara setup (3 langkah):</b><br>
+            <b>1.</b> Buka <a href="https://t.me/BotFather" target="_blank" style="color:#0088cc;">@BotFather</a> → kirim <code>/newbot</code> → ikuti instruksi → copy <b>Bot Token</b><br>
+            <b>2.</b> Buka bot kamu di Telegram → klik <b>Start</b> (wajib, agar bot bisa kirim pesan)<br>
+            <b>3.</b> Buka <a href="https://t.me/userinfobot" target="_blank" style="color:#0088cc;">@userinfobot</a> → kirim pesan apapun → copy angka <b>Id</b> sebagai Chat ID
+        </div>
+        <div class="form-group"><label>Bot Token <span style="font-weight:400;color:#888;font-size:.7rem;">dari @BotFather</span></label><input type="text" id="tgBotTokenInput" class="form-control" placeholder="123456789:AAF-contoh-token-dari-botfather" autocomplete="off"></div>
+        <div class="form-group"><label>Chat ID <span style="font-weight:400;color:#888;font-size:.7rem;">dari @userinfobot (angka, bisa negatif untuk grup)</span></label><input type="text" id="tgChatIdInput" class="form-control" placeholder="123456789" autocomplete="off"></div>
+        <input type="hidden" id="tgEdgeUrlInput" value="">
+        <div id="tgTestStatus" style="font-size:.72rem; margin-bottom:12px; min-height:20px; padding: 0 2px;"></div>
+        <div class="modal-footer" style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-secondary" onclick="testTelegramNotif()" style="flex:1">Tes Kirim</button>
+            <button class="btn btn-secondary" onclick="sendDailySummaryToTelegram()" style="flex:1; background:#0088cc; color:#fff; border-color:#0088cc;">Kirim Ringkasan</button>
+            <button class="btn btn-danger" onclick="clearTelegramConfig()" style="flex:1">Hapus</button>
+            <button class="btn btn-primary" onclick="saveTelegramConfig()" style="flex:1">Simpan</button>
+        </div>
+        <div style="background:#f0f8ff; border:1px solid #cce0ff; border-radius:8px; padding:10px 12px; margin-top:12px; font-size:.68rem; color:#0055aa; line-height:1.8;">
+            <b>Notifikasi yang dikirim otomatis:</b><br>
+            Transaksi baru · Transaksi diubah · Transaksi dihapus<br>
+            Peringatan anggaran 80% & anggaran habis<br>
+            Ringkasan harian otomatis pukul <b>21:00</b>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL SETELAN ===== -->
+<div id="setelanModal" class="modal">
+    <div class="modal-content setelan-modal-content" style="max-width:880px;">
+        <div class="modal-header"><h3 data-i18n="settings_title">Setelan</h3><button class="modal-close" onclick="closeModal('setelanModal')">×</button></div>
+
+        <!-- Tab navigation -->
+        <div class="setelan-tabs" id="setelanTabs">
+            <button type="button" class="setelan-tab-btn active" data-tab="lang" onclick="window.switchSetelanTab('lang')"><span data-i18n="language_section">Bahasa / Language</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="ai" onclick="window.switchSetelanTab('ai')"><span data-i18n="ai_analysis_section">Analisis AI</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="gold" onclick="window.switchSetelanTab('gold'); window.updateEmasQuotaDisplay()"><span data-i18n="gold_price_section">Harga Emas Antam</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="charity" onclick="window.switchSetelanTab('charity')"><span data-i18n="charity_section">Sedekah</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="telegram" onclick="window.switchSetelanTab('telegram')"><span data-i18n="telegram_section">Notifikasi Telegram</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="supabase" onclick="window.switchSetelanTab('supabase')"><span data-i18n="supabase_section">Koneksi Supabase</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="password" onclick="window.switchSetelanTab('password')"><span data-i18n="change_password_section">Ganti Password Keamanan</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="sync" onclick="window.switchSetelanTab('sync')"><span data-i18n="settings_sync_section">Sinkronisasi Setelan</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="backup" onclick="window.switchSetelanTab('backup')"><span data-i18n="data_backup_section">Cadangan Data</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="migration" onclick="window.switchSetelanTab('migration')"><span data-i18n="migration_section">Migrasi Data ke Cloud</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="reset" onclick="window.switchSetelanTab('reset')"><span data-i18n="reset_app_section">Reset Total Aplikasi</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="archive" onclick="window.switchSetelanTab('archive')"><span data-i18n="archive_section">Arsipkan & Kosongkan Database</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="devices" onclick="window.switchSetelanTab('devices'); window.loadConnectedDevices()">Perangkat Terhubung</button>
+        </div>
+
+        <div class="setelan-tab-content" id="setelanTabContent">
+
+        <!-- Bahasa / Language -->
+        <div class="data-management-panel setelan-tab-panel active" data-tab-panel="lang">
+            <div class="panel-title setelan-title" data-i18n="language_section">Bahasa / Language</div>
+            <div class="setelan-desc" data-i18n="language_desc">Pilih bahasa tampilan aplikasi.</div>
+            <div class="setelan-row">
+                <button id="langBtnId" class="btn btn-lang-active" style="flex:1;" onclick="window.setLang('id')">Bahasa Indonesia</button>
+                <button id="langBtnEn" class="btn btn-lang-inactive" style="flex:1;" onclick="window.setLang('en')">English</button>
+            </div>
+        </div>
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="ai">
+            <div class="panel-title setelan-title--purple">
+                <span data-i18n="ai_analysis_section">Analisis AI</span>
+                <span id="aiWorkerStatusBadge" class="setelan-badge setelan-badge--neutral">Belum dikonfigurasi</span>
+            </div>
+            <div class="setelan-desc">
+                <span data-i18n="ai_desc">Masukkan URL Cloudflare Worker milik Anda untuk mengaktifkan fitur Analisis Keuangan AI.</span>
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label data-i18n="worker_url">Worker URL</label>
+                <input type="text" id="aiWorkerUrlInput" class="form-control" placeholder="https://nama-worker-anda.workers.dev" data-i18n="worker_placeholder" data-i18n-attr="placeholder" oninput="updateAiWorkerBadge()">
+            </div>
+            <div id="aiWorkerTestStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary" style="flex:1;" onclick="testAiWorkerUrl()" data-i18n="test_connection">Tes Koneksi</button>
+                <button class="btn btn-danger" style="flex:1;" onclick="clearAiWorkerUrl()">Hapus</button>
+                <button class="btn btn-primary" style="flex:2;" onclick="saveAiWorkerUrl()">Simpan</button>
+            </div>
+        </div>
+
+        <!-- Harga Emas Antam -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="gold">
+            <div class="panel-title setelan-title--amber">
+                <span data-i18n="gold_price_section">Harga Emas Antam</span>
+                <span id="emasApiStatusBadge" class="setelan-badge setelan-badge--neutral">Belum dikonfigurasi</span>
+            </div>
+            <div class="setelan-desc">
+                <span data-i18n="gold_api_desc">Masukkan API key dari <strong>emas.maulanar.my.id</strong> untuk menampilkan harga emas Antam terkini.</span>
+            </div>
+            <div id="emasQuotaInfo" style="font-size:.68rem; color:#92400e; background:#fef3c7; border:1px solid #fde68a; border-radius:6px; padding:6px 8px; margin-bottom:10px;"></div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label data-i18n="api_key_label">API Key</label>
+                <input type="text" id="emasApiKeyInput" class="form-control" placeholder="Masukkan API key dari emas.maulanar.my.id" oninput="updateEmasApiBadge()">
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label data-i18n="gold_amount_label">Jumlah Emas yang Dimiliki (gram)</label>
+                <input type="number" id="emasGramInput" class="form-control" placeholder="Contoh: 5.5" min="0" step="0.01" oninput="updateEmasGramPreview()">
+                <div id="emasGramPreview" class="setelan-preview--amber"></div>
+            </div>
+            <div id="emasApiTestStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary" style="flex:1;" onclick="testEmasApiKey()">Tes</button>
+                <button class="btn btn-danger" style="flex:1;" onclick="clearEmasApiKey()">Hapus</button>
+                <button class="btn btn-primary" style="flex:2;" onclick="saveEmasApiKey()">Simpan</button>
+            </div>
+        </div>
+
+        <!-- Sedekah -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="charity">
+            <div class="panel-title setelan-title--green" data-i18n="charity_section">Sedekah</div>
+            <div class="setelan-desc">
+                <span data-i18n="charity_desc">Sedekah dihitung otomatis <strong>2,5%</strong> dari total pemasukan bulan kalender berjalan.</span>
+            </div>
+            <div id="zakatPreview" class="setelan-preview--green"></div>
+        </div>
+
+        <!-- Telegram -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="telegram">
+            <div class="panel-title setelan-title--blue" data-i18n="telegram_section">Notifikasi Telegram</div>
+            <div class="setelan-desc">
+                <span data-i18n="telegram_desc">Kirim notifikasi transaksi, peringatan anggaran, dan ringkasan harian lewat Telegram Bot.</span>
+            </div>
+            <button class="btn btn-primary" onclick="closeModal('setelanModal'); openTelegramSettings()" data-i18n="telegram_settings_btn">Atur Notifikasi Telegram</button>
+        </div>
+
+        <!-- Koneksi Supabase -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="supabase">
+            <div class="form-group" style="margin-bottom:0;">
+                <div class="setelan-info-row">
+                    <span data-i18n="supabase_section">Koneksi Supabase</span>
+                    <span class="setelan-badge setelan-badge--success"><span data-i18n="supabase_all_books">Berlaku untuk semua buku</span></span>
+                </div>
+                <label data-i18n="supabase_url_label">Supabase URL Connection</label>
+                <input type="text" id="supabaseUrlInput" class="form-control" placeholder="https://yourproject.supabase.co" style="margin-bottom: 10px;">
+                <label data-i18n="supabase_key_label">Supabase Anon Key</label>
+                <input type="password" id="supabaseKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                <div class="cloud-connect-row">
+                    <button class="btn btn-primary" style="width:100%" onclick="testCloudConnection()" data-i18n="connect_sync">Hubungkan & Sinkronkan Semua Buku</button>
+                </div>
+                <div id="connectionStatus" style="margin-top:8px"></div>
+                <div class="setelan-divider"></div>
+                <label class="setelan-label-strong">Nama Perangkat Ini</label>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="text" id="deviceNameInput" class="form-control" placeholder="cth: HP Saya, Laptop Kantor" maxlength="24" autocomplete="off" style="flex:1;">
+                    <button class="btn btn-secondary" onclick="window.saveDeviceName()" style="white-space:nowrap;">Simpan</button>
+                </div>
+                <div class="setelan-hint">Tampil di log sinkronisasi &amp; notifikasi Telegram. Kosongkan dan simpan untuk reset ke ID acak.</div>
+                <div id="deviceNameStatus" style="font-size:.7rem; min-height:16px; margin-top:6px;"></div>
+            </div>
+        </div>
+
+        <!-- Ganti Password -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="password">
+            <div class="panel-title" data-i18n="change_password_section">Ganti Password Keamanan</div>
+            <div class="setelan-desc">
+                <span data-i18n="change_pwd_desc">Ganti password yang digunakan untuk mengenkripsi koneksi Supabase Anda.</span>
+            </div>
+            <input type="password" id="changePwdOld" class="form-control" placeholder="Password saat ini" data-i18n="current_pwd" data-i18n-attr="placeholder" style="margin-bottom:8px;">
+            <input type="password" id="changePwdNew" class="form-control" placeholder="Password baru (min. 6 karakter)" data-i18n="new_pwd" data-i18n-attr="placeholder" style="margin-bottom:8px;">
+            <input type="password" id="changePwdNew2" class="form-control" placeholder="Konfirmasi password baru" data-i18n="confirm_pwd" data-i18n-attr="placeholder" style="margin-bottom:10px;">
+            <div id="changePwdStatus" style="font-size:.7rem; min-height:16px; margin-bottom:8px;"></div>
+            <button class="btn btn-primary" style="width:100%;" onclick="changePassword()" data-i18n="change_pwd_btn">Ganti Password</button>
+        </div>
+
+        <!-- Sinkronisasi Setelan -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="sync">
+            <div class="panel-title setelan-title--blue">
+                <span data-i18n="settings_sync_section">Sinkronisasi Setelan</span>
+                <span id="settingsSyncBadge" class="setelan-badge setelan-badge--success" data-i18n="settings_sync_auto">Otomatis</span>
+            </div>
+            <div class="setelan-desc--tight">
+                <span data-i18n="settings_sync_desc">Daftar buku kas, anggaran dasar, anggaran bulanan, dan konfigurasi Telegram tersinkronisasi otomatis ke Supabase setiap kali ada perubahan.</span>
+            </div>
+            <div id="settingsSyncStatus" class="setelan-status-text"></div>
+        </div>
+
+        <!-- Cadangan Data -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="backup">
+            <div class="panel-title" data-i18n="data_backup_section">Cadangan Data</div>
+            <div class="panel-actions-row">
+                <button class="btn btn-secondary" onclick="exportToCSV()">CSV</button>
+                <button class="btn btn-secondary" onclick="exportToJSON()">JSON</button>
+                <button class="btn btn-secondary" onclick="triggerJsonImport()">Impor</button>
+            </div>
+            <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)">
+            <div style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--rule);">
+                <label class="setelan-label-strong" data-i18n="sheets_url_label">Google Sheets Web App URL</label>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <input type="text" id="googleSheetsUrlInput" class="form-control" style="flex:2; min-width:200px;" placeholder="https://script.google.com/macros/s/.../exec">
+                    <button class="btn btn-secondary" onclick="saveGoogleSheetsUrl()" style="flex:0 0 auto;" data-i18n="save_url">Simpan URL</button>
+                    <button class="btn btn-success" onclick="backupToGoogleSheets()" style="flex:0 0 auto;" data-i18n="backup_to_sheets">Backup ke Google Sheets</button>
+                </div>
+                <div id="googleSheetsStatus" style="font-size:.7rem; margin-top:6px; min-height:16px;"></div>
+                <div id="googleSheetsLastBackup" class="setelan-hint"></div>
+            </div>
+        </div>
+
+        <!-- ===== MIGRASI DATA KE CLOUD ===== -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="migration">
+            <div class="panel-title setelan-title--purple">
+                <span data-i18n="migration_section">Migrasi Data ke Cloud</span>
+            </div>
+            <div class="setelan-desc">
+                <span data-i18n="migration_desc">Pindahkan semua data (anggaran, jadwal pembayaran) dari Local Storage ke Supabase agar tersinkronisasi di semua perangkat.</span>
+            </div>
+            <div id="migrationStatus" class="setelan-test-status" style="color:var(--ink-faint);"></div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-primary" style="flex:1;" 
+                        onclick="window.runFullMigration()" data-i18n="migrate_all">
+                    Migrasi Semua Data
+                </button>
+                <button class="btn btn-secondary" style="flex:1;" 
+                        onclick="window.checkMigrationStatus()" data-i18n="check_status">
+                    Cek Status
+                </button>
+            </div>
+        </div>
+
+        <!-- Reset Aplikasi Total -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="reset">
+            <div class="panel-title setelan-title--red" data-i18n="reset_app_section">Reset Total Aplikasi</div>
+            <div class="setelan-desc" style="margin-bottom:12px;">
+                Hapus <b>semua buku, transaksi, dan setelan</b> baik di Supabase maupun di penyimpanan lokal. Aplikasi akan kembali ke kondisi <b>bersih seperti baru dipasang</b>. Gunakan saat ingin memulai dari awal atau berpindah akun Supabase.
+            </div>
+            <div id="resetAppStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
+            <button class="btn btn-primary" style="width:100%; margin-bottom:8px;" onclick="window.exportAllDataOnly()" data-i18n="export_all_json">Ekspor Semua Data (JSON)</button>
+            <label class="btn btn-success" style="width:100%; margin-bottom:8px; cursor:pointer; display:block; text-align:center; box-sizing:border-box;">
+                Import dari File JSON
+                <input type="file" id="importJsonFile" accept=".json" style="display:none;" onchange="window.importAllDataFromFile(this)">
+            </label>
+            <div id="importStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
+            <button class="btn btn-danger" style="width:100%;" onclick="window.resetAllApplication()">Reset Total — Hapus Semua Data</button>
+        </div>
+
+        <!-- Arsipkan JSON -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="archive">
+            <div class="panel-title setelan-title--red" data-i18n="archive_section">Arsipkan & Kosongkan Database</div>
+            <div class="setelan-desc" style="margin-bottom:12px;">
+                Export semua transaksi buku ini ke file JSON sebagai arsip, lalu <b>hapus permanen</b> seluruh data dari Supabase dan lokal. Gunakan saat storage hampir penuh.
+            </div>
+            <div id="archiveStatus" style="font-size:.7rem; padding:6px 10px; border-radius:6px; margin-bottom:10px; display:none;"></div>
+            <button class="btn btn-danger" style="width:100%;" onclick="archiveAndClearData()">Arsipkan JSON & Kosongkan Database</button>
+        </div>
+
+        <!-- Perangkat Terhubung -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="devices">
+            <div class="panel-title" style="display:flex; align-items:center; justify-content:space-between;">
+                <span>Perangkat Terhubung</span>
+                <button class="btn btn-secondary" style="font-size:.65rem; padding:3px 10px;" onclick="window.loadConnectedDevices()">↻ Refresh</button>
+            </div>
+            <div class="setelan-desc" style="margin-bottom:12px;">
+                Daftar perangkat yang pernah mengakses buku ini, berdasarkan log aktivitas di cloud. Perangkat yang lama tidak aktif bisa diabaikan.
+            </div>
+            <div id="devicesLoadStatus" class="setelan-status-text" style="margin-top:0; margin-bottom:8px;"></div>
+            <div id="devicesList"></div>
+            <!-- [UI] Tombol "Ganti Akun" dipindah ke sini dari top bar. Ini menggantikan
+                 satu-satunya jalan pengguna DESKTOP untuk ganti akun (sebelumnya tombol
+                 top bar) -- kalau tidak dipindah ke sini, desktop tidak punya jalan sama
+                 sekali karena hamburger/drawer mobile disembunyikan di layar lebar
+                 (lihat css/style.css: .mobile-only { display:none } di atas breakpoint). -->
+            <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--rule);">
+                <button class="btn" style="width:100%; background:#e8f0fe; color:#1a56db; border:1px solid #c5d8ff;" onclick="closeModal('setelanModal'); logoutToLockScreen()" data-i18n="switch_account">Ganti Akun</button>
+            </div>
+        </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Backup Modal -->
+<div id="backupModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>Manajer Cadangan</h3><button class="modal-close" onclick="closeModal('backupModal')">×</button></div>
+        <div class="form-group"><label>Auto-Backup Terakhir</label><div id="lastBackupInfo" style="background:#f5f5f5; padding:10px; border-radius:8px; font-size:.75rem">Memuat...</div></div>
+        <div class="form-group"><label>Cadangan Lokal</label><div id="backupListContainer" style="max-height:130px; overflow-y:auto; border:1px solid #ddd; border-radius:8px; padding:10px"></div></div>
+        <div class="form-group"><label style="display:flex; align-items:center; gap:8px;">Cadangan Cloud (Supabase) <span id="cloudBackupStatus" style="font-size:.65rem; padding:2px 8px; border-radius:10px; background:#e3fcef; color:#006644;">Otomatis Harian</span></label><div id="cloudBackupListContainer" style="max-height:130px; overflow-y:auto; border:1px solid #ddd; border-radius:8px; padding:10px"><div style="color:#888; font-size:.7rem; text-align:center;">Memuat cadangan cloud...</div></div></div>
+        <div class="panel-actions-row">
+            <button class="btn btn-primary" onclick="createBackup()" style="flex:1"> Cadangan Lokal</button>
+            <button class="btn btn-success" onclick="createCloudBackup()" style="flex:1"> Cadangan Cloud</button>
+            <button class="btn btn-warning" onclick="restoreFromBackup()" style="flex:1">Pulihkan</button>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('backupModal')">Tutup</button></div>
+    </div>
+</div>
+
+<!-- Budget Modal (Bulanan) -->
+<div id="budgetModal" class="modal">
+    <div class="modal-content wide">
+        <div class="modal-header"><h3>Anggaran Bulanan</h3><button class="modal-close" onclick="closeModal('budgetModal')">×</button></div>
+        <div style="background:#f0f8ff; border:1px solid #cce0ff; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:#0055aa;">
+            <b>Otomatis:</b> Anggaran yang disimpan di sini berlaku <b>khusus untuk bulan ini</b>.
+            Bulan berikutnya akan kembali ke <b>Anggaran Dasar</b>.
+        </div>
+        <div class="form-group"><label>Bulan & Tahun</label><div style="display:flex; gap:10px"><select id="budgetModalMonth" class="form-control" style="flex:1"></select><input type="number" id="budgetModalYear" class="form-control" style="flex:1"></div></div>
+        <div id="budgetCategoriesContainer"></div>
+        <div id="budgetSummary" class="budget-summary-row"></div>
+        <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('budgetModal')">Batal</button><button class="btn btn-primary" onclick="saveBudget()">Simpan</button></div>
+    </div>
+</div>
+
+<!-- Modal Anggaran Bulanan -->
+<div id="defaultBudgetModal" class="modal">
+    <div class="modal-content wide">
+        <div class="modal-header"><h3>Anggaran Bulanan</h3><button class="modal-close" onclick="closeModal('defaultBudgetModal')">×</button></div>
+        <div style="background:#ebf3ff; border:1px solid #c5d8ff; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:#1a56db;">
+            <b>Anggaran Bulanan</b> adalah template per kategori yang berlaku <b>secara otomatis</b> di setiap bulan
+            yang belum memiliki anggaran khusus. Untuk mengatur anggaran bulan tertentu saja, gunakan tombol <b>Anggarkan</b>.
+        </div>
+        <div id="defaultBudgetCategoriesContainer"></div>
+        <div id="defaultBudgetSummary" class="budget-summary-row"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('defaultBudgetModal')">Tutup</button>
+            <button class="btn btn-primary" onclick="saveDefaultBudget()">Simpan</button>
+        </div>
+    </div>
+</div>
+
+<div id="emergencyFundModal" class="modal" style="z-index:2000;">
+    <div class="modal-content" style="max-width:420px;">
+        <div class="modal-header">
+            <h3>Target Dana Darurat</h3>
+            <button class="modal-close" onclick="window.closeModal('emergencyFundModal')">×</button>
+        </div>
+        <div style="padding:0 22px 16px;">
+            <div style="font-size:.72rem; color:#92400e; margin-bottom:14px; line-height:1.6; background:#fff7e6; border:1px solid #fbd38d; border-radius:8px; padding:10px 12px;">
+                Dana darurat dihitung sebagai <b>N × Anggaran Bulanan</b>. Standar umum 12 bulan, tapi bisa disesuaikan
+                lebih rendah (misal saat penghasilan belum stabil) atau lebih tinggi sesuai kondisi ekonomi Anda.
+            </div>
+            <div class="form-group">
+                <label>Jumlah Bulan</label>
+                <input type="number" id="efMonthsInput" class="form-control" min="1" max="60" step="1" placeholder="Contoh: 12">
+            </div>
+            <div style="display:flex; gap:6px; margin-bottom:4px;">
+                <button type="button" class="btn btn-secondary" style="flex:1; font-size:.72rem; padding:6px;" onclick="window.setEfMonthsPreset(3)">3 bln</button>
+                <button type="button" class="btn btn-secondary" style="flex:1; font-size:.72rem; padding:6px;" onclick="window.setEfMonthsPreset(6)">6 bln</button>
+                <button type="button" class="btn btn-secondary" style="flex:1; font-size:.72rem; padding:6px;" onclick="window.setEfMonthsPreset(9)">9 bln</button>
+                <button type="button" class="btn btn-secondary" style="flex:1; font-size:.72rem; padding:6px;" onclick="window.setEfMonthsPreset(12)">12 bln</button>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:14px;">
+                <button class="btn btn-secondary" style="flex:1;" onclick="window.closeModal('emergencyFundModal')">Batal</button>
+                <button class="btn btn-primary" style="flex:2; background:#cc7b00; border-color:#cc7b00;" onclick="window.saveEmergencyFundMonths()">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Visibilitas Card Perencanaan Keuangan (per buku) -->
+<div id="cardVisibilityModal" class="modal">
+    <div class="modal-content" style="max-width:420px;">
+        <div class="modal-header">
+            <h3>Tampilan Card · <span id="cardVisibilityBookName" style="color:#cc7b00;"></span></h3>
+            <button class="modal-close" onclick="window.closeModal('cardVisibilityModal')">×</button>
+        </div>
+        <div style="padding:0 22px 16px;">
+            <div style="font-size:.7rem; color:#888; margin-bottom:10px; line-height:1.6;">
+                Pilih card perencanaan keuangan yang ingin ditampilkan untuk buku ini. Card yang dicentang akan tampil, yang tidak dicentang akan disembunyikan — pengaturan ini khusus untuk buku ini saja.
+            </div>
+            <div id="cardVisibilityList"></div>
+            <div style="display:flex; gap:8px; margin-top:16px;">
+                <button class="btn btn-secondary" style="flex:1;" onclick="window.closeModal('cardVisibilityModal')">Batal</button>
+                <button class="btn btn-primary" style="flex:2; background:#cc7b00; border-color:#cc7b00;" onclick="window.saveCardVisibility()">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Anggaran Tahunan -->
+<div id="annualBudgetModal" class="modal">
+    <div class="modal-content wide">
+        <div class="modal-header"><h3>Anggaran Tahunan</h3><button class="modal-close" onclick="closeModal('annualBudgetModal')">×</button></div>
+        <div style="background:#f3e8ff; border:1px solid #d6bcfa; border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:#553c9a;">
+            <b>Anggaran Tahunan</b> adalah rencana biaya yang terjadi <b>tidak setiap bulan</b> — seperti hari raya, pajak, servis kendaraan, liburan, dll. Total anggaran ini membantu menghitung kebutuhan cadangan dana Anda.
+        </div>
+        <div id="annualBudgetItemsContainer"></div>
+        <div style="margin:10px 0;">
+            <button class="btn btn-secondary" style="width:100%;" onclick="addAnnualBudgetRow()">＋ Tambah Item</button>
+        </div>
+        <div id="annualBudgetSummary" class="budget-summary-row"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('annualBudgetModal')">Tutup</button>
+            <button class="btn btn-primary" onclick="saveAnnualBudget()">Simpan</button>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Report Modal -->
+<div id="monthlyReportModal" class="modal">
+    <div class="modal-content report">
+        <div class="modal-header"><h3 id="reportModalTitle">Laporan Bulanan</h3><button class="modal-close" onclick="closeModal('monthlyReportModal')">×</button></div>
+        <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+            <select id="reportMonth" class="form-control" style="width: auto; flex: 1;">
+                <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
+                <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
+                <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
+                <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+            </select>
+            <input type="number" id="reportYear" class="form-control" style="width: 100px;" value="2026">
+            <button class="btn btn-primary" onclick="generateMonthlyReport()">Tampilkan</button>
+            <button class="btn btn-secondary" onclick="exportReportAsPDF()">Export PDF</button>
+        </div>
+        <div id="reportContent"><div style="text-align: center; padding: 50px;">Pilih bulan dan tahun, lalu klik Tampilkan</div></div>
+    </div>
+</div>
+
+<!-- View Attachment Modal -->
+<div id="viewAttachmentModal" class="modal">
+    <div class="modal-content" style="max-width:600px; text-align:center">
+        <div class="modal-header"><h3>Lampiran Nota</h3><button class="modal-close" onclick="closeModal('viewAttachmentModal')">×</button></div>
+        <img id="fullAttachmentImage" style="max-width:100%; max-height:60vh; border-radius:8px"><br><br>
+        <button class="btn btn-secondary" onclick="downloadAttachment()">Unduh Gambar</button>
+    </div>
+</div>
+
+<!-- First Time Setup Modal -->
+<div id="firstTimeSetupModal" class="modal" style="z-index:2000;">
+    <div class="modal-content" style="max-width:460px;">
+        <div style="text-align:center; margin-bottom:24px;">
+            <div style="font-size:2.5rem; margin-bottom:8px;"></div>
+            <div style="font-size:1rem; font-weight:700; margin-bottom:4px;">Setup Sinarkeu</div>
+            <div style="font-size:.75rem; color:#888;">Masukkan kredensial Supabase dan buat password keamanan</div>
+        </div>
+        <div class="form-group"><label>Supabase Project URL</label><input type="text" id="setupUrlInput" class="form-control" placeholder="https://xxxxxxxx.supabase.co"></div>
+        <div class="form-group"><label data-i18n="supabase_key_label">Supabase Anon Key</label><input type="password" id="setupKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."><div style="display:flex; align-items:center; gap:6px; margin-top:6px;"><input type="checkbox" id="showKeyToggle" onchange="document.getElementById('setupKeyInput').type = this.checked ? 'text' : 'password'"><label for="showKeyToggle" style="font-size:.7rem; color:#888; cursor:pointer; text-transform:none; letter-spacing:0;">Tampilkan key</label></div></div>
+        <div style="border-top:1px dashed #ddd; margin: 16px 0;"></div>
+        <div class="form-group"><label>Nama Perangkat Ini <span style="font-weight:400; color:#aaa; font-size:.7rem;">(opsional)</span></label><input type="text" id="setupDeviceNameInput" class="form-control" placeholder="cth: HP Saya, Laptop Kantor" maxlength="24" autocomplete="off"><div style="font-size:.65rem; color:#aaa; margin-top:4px;">Tampil di log sinkronisasi &amp; notifikasi Telegram. Maks 24 karakter.</div></div>
+        <div style="border-top:1px dashed #ddd; margin: 16px 0;"></div>
+        <div class="form-group"><label>Buat Password Keamanan</label><div style="position:relative; margin-bottom:8px;"><input type="password" id="setupPwdInput" class="form-control" placeholder="Buat password (min. 6 karakter)" oninput="evalSetupPwdStrength()"></div><div class="pwd-strength"><div class="pwd-strength-fill" id="setupPwdStrengthFill"></div></div><div style="font-size:.65rem; color:#888; margin-top:4px;" id="setupPwdStrengthLabel"></div></div>
+        <div class="form-group"><label>Konfirmasi Password</label><input type="password" id="setupPwdConfirm" class="form-control" placeholder="Ulangi password"></div>
+        <div style="background:#fff3e0; border:1px solid #ffab00; border-radius:8px; padding:10px 12px; font-size:.7rem; color:#7a4f00; margin-bottom:16px; line-height:1.6;">Password ini <strong>tidak bisa dipulihkan</strong>. Jika lupa, seluruh data akan terhapus. Simpan di tempat yang aman.</div>
+        <div id="setupStatusMsg" class="setup-status"></div>
+        <button id="setupConnectBtn" class="btn btn-primary" style="width:100%; margin-bottom:16px;" onclick="doFirstTimeSetup()">Simpan & Mulai</button>
+    </div>
+</div>
+
+<!-- AI Analysis Modal -->
+<div id="aiAnalysisModal" class="modal">
+    <div class="modal-content wide" style="max-width:680px; max-height:90vh;">
+        <div class="modal-header"><h3>Analisis Keuangan</h3><button class="modal-close" onclick="closeModal('aiAnalysisModal')">×</button></div>
+        <div id="aiWorkerWarning" style="display:none; background:#fff3e0; border:1px solid #ffab00; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:.75rem; color:#7a4f00; line-height:1.6;">
+            <strong>Worker URL belum dikonfigurasi.</strong> Buka <a href="#" onclick="closeModal('aiAnalysisModal'); openSetelanModal('ai'); return false;" style="color:#cc7b00; font-weight:600;">Setelan → Analisis AI</a> untuk mengisi URL Cloudflare Worker Anda.
+        </div>
+        <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+            <select id="aiAnalysisPeriod" class="budget-select" style="flex:1; min-width:140px;">
+                <option value="all">Semua Data</option>
+                <option value="thismonth">Bulan Ini</option>
+                <option value="lastmonth">Bulan Lalu</option>
+                <option value="last3months">3 Bulan Terakhir</option>
+            </select>
+            <select id="aiAnalysisType" class="budget-select" style="flex:1; min-width:160px;">
+                <option value="general">Ringkasan & Saran Umum</option>
+                <option value="expense">Analisis Pengeluaran</option>
+                <option value="saving">Tips Hemat & Menabung</option>
+                <option value="cashflow">Arus Kas & Tren</option>
+            </select>
+            <button id="aiAnalysisRunBtn" class="btn btn-primary" style="background:#6b46c1; border-color:#6b46c1;" onclick="runAIAnalysis()">Analisis Sekarang</button>
+        </div>
+        <div id="aiAnalysisResult" style="min-height:200px; background:#faf9ff; border:1.5px solid #e9e3ff; border-radius:10px; padding:18px 20px; font-size:.82rem; line-height:1.75; color:#1a1a1a; white-space:pre-wrap; overflow-y:auto; max-height:420px;">
+            <div style="text-align:center; color:#999; padding:40px 0;">Pilih periode dan jenis analisis, lalu klik <strong>Analisis Sekarang</strong>.</div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:8px;">
+            <span id="aiAnalysisFooter" style="font-size:.65rem; color:#aaa;"></span>
+            <div style="display:flex; gap:8px;"><button id="aiCopyBtn" class="btn btn-secondary" style="display:none;" onclick="copyAIResult()">Salin</button><button class="btn btn-secondary" onclick="closeModal('aiAnalysisModal')">Tutup</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL TANYA AI ===== -->
+<div id="aiChatModal" class="modal">
+    <div class="modal-content" style="max-width:560px;">
+        <div class="modal-header"><h3>Tanya AI Keuangan</h3><button class="modal-close" onclick="closeModal('aiChatModal')">×</button></div>
+        <div style="padding:0 22px 18px;">
+            <div id="aiChatWorkerWarning" style="display:none; background:#fff5f5; border:1px solid #feb2b2; border-radius:8px; padding:10px 12px; margin-bottom:12px; font-size:.72rem; color:#c53030;">
+                <strong>Worker URL belum dikonfigurasi.</strong> Buka <a href="#" onclick="closeModal('aiChatModal'); openSetelanModal('ai'); return false;" style="color:#c53030; font-weight:600; text-decoration:underline;">Setelan → Analisis AI</a> untuk mengisi URL Cloudflare Worker Anda.
+            </div>
+            <div style="font-size:.68rem; color:#888; margin-bottom:8px;">Tanyakan apa saja soal transaksi Anda, contoh:</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
+                <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.useAIChatExample('Pemasukan bulan ini berapa?')">Pemasukan bulan ini?</button>
+                <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.useAIChatExample('Pengeluaran bulan lalu berapa?')">Pengeluaran bulan lalu?</button>
+                <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.useAIChatExample('Kategori apa yang paling besar pengeluarannya bulan ini?')">Kategori terbesar bulan ini?</button>
+            </div>
+            <div id="aiChatHistory" style="max-height:340px; overflow-y:auto; border:1px solid #eee; border-radius:10px; padding:12px; margin-bottom:10px; background:#fafafa;">
+                <div style="text-align:center; color:#999; font-size:.72rem; padding:20px 0;" id="aiChatEmptyState">Belum ada percakapan. Coba tanyakan sesuatu di bawah.</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="aiChatInput" class="form-control" placeholder="Misal: listrik bulan Juni berapa?" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.sendAIChatMessage();}">
+                <button class="btn btn-primary" id="aiChatSendBtn" style="background:#0e7490; border-color:#0e7490; white-space:nowrap;" onclick="window.sendAIChatMessage()">Tanya</button>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.clearAIChatHistory()">Hapus Riwayat</button>
+                <span style="font-size:.6rem; color:#aaa;">Berdasarkan transaksi tersimpan di perangkat ini (maks. 300 terbaru)</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL FASE KEHIDUPAN ===== -->
+<div id="faseKehidupanModal" class="modal" style="z-index:2000;">
+    <div class="modal-content" style="max-width:480px;">
+        <div class="modal-header">
+            <h3>Fase Kehidupan Pernikahan</h3>
+            <button class="modal-close" onclick="window.closeModal('faseKehidupanModal')">×</button>
+        </div>
+        <div style="padding:0 22px 16px;">
+            <div style="font-size:.72rem; color:#666; margin-bottom:14px; line-height:1.6; background:#fff0f7; border:1px solid #fbb6ce; border-radius:8px; padding:10px 12px;">
+                Atur fase kehidupan pernikahan Anda agar analisis AI bisa memberikan rekomendasi keuangan yang lebih relevan dan personal.
+            </div>
+            <!-- hidden native select for compatibility -->
+            <select id="faseSelect" style="display:none;" onchange="window.updateFaseDesc()">
+                <option value="">-- Pilih Fase --</option>
+                <option value="1">Fase 1 — Bulan Madu</option>
+                <option value="2">Fase 2 — Penyesuaian & Realita</option>
+                <option value="3">Fase 3 — Pengasuhan Awal</option>
+                <option value="4">Fase 4 — Keluarga Aktif</option>
+                <option value="5">Fase 5 — Remaja & Melepas</option>
+                <option value="6">Fase 6 — Sarang Kosong</option>
+                <option value="7">Fase 7 — Pensiun & Menua Bersama</option>
+            </select>
+            <div class="form-group">
+                <label>Fase Kehidupan Saat Ini</label>
+                <div class="fase-dropdown" id="faseDropdown">
+                    <div class="fase-dropdown-trigger" id="faseDropdownTrigger" onclick="window.toggleFaseDropdown()">
+                        <span class="fase-trigger-icon" id="faseTriggerIcon">🔍</span>
+                        <span class="fase-trigger-text" id="faseTriggerText">-- Pilih Fase --</span>
+                        <svg class="fase-trigger-arrow" id="faseArrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                    <div class="fase-dropdown-menu" id="faseDropdownMenu">
+                        <div class="fase-option" data-value="1" onclick="window.selectFase(1)">
+                            <span class="fase-opt-icon">💍</span>
+                            <div class="fase-opt-body">
+                                <div class="fase-opt-title">Fase 1 — Bulan Madu</div>
+                                <div class="fase-opt-sub">0–2 tahun menikah</div>
+                            </div>
+                        </div>
+                        <div class="fase-option" data-value="2" onclick="window.selectFase(2)">
+                            <span class="fase-opt-icon">🏠</span>
+                            <div class="fase-opt-body">
+                                <div class="fase-opt-title">Fase 2 — Penyesuaian & Realita</div>
+                                <div class="fase-opt-sub">2–5 tahun menikah</div>
+                            </div>
+                        </div>
+                        <div class="fase-option" data-value="3" onclick="window.selectFase(3)">
+                            <span class="fase-opt-icon">👶</span>
+                            <div class="fase-opt-body">
+                                <div class="fase-opt-title">Fase 3 — Pengasuhan Awal</div>
+                                <div class="fase-opt-sub">Anak pertama lahir</div>
+                            </div>
+                        </div>
+                        <div class="fase-option" data-value="4" onclick="window.selectFase(4)">
+                            <span class="fase-opt-icon">🎒</span>
+                            <div class="fase-opt-body">
+                                <div class="fase-opt-title">Fase 4 — Keluarga Aktif</div>
+                                <div class="fase-opt-sub">Anak usia sekolah</div>
+                            </div>
+                        </div>
+                        <div class="fase-option" data-value="5" onclick="window.selectFase(5)">
+                            <span class="fase-opt-icon">🧑‍🎓</span>
+                            <div class="fase-opt-body">
+                                <div class="fase-opt-title">Fase 5 — Remaja & Melepas</div>
+                                <div class="fase-opt-sub">Anak usia remaja</div>
+                            </div>
+                        </div>
+                        <div class="fase-option" data-value="6" onclick="window.selectFase(6)">
+                            <span class="fase-opt-icon">🕊️</span>
+                            <div class="fase-opt-body">
+                                <div class="fase-opt-title">Fase 6 — Sarang Kosong</div>
+                                <div class="fase-opt-sub">Anak sudah mandiri</div>
+                            </div>
+                        </div>
+                        <div class="fase-option" data-value="7" onclick="window.selectFase(7)">
+                            <span class="fase-opt-icon">🌅</span>
+                            <div class="fase-opt-body">
+                                <div class="fase-opt-title">Fase 7 — Pensiun & Menua Bersama</div>
+                                <div class="fase-opt-sub">Masa tenang berdua</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="faseDescBox" style="font-size:.72rem; color:#555; background:#fafafa; border:1px solid #eee; border-radius:8px; padding:10px 12px; margin-bottom:14px; line-height:1.7; display:none;"></div>
+            <div class="form-group">
+                <label>Jumlah Tanggungan (anak / anggota keluarga non-penghasilan)</label>
+                <input type="number" id="faseTanggungan" class="form-control" placeholder="Contoh: 2" min="0" max="20" step="1">
+            </div>
+            <div class="form-group">
+                <label>Target Keuangan Utama Fase Ini <span style="font-weight:400; color:#888; font-size:.68rem;">(opsional)</span></label>
+                <input type="text" id="faseTarget" class="form-control" placeholder="Contoh: Beli rumah, Dana pendidikan anak, Cicilan KPR...">
+            </div>
+            <div style="display:flex; gap:8px; margin-top:4px;">
+                <button class="btn btn-secondary" style="flex:1;" onclick="window.closeModal('faseKehidupanModal')">Batal</button>
+                <button class="btn btn-primary" style="flex:2; background:#e53e8a; border-color:#e53e8a;" onclick="window.saveFaseKehidupan()">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL AI FASE KEHIDUPAN ===== -->
+<div id="faseAIModal" class="modal" style="z-index:2000;">
+    <div class="modal-content report" style="max-width:620px;">
+        <div class="modal-header">
+            <h3>Analisis AI — Fase Kehidupan</h3>
+            <button class="modal-close" onclick="window.closeModal('faseAIModal')">×</button>
+        </div>
+        <div style="padding:0 22px 16px;">
+            <div id="faseAIResult" style="min-height:200px; background:#faf9ff; border:1.5px solid #fbb6ce; border-radius:10px; padding:18px 20px; font-size:.82rem; line-height:1.75; color:#1a1a1a; white-space:pre-wrap; overflow-y:auto; max-height:420px;">
+                <div style="text-align:center; color:#999; padding:40px 0;">Klik <strong>Analisis Sekarang</strong> untuk mulai.</div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:8px;">
+                <span id="faseAIFooter" style="font-size:.65rem; color:#aaa;"></span>
+                <div style="display:flex; gap:8px;">
+                    <button id="faseAICopyBtn" class="btn btn-secondary" style="display:none;" onclick="window.copyFaseAIResult()">Salin</button>
+                    <button id="faseAIRunBtn" class="btn btn-primary" style="background:#e53e8a; border-color:#e53e8a;" onclick="window.runFaseAIAnalysis()">Analisis Sekarang</button>
+                    <button class="btn btn-secondary" onclick="window.closeModal('faseAIModal')">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Account Manager Modal -->
+<div id="accountManagerModal" class="modal" style="z-index:2100;">
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header"><h3>Manajer Akun</h3><button class="modal-close" onclick="closeModal('accountManagerModal')">×</button></div>
+        <div style="padding:0 22px 16px;">
+            <div style="font-size:.72rem; color:#666; margin-bottom:14px; line-height:1.6;">Setiap akun terhubung ke database Supabase yang berbeda. Beralih akun akan memuat data dari database tersebut.</div>
+            <div id="accModalList" class="acc-modal-list"></div>
+            <div style="border-top:1.5px dashed #1a1a1a; padding-top:16px; margin-top:4px;">
+                <div style="font-size:.75rem; font-weight:700; margin-bottom:12px;">＋ Tambah / Edit Akun</div>
+                <div class="form-group"><label>Nama Akun</label><input type="text" id="newAccName" class="form-control" placeholder="Contoh: Pribadi, Bisnis, Keluarga..." onkeydown="if(event.key==='Enter') saveNewAccount()"></div>
+                <div class="form-group"><label>Supabase Project URL</label><input type="text" id="newAccUrl" class="form-control" placeholder="https://xxxxxxxx.supabase.co" onkeydown="if(event.key==='Enter') saveNewAccount()"></div>
+                <div class="form-group"><label data-i18n="supabase_key_label">Supabase Anon Key</label><input type="password" id="newAccKey" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." onkeydown="if(event.key==='Enter') saveNewAccount()"><div style="display:flex; align-items:center; gap:6px; margin-top:5px;"><input type="checkbox" id="newAccShowKey" onchange="document.getElementById('newAccKey').type = this.checked ? 'text' : 'password'"><label for="newAccShowKey" style="font-size:.68rem; color:#888; cursor:pointer; text-transform:none; letter-spacing:0;">Tampilkan key</label></div></div>
+                <div class="form-group"><label>Password Enkripsi</label><input type="password" id="newAccPwd" class="form-control" placeholder="Min. 6 karakter — wajib diingat!" onkeydown="if(event.key==='Enter') saveNewAccount()" oninput="(function(){var eg=document.getElementById('editingAccId'),cg=document.getElementById('newAccPwdConfirmGroup');if(eg&&eg.value)cg.style.display=document.getElementById('newAccPwd').value?'':'none';})()"><div style="font-size:.65rem; color:#888; margin-top:4px;">Password digunakan untuk mengenkripsi koneksi akun ini secara terpisah.</div></div>
+                <div class="form-group" id="newAccPwdConfirmGroup"><label>Konfirmasi Password</label><input type="password" id="newAccPwdConfirm" class="form-control" placeholder="Ulangi password enkripsi" onkeydown="if(event.key==='Enter') saveNewAccount()"><div style="font-size:.65rem; color:#888; margin-top:4px;">Pastikan password yang dimasukkan sama persis.</div></div>
+                <input type="hidden" id="editingAccId" value="">
+                <div id="newAccStatus" style="font-size:.72rem; margin-bottom:10px; min-height:16px;"></div>
+                <div style="display:flex; gap:8px;"><button class="btn btn-secondary" id="cancelAccBtn" style="flex:1;" onclick="cancelEditAccount()">Batal</button><button class="btn btn-primary" id="saveAccBtn" style="flex:2;" onclick="saveNewAccount()">Simpan Akun</button></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Account Unlock Modal -->
+<div id="accountUnlockModal" class="modal" style="z-index:2200;">
+    <div class="modal-content" style="max-width:360px; text-align:center;">
+        <div class="modal-header"><h3 id="accUnlockTitle">Buka Akun</h3><button class="modal-close" onclick="closeModal('accountUnlockModal')">×</button></div>
+        <div style="padding:20px 22px 22px;">
+            <div style="font-size:.75rem; color:#666; margin-bottom:16px;" id="accUnlockSubtitle">Masukkan password untuk akun ini</div>
+            <div style="position:relative; margin-bottom:14px;"><input type="password" id="accUnlockPwdInput" class="form-control" placeholder="Password akun" onkeydown="if(event.key==='Enter') submitAccountUnlock()"></div>
+            <div id="accUnlockStatus" style="font-size:.72rem; color:#de350b; margin-bottom:12px; min-height:16px;"></div>
+            <button class="btn btn-primary" style="width:100%;" onclick="submitAccountUnlock()">Buka & Beralih</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MOBILE DRAWER ===== -->
+<div id="mobileDrawerOverlay" class="mdrawer-overlay" onclick="closeMobileDrawer()"></div>
+<div id="mobileDrawer" class="mdrawer">
+    <div class="mdrawer-header">
+        <span class="mdrawer-header-title" data-i18n="menu">Menu</span>
+        <button class="mdrawer-close" onclick="closeMobileDrawer()" aria-label="Tutup">×</button>
+    </div>
+    <div class="mdrawer-account">
+        <div class="mdrawer-account-label">Akun Aktif</div>
+        <div id="drawerAccountLabel" class="mdrawer-account-value">—</div>
+    </div>
+    <div class="mdrawer-body">
+        <button class="mdrawer-btn mdrawer-btn-primary" onclick="drawerAction(openBookManager)" data-i18n="manage_book">Kelola Buku</button>
+        <button class="mdrawer-btn mdrawer-btn-success" onclick="drawerAction(forceFullSync)" data-i18n="sync">Sinkronisasi</button>
+        <button class="mdrawer-btn mdrawer-btn-neutral" onclick="drawerAction(openSetelanModal)" data-i18n="settings">Setelan</button>
+        <button class="mdrawer-btn mdrawer-btn-warning" onclick="drawerAction(openPaymentReminderModal)">
+            <span data-i18n="payment_reminder">Pengingat Pembayaran</span>
+            <span id="drawerReminderBadge" class="mdrawer-badge"></span>
+        </button>
+        <div class="mdrawer-divider"></div>
+        <button class="mdrawer-btn mdrawer-btn-outline" onclick="drawerAction(logoutToLockScreen)" data-i18n="switch_account">Ganti Akun</button>
+        <button class="mdrawer-btn mdrawer-btn-outline" id="drawerDarkBtn" onclick="window.toggleDarkMode(); document.getElementById('drawerDarkLabel').textContent = document.documentElement.getAttribute('data-theme')==='dark' ? '☀️ Mode Terang' : '🌙 Mode Gelap';"><span id="drawerDarkLabel">🌙 Mode Gelap</span></button>
+    </div>
+</div>
+
+<!-- ===== MODAL PENGINGAT PEMBAYARAN ===== -->
+<div id="paymentReminderModal" class="modal" style="z-index:2000;">
+    <div class="modal-content" style="max-width:560px;">
+        <div class="modal-header">
+            <h3>Jadwal Pembayaran</h3>
+            <button class="modal-close" onclick="closeModal('paymentReminderModal')">×</button>
+        </div>
+        <div style="padding:0 22px 16px;">
+
+            <!-- Notif segera jatuh tempo -->
+            <div id="prUpcomingAlert" class="pr-upcoming-alert" style="display:none; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:.75rem; line-height:1.8;"></div>
+
+            <!-- Daftar pengingat aktif -->
+            <div style="margin-bottom:14px;">
+                <div style="font-size:.75rem; font-weight:700; color:#1a1a1a; margin-bottom:8px;">Daftar Jadwal</div>
+                <div id="prList" style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; padding-right:4px;">
+                    <div id="prEmptyMsg" style="font-size:.72rem; color:#aaa; text-align:center; padding:18px 0;">Belum ada jadwal pembayaran. Tambahkan di bawah.</div>
+                </div>
+            </div>
+
+            <!-- Form tambah/edit -->
+            <div class="pr-form-divider" style="padding-top:14px;">
+                <div style="font-size:.75rem; font-weight:700; margin-bottom:10px;" id="prFormTitle">＋ Tambah Jadwal Baru</div>
+                <input type="hidden" id="prEditId" value="">
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label>Jenis Pembayaran</label>
+                    <input type="text" id="prName" class="form-control" placeholder="Contoh: Listrik, BPJS, Pajak Kendaraan...">
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <div class="form-group" style="flex:1; min-width:120px; margin-bottom:10px;">
+                        <label>Tanggal Jatuh Tempo</label>
+                        <input type="number" id="prDay" class="form-control" min="1" max="31" placeholder="Tanggal (1–31)">
+                    </div>
+                    <div class="form-group" style="flex:1; min-width:120px; margin-bottom:10px;">
+                        <label>Pengulangan</label>
+                        <select id="prRecurrence" class="form-control" onchange="togglePrMonthField()">
+                            <option value="monthly">Bulanan</option>
+                            <option value="yearly">Tahunan</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="prMonthGroup" style="flex:1; min-width:120px; margin-bottom:10px; display:none;">
+                        <label>Bulan</label>
+                        <select id="prMonth" class="form-control">
+                            <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
+                            <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
+                            <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
+                            <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label>Catatan <span style="font-weight:400; color:#aaa;">(opsional)</span></label>
+                    <input type="text" id="prNote" class="form-control" placeholder="Contoh: Via m-banking, estimasi Rp 150.000...">
+                </div>
+                <div id="prFormStatus" style="font-size:.72rem; color:#de350b; margin-bottom:8px; min-height:16px;"></div>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-secondary" style="flex:1;" onclick="cancelPrEdit()">Batal</button>
+                    <button class="btn btn-primary" style="flex:2; background:#d97706; border-color:#d97706;" onclick="savePaymentReminderHandler()">Simpan Jadwal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== SKRIP UTAMA ===== -->
+<script src="js/i18n.js" defer></script>
+<script src="js/config.js" defer></script>
+<script src="js/utils.js" defer></script>
+<script src="js/crypto.js" defer></script>
+<script src="js/db.js" defer></script>
+<script src="js/telegram.js" defer></script>
+<script src="js/account.js" defer></script>
+<script src="js/book.js" defer></script>
+<script src="js/transaction.js" defer></script>
+<script src="js/sync-conflict.js" defer></script>
+<script src="js/budget.js" defer></script>
+<script src="js/payment-reminder.js" defer></script>
+<script src="js/expense-chart.js" defer></script>
+<script src="js/render.js" defer></script>
+<script src="js/report.js" defer></script>
+<script src="js/forecast.js" defer></script>
+<script src="js/report-shortcuts.js" defer></script>
+<script src="js/backup.js" defer></script>
+<script src="js/forex.js" defer></script>
+<script src="js/ai.js" defer></script>
+<script src="js/settings.js" defer></script>
+    <script src="js/autolock.js" defer></script>
+<script src="js/app.js" defer></script>
+<script src="js/custom-select.js" defer></script>
+
+<!-- ===== PATCH: SINKRONISASI ANGGARAN & JADWAL PEMBAYARAN ANTAR PERANGKAT ===== -->
+<!--
+  PATCH ini mensinkronkan:
+    1. Anggaran Bulanan (default/template)   → localStorage key: sk_default_budget_{bookId}
+    2. Anggaran Bulanan Khusus per bulan     → localStorage key: sk_budgets_{bookId}_{YYYY-MM}
+    3. Anggaran Tahunan                      → localStorage key: sk_annual_budget_{bookId}
+    4. Jadwal Pembayaran                     → localStorage key: paymentReminders_{bookId}
+
+  Cara kerja:
+    - Setiap kali data disimpan, otomatis push ke Supabase (tabel: settings_sync)
+    - Saat load/switch buku, pull dari Supabase dan bandingkan updated_at
+    - Data yang lebih baru (cloud vs lokal) menang (last-write-wins)
+    - Pull otomatis setiap 30 detik (sama dengan interval sync transaksi)
+
+  Syarat Supabase:
+    Jalankan SQL ini sekali di Supabase SQL Editor:
+
+    CREATE TABLE IF NOT EXISTS settings_sync (
+      id TEXT PRIMARY KEY,
+      book_id TEXT NOT NULL,
+      setting_key TEXT NOT NULL,
+      value TEXT NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      device_id TEXT,
+      UNIQUE(book_id, setting_key)
+    );
+    CREATE INDEX IF NOT EXISTS idx_settings_sync_book ON settings_sync(book_id);
+-->
+<script>
+(function() {
+'use strict';
+
+// ─── Utilitas ───────────────────────────────────────────────────────────────
+
+const PATCH_VERSION = '1.0.3';
+const SYNC_KEYS = ['defaultBudget', 'budget_monthly', 'annualBudget', 'paymentReminders'];
+let _patchReady = false;
+let _syncIntervalId = null;
+
+function _log(msg, ...args) {
+  console.log(`[SyncPatch v${PATCH_VERSION}]`, msg, ...args);
+}
+
+function _getSupabase() {
+  // Selalu ambil URL & Key dari sesi aktif saat ini (bisa berubah saat ganti akun)
+  const url = (typeof window.getCloudUrl === 'function') ? window.getCloudUrl()
+             : (window._supabaseUrl || null);
+  const key = window.globalSupabaseKey || window._supabaseKey || null;
+  if (!url || !key) return null;
+
+  // Gunakan cache HANYA jika URL-nya masih sama dengan akun aktif.
+  // Saat _doSwitch() dipanggil, window._syncPatchSupabaseClient di-null-kan
+  // sehingga client lama tidak bocor ke akun berikutnya.
+  if (window._syncPatchSupabaseClient && window._syncPatchClientUrl === url) {
+    return window._syncPatchSupabaseClient;
+  }
+
+  // Coba gunakan client yang sudah dibuat oleh app utama (URL cocok)
+  if (window._supabaseClient && window._syncPatchClientUrl === url) return window._supabaseClient;
+  if (window.supabaseClient && window._syncPatchClientUrl === url) return window.supabaseClient;
+
+  // Buat client baru untuk URL/akun aktif
+  try {
+    window._syncPatchSupabaseClient = window.supabase.createClient(url, key);
+    window._syncPatchClientUrl = url;
+    return window._syncPatchSupabaseClient;
+  } catch(e) {}
+  return null;
+}
+
+function _getDeviceId() {
+  let did = localStorage.getItem('sinarkeu_device_id');
+  if (!did) {
+    did = 'dev_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now();
+    localStorage.setItem('sinarkeu_device_id', did);
+  }
+  return did;
+}
+
+function _getCurrentBookId() {
+  // Ambil dari select element atau variabel global app
+  const sel = document.getElementById('currentBookSelect');
+  if (sel && sel.value) return sel.value;
+  if (window.currentBookId) return window.currentBookId;
+  if (window.activeBookId) return window.activeBookId;
+  return null;
+}
+
+function _now() {
+  return new Date().toISOString();
+}
+
+// ─── Push ke Supabase ───────────────────────────────────────────────────────
+
+async function pushSettingToCloud(bookId, settingKey, value) {
+  if (!navigator.onLine) return { ok: false, reason: 'offline' };
+  const sb = _getSupabase();
+  if (!sb) return { ok: false, reason: 'no_client' };
+  
+  const id = `${bookId}__${settingKey}`;
+  const payload = {
+    id,
+    book_id: bookId,
+    setting_key: settingKey,
+    value: JSON.stringify(value),
+    updated_at: _now(),
+    device_id: _getDeviceId()
+  };
+
+  try {
+    const { error } = await sb
+      .from('settings_sync')
+      .upsert(payload, { onConflict: 'id' });
+    if (error) throw error;
+    _log(`Push OK: ${settingKey} (book: ${bookId})`);
+    return { ok: true };
+  } catch(e) {
+    _log(`Push FAIL: ${settingKey}`, e.message);
+    return { ok: false, reason: e.message };
+  }
+}
+
+// ─── Pull dari Supabase ─────────────────────────────────────────────────────
+
+async function pullSettingsFromCloud(bookId) {
+  if (!navigator.onLine) return { ok: false, reason: 'offline' };
+  const sb = _getSupabase();
+  if (!sb) return { ok: false, reason: 'no_client' };
+
+  try {
+    const { data, error } = await sb
+      .from('settings_sync')
+      .select('setting_key, value, updated_at, device_id')
+      .eq('book_id', bookId);
+    if (error) throw error;
+    if (!data || data.length === 0) return { ok: true, updated: 0 };
+
+    let updated = 0;
+    const myDevice = _getDeviceId();
+
+    for (const row of data) {
+      const { setting_key, value, updated_at, device_id } = row;
+      
+      // Skip kalau data dari perangkat ini sendiri (sudah up-to-date)
+      if (device_id === myDevice) continue;
+
+      const localKey = _buildLocalKey(bookId, setting_key);
+      const cloudTime = new Date(updated_at).getTime();
+
+      // Bandingkan dengan timestamp lokal
+      const localMeta = localStorage.getItem(`${localKey}__updated_at`);
+      const localTime = localMeta ? new Date(localMeta).getTime() : 0;
+
+      if (cloudTime > localTime) {
+        // Cloud lebih baru → pakai cloud
+        try {
+          const parsed = JSON.parse(value);
+          localStorage.setItem(localKey, JSON.stringify(parsed));
+          localStorage.setItem(`${localKey}__updated_at`, updated_at);
+          _log(`Pull applied: ${setting_key} (cloud: ${updated_at})`);
+          updated++;
+        } catch(parseErr) {
+          _log(`Parse fail: ${setting_key}`, parseErr.message);
+        }
+      }
+    }
+
+    // Jika ada yang diperbarui, refresh UI
+    if (updated > 0) {
+      _refreshUI();
+    }
+
+    return { ok: true, updated };
+  } catch(e) {
+    _log(`Pull FAIL (book: ${bookId})`, e.message);
+    return { ok: false, reason: e.message };
+  }
+}
+
+function _buildLocalKey(bookId, settingKey) {
+  // Konversi setting_key cloud ke localStorage key
+  if (settingKey === 'defaultBudget') return `sk_default_budget_${bookId}`;
+  if (settingKey === 'annualBudget')  return `sk_annual_budget_${bookId}`;
+  if (settingKey === 'paymentReminders') return `paymentReminders_${bookId}`;
+  // budget_monthly_YYYY-MM
+  if (settingKey.startsWith('budget_monthly_')) {
+    const ym = settingKey.replace('budget_monthly_', '');
+    return `sk_budgets_${bookId}_${ym}`;
+  }
+  return `${settingKey}_${bookId}`;
+}
+
+function _buildCloudKey(localKey, bookId) {
+  // Konversi localStorage key ke setting_key cloud
+  if (localKey === `sk_default_budget_${bookId}`) return 'defaultBudget';
+  if (localKey === `sk_annual_budget_${bookId}`)  return 'annualBudget';
+  if (localKey === `paymentReminders_${bookId}`) return 'paymentReminders';
+  // sk_budgets_{bookId}_{YYYY-MM}
+  const m = localKey.match(/^sk_budgets_(.+)_(\d{4}-\d{2})$/);
+  if (m) return `budget_monthly_${m[2]}`;
+  return null;
+}
+
+function _refreshUI() {
+  try {
+    if (typeof window.renderBudget === 'function') window.renderBudget();
+  } catch(e) {}
+  try {
+    if (typeof window.renderPaymentReminders === 'function') window.renderPaymentReminders();
+  } catch(e) {}
+  try {
+    if (typeof window.renderFinancialCards === 'function') window.renderFinancialCards();
+  } catch(e) {}
+  try {
+    if (typeof window.updateFinancialCards === 'function') window.updateFinancialCards();
+  } catch(e) {}
+  try {
+    if (typeof window.render === 'function') window.render();
+  } catch(e) {}
+}
+
+// ─── Intercept fungsi simpan ─────────────────────────────────────────────────
+//
+// CATATAN PERBAIKAN: fungsi-fungsi asli (saveBudget, saveDefaultBudget,
+// saveAnnualBudget di budget.js) sekarang berupa `async function` yang benar
+// menunggu hasil push ke cloud sebelum menampilkan status ke user. Wrapper
+// di bawah ini HARUS ikut `await` panggilan ke fungsi asli (bukan hanya
+// `.apply(...)` tanpa await), supaya:
+//   1. Toast status sukses/gagal dari fungsi asli tidak tumpang tindih
+//      dengan proses sync milik patch ini yang berjalan setelahnya.
+//   2. _syncAfterSaveXxx() (yang membaca localStorage hasil simpan) tidak
+//      jalan sebelum fungsi asli benar-benar selesai menulis ke localStorage.
+
+function _interceptSave() {
+  // 1. saveBudget (anggaran bulanan khusus per bulan)
+  const _origSaveBudget = window.saveBudget;
+  if (typeof _origSaveBudget === 'function') {
+    window.saveBudget = async function(...args) {
+      const result = await _origSaveBudget.apply(this, args);
+      await _syncAfterSaveBudget();
+      return result;
+    };
+    _log('Intercepted: saveBudget');
+  }
+
+  // 2. saveDefaultBudget (anggaran bulanan template/dasar)
+  const _origSaveDefault = window.saveDefaultBudget;
+  if (typeof _origSaveDefault === 'function') {
+    window.saveDefaultBudget = async function(...args) {
+      const result = await _origSaveDefault.apply(this, args);
+      await _syncAfterSaveDefaultBudget();
+      return result;
+    };
+    _log('Intercepted: saveDefaultBudget');
+  }
+
+  // 3. saveAnnualBudget (anggaran tahunan)
+  const _origSaveAnnual = window.saveAnnualBudget;
+  if (typeof _origSaveAnnual === 'function') {
+    window.saveAnnualBudget = async function(...args) {
+      const result = await _origSaveAnnual.apply(this, args);
+      await _syncAfterSaveAnnualBudget();
+      return result;
+    };
+    _log('Intercepted: saveAnnualBudget');
+  }
+
+  // 4. savePaymentReminderHandler (jadwal pembayaran)
+  const _origSavePR = window.savePaymentReminderHandler;
+  if (typeof _origSavePR === 'function') {
+    window.savePaymentReminderHandler = async function(...args) {
+      const result = await _origSavePR.apply(this, args);
+      await _syncAfterSavePaymentReminders();
+      return result;
+    };
+    _log('Intercepted: savePaymentReminderHandler');
+  }
+
+  // 5. deletePaymentReminder (hapus jadwal pembayaran)
+  const _origDelPR = window.deletePaymentReminder;
+  if (typeof _origDelPR === 'function') {
+    window.deletePaymentReminder = async function(...args) {
+      const result = await _origDelPR.apply(this, args);
+      await _syncAfterSavePaymentReminders();
+      return result;
+    };
+    _log('Intercepted: deletePaymentReminder');
+  }
+}
+
+// ─── Sync setelah simpan ─────────────────────────────────────────────────────
+
+async function _syncAfterSaveBudget() {
+  const bookId = _getCurrentBookId();
+  if (!bookId) return;
+  // Cari semua key sk_budgets_{bookId}_{YYYY-MM} di localStorage
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key) continue;
+    const m = key.match(/^sk_budgets_(.+)_(\d{4}-\d{2})$/);
+    if (m && m[1] === bookId) {
+      const ym = m[2];
+      try {
+        const val = JSON.parse(localStorage.getItem(key));
+        // Simpan timestamp lokal
+        const ts = _now();
+        localStorage.setItem(`${key}__updated_at`, ts);
+        await pushSettingToCloud(bookId, `budget_monthly_${ym}`, val);
+      } catch(e) {}
+    }
+  }
+}
+
+async function _syncAfterSaveDefaultBudget() {
+  const bookId = _getCurrentBookId();
+  if (!bookId) return;
+  const key = `sk_default_budget_${bookId}`;
+  try {
+    const val = JSON.parse(localStorage.getItem(key) || 'null');
+    if (val === null) return;
+    const ts = _now();
+    localStorage.setItem(`${key}__updated_at`, ts);
+    await pushSettingToCloud(bookId, 'defaultBudget', val);
+  } catch(e) { _log('Sync defaultBudget fail', e.message); }
+}
+
+async function _syncAfterSaveAnnualBudget() {
+  const bookId = _getCurrentBookId();
+  if (!bookId) return;
+  const key = `sk_annual_budget_${bookId}`;
+  try {
+    const val = JSON.parse(localStorage.getItem(key) || 'null');
+    if (val === null) return;
+    const ts = _now();
+    localStorage.setItem(`${key}__updated_at`, ts);
+    await pushSettingToCloud(bookId, 'annualBudget', val);
+  } catch(e) { _log('Sync annualBudget fail', e.message); }
+}
+
+async function _syncAfterSavePaymentReminders() {
+  const bookId = _getCurrentBookId();
+  if (!bookId) return;
+  const key = `paymentReminders_${bookId}`;
+  try {
+    const val = JSON.parse(localStorage.getItem(key) || 'null');
+    if (val === null) return;
+    const ts = _now();
+    localStorage.setItem(`${key}__updated_at`, ts);
+    await pushSettingToCloud(bookId, 'paymentReminders', val);
+  } catch(e) { _log('Sync paymentReminders fail', e.message); }
+}
+
+// ─── Pull otomatis saat switch buku ─────────────────────────────────────────
+
+function _interceptSwitchBook() {
+  const _origSwitch = window.switchBook;
+  if (typeof _origSwitch === 'function') {
+    window.switchBook = async function(bookId, ...args) {
+      const result = _origSwitch.apply(this, [bookId, ...args]);
+      // Delay sedikit agar UI selesai render
+      setTimeout(() => pullSettingsFromCloud(bookId), 800);
+      return result;
+    };
+    _log('Intercepted: switchBook');
+  }
+}
+
+// ─── Migrasi & cek status (dipanggil dari tombol di UI) ──────────────────────
+
+window.runFullMigration = async function() {
+  const statusEl = document.getElementById('migrationStatus');
+  const bookId = _getCurrentBookId();
+
+  if (!bookId) {
+    if (statusEl) statusEl.textContent = 'Tidak ada buku aktif. Pilih buku dulu.';
+    return;
+  }
+
+  const sb = _getSupabase();
+  if (!sb) {
+    if (statusEl) statusEl.textContent = 'Tidak terhubung ke Supabase. Pastikan koneksi aktif.';
+    return;
+  }
+
+  if (statusEl) statusEl.innerHTML = 'Sedang migrasi data...';
+  let pushed = 0;
+
+  // Push defaultBudget
+  const db = localStorage.getItem(`sk_default_budget_${bookId}`);
+  if (db) {
+    try {
+      const ts = _now();
+      localStorage.setItem(`sk_default_budget_${bookId}__updated_at`, ts);
+      const r = await pushSettingToCloud(bookId, 'defaultBudget', JSON.parse(db));
+      if (r.ok) pushed++;
+    } catch(e) {}
+  }
+
+  // Push annualBudget
+  const ab = localStorage.getItem(`sk_annual_budget_${bookId}`);
+  if (ab) {
+    try {
+      const ts = _now();
+      localStorage.setItem(`sk_annual_budget_${bookId}__updated_at`, ts);
+      const r = await pushSettingToCloud(bookId, 'annualBudget', JSON.parse(ab));
+      if (r.ok) pushed++;
+    } catch(e) {}
+  }
+
+  // Push paymentReminders
+  const pr = localStorage.getItem(`paymentReminders_${bookId}`);
+  if (pr) {
+    try {
+      const ts = _now();
+      localStorage.setItem(`paymentReminders_${bookId}__updated_at`, ts);
+      const r = await pushSettingToCloud(bookId, 'paymentReminders', JSON.parse(pr));
+      if (r.ok) pushed++;
+    } catch(e) {}
+  }
+
+  // Push semua budget bulanan khusus
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key) continue;
+    const m = key.match(/^sk_budgets_(.+)_(\d{4}-\d{2})$/);
+    if (m && m[1] === bookId) {
+      try {
+        const val = JSON.parse(localStorage.getItem(key));
+        const ts = _now();
+        localStorage.setItem(`${key}__updated_at`, ts);
+        const r = await pushSettingToCloud(bookId, `budget_monthly_${m[2]}`, val);
+        if (r.ok) pushed++;
+      } catch(e) {}
+    }
+  }
+
+  if (statusEl) statusEl.innerHTML = `Migrasi selesai: ${pushed} data berhasil dikirim ke cloud.`;
+  _log(`Migrasi selesai: ${pushed} item`);
+};
+
+window.checkMigrationStatus = async function() {
+  const statusEl = document.getElementById('migrationStatus');
+  const bookId = _getCurrentBookId();
+  if (!bookId) {
+    if (statusEl) statusEl.textContent = 'Tidak ada buku aktif.';
+    return;
+  }
+  const sb = _getSupabase();
+  if (!sb) {
+    if (statusEl) statusEl.textContent = 'Tidak terhubung ke Supabase.';
+    return;
+  }
+  if (statusEl) statusEl.textContent = 'Memeriksa...';
+  try {
+    const { data, error } = await sb
+      .from('settings_sync')
+      .select('setting_key, updated_at, device_id')
+      .eq('book_id', bookId);
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      if (statusEl) statusEl.innerHTML = 'Belum ada data di cloud. Klik <b>Migrasi Semua Data</b> untuk memulai.';
+      return;
+    }
+    const lines = data.map(r => {
+      const d = new Date(r.updated_at);
+      const dStr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      const isMe = r.device_id === _getDeviceId() ? ' (perangkat ini)' : '';
+      return `${r.setting_key} — ${dStr}${isMe}`;
+    });
+    if (statusEl) statusEl.innerHTML = `<b>${data.length} data tersinkron:</b><br>${lines.join('<br>')}`;
+  } catch(e) {
+    if (statusEl) statusEl.textContent = `Gagal cek: ${e.message}`;
+  }
+};
+
+// ─── Auto sync periodik ──────────────────────────────────────────────────────
+
+async function _autoSync() {
+  if (!navigator.onLine) return; // skip saat offline, hindari error di console
+  const bookId = _getCurrentBookId();
+  if (!bookId) return;
+  const result = await pullSettingsFromCloud(bookId);
+  if (result.ok && result.updated > 0) {
+    _log(`Auto-sync: ${result.updated} pembaruan dari cloud`);
+  }
+}
+
+function _startAutoSync() {
+  if (_syncIntervalId) clearInterval(_syncIntervalId);
+  _syncIntervalId = setInterval(_autoSync, 30000); // setiap 30 detik
+  _log('Auto-sync dimulai (interval: 30 detik)');
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+
+function _init() {
+  _log('Inisialisasi patch sinkronisasi...');
+  _interceptSave();
+  _interceptSwitchBook();
+  _startAutoSync();
+
+  // Pull data saat pertama load (delay agar app utama selesai init)
+  setTimeout(async () => {
+    if (!navigator.onLine) return; // skip pull awal jika offline
+    const bookId = _getCurrentBookId();
+    if (bookId) {
+      _log(`Pull awal untuk buku: ${bookId}`);
+      await pullSettingsFromCloud(bookId);
+    }
+  }, 2500);
+
+  _patchReady = true;
+  _log('Patch aktif ');
+
+  // Expose untuk debugging
+  window._syncPatch = {
+    version: PATCH_VERSION,
+    push: pushSettingToCloud,
+    pull: pullSettingsFromCloud,
+    syncNow: _autoSync,
+    getDeviceId: _getDeviceId,
+  };
+}
+
+// Tunggu app utama selesai load
+if (document.readyState === 'complete') {
+  setTimeout(_init, 1500);
+} else {
+  window.addEventListener('load', () => setTimeout(_init, 1500));
+}
+
+})();
+</script>
+<!-- ===== MODAL TUTUP ANAK BUKU ===== -->
+<div id="tutupAnakBukuModal" class="modal">
+    <div class="modal-content" style="max-width:480px;">
+        <div class="modal-header">
+            <h3>Tutup & Kirim ke Buku Induk</h3>
+            <button class="modal-close" onclick="closeModal('tutupAnakBukuModal')">×</button>
+        </div>
+        <div id="tutupAnakBukuInfo" style="margin-bottom:14px;"></div>
+        <div class="form-group">
+            <label style="font-size:.75rem; font-weight:600;">Deskripsi transaksi di buku induk</label>
+            <input type="text" id="tutupAnakBukuDesc" class="form-control"
+                   placeholder="Contoh: Ringkasan Renovasi Dapur"
+                   style="margin-top:6px;">
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('tutupAnakBukuModal')">Batal</button>
+            <button id="tutupAnakBukuSubmitBtn" class="btn btn-primary" style="background:#6b46c1; border-color:#6b46c1;"
+                    onclick="window.tutupAnakBuku()">
+                Kirim Ringkasan ke Induk
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== AKHIR PATCH SINKRONISASI ===== -->
+
+
+<script>
+(function() {
+  var HIDDEN_MASK = '••••••••';
+  var hidden = localStorage.getItem('sk_balance_hidden') === '1';
+
+  var eyeOpen  = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  var eyeClose = '<line x1="1" y1="1" x2="23" y2="23"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 1 12s4 8 11 8a9.74 9.74 0 0 0 5.39-1.61"/><circle cx="12" cy="12" r="3" style="display:none"/>';
+
+  function updateIcon() {
+    var icon = document.getElementById('balanceEyeIcon');
+    if (!icon) return;
+    icon.innerHTML = hidden ? eyeClose : eyeOpen;
+  }
+
+  function applyPrivacy() {
+    var el = document.getElementById('statBalance');
+    if (!el) return;
+    if (hidden) {
+      el.setAttribute('data-real', el.innerText !== HIDDEN_MASK ? el.innerText : (el.getAttribute('data-real') || ''));
+      el.innerText = HIDDEN_MASK;
+      el.style.letterSpacing = '0.1em';
+    } else {
+      var real = el.getAttribute('data-real');
+      if (real) { el.innerText = real; el.style.letterSpacing = ''; }
+    }
+    updateIcon();
+  }
+
+  window.toggleBalancePrivacy = function() {
+    hidden = !hidden;
+    localStorage.setItem('sk_balance_hidden', hidden ? '1' : '0');
+    applyPrivacy();
+  };
+
+  // Patch render agar saldo tetap tersembunyi setelah refresh data
+  var _origSetBalance = null;
+  function patchRender() {
+    var el = document.getElementById('statBalance');
+    if (!el) return;
+    var observer = new MutationObserver(function() {
+      if (hidden && el.innerText !== HIDDEN_MASK) {
+        el.setAttribute('data-real', el.innerText);
+        el.innerText = HIDDEN_MASK;
+        el.style.letterSpacing = '0.1em';
+      }
+    });
+    observer.observe(el, { childList: true, characterData: true, subtree: true });
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    applyPrivacy();
+    patchRender();
+  });
+})();
+</script>
+
+<script>
+(function() {
+  var FASE_META = {
+    1: { icon: '💍', label: 'Fase 1 — Bulan Madu',            sub: '0–2 tahun menikah' },
+    2: { icon: '🏠', label: 'Fase 2 — Penyesuaian & Realita', sub: '2–5 tahun menikah' },
+    3: { icon: '👶', label: 'Fase 3 — Pengasuhan Awal',        sub: 'Anak pertama lahir' },
+    4: { icon: '🎒', label: 'Fase 4 — Keluarga Aktif',         sub: 'Anak usia sekolah' },
+    5: { icon: '🧑‍🎓', label: 'Fase 5 — Remaja & Melepas',   sub: 'Anak usia remaja' },
+    6: { icon: '🕊️', label: 'Fase 6 — Sarang Kosong',        sub: 'Anak sudah mandiri' },
+    7: { icon: '🌅', label: 'Fase 7 — Pensiun & Menua Bersama', sub: 'Masa tenang berdua' },
+  };
+
+  window.toggleFaseDropdown = function() {
+    var dd = document.getElementById('faseDropdown');
+    if (dd) dd.classList.toggle('open');
+  };
+
+  window.selectFase = function(val) {
+    // update hidden native select
+    var sel = document.getElementById('faseSelect');
+    if (sel) { sel.value = val; }
+
+    // update trigger display
+    var meta = FASE_META[val];
+    var iconEl = document.getElementById('faseTriggerIcon');
+    var textEl = document.getElementById('faseTriggerText');
+    if (iconEl) iconEl.textContent = meta.icon;
+    if (textEl) { textEl.textContent = meta.label; textEl.classList.remove('placeholder'); }
+
+    // mark selected option
+    document.querySelectorAll('.fase-option').forEach(function(el) {
+      el.classList.toggle('selected', parseInt(el.dataset.value) === val);
+    });
+
+    // close dropdown
+    var dd = document.getElementById('faseDropdown');
+    if (dd) dd.classList.remove('open');
+
+    // trigger desc update
+    if (typeof window.updateFaseDesc === 'function') window.updateFaseDesc();
+  };
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    var dd = document.getElementById('faseDropdown');
+    if (dd && !dd.contains(e.target)) dd.classList.remove('open');
+  });
+
+  // Sync dropdown display when modal opens (e.g. existing saved fase)
+  var _origLoadFase = window.loadFaseKehidupanForm;
+  document.addEventListener('DOMContentLoaded', function() {
+    // Patch loadFaseKehidupanForm to also update custom dropdown
+    var origLoad = window.loadFaseKehidupanForm;
+    window.loadFaseKehidupanForm = function() {
+      if (origLoad) origLoad.apply(this, arguments);
+      // sync after native select is set
+      setTimeout(function() {
+        var sel = document.getElementById('faseSelect');
+        if (sel && sel.value) window.selectFase(parseInt(sel.value));
+        else {
+          var textEl = document.getElementById('faseTriggerText');
+          var iconEl = document.getElementById('faseTriggerIcon');
+          if (textEl) { textEl.textContent = '-- Pilih Fase --'; textEl.classList.add('placeholder'); }
+          if (iconEl) iconEl.textContent = '🔍';
+        }
+      }, 50);
+    };
+    // init placeholder class
+    var textEl = document.getElementById('faseTriggerText');
+    if (textEl) textEl.classList.add('placeholder');
+  });
+})();
+</script>
+</body>
+</html>
