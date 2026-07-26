@@ -155,6 +155,19 @@ window.requireOnline = function(operationName) {
     return true;
 };
 
+// Daftar modal yang sekarang tampil sebagai halaman penuh di area utama
+// (pola sama seperti Setelan) alih-alih kotak dialog mengambang -- dipetakan
+// ke id tombol nav sidebar masing-masing supaya nav bisa ikut ditandai aktif.
+// Lihat CLAUDE.md bagian "Sidebar/nav" untuk konvensinya.
+window.FULLVIEW_MODALS = {
+    monthlyReportModal:   'laporan',
+    budgetModal:          'anggaran',
+    paymentReminderModal: 'reminder',
+    bookManagerModal:     'buku',
+    accountManagerModal:  'akun',
+    backupModal:          'backup'
+};
+
 // Modal utility (dipanggil dari onclick di HTML)
 window.openModal = function(id) {
     // [FIX UX] addModal & editModal sekarang boleh dibuka offline -- lihat
@@ -167,6 +180,26 @@ window.openModal = function(id) {
     if (!window.isOnline() && id === 'bookManagerModal') {
         window.showToast('Anda harus ONLINE untuk operasi ini!', 'warning');
         return;
+    }
+    // [FULLVIEW] Menu sidebar (Laporan, Anggaran, Pengingat Pembayaran, Buku
+    // Kas, Akun, Cadangan Data) tampil full-page seperti Dashboard/Setelan,
+    // bukan modal mengambang -- sembunyikan Dashboard/Setelan, tandai nav
+    // sidebar aktif, dan tutup drawer mobile kalau lagi terbuka.
+    if (window.FULLVIEW_MODALS[id]) {
+        document.body.classList.remove('view-settings');
+        document.getElementById('setelanModal').classList.remove('show');
+        // Kalau lagi pindah langsung dari satu menu full-page ke menu
+        // full-page lain (mis. dari Laporan ke Anggaran), tutup dulu yang
+        // lama supaya tidak tumpang tindih di layar.
+        Object.keys(window.FULLVIEW_MODALS).forEach(function(otherId) {
+            if (otherId !== id) {
+                var otherEl = document.getElementById(otherId);
+                if (otherEl) otherEl.classList.remove('show');
+            }
+        });
+        document.body.classList.add('view-fullpage');
+        if (typeof window.updateAppSidebarNav === 'function') window.updateAppSidebarNav(window.FULLVIEW_MODALS[id]);
+        if (typeof window.closeMobileDrawer === 'function') window.closeMobileDrawer();
     }
     document.getElementById(id).classList.add('show');
     if (id === 'addModal') {
@@ -195,6 +228,13 @@ window.closeModal = function(id) {
     document.getElementById(id).classList.remove('show');
     if (id === 'setelanModal') {
         document.body.classList.remove('view-settings');
+        if (typeof window.updateAppSidebarNav === 'function') window.updateAppSidebarNav('dashboard');
+    }
+    // [FULLVIEW] Kalau yang ditutup salah satu menu full-page sidebar,
+    // kembali ke Dashboard (bukan sekadar hilang, karena Dashboard-nya
+    // sendiri disembunyikan selama mode fullview aktif).
+    if (window.FULLVIEW_MODALS[id]) {
+        document.body.classList.remove('view-fullpage');
         if (typeof window.updateAppSidebarNav === 'function') window.updateAppSidebarNav('dashboard');
     }
 };

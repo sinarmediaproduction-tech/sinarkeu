@@ -86,6 +86,16 @@ window.openSetelanModal = function(initialTab) {
     if (deviceNameInp) deviceNameInp.value = localStorage.getItem('sk_device_id') || '';
     if (deviceNameSt) deviceNameSt.innerText = '';
     
+    // Kalau lagi ada menu full-page sidebar lain yang terbuka (Laporan,
+    // Anggaran, dst), tutup dulu supaya tidak tumpang tindih dengan Setelan.
+    if (window.FULLVIEW_MODALS) {
+        Object.keys(window.FULLVIEW_MODALS).forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.classList.remove('show');
+        });
+    }
+    document.body.classList.remove('view-fullpage');
+
     window.openModal('setelanModal');
     window.switchSetelanTab(initialTab || 'lang');
 
@@ -110,19 +120,37 @@ window.showSetelanView = function(initialTab) {
 };
 
 window.showDashboardView = function() {
-    document.body.classList.remove('view-settings');
+    document.body.classList.remove('view-settings', 'view-fullpage');
     window.updateAppSidebarNav('dashboard');
     // Kalau lagi buka Setelan sebagai modal (mode mobile), tutup juga saat
     // pindah ke menu Dashboard di sidebar.
     if (typeof window.closeModal === 'function') window.closeModal('setelanModal');
+    // Kalau lagi ada menu full-page lain yang terbuka (Laporan, Anggaran,
+    // Pengingat Pembayaran, Buku Kas, Akun, Cadangan Data), tutup juga.
+    if (window.FULLVIEW_MODALS) {
+        Object.keys(window.FULLVIEW_MODALS).forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.classList.remove('show');
+        });
+    }
     if (typeof window.closeMobileDrawer === 'function') window.closeMobileDrawer();
 };
 
+window.APP_NAV_BTN_MAP = {
+    dashboard: 'navDashboardBtn',
+    setelan:   'navSetelanBtn',
+    laporan:   'navReportBtn',
+    anggaran:  'navBudgetBtn',
+    reminder:  'navReminderBtn',
+    buku:      'navBookBtn',
+    akun:      'navAccountBtn',
+    backup:    'navBackupBtn'
+};
 window.updateAppSidebarNav = function(which) {
-    var dashBtn = document.getElementById('navDashboardBtn');
-    var setBtn = document.getElementById('navSetelanBtn');
-    if (dashBtn) dashBtn.classList.toggle('active', which === 'dashboard');
-    if (setBtn) setBtn.classList.toggle('active', which === 'setelan');
+    Object.keys(window.APP_NAV_BTN_MAP).forEach(function(key) {
+        var btn = document.getElementById(window.APP_NAV_BTN_MAP[key]);
+        if (btn) btn.classList.toggle('active', key === which);
+    });
 };
 
 window.testCloudConnection = async function() {

@@ -1383,6 +1383,72 @@ tr:hover td { background: var(--accent-lt); }
   body.view-settings #setelanModal .setelan-tab-content { max-height: none; }
 }
 
+/* ── Menu sidebar full-page: Laporan, Anggaran, Pengingat Pembayaran,
+   Buku Kas, Akun, Cadangan Data (pola sama seperti Setelan di atas, tapi
+   digeneralisasi lewat class .fullview-modal + body.view-fullpage supaya
+   tidak perlu selector per-ID). Lihat CLAUDE.md bagian "Sidebar/nav". ── */
+@media (max-width: 1023px) {
+  body.view-fullpage .container { display: none; }
+  body.view-fullpage .fullview-modal.show {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    background: var(--paper);
+    z-index: 2000;
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+  body.view-fullpage .fullview-modal.show .modal-content {
+    width: 100%;
+    max-width: none !important;
+    height: 100%;
+    max-height: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  body.view-fullpage .fullview-modal.show .modal-header {
+    position: sticky;
+    top: 0;
+    background: var(--paper);
+    z-index: 1;
+    padding: 16px 16px 12px;
+    margin: 0 0 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+}
+
+@media (min-width: 1024px) {
+  body.view-fullpage .container { display: none; }
+  body.view-fullpage .fullview-modal.show {
+    display: block;
+    position: static;
+    width: auto;
+    max-width: none;
+    height: auto;
+    margin: 0 0 0 220px;
+    background: none;
+    border: none;
+    z-index: auto;
+    padding: 28px 32px 40px;
+  }
+  body.view-fullpage .fullview-modal.show .modal-content {
+    width: 100%; height: auto;
+    max-width: none !important; max-height: none !important;
+    min-height: 0;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-sm);
+    background: var(--paper);
+    padding: 24px;
+    display: block;
+  }
+  body.view-fullpage .fullview-modal.show .modal-close { display: none; }
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
