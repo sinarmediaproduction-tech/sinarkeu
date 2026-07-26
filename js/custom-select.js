@@ -164,9 +164,20 @@ window.initCustomSelect = function(selectEl, opts) {
         btn.appendChild(dot);
       }
 
-      var label = document.createElement('span');
-      label.textContent = no.text;
-      btn.appendChild(label);
+      var labelWrap = document.createElement('span');
+      labelWrap.className = 'cs-option-label';
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'cs-opt-name';
+      nameSpan.textContent = no.text;
+      labelWrap.appendChild(nameSpan);
+      var optBalance = no.getAttribute('data-balance');
+      if (optBalance) {
+        var balSpan = document.createElement('span');
+        balSpan.className = 'cs-opt-balance';
+        balSpan.textContent = optBalance;
+        labelWrap.appendChild(balSpan);
+      }
+      btn.appendChild(labelWrap);
 
       if (no.value !== '') {
         btn.addEventListener('click', function(e) {
@@ -197,7 +208,10 @@ window.initCustomSelect = function(selectEl, opts) {
     var text = wrapper.querySelector('.cs-trigger-text');
     var selOpt = selectEl.querySelector('option[value="' + val + '"]');
     if (val && selOpt) {
-      text.textContent = selOpt.text;
+      var optBalance = selOpt.getAttribute('data-balance');
+      text.innerHTML = '<span class="cs-trigger-name"></span>' + (optBalance ? '<span class="cs-trigger-balance"></span>' : '');
+      text.querySelector('.cs-trigger-name').textContent = selOpt.text;
+      if (optBalance) text.querySelector('.cs-trigger-balance').textContent = optBalance;
       text.classList.remove('placeholder');
     } else {
       text.textContent = 'Pilih...';

@@ -51,8 +51,9 @@ window.updateBookSelectDropdown = function() {
         let opt = document.createElement('option');
         opt.value = b.id;
         const namePart = isChild ? '  ↳ ' + b.name : b.name;
+        opt.textContent = namePart;
         const balanceLabel = balanceHidden ? null : window.getBookBalanceLabel(b.id);
-        opt.innerText = balanceLabel ? `${namePart} — ${balanceLabel}` : namePart;
+        if (balanceLabel) opt.setAttribute('data-balance', balanceLabel);
         if (isChild) opt.setAttribute('data-child', '1');
         if (b.id === window.currentBookId) opt.selected = true;
         sel.appendChild(opt);
