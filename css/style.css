@@ -1174,19 +1174,18 @@ tr:hover td { background: var(--accent-lt); }
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 14px;
 }
 
-/* Semua section Setelan tampil sekaligus (tidak lagi per-tab) --
-   dipisahkan dengan garis pembatas supaya tetap mudah dibedakan. */
-.setelan-tab-panel {
+/* Setiap section Setelan tampil sebagai card sendiri (lihat
+   .data-management-panel) -- jaraknya diatur lewat gap flex di atas,
+   jadi card ini tidak perlu tambahan margin/border/padding sendiri
+   (dulu ada padding-top:22px + border-top di sini yang numpuk dengan
+   margin card, hasilnya jarak antar-card 2x lebih lebar dari jarak
+   header-ke-card pertama -- makanya terasa tidak balance). */
+.data-management-panel.setelan-tab-panel {
   display: block;
-  padding-top: 22px;
-  border-top: 1px solid var(--rule);
-}
-.setelan-tab-panel:first-child {
-  padding-top: 0;
-  border-top: none;
+  margin: 0;
 }
 
 /* ── App Sidebar: Dashboard / Pengaturan (Mobile + Desktop) ── */
@@ -1305,11 +1304,13 @@ tr:hover td { background: var(--accent-lt); }
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    padding: 0;
+    /* Sama seperti .fullview-modal (Laporan, Anggaran, dst.) di layar hp:
+       sisi 12px, bawah 12px, atas 0 (header yang mengatur jarak atas). */
+    padding: 0 12px 12px;
   }
   body.view-settings #setelanModal .modal-header {
     background: var(--paper);
-    padding: 16px 12px 12px;
+    padding: 16px 0 12px;
     margin: 0 0 8px;
     border-bottom: 1px solid var(--rule);
     justify-content: flex-start;
@@ -1318,10 +1319,6 @@ tr:hover td { background: var(--accent-lt); }
   body.view-settings #setelanModal .modal-header .modal-close {
     order: -1;
     position: static;
-  }
-  body.view-settings #setelanModal .setelan-tab-content {
-    padding-left: 12px;
-    padding-right: 12px;
   }
 }
 
@@ -1679,7 +1676,6 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
    MODAL SETELAN — helper class theme-aware
    (pengganti inline style agar ikut dark mode)
 =================================================== */
-.setelan-tab-panel { margin-top: 0; }
 
 .setelan-desc {
   font-size: .7rem;
