@@ -140,7 +140,7 @@ async function generateMonthlyReport() {
       </div>
 
       <!-- Summary cards -->
-      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px;">
+      <div class="laporan-summary-grid" style="margin-bottom:20px;">
         <div style="background:${C.incBg}; border:1.5px solid ${C.incBd}; border-radius: var(--radius-sm); padding:14px 16px;">
           <div style="font-size:.65rem; color:${C.incTxt}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Total Pemasukan</div>
           <div style="font-size:1rem; font-weight:700; color:${C.incTxt}; margin-top:4px;">${fmtRp(income)}</div>
@@ -169,8 +169,8 @@ async function generateMonthlyReport() {
 
       <!-- Kategori -->
       <div style="font-size:.78rem; font-weight:700; margin-bottom:8px; color:${C.inkMuted}; text-transform:uppercase; letter-spacing:.5px;">Pengeluaran per Kategori</div>
-      <div style="border:1.5px solid ${C.rule}; border-radius: var(--radius-sm); overflow:hidden; margin-bottom:20px;">
-        <table style="width:100%; border-collapse:collapse; font-size:.78rem;">
+      <div class="laporan-table-wrap" style="border:1.5px solid ${C.rule}; border-radius: var(--radius-sm); margin-bottom:20px;">
+        <table style="width:100%; min-width:380px; border-collapse:collapse; font-size:.78rem;">
           <thead>
             <tr style="background:${C.thead}; text-align:left;">
               <th style="padding:8px 10px; font-weight:600; color:${C.inkMuted};">Kategori</th>
@@ -185,8 +185,8 @@ async function generateMonthlyReport() {
 
       <!-- Daftar transaksi -->
       <div style="font-size:.78rem; font-weight:700; margin-bottom:8px; color:${C.inkMuted}; text-transform:uppercase; letter-spacing:.5px;">Daftar Transaksi (${allTx.length} transaksi)</div>
-      <div style="border:1.5px solid ${C.rule}; border-radius: var(--radius-sm); overflow:hidden;">
-        <table style="width:100%; border-collapse:collapse; font-size:.75rem;">
+      <div class="laporan-table-wrap" style="border:1.5px solid ${C.rule}; border-radius: var(--radius-sm);">
+        <table style="width:100%; min-width:480px; border-collapse:collapse; font-size:.75rem;">
           <thead>
             <tr style="background:${C.thead};">
               <th style="padding:8px 10px; text-align:left; font-weight:600; color:${C.inkMuted};">Tanggal</th>

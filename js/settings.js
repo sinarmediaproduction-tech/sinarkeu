@@ -540,8 +540,8 @@ window.loadConnectedDevices = async function() {
                 .slice(0, 3).map(function(a) { return a[0]; }).join(', ');
 
             html += '<div style="border:1px solid var(--rule); border-radius: var(--radius-sm); padding:10px 12px; margin-bottom:8px; background:var(--paper);">';
-            html += '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">';
-            html += '<span style="font-size:.78rem; font-weight:700; color:var(--ink);">';
+            html += '<div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px 8px; margin-bottom:4px;">';
+            html += '<span style="font-size:.78rem; font-weight:700; color:var(--ink); word-break:break-word;">';
             html += '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:' + dotColor + '; margin-right:5px; vertical-align:middle;"></span>';
             html += window.escapeHtml(d.device_id);
             if (isMe) html += ' <span style="font-size:.6rem; background:#e3fcef; color:#006644; padding:1px 7px; border-radius: var(--radius-sm); font-weight:600; vertical-align:middle;">Perangkat ini</span>';
