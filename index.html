@@ -1521,16 +1521,8 @@ alter table public.settings
             <!-- Notif segera jatuh tempo -->
             <div id="prUpcomingAlert" class="pr-upcoming-alert" style="display:none; border-radius: var(--radius-sm); padding:10px 14px; margin-bottom:14px; font-size:.75rem; line-height:1.8;"></div>
 
-            <!-- Daftar pengingat aktif -->
-            <div style="margin-bottom:14px;">
-                <div style="font-size:.75rem; font-weight:700; color:var(--ink); margin-bottom:8px;">Daftar Jadwal</div>
-                <div id="prList" style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; padding-right:4px;">
-                    <div id="prEmptyMsg" style="font-size:.72rem; color:#aaa; text-align:center; padding:18px 0;">Belum ada jadwal pembayaran. Tambahkan di bawah.</div>
-                </div>
-            </div>
-
             <!-- Form tambah/edit -->
-            <div class="pr-form-divider" style="padding-top:14px;">
+            <div class="pr-form-divider" style="padding-top:0; border-top:none;">
                 <div style="font-size:.75rem; font-weight:700; margin-bottom:10px;" id="prFormTitle">＋ Tambah Jadwal Baru</div>
                 <input type="hidden" id="prEditId" value="">
                 <div class="form-group" style="margin-bottom:10px;">
@@ -1567,6 +1559,14 @@ alter table public.settings
                 <div style="display:flex; gap:8px;">
                     <button class="btn btn-secondary" style="flex:1;" onclick="cancelPrEdit()">Batal</button>
                     <button class="btn btn-primary" style="flex:2; background:var(--warning); border-color:var(--warning);" onclick="savePaymentReminderHandler()">Simpan Jadwal</button>
+                </div>
+            </div>
+
+            <!-- Daftar pengingat aktif -->
+            <div class="pr-form-divider" style="margin-top:14px; padding-top:14px;">
+                <div style="font-size:.75rem; font-weight:700; color:var(--ink); margin-bottom:8px;">Daftar Jadwal</div>
+                <div id="prList" style="display:flex; flex-direction:column; gap:8px; padding-right:4px;">
+                    <div id="prEmptyMsg" style="font-size:.72rem; color:#aaa; text-align:center; padding:18px 0;">Belum ada jadwal pembayaran. Tambahkan di atas.</div>
                 </div>
             </div>
         </div>
