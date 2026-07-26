@@ -1,7 +1,34 @@
 // ==================== BOOK MANAGEMENT ====================
+// Hitung saldo akhir sebuah buku dari cache lokal (sk_txs_<id> + sk_balance_offset_<id>)
+// TANPA perlu berpindah/membuka buku tsb -- makanya dropdown pindah buku bisa
+// langsung menampilkan saldo tiap buku. Catatan: kalau buku itu belum pernah
+// dibuka di device ini, cache-nya belum ada, jadi saldo tidak bisa ditampilkan
+// (return null, bukan 0, supaya tidak menyesatkan seolah saldonya benar-benar nol).
+window.getBookBalanceLabel = function(bookId) {
+    try {
+        const raw = localStorage.getItem('sk_txs_' + bookId);
+        if (raw === null) return null;
+        const txs = JSON.parse(raw || '[]');
+        let inc = 0, exp = 0;
+        txs.forEach(t => {
+            const amt = Number(t.amount) || 0;
+            if (t.type === 'income') inc += amt; else exp += amt;
+        });
+        const offset = Number(localStorage.getItem('sk_balance_offset_' + bookId)) || 0;
+        return window.rp(inc - exp + offset);
+    } catch (e) {
+        return null;
+    }
+};
+
 window.updateBookSelectDropdown = function() {
     let sel = document.getElementById('currentBookSelect');
     sel.innerHTML = '';
+
+    // Ikuti setelan privasi "Sembunyikan Saldo" (sk_balance_hidden) yang sama
+    // dipakai oleh saldo hero di dashboard -- kalau user sedang menyembunyikan
+    // saldo, jangan bocorkan saldo tiap buku lewat dropdown ini.
+    const balanceHidden = localStorage.getItem('sk_balance_hidden') === '1';
 
     // [UI] Kelompokkan anak buku tepat di bawah buku induknya (bukan
     // mengikuti urutan asli array window.books apa adanya), supaya
@@ -23,7 +50,9 @@ window.updateBookSelectDropdown = function() {
     function addOption(b, isChild) {
         let opt = document.createElement('option');
         opt.value = b.id;
-        opt.innerText = isChild ? '  ↳ ' + b.name : b.name;
+        const namePart = isChild ? '  ↳ ' + b.name : b.name;
+        const balanceLabel = balanceHidden ? null : window.getBookBalanceLabel(b.id);
+        opt.innerText = balanceLabel ? `${namePart} — ${balanceLabel}` : namePart;
         if (isChild) opt.setAttribute('data-child', '1');
         if (b.id === window.currentBookId) opt.selected = true;
         sel.appendChild(opt);
