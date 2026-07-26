@@ -17,18 +17,18 @@
   --paper:      #FFFFFF;
   --paper-warm: #F5F6F8;
   --rule:       #E4E7EC;
-  --accent:     #4F63D2;
-  --accent-lt:  #E7EAFB;
+  --accent:     #A32638;
+  --accent-lt:  #F7E4E7;
   --success:    #2F9E6E;
   --success-lt: #E3F5EC;
   --danger:     #DC5A4E;
   --danger-lt:  #FBE7E5;
   --warning:    #D8A13B;
   --warning-lt: #FBF0DC;
-  --purple:     #7C6FD6;
-  --purple-lt:  #ECE9FB;
-  --brand:      #4F63D2; /* selaras dengan --accent, dipakai di sidebar */
-  --brand-dark: #37449C;
+  --purple:     #A32638;
+  --purple-lt:  #F7E4E7;
+  --brand:      #A32638; /* selaras dengan --accent, dipakai di sidebar */
+  --brand-dark: #7A1C2A;
   /* Extended palette */
   --fase:       #C77A9A;
   --fase-lt:    #F8E9EF;
@@ -434,7 +434,7 @@ h1, h2, h3, h4,
   background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
   border: none;
   border-radius: var(--radius-lg);
-  box-shadow: 0 12px 32px rgba(79,99,210,0.20);
+  box-shadow: 0 12px 32px rgba(163,38,56,0.20);
   padding: 26px 28px;
   margin-bottom: 18px;
 }
@@ -842,9 +842,9 @@ button:disabled, .btn:disabled,
   color: #fff;
   border-color: var(--accent);
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(79,99,210,0.22);
+  box-shadow: 0 4px 14px rgba(163,38,56,0.22);
 }
-.btn-primary:hover:not(:disabled) { background: var(--brand-dark); border-color: var(--brand-dark); box-shadow: 0 6px 18px rgba(79,99,210,0.28); transform: translateY(-1px); }
+.btn-primary:hover:not(:disabled) { background: var(--brand-dark); border-color: var(--brand-dark); box-shadow: 0 6px 18px rgba(163,38,56,0.28); transform: translateY(-1px); }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; background: var(--ink-faint); border-color: var(--ink-faint); box-shadow: none; }
 
 .btn-secondary {
@@ -2698,16 +2698,16 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   --paper:      #171B24;
   --paper-warm: #1E232E;
   --rule:       #2E3440;
-  --accent:     #7C8CF0;
-  --accent-lt:  #262B45;
+  --accent:     #E0707F;
+  --accent-lt:  #3A2027;
   --success:    #4FC490;
   --success-lt: #1B2E27;
   --danger:     #E8776D;
   --danger-lt:  #33201E;
   --warning:    #E8B75E;
   --warning-lt: #332912;
-  --purple:     #A79AE8;
-  --purple-lt:  #2A2640;
+  --purple:     #E0707F;
+  --purple-lt:  #3A2027;
   /* Brand (title bar / sidebar / balance hero) — dark overrides,
      supaya tidak lagi tampil ungu terang di mode gelap */
   --brand:      #262B38;
