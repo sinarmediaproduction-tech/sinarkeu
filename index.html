@@ -71,19 +71,23 @@
 
 <!-- ===== PASSWORD LOCK SCREEN ===== -->
 <div id="passwordLockScreen">
-    <div class="lock-card">
-        <div class="lock-title">Sinarkeu</div>
-        <div class="lock-subtitle" id="lockSubtitle">Pilih akun dan masukkan password</div>
-        <div class="lock-account-picker" id="lockAccountPicker"></div>
-        <div class="lock-input-wrap">
-            <input type="password" id="lockPasswordInput" class="lock-input"
-                   placeholder="Password" disabled
-                   onkeydown="if(event.key==='Enter') submitLockPassword()"
-                   oninput="clearLockError()">
-            <button class="lock-eye-btn" onclick="toggleLockEye()" id="lockEyeBtn" title="Tampilkan/sembunyikan" disabled>Lihat</button>
+    <div class="lock-card-wrap">
+        <div class="lock-card">
+            <div class="lock-title">Sinarkeu System</div>
+            <div class="lock-account-picker" id="lockAccountPicker"></div>
+            <div class="lock-input-wrap">
+                <input type="password" id="lockPasswordInput" class="lock-input"
+                       placeholder="Password" disabled
+                       onkeydown="if(event.key==='Enter') submitLockPassword()"
+                       oninput="clearLockError()">
+                <button class="lock-eye-btn" onclick="toggleLockEye()" id="lockEyeBtn" title="Tampilkan/sembunyikan" disabled>Lihat</button>
+            </div>
+            <div class="lock-status" id="lockStatus"></div>
         </div>
-        <div class="lock-status" id="lockStatus"></div>
+    </div>
+    <div class="lock-footer">
         <button class="lock-add-account" onclick="openAccountManagerFromLock()">＋ Tambah akun baru</button>
+        <span class="lock-footer-sep">·</span>
         <button class="lock-manual-btn" onclick="toggleManual()">Panduan Pengguna</button>
     </div>
 </div>
