@@ -97,9 +97,11 @@ window.stopAutoSync = function() {
 };
 
 window.submitLockPassword = async function() {
-    const pwd = document.getElementById('lockPasswordInput').value;
+    clearTimeout(window._lockAutoTimer);
+    if (window._lockUnlockInFlight) return; // cegah proses dobel kalau debounce & Enter nembak bersamaan
+    const inp = document.getElementById('lockPasswordInput');
+    const pwd = inp.value;
     const status = document.getElementById('lockStatus');
-    const btn = document.getElementById('lockSubmitBtn');
     if (!pwd) { status.innerText = window.t('lock_pwd_empty'); return; }
     // [SECURITY] Anti brute-force: kalau masih dalam masa tunggu akibat
     // percobaan gagal berturut-turut sebelumnya, tolak dulu tanpa mencoba
@@ -109,22 +111,21 @@ window.submitLockPassword = async function() {
         status.innerText = `Terlalu banyak percobaan gagal. Coba lagi dalam ${waitSec} detik.`;
         return;
     }
-    btn.disabled = true;
-    btn.innerText = window.t('lock_verifying');
-    status.innerText = '';
+    window._lockUnlockInFlight = true;
+    inp.disabled = true;
+    status.innerText = window.t('lock_verifying');
     const ok = await window.unlockWithPassword(pwd);
     if (window.recordUnlockAttempt) window.recordUnlockAttempt(ok);
+    window._lockUnlockInFlight = false;
     if (ok) {
         document.getElementById('passwordLockScreen').style.display = 'none';
         window.continueAppInit();
     } else {
-        btn.disabled = false;
-        btn.innerText = window.t('lock_open');
+        inp.disabled = false;
         const nextWait = window.getUnlockWaitMs ? window.getUnlockWaitMs() : 0;
         status.innerText = nextWait > 0
             ? `${window.t('lock_wrong_pwd')} Terlalu banyak percobaan, tunggu ${nextWait} detik.`
             : window.t('lock_wrong_pwd');
-        const inp = document.getElementById('lockPasswordInput');
         inp.classList.add('error-shake');
         inp.value = '';
         inp.focus();
@@ -141,10 +142,26 @@ window.submitLockPassword = async function() {
 (function enableLockScreenInputs() {
     const inp = document.getElementById('lockPasswordInput');
     const eyeBtn = document.getElementById('lockEyeBtn');
-    const submitBtn = document.getElementById('lockSubmitBtn');
     if (inp) inp.disabled = false;
     if (eyeBtn) eyeBtn.disabled = false;
-    if (submitBtn) submitBtn.disabled = false;
+
+    // [UX] Tidak ada lagi tombol "Buka": password diverifikasi otomatis
+    // begitu user berhenti mengetik sejenak (debounce 700ms). Sengaja pakai
+    // debounce (bukan tiap keystroke) supaya: (1) tidak memicu dekripsi
+    // PBKDF2 + verifikasi cloud yang berat di setiap huruf yang diketik, dan
+    // (2) tidak menghabiskan jatah anti-brute-force (recordUnlockAttempt)
+    // hanya karena password belum selesai diketik. Kalau password benar,
+    // layar langsung tertutup tanpa perlu klik apa pun; kalau salah, pesan
+    // error baru muncul setelah user benar-benar berhenti mengetik.
+    if (inp) {
+        inp.addEventListener('input', () => {
+            clearTimeout(window._lockAutoTimer);
+            if (!inp.value) return;
+            window._lockAutoTimer = setTimeout(() => {
+                if (!window._lockUnlockInFlight) window.submitLockPassword();
+            }, 700);
+        });
+    }
 })();
 
 window.continueAppInit = async function() {

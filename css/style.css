@@ -2102,24 +2102,6 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 }
 .lock-eye-btn:disabled { cursor: wait; opacity: .5; }
 
-.lock-btn {
-  width: 100%;
-  padding: 12px;
-  font-size: .82rem;
-  font-weight: 700;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-pill);
-  cursor: pointer;
-  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
-  font-family: inherit;
-  box-shadow: 0 4px 14px rgba(79,99,210,0.22);
-}
-.lock-btn:hover { background: var(--brand-dark); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(79,99,210,0.28); }
-.lock-btn:active { opacity: 0.9; }
-.lock-btn:disabled { background: var(--ink-faint); cursor: not-allowed; box-shadow: none; }
-
 .lock-status {
   font-size: .7rem;
   margin-top: 10px;
@@ -2784,8 +2766,6 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 [data-theme="dark"] #passwordLockScreen { background: var(--paper-warm); }
 [data-theme="dark"] .lock-card { background: transparent; border-color: transparent; }
 [data-theme="dark"] .lock-input { background: var(--paper); border-color: var(--rule); color: var(--ink); }
-[data-theme="dark"] .lock-btn { background: var(--ink); color: var(--paper-warm); }
-[data-theme="dark"] .lock-btn:hover { background: var(--ink-muted); }
 [data-theme="dark"] .lock-account-item { background: var(--paper); border-color: var(--rule); }
 [data-theme="dark"] .lock-account-item:hover,
 [data-theme="dark"] .lock-account-item.selected { background: var(--paper-warm); }
