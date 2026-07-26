@@ -780,6 +780,17 @@ canvas { max-height: 260px; width: 100%; }
   width: 105px;
   color: var(--ink);
 }
+/* [FIX] input[type="date"] punya aturan border/background/padding sendiri
+   (lihat "Native Date Input" di bawah) dengan specificity yang sama, jadi
+   tanpa selector lebih spesifik ini urutan file yang menang -> tampil
+   sebagai kotak bulat sendiri di DALAM .date-filter-box (kotak dobel).
+   Selector ini memastikan input selalu menyatu tanpa border/bg sendiri. */
+.date-filter-box input[type="date"] {
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+}
 .date-clear-btn {
   background: none;
   border: none;
@@ -2466,12 +2477,13 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   .expense-chart-legend { min-width: 130px; }
   .legend-item { font-size: .68rem; }
   .controls { flex-direction: column; align-items: stretch; gap: 8px; }
-  .filters { width: 100%; flex-wrap: wrap; gap: 5px; }
+  .filters { width: 100%; flex-wrap: wrap; gap: 6px; }
   .search-input { width: 100%; }
-  .date-filter-box { width: 100%; }
-  .date-filter-box input { flex: 1; font-size: .72rem; }
-  .actions { width: 100%; }
-  .actions .btn { flex: 1; justify-content: center; font-size: .7rem; padding: 8px 6px; }
+  .filter-btn { flex: 1; justify-content: center; text-align: center; padding: 7px 4px; }
+  .date-filter-box { width: 100%; padding: 3px 10px; gap: 4px; }
+  .date-filter-box input { flex: 1; min-width: 0; font-size: .7rem; padding: 6px 2px; }
+  .actions { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; gap: 6px; }
+  .actions .btn { min-width: 0; justify-content: center; font-size: .68rem; padding: 9px 4px; white-space: nowrap; }
   table { min-width: unset; font-size: .72rem; }
   .col-no, .col-nota, .col-saldo { display: none; }
   th, td { padding: 9px 8px; }
@@ -2763,6 +2775,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 [data-theme="dark"] .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
 [data-theme="dark"] .date-filter-box { background: var(--paper); border-color: var(--rule); }
 [data-theme="dark"] .date-filter-box input { color: var(--ink); }
+[data-theme="dark"] .date-filter-box input[type="date"] { border: none; background: transparent; }
 
 /* Pagination */
 [data-theme="dark"] .page-btn { background: var(--paper); border-color: var(--rule); color: var(--ink-muted); }
