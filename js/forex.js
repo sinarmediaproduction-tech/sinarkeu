@@ -240,16 +240,11 @@ window.fetchGoldPrice = async function(forceRefresh) {
             } else if (res.status === 403) {
                 // Bukan kuota habis (itu 429) -- 403 berarti request DITOLAK sebelum
                 // sempat diproses (API key salah/kadaluarsa/dicabut, atau permintaan
-                // diblokir di level proxy/Vercel). Coba baca detail dari body error
-                // proxy (lihat api/emas.js) supaya penyebabnya kelihatan, bukan cuma
-                // kode angka yang membingungkan.
-                let detail = '';
-                try {
-                    const errJson = await res.json();
-                    const d = errJson?.detail;
-                    detail = errJson?.error ? `${errJson.error}${d ? ' — ' + (typeof d === 'string' ? d : JSON.stringify(d)) : ''}` : '';
-                } catch { /* body bukan JSON / kosong, lewati */ }
-                srcEl.textContent = `Ditolak (403)${detail ? ': ' + detail : ' -- kemungkinan API key emas salah/kadaluarsa'}, beralih ke estimasi spot`;
+                // diblokir di level proxy/Vercel). Detail teknis dari body error
+                // proxy (lihat api/emas.js) sengaja TIDAK ditampilkan ke pengguna --
+                // itu cuma noise (JSON mentah upstream), pesan di card cukup
+                // ringkas: kenapa gagal + fallback yang dipakai.
+                srcEl.textContent = 'API key emas ditolak, beralih ke estimasi spot';
                 srcEl.style.color = '#de350b';
                 if (cache) {
                     priceEl.textContent = 'Rp ' + Math.round(cache.pricePerGram).toLocaleString('id-ID');
@@ -257,16 +252,11 @@ window.fetchGoldPrice = async function(forceRefresh) {
                     return;
                 }
             } else {
-                let detail = '';
-                try {
-                    const errJson = await res.json();
-                    detail = errJson?.error || '';
-                } catch { /* body bukan JSON / kosong, lewati */ }
-                srcEl.textContent = `API error (${res.status})${detail ? ': ' + detail : ''}, beralih ke estimasi spot`;
+                srcEl.textContent = 'Gagal ambil harga emas, beralih ke estimasi spot';
                 srcEl.style.color = '#cc7b00';
             }
         } catch (e) {
-            srcEl.textContent = `Gagal hubungi API (${e.message}), beralih ke estimasi spot`;
+            srcEl.textContent = 'Gagal hubungi API harga emas, beralih ke estimasi spot';
             srcEl.style.color = '#cc7b00';
         }
     } else if (refreshBtn) {

@@ -448,6 +448,22 @@ alter table public.settings
         </button>
     </div>
 
+    <div class="app-nav-group">
+        <div class="app-nav-group-label">Keamanan & Perangkat</div>
+        <button type="button" class="app-nav-item" id="navTelegramBtn" onclick="window.closeMobileDrawer(); window.openTelegramSettings()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
+            <span data-i18n="telegram_section">Notifikasi Telegram</span>
+        </button>
+        <button type="button" class="app-nav-item" id="navSafetySnapshotBtn" onclick="window.closeMobileDrawer(); window.openSafetySnapshotManager()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path></svg>
+            <span>Snapshot Keamanan</span>
+        </button>
+        <button type="button" class="app-nav-item" id="navDeviceManagerBtn" onclick="window.closeMobileDrawer(); window.openDeviceManager()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+            <span>Perangkat Terhubung</span>
+        </button>
+    </div>
+
     <div class="app-nav-footer">
         <button type="button" class="app-nav-item" id="navSetelanBtn" onclick="window.showSetelanView()">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852 1 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
@@ -839,7 +855,7 @@ alter table public.settings
 </div>
 
 <!-- Telegram Settings Modal -->
-<div id="telegramSettingsModal" class="modal">
+<div id="telegramSettingsModal" class="modal fullview-modal">
     <div class="modal-content">
         <div class="modal-header"><h3>Notifikasi Telegram</h3><button class="modal-close" onclick="closeModal('telegramSettingsModal')">×</button></div>
         <div class="form-group"><label style="display:flex; align-items:center; gap:8px;">Status <span id="tgStatusBadge" style="font-size:.6rem; padding:2px 8px; border-radius: var(--radius-sm); background:var(--rule); color:var(--ink-muted);">Belum dikonfigurasi</span></label></div>
@@ -879,16 +895,13 @@ alter table public.settings
             <button type="button" class="setelan-tab-btn" data-tab="ai" onclick="window.switchSetelanTab('ai')"><span data-i18n="ai_analysis_section">Analisis AI</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="gold" onclick="window.switchSetelanTab('gold'); window.updateEmasQuotaDisplay()"><span data-i18n="gold_price_section">Harga Emas Antam</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="charity" onclick="window.switchSetelanTab('charity')"><span data-i18n="charity_section">Sedekah</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="telegram" onclick="window.switchSetelanTab('telegram')"><span data-i18n="telegram_section">Notifikasi Telegram</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="supabase" onclick="window.switchSetelanTab('supabase')"><span data-i18n="supabase_section">Koneksi Supabase</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="password" onclick="window.switchSetelanTab('password')"><span data-i18n="change_password_section">Ganti Password Keamanan</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="sync" onclick="window.switchSetelanTab('sync')"><span data-i18n="settings_sync_section">Sinkronisasi Setelan</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="backup" onclick="window.switchSetelanTab('backup')"><span data-i18n="data_backup_section">Cadangan Data</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="safety-snapshot" onclick="window.switchSetelanTab('safety-snapshot'); window.renderSafetySnapshotList()">Snapshot Keamanan</button>
             <button type="button" class="setelan-tab-btn" data-tab="migration" onclick="window.switchSetelanTab('migration')"><span data-i18n="migration_section">Migrasi Data ke Cloud</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="reset" onclick="window.switchSetelanTab('reset')"><span data-i18n="reset_app_section">Reset Total Aplikasi</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="archive" onclick="window.switchSetelanTab('archive')"><span data-i18n="archive_section">Arsipkan & Kosongkan Database</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="devices" onclick="window.switchSetelanTab('devices'); window.loadConnectedDevices()">Perangkat Terhubung</button>
         </div>
 
         <div class="setelan-tab-content" id="setelanTabContent">
@@ -956,15 +969,6 @@ alter table public.settings
                 <span data-i18n="charity_desc">Sedekah dihitung otomatis <strong>2,5%</strong> dari total pemasukan bulan kalender berjalan.</span>
             </div>
             <div id="zakatPreview" class="setelan-preview--green"></div>
-        </div>
-
-        <!-- Telegram -->
-        <div class="data-management-panel setelan-tab-panel" data-tab-panel="telegram">
-            <div class="panel-title setelan-title--blue" data-i18n="telegram_section">Notifikasi Telegram</div>
-            <div class="setelan-desc">
-                <span data-i18n="telegram_desc">Kirim notifikasi transaksi, peringatan anggaran, dan ringkasan harian lewat Telegram Bot.</span>
-            </div>
-            <button class="btn btn-primary" onclick="closeModal('setelanModal'); openTelegramSettings()" data-i18n="telegram_settings_btn">Atur Notifikasi Telegram</button>
         </div>
 
         <!-- Koneksi Supabase -->
@@ -1039,17 +1043,6 @@ alter table public.settings
             </div>
         </div>
 
-        <!-- ===== SNAPSHOT KEAMANAN (Restore Point Otomatis) ===== -->
-        <div class="data-management-panel setelan-tab-panel" data-tab-panel="safety-snapshot">
-            <div class="panel-title">Snapshot Keamanan</div>
-            <div class="setelan-desc" style="margin-bottom:12px;">
-                Berbeda dari <b>Cadangan Data</b>: snapshot di sini dibuat <b>otomatis</b> oleh aplikasi tanpa perlu diklik &mdash; baik <b>1x per hari</b> (snapshot harian), maupun tepat sebelum aksi berisiko dijalankan (hapus buku, hapus akun, reset total aplikasi, arsipkan &amp; kosongkan database, restore Cadangan Data, atau impor JSON). Gunakan untuk berjaga-jaga kalau ada error atau hasil aksi tersebut ternyata keliru.
-                <br><br>
-                Menyimpan <b>seluruh data lokal akun ini</b> (semua buku, anggaran, pengingat pembayaran, setelan) pada perangkat ini saja &mdash; maksimal 10 snapshot terbaru disimpan (snapshot tertua otomatis dihapus kalau sudah penuh). <b>Catatan:</b> jika aksi terkait sudah menghapus data secara permanen di cloud/Supabase, snapshot ini hanya memulihkan salinan lokal, bukan data di cloud.
-            </div>
-            <div id="safetySnapshotListContainer"></div>
-        </div>
-
         <!-- ===== MIGRASI DATA KE CLOUD ===== -->
         <div class="data-management-panel setelan-tab-panel" data-tab-panel="migration">
             <div class="panel-title setelan-title--purple">
@@ -1095,27 +1088,6 @@ alter table public.settings
             </div>
             <div id="archiveStatus" style="font-size:.7rem; padding:6px 10px; border-radius: var(--radius-sm); margin-bottom:10px; display:none;"></div>
             <button class="btn btn-danger" style="width:100%;" onclick="archiveAndClearData()">Arsipkan JSON & Kosongkan Database</button>
-        </div>
-
-        <!-- Perangkat Terhubung -->
-        <div class="data-management-panel setelan-tab-panel" data-tab-panel="devices">
-            <div class="panel-title" style="display:flex; align-items:center; justify-content:space-between;">
-                <span>Perangkat Terhubung</span>
-                <button class="btn btn-secondary" style="font-size:.65rem; padding:3px 10px;" onclick="window.loadConnectedDevices()">↻ Refresh</button>
-            </div>
-            <div class="setelan-desc" style="margin-bottom:12px;">
-                Daftar perangkat yang pernah mengakses buku ini, berdasarkan log aktivitas di cloud. Perangkat yang lama tidak aktif bisa diabaikan.
-            </div>
-            <div id="devicesLoadStatus" class="setelan-status-text" style="margin-top:0; margin-bottom:8px;"></div>
-            <div id="devicesList"></div>
-            <!-- [UI] Tombol "Ganti Akun" dipindah ke sini dari top bar. Ini menggantikan
-                 satu-satunya jalan pengguna DESKTOP untuk ganti akun (sebelumnya tombol
-                 top bar) -- kalau tidak dipindah ke sini, desktop tidak punya jalan sama
-                 sekali karena hamburger/drawer mobile disembunyikan di layar lebar
-                 (lihat css/style.css: .mobile-only { display:none } di atas breakpoint). -->
-            <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--rule);">
-                <button class="btn" style="width:100%; background:var(--info-lt); color:var(--info); border:1px solid #c5d8ff;" onclick="closeModal('setelanModal'); logoutToLockScreen()" data-i18n="switch_account">Ganti Akun</button>
-            </div>
         </div>
 
         </div>
@@ -1569,6 +1541,48 @@ alter table public.settings
                     <div id="prEmptyMsg" style="font-size:.72rem; color:#aaa; text-align:center; padding:18px 0;">Belum ada jadwal pembayaran. Tambahkan di atas.</div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MENU SIDEBAR: PERANGKAT TERHUBUNG (dipindah dari Setelan) ===== -->
+<div id="deviceManagerModal" class="modal fullview-modal">
+    <div class="modal-content" style="max-width:640px;">
+        <div class="modal-header" style="display:flex; align-items:center; justify-content:space-between;">
+            <h3>Perangkat Terhubung</h3>
+            <button class="modal-close" onclick="closeModal('deviceManagerModal')">×</button>
+        </div>
+        <div style="padding:0 4px;">
+            <div class="setelan-desc" style="margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                <span>Daftar perangkat yang pernah mengakses buku ini, berdasarkan log aktivitas di cloud. Perangkat yang lama tidak aktif bisa diabaikan.</span>
+                <button class="btn btn-secondary" style="font-size:.65rem; padding:3px 10px; white-space:nowrap;" onclick="window.loadConnectedDevices()">↻ Refresh</button>
+            </div>
+            <div id="devicesLoadStatus" class="setelan-status-text" style="margin-top:0; margin-bottom:8px;"></div>
+            <div id="devicesList"></div>
+            <!-- [UI] Tombol "Ganti Akun": satu-satunya jalan pengguna DESKTOP untuk
+                 ganti akun (hamburger/drawer mobile disembunyikan di layar lebar --
+                 lihat css/style.css: .mobile-only { display:none } di atas breakpoint). -->
+            <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--rule);">
+                <button class="btn" style="width:100%; background:var(--info-lt); color:var(--info); border:1px solid #c5d8ff;" onclick="closeModal('deviceManagerModal'); logoutToLockScreen()" data-i18n="switch_account">Ganti Akun</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MENU SIDEBAR: SNAPSHOT KEAMANAN (dipindah dari Setelan) ===== -->
+<div id="safetySnapshotModal" class="modal fullview-modal">
+    <div class="modal-content" style="max-width:640px;">
+        <div class="modal-header">
+            <h3>Snapshot Keamanan</h3>
+            <button class="modal-close" onclick="closeModal('safetySnapshotModal')">×</button>
+        </div>
+        <div style="padding:0 4px;">
+            <div class="setelan-desc" style="margin-bottom:12px;">
+                Berbeda dari <b>Cadangan Data</b>: snapshot di sini dibuat <b>otomatis</b> oleh aplikasi tanpa perlu diklik &mdash; baik <b>1x per hari</b> (snapshot harian), maupun tepat sebelum aksi berisiko dijalankan (hapus buku, hapus akun, reset total aplikasi, arsipkan &amp; kosongkan database, restore Cadangan Data, atau impor JSON). Gunakan untuk berjaga-jaga kalau ada error atau hasil aksi tersebut ternyata keliru.
+                <br><br>
+                Menyimpan <b>seluruh data lokal akun ini</b> (semua buku, anggaran, pengingat pembayaran, setelan) pada perangkat ini saja &mdash; maksimal 10 snapshot terbaru disimpan (snapshot tertua otomatis dihapus kalau sudah penuh). <b>Catatan:</b> jika aksi terkait sudah menghapus data secara permanen di cloud/Supabase, snapshot ini hanya memulihkan salinan lokal, bukan data di cloud.
+            </div>
+            <div id="safetySnapshotListContainer"></div>
         </div>
     </div>
 </div>

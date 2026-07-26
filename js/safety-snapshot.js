@@ -105,6 +105,13 @@ window.checkAndRunDailySafetySnapshot = function() {
     }
 };
 
+// Dipanggil dari menu sidebar "Snapshot Keamanan" (sebelumnya tab di dalam
+// Setelan, sekarang halaman fullview tersendiri -- lihat FULLVIEW_MODALS).
+window.openSafetySnapshotManager = function() {
+    window.renderSafetySnapshotList();
+    window.openModal('safetySnapshotModal');
+};
+
 window.renderSafetySnapshotList = function() {
     const container = document.getElementById('safetySnapshotListContainer');
     if (!container) return;

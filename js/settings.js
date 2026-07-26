@@ -144,7 +144,10 @@ window.APP_NAV_BTN_MAP = {
     reminder:  'navReminderBtn',
     buku:      'navBookBtn',
     akun:      'navAccountBtn',
-    backup:    'navBackupBtn'
+    backup:    'navBackupBtn',
+    telegram:  'navTelegramBtn',
+    snapshot:  'navSafetySnapshotBtn',
+    devices:   'navDeviceManagerBtn'
 };
 window.updateAppSidebarNav = function(which) {
     Object.keys(window.APP_NAV_BTN_MAP).forEach(function(key) {
@@ -456,6 +459,13 @@ window.saveDeviceName = function() {
 };
 
 // ── PERANGKAT TERHUBUNG ──
+// Dipanggil dari menu sidebar "Perangkat Terhubung" (sebelumnya tab di dalam
+// Setelan, sekarang halaman fullview tersendiri -- lihat FULLVIEW_MODALS).
+window.openDeviceManager = function() {
+    window.openModal('deviceManagerModal');
+    window.loadConnectedDevices();
+};
+
 window.loadConnectedDevices = async function() {
     var listEl = document.getElementById('devicesList');
     var statusEl = document.getElementById('devicesLoadStatus');

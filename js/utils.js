@@ -160,12 +160,15 @@ window.requireOnline = function(operationName) {
 // ke id tombol nav sidebar masing-masing supaya nav bisa ikut ditandai aktif.
 // Lihat CLAUDE.md bagian "Sidebar/nav" untuk konvensinya.
 window.FULLVIEW_MODALS = {
-    monthlyReportModal:   'laporan',
-    defaultBudgetModal:   'anggaran',
-    paymentReminderModal: 'reminder',
-    bookManagerModal:     'buku',
-    accountManagerModal:  'akun',
-    backupModal:          'backup'
+    monthlyReportModal:    'laporan',
+    defaultBudgetModal:    'anggaran',
+    paymentReminderModal:  'reminder',
+    bookManagerModal:      'buku',
+    accountManagerModal:   'akun',
+    backupModal:           'backup',
+    telegramSettingsModal: 'telegram',
+    safetySnapshotModal:   'snapshot',
+    deviceManagerModal:    'devices'
 };
 
 // Modal utility (dipanggil dari onclick di HTML)
