@@ -38,7 +38,6 @@ window.render = function() {
     document.getElementById('statBalance').innerText = window.rp(currentBalance);
     document.getElementById('statIncome').innerText = window.rp(totalInc + incomeOffset);
     document.getElementById('statExpense').innerText = window.rp(totalExp + expenseOffset);
-    window.updateZakatCard();
     if (typeof window.renderForecastCard === 'function') window.renderForecastCard();
     if ((window.expenseChartVisible || !window._expenseChartInitialized) && typeof window.renderExpenseChart === 'function') {
         window.renderExpenseChart();

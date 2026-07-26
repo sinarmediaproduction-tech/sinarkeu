@@ -112,7 +112,6 @@ window.switchBook = async function(id) {
         // Render ulang semua card keuangan setelah semua data per-buku selesai dimuat
         if (typeof window.updateFinancialCards === 'function') window.updateFinancialCards();
         if (typeof window.updateFaseCard === 'function') window.updateFaseCard();
-        if (typeof window.updateZakatCard === 'function') window.updateZakatCard();
         if (typeof window.renderForecastCard === 'function') window.renderForecastCard();
 
         window._lastSyncTime = new Date();

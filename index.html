@@ -385,7 +385,6 @@ alter table public.settings
             <ul>
                 <li><strong>Kurs USD/IDR</strong> – Ditampilkan secara otomatis dari beberapa sumber API.</li>
                 <li><strong>Harga Emas Antam</strong> – Bisa diaktifkan dengan API key dari <em>emas.maulanar.my.id</em> (gratis).</li>
-                <li><strong>Sedekah</strong> – Dihitung otomatis 2,5% dari pemasukan bulan kalender berjalan dan selalu tampil di dashboard.</li>
                 <li><strong>Log Audit</strong> – Semua aktivitas tercatat dan bisa dilihat di bawah tabel transaksi.</li>
             </ul>
 
@@ -571,11 +570,6 @@ alter table public.settings
                 <div style="font-size:.6rem; color:var(--ink-muted); font-weight:600;" id="goldValueLabel"></div>
                 <div style="font-size:.85rem; font-weight:700; color:var(--ink);" id="goldValue"></div>
             </div>
-        </div>
-        <div class="stat-card" id="zakatCard" style="display:none;">
-            <div class="stat-label" data-i18n="charity_fund">Dana Sedekah</div>
-            <div class="stat-value" id="zakatValue">Rp 0</div>
-            <div style="font-size:.6rem; color:var(--ink-faint); margin-top:4px;" id="zakatSource"></div>
         </div>
     </div>
 
@@ -897,16 +891,7 @@ alter table public.settings
 
         <div class="setelan-tab-content" id="setelanTabContent">
 
-        <!-- Bahasa / Language -->
-        <div class="data-management-panel setelan-tab-panel active" data-tab-panel="lang">
-            <div class="panel-title setelan-title" data-i18n="language_section">Bahasa / Language</div>
-            <div class="setelan-desc" data-i18n="language_desc">Pilih bahasa tampilan aplikasi.</div>
-            <div class="setelan-row">
-                <button id="langBtnId" class="btn btn-lang-active" style="flex:1;" onclick="window.setLang('id')">Bahasa Indonesia</button>
-                <button id="langBtnEn" class="btn btn-lang-inactive" style="flex:1;" onclick="window.setLang('en')">English</button>
-            </div>
-        </div>
-        <div class="data-management-panel setelan-tab-panel" data-tab-panel="ai">
+        <div class="data-management-panel setelan-tab-panel active" data-tab-panel="ai">
             <div class="panel-title setelan-title--purple">
                 <span data-i18n="ai_analysis_section">Analisis AI</span>
                 <span id="aiWorkerStatusBadge" class="setelan-badge setelan-badge--neutral">Belum dikonfigurasi</span>
@@ -951,15 +936,6 @@ alter table public.settings
                 <button class="btn btn-danger" style="flex:1;" onclick="clearEmasApiKey()">Hapus</button>
                 <button class="btn btn-primary" style="flex:2;" onclick="saveEmasApiKey()">Simpan</button>
             </div>
-        </div>
-
-        <!-- Sedekah -->
-        <div class="data-management-panel setelan-tab-panel" data-tab-panel="charity">
-            <div class="panel-title setelan-title--green" data-i18n="charity_section">Sedekah</div>
-            <div class="setelan-desc">
-                <span data-i18n="charity_desc">Sedekah dihitung otomatis <strong>2,5%</strong> dari total pemasukan bulan kalender berjalan.</span>
-            </div>
-            <div id="zakatPreview" class="setelan-preview--green"></div>
         </div>
 
         <!-- Koneksi Supabase -->

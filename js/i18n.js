@@ -1,7 +1,6 @@
 // ==================== I18N / LANGUAGE SYSTEM ====================
-// Sistem terjemahan Bahasa Indonesia ↔ English
-// Penggunaan: t('key') → returns string sesuai bahasa aktif
-// Untuk mengganti bahasa: window.setLang('en') atau window.setLang('id')
+// Sistem terjemahan Bahasa Indonesia (satu-satunya bahasa yang didukung)
+// Penggunaan: t('key') → returns string bahasa Indonesia
 
 (function() {
     const translations = {
@@ -66,7 +65,6 @@
             total_expense: 'Total Pengeluaran',
             usd_rate: 'Kurs USD/IDR',
             gold_per_gram: 'Emas / gram',
-            charity_fund: 'Dana Sedekah',
             loading_data: 'Memuat...',
 
             // === KARTU PERENCANAAN ===
@@ -159,9 +157,6 @@
             gold_amount_label: 'Jumlah Emas yang Dimiliki (gram)',
             gold_amount_placeholder: 'Contoh: 5.5',
 
-            charity_section: 'Sedekah',
-            charity_desc: 'Sedekah dihitung otomatis 2,5% dari total pemasukan bulan kalender berjalan.',
-
             telegram_section: 'Notifikasi Telegram',
             telegram_desc: 'Kirim notifikasi transaksi, peringatan anggaran, dan ringkasan harian lewat Telegram Bot.',
             telegram_settings_btn: 'Atur Notifikasi Telegram',
@@ -194,11 +189,6 @@
             export_all_json: 'Ekspor Semua Data (JSON)',
 
             archive_section: 'Arsipkan & Kosongkan Database',
-
-            language_section: 'Bahasa / Language',
-            language_desc: 'Pilih bahasa tampilan aplikasi.',
-            lang_id: '🇮🇩 Bahasa Indonesia',
-            lang_en: '🇬🇧 English',
 
             // === PESAN STATUS ===
             all_fields_required: 'Semua field wajib diisi.',
@@ -318,344 +308,17 @@
             see_all: 'Lihat Semua',
             ai_chat_placeholder: 'Tanya sesuatu tentang keuanganmu...',
         },
-
-        en: {
-            // === GENERAL ===
-            save: 'Save',
-            cancel: 'Cancel',
-            delete: 'Delete',
-            edit: 'Edit',
-            close: 'Close',
-            add: 'Add',
-            confirm: 'Confirm',
-            loading: 'Loading...',
-            yes: 'Yes',
-            no: 'No',
-            ok: 'OK',
-            error: 'Error',
-            success: 'Success',
-            warning: 'Warning',
-            search: 'Search...',
-            test: 'Test',
-            status: 'Status',
-            name: 'Name',
-            description: 'Description',
-            date: 'Date',
-            amount: 'Amount',
-            category: 'Category',
-            note: 'Note',
-            action: 'Action',
-            all: 'All',
-            none: 'None',
-            set: 'Set',
-            manage: 'Manage',
-            configure: 'Configure',
-            refresh: 'Refresh',
-            export: 'Export',
-            import: 'Import',
-            backup: 'Backup',
-            reset: 'Reset',
-            connect: 'Connect',
-            disconnect: 'Disconnect',
-            send: 'Send',
-            copy: 'Copy',
-            month: 'Month',
-            year: 'Year',
-            password: 'Password',
-
-            // === NAVIGATION & HEADER ===
-            book_label: 'BOOK:',
-            manage_book: 'Manage',
-            sync: 'Sync',
-            dark_mode: 'Dark Mode',
-            settings: 'Settings',
-            payment_reminder: 'Payment Reminder',
-            switch_account: 'Switch Account',
-            menu: 'Menu',
-            ai_placeholder: 'Ask AI about your finances...',
-
-            // === DASHBOARD STATS ===
-            final_balance: 'Balance',
-            total_income: 'Total Income',
-            total_expense: 'Total Expenses',
-            usd_rate: 'USD/IDR Rate',
-            gold_per_gram: 'Gold / gram',
-            charity_fund: 'Charity Fund',
-            loading_data: 'Loading...',
-
-            // === PLANNING CARDS ===
-            monthly_budget: 'Monthly Budget',
-            annual_budget: 'Annual Budget',
-            emergency_fund: 'Emergency Fund',
-            annual_needs: 'Mandatory Reserve',
-            life_phase: 'Life Phase',
-            mutual_fund: 'Mutual Fund',
-            monthly_template: 'Template per category, applies each month',
-            annual_costs: 'Annual costs: holidays, taxes, etc.',
-            emergency_ideal: '12× monthly budget (ideal target)',
-            annual_need_desc: 'Emergency fund + annual budget',
-            dsj_note: '30% of balance after emergency fund',
-
-            // === BUDGET ===
-            target: 'Target:',
-            actual: 'Actual:',
-            remaining: 'Remaining:',
-            budget_btn: 'Budget',
-            report_btn: 'Report',
-            pdf_btn: 'PDF',
-            monthly_total: 'Total Monthly Budget: ',
-            annual_total: 'Total Annual Budget: ',
-            this_month_only: 'This month only',
-            no_budget: 'None',
-
-            // === FILTER & CONTROLS ===
-            filter_all: 'All',
-            filter_income: 'Income',
-            filter_expense: 'Expense',
-            add_transaction: '+ Transaction',
-            ai_analysis: 'AI Analysis',
-            ask_ai: 'Ask AI',
-
-            // === TRANSACTION TABLE ===
-            col_no: 'No',
-            col_date: 'Date',
-            col_category: 'Category',
-            col_description: 'Description',
-            col_income: 'Income',
-            col_expense: 'Expense',
-            col_balance: 'Balance',
-            col_receipt: 'Receipt',
-            col_action: 'Action',
-            transaction_count: ' transactions',
-            no_transactions: 'No transactions yet.',
-
-            // === FINANCIAL ESTIMATE ===
-            financial_estimate: 'Financial Estimate',
-
-            // === EXPENSE CHART ===
-            expense_by_category: ' Expenses by Category',
-            show: '▼ Show',
-            hide: '▲ Hide',
-            chart_all: 'All',
-            chart_month: 'This Month',
-            no_expense_data: 'No expense data yet',
-
-            // === BACKUP ===
-            manage_backup: 'Manage Backup',
-            audit_log: 'Audit Log',
-            loading_log: 'Loading log...',
-            exporting_json: 'Exporting data to JSON...',
-            deleting_supabase: 'Deleting data from Supabase...',
-            url_empty: 'URL cannot be empty!',
-            url_invalid: 'URL must start with https://script.google.com/macros/ ...',
-            sheets_url_saved: 'Google Sheets Web App URL saved successfully!',
-            last_backup: 'Last backup: ',
-            never_backup: 'Never backed up to Google Sheets.',
-            preparing_export: 'Preparing export file...',
-            backup_to_sheets: 'Backup to Google Sheets',
-            save_url: 'Save URL',
-            sheets_url_label: 'Google Sheets Web App URL',
-
-            // === SETTINGS ===
-            settings_title: 'Settings',
-            ai_analysis_section: 'AI Analysis',
-            ai_not_configured: 'Not configured',
-            ai_desc: 'Enter your Cloudflare Worker URL to enable the AI Financial Analysis feature.',
-            worker_url: 'Worker URL',
-            worker_placeholder: 'https://your-worker-name.workers.dev',
-            test_connection: 'Test Connection',
-            clear: 'Clear',
-
-            gold_price_section: 'Antam Gold Price',
-            gold_api_desc: 'Enter the API key from emas.maulanar.my.id to display the latest Antam gold price.',
-            api_key_label: 'API Key',
-            api_key_placeholder: 'Enter API key from emas.maulanar.my.id',
-            gold_amount_label: 'Amount of Gold Owned (grams)',
-            gold_amount_placeholder: 'e.g. 5.5',
-
-            charity_section: 'Charity (Sedekah)',
-            charity_desc: 'Charity is automatically calculated at 2.5% of total income for the current calendar month.',
-
-            telegram_section: 'Telegram Notifications',
-            telegram_desc: 'Send transaction notifications, budget alerts, and daily summaries via Telegram Bot.',
-            telegram_settings_btn: 'Set Up Telegram Notifications',
-
-            supabase_section: 'Supabase Connection',
-            supabase_all_books: 'Applies to all books',
-            supabase_url_label: 'Supabase URL Connection',
-            supabase_key_label: 'Supabase Anon Key',
-            connect_sync: 'Connect & Sync All Books',
-
-            change_password_section: 'Change Security Password',
-            change_pwd_desc: 'Change the password used to encrypt your Supabase connection.',
-            current_pwd: 'Current password',
-            new_pwd: 'New password (min. 6 characters)',
-            confirm_pwd: 'Confirm new password',
-            change_pwd_btn: 'Change Password',
-
-            settings_sync_section: 'Settings Sync',
-            settings_sync_auto: 'Automatic',
-            settings_sync_desc: 'The list of ledger books, base budgets, monthly budgets, and Telegram configuration are automatically synced to Supabase whenever a change occurs.',
-
-            data_backup_section: 'Data Backup',
-            migration_section: 'Migrate Data to Cloud',
-            migration_desc: 'Move all data (budgets, payment schedules) from Local Storage to Supabase so it syncs across all devices.',
-            migrate_all: 'Migrate All Data',
-            check_status: 'Check Status',
-
-            reset_app_section: 'Full App Reset',
-            reset_app_desc: 'Delete all books, transactions, and settings from both Supabase and local storage. The app will return to a clean state as if newly installed.',
-            export_all_json: 'Export All Data (JSON)',
-
-            archive_section: 'Archive & Clear Database',
-
-            language_section: 'Bahasa / Language',
-            language_desc: 'Choose the display language of the app.',
-            lang_id: '🇮🇩 Bahasa Indonesia',
-            lang_en: '🇬🇧 English',
-
-            // === STATUS MESSAGES ===
-            all_fields_required: 'All fields are required.',
-            pwd_min_6: 'New password must be at least 6 characters.',
-            confirm_mismatch: 'Confirmation does not match.',
-            verifying: 'Verifying...',
-            encryption_data_not_found: 'Encryption data not found.',
-            old_pwd_wrong: 'Old password is incorrect.',
-            failed_read_encrypted: 'Failed to read encrypted data.',
-            re_encrypting: 'Re-encrypting...',
-            updating_cloud_pwd: 'Updating password verification in cloud...',
-            re_syncing_settings: 'Re-syncing settings to cloud...',
-            pwd_changed_success: 'Password changed and synced to cloud! Make sure to update the password on other devices too.',
-            supabase_url_key_required: 'Supabase URL and Anon Key are required!',
-            pwd_min_6_short: 'Password must be at least 6 characters!',
-            confirm_pwd_mismatch: 'Password confirmation does not match!',
-            testing_connection: 'Testing connection...',
-            connecting_supabase: 'Connecting to Supabase...',
-            save_start: 'Save & Start',
-            connection_failed: 'Connection failed! Please check your URL and Anon Key.',
-            checking_backend: 'Checking if this backend has been connected from another device...',
-            backend_diff_password: 'This backend was already set up from another device with a different password. Use the SAME password as that device.',
-            encrypting_credentials: 'Encrypting credentials...',
-            connected: 'Connected',
-            must_be_online: 'You must be ONLINE to migrate!',
-            starting_migration: 'Starting data migration...',
-            migrating_payment: 'Migrating payment schedules...',
-            migrating_budget: 'Migrating budgets...',
-            final_sync: 'Final sync...',
-            migration_done: 'Migration complete! All data synced to cloud.',
-            migration_failed: 'Migration failed: ',
-            must_be_online_check: 'You must be ONLINE to check status!',
-            checking_status: 'Checking status...',
-            migration_failed_check: 'Status check failed: ',
-
-            // === LOCK SCREEN ===
-            lock_show_hide: 'Show/hide',
-            lock_show: 'Show',
-            lock_hide: 'Hide',
-            lock_open: 'Unlock',
-            lock_pwd_empty: 'Password cannot be empty',
-            lock_verifying: 'Verifying...',
-            lock_wrong_pwd: 'Incorrect password',
-
-            // === ACCOUNT ===
-            open_account: 'Open "',
-            enter_pwd_for: 'Enter encryption password for account ',
-            enter_pwd_first: 'Please enter your password first.',
-            acc_name_required: 'Account name is required!',
-            acc_fields_required: 'URL, Anon Key, and Password (min 6 characters) are required!',
-            acc_connection_failed: 'Connection failed! Check your URL and Anon Key.',
-            acc_encrypting_saving: 'Encrypting and saving...',
-            acc_updated: 'Account updated successfully!',
-            acc_added: 'Account added successfully!',
-            testing_supabase: 'Testing Supabase connection...',
-
-            // === RENDER / UI ===
-            emergency_insufficient: 'Balance is not enough for emergency fund',
-            emergency_50pct: '50% of balance after mandatory reserve',
-            life_phase_not_set: 'Not set',
-            life_phase_click: 'Click to set your life phase',
-            ai_analysis_btn: 'AI Analysis',
-            new_receipt: 'New receipt ready to save',
-            has_attachment: 'Receipt already attached.',
-            no_attachment: 'No receipt attached.',
-
-            // === TELEGRAM ===
-            telegram_active: 'Active',
-            telegram_not_configured: 'Not configured',
-
-            // === FOREX ===
-            forex_configured: 'Configured',
-            forex_not_configured: 'Not configured',
-
-            // === AI ===
-            ai_worker_not_configured: 'Worker URL not configured.',
-            ai_open_settings: 'Settings → AI Analysis',
-
-            // === OFFLINE ===
-            offline_mode: 'Read-Only Mode',
-            offline_desc: 'You are offline. To add/edit/delete data, please connect to the internet.',
-
-            // === MONTHS ===
-            jan: 'Jan', feb: 'Feb', mar: 'Mar', apr: 'Apr',
-            may: 'May', jun: 'Jun', jul: 'Jul', aug: 'Aug',
-            sep: 'Sep', oct: 'Oct', nov: 'Nov', dec: 'Dec',
-
-            // === INCOME CATEGORIES ===
-            cat_salary: 'Salary',
-            cat_freelance: 'Freelance',
-            cat_bonus: 'Bonus',
-            cat_thr: 'Holiday Allowance',
-            cat_investment: 'Investment Returns',
-            cat_asset_sale: 'Asset Sale',
-            cat_gift: 'Gift',
-            cat_sales: 'Sales',
-            cat_service: 'Service',
-            cat_advance: 'Down Payment',
-            cat_receivable: 'Receivable Settlement',
-            cat_commission: 'Commission',
-            cat_loan_received: 'Loan Received',
-            cat_refund: 'Refund',
-            cat_subsidy: 'Subsidy & Aid',
-            cat_other: 'Other',
-
-            // === ADD TRANSACTION ===
-            add_transaction_title: 'Add Transaction',
-            edit_transaction_title: 'Edit Transaction',
-            income_tab: 'Income',
-            expense_tab: 'Expense',
-            pick_category: '-- Select Category --',
-            select_category: 'Category',
-
-            // === MISC ===
-            hide_balance: 'Hide/Show Balance',
-            payment_reminder_banner: 'Payment Reminder',
-            see_all: 'See All',
-            ai_chat_placeholder: 'Ask something about your finances...',
-        }
     };
 
-    // Get current language (default: id)
+    // Bahasa aplikasi selalu Indonesia
     function getLang() {
-        return localStorage.getItem('sk_lang') || 'id';
+        return 'id';
     }
 
     // Translate function
     window.t = function(key) {
-        var lang = getLang();
-        var dict = translations[lang] || translations['id'];
-        return dict[key] !== undefined ? dict[key] : (translations['id'][key] || key);
-    };
-
-    // Set language and re-render all i18n elements
-    window.setLang = function(lang) {
-        if (!translations[lang]) return;
-        localStorage.setItem('sk_lang', lang);
-        window.applyI18n();
-        // Re-render dynamic parts if app is loaded
-        if (typeof window.render === 'function') window.render();
-        if (typeof window.renderBudget === 'function') window.renderBudget();
-        if (typeof window.renderForecastCard === 'function') window.renderForecastCard();
-        if (typeof window.renderZakatCard === 'function') window.renderZakatCard();
+        var dict = translations.id;
+        return dict[key] !== undefined ? dict[key] : key;
     };
 
     // Apply translations to all elements with data-i18n attribute
@@ -670,27 +333,8 @@
                 el.textContent = val;
             }
         });
-        // Update html lang attribute
-        document.documentElement.lang = getLang() === 'en' ? 'en' : 'id';
-        // Update language toggle buttons if they exist
-        _updateLangButtons();
+        document.documentElement.lang = 'id';
     };
-
-    function _updateLangButtons() {
-        var lang = getLang();
-        var btnId = document.getElementById('langBtnId');
-        var btnEn = document.getElementById('langBtnEn');
-        if (btnId) {
-            btnId.style.background = lang === 'id' ? '#3E8FBF' : '#EEF0F3';
-            btnId.style.color = lang === 'id' ? '#fff' : '#333';
-            btnId.style.borderColor = lang === 'id' ? '#3E8FBF' : '#D6DAE1';
-        }
-        if (btnEn) {
-            btnEn.style.background = lang === 'en' ? '#3E8FBF' : '#EEF0F3';
-            btnEn.style.color = lang === 'en' ? '#fff' : '#333';
-            btnEn.style.borderColor = lang === 'en' ? '#3E8FBF' : '#D6DAE1';
-        }
-    }
 
     // Apply on DOM ready
     document.addEventListener('DOMContentLoaded', function() {

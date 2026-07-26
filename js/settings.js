@@ -49,12 +49,6 @@ window.openSetelanModal = function(initialTab) {
         window.updateEmasGramPreview();
     }
     
-    var zakatInp = document.getElementById('zakatPersenInput');
-    if (zakatInp) zakatInp.value = localStorage.getItem('sk_zakat_persen') || '';
-    if (typeof window.updateZakatPreview === 'function') {
-        window.updateZakatPreview();
-    }
-    
     var gsUrl = document.getElementById('googleSheetsUrlInput');
     if (gsUrl) gsUrl.value = localStorage.getItem('sk_google_sheets_url') || '';
     
