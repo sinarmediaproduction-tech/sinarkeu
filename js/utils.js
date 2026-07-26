@@ -12,6 +12,15 @@ window.formatDateTime = function(dtStr) {
     return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 };
 
+// [UI] Format tanggal singkat untuk tabel transaksi di tampilan hape,
+// mis. "20/7/26" (tanpa nol di depan, tahun 2 digit, tanpa jam).
+window.formatDateShort = function(dtStr) {
+    if (!dtStr) return '-';
+    let d = window.parseTxDate(dtStr);
+    if (isNaN(d.getTime())) return dtStr;
+    return d.getDate() + '/' + (d.getMonth() + 1) + '/' + String(d.getFullYear()).slice(-2);
+};
+
 // [BUG FIX] Konversi string tanggal apa pun (termasuk format Supabase
 // "YYYY-MM-DDTHH:mm:ss+00:00") ke format ketat "YYYY-MM-DDTHH:mm" yang
 // disyaratkan oleh <input type="datetime-local">. Tanpa ini, mengisi value

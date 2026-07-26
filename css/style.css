@@ -979,6 +979,10 @@ td {
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: var(--accent-lt); }
 
+/* [UI] Tanggal singkat (mis. 20/7/26) hanya tampil di hape;
+   versi lengkap dengan jam tampil di desktop/tablet. */
+.date-short { display: none; }
+
 .type-badge {
   font-size: .62rem;
   font-weight: 700;
@@ -2319,13 +2323,19 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
      gelap) dan bentuk lebih rounded. */
 
   /* [UI] Tabel transaksi di hape: tampilkan hanya kolom Tanggal, Deskripsi,
-     Pemasukan, Pengeluaran, Aksi. Sembunyikan No, Kategori, Saldo, Nota. */
+     Pemasukan, Pengeluaran. Sembunyikan No, Kategori, Saldo, Nota, Aksi. */
   table .col-no,
   table .col-category,
   table .col-saldo,
-  table .col-nota {
+  table .col-nota,
+  table .col-action {
     display: none;
   }
+  /* [UI] Tanggal di hape pakai format singkat d/m/yy (mis. 20/7/26)
+     tanpa jam, supaya kolom lebih ringkas. */
+  .date-full  { display: none; }
+  .date-short { display: inline; }
+  table tbody tr { cursor: pointer; }
 }
 
 @media(min-width:769px) and (max-width:1024px) {
