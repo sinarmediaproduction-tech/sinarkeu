@@ -1297,7 +1297,7 @@ tr:hover td { background: var(--accent-lt); }
   }
   body.view-settings #setelanModal .modal-header {
     background: var(--paper);
-    padding: 16px 16px 12px;
+    padding: 16px 12px 12px;
     margin: 0 0 8px;
     border-bottom: 1px solid var(--rule);
     justify-content: flex-start;
@@ -1308,8 +1308,8 @@ tr:hover td { background: var(--accent-lt); }
     position: static;
   }
   body.view-settings #setelanModal .setelan-tab-content {
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: 12px;
+    padding-right: 12px;
   }
 }
 
@@ -1387,7 +1387,7 @@ tr:hover td { background: var(--accent-lt); }
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    padding: 0 16px 16px;
+    padding: 0 12px 12px;
   }
   body.view-fullpage .fullview-modal.show .modal-header {
     background: var(--paper);
