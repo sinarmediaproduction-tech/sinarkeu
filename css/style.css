@@ -1221,6 +1221,16 @@ tr:hover td { background: var(--accent-lt); }
 }
 #appSidebar.open { transform: translateX(0); }
 
+@media (max-width: 1023px) {
+  /* Drawer mobile: rapatkan padding supaya konten (brand, label grup, item
+     nav) lebih mepet ke tepi kiri/kanan drawer, bukan menyisakan margin
+     lebar yang boros ruang di layar sempit. */
+  #appSidebar { width: min(80vw, 260px); padding: 18px 8px; }
+  .app-sidebar-brand { padding: 4px 6px 16px; }
+  .app-nav-group-label { padding: 8px 6px 2px; }
+  .app-nav-item { padding: 11px 8px; }
+}
+
 .app-sidebar-brand {
   font-family: var(--font-display);
   font-size: .85rem;
