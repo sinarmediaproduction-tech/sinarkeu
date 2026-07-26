@@ -1853,6 +1853,14 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   color: var(--ink-muted);
 }
 .budget-cat-row .form-control { flex: 1; }
+@media (max-width: 480px) {
+  .budget-cat-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+  .budget-cat-row .budget-cat-label { width: auto; }
+}
 
 .budget-summary-row {
   background: var(--paper-warm);
@@ -1936,6 +1944,24 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   letter-spacing: 0.06em;
 }
 .report-table-wrap { overflow-x: auto; }
+
+/* ── Laporan Bulanan (monthly report modal): dipakai generateMonthlyReport()
+   di js/report.js. Sebelumnya wrapper tabel pakai overflow:hidden, jadi di
+   hape konten yang lebih lebar dari layar KEPOTONG (bukan bisa di-scroll).
+   Diganti overflow-x:auto (scroll horizontal), dan grid ringkasan jadi
+   1 kolom di layar sempit supaya tidak gepeng. ── */
+.laporan-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.laporan-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 480px) {
+  .laporan-summary-grid { grid-template-columns: 1fr; }
+}
 
 /* ── Account Modal ── */
 .acc-modal-list { margin-bottom: 14px; }
