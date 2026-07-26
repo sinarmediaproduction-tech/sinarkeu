@@ -123,7 +123,7 @@ window.renderBookList = function() {
         div.className = 'book-list-item';
         let isCurrent = b.id === window.currentBookId;
         let delBtn = window.books.length > 1 ? `<button class="btn-mini btn-mini-danger" onclick="window.deleteBook('${b.id}')">Hapus</button>` : '';
-        if (isCurrent) delBtn = '<span style="font-size:.65rem; color:#4F7A3A; font-weight:bold;">SEDANG AKTIF</span>';
+        if (isCurrent) delBtn = '<span style="font-size:.65rem; color:#2F9E6E; font-weight:bold;">SEDANG AKTIF</span>';
         const parentBook = b.parentId ? window.books.find(x => x.id === b.parentId) : null;
         const parentLabel = parentBook ? `<div style="font-size:.6rem; color:#6b46c1; margin-top:2px;">↳ Anak dari: <b>${window.escapeHtml(parentBook.name)}</b></div>` : '';
         div.innerHTML = `
@@ -133,8 +133,8 @@ window.renderBookList = function() {
             </span>
             <div class="book-list-actions">
                 ${!isCurrent ? `<button class="btn-mini" onclick="window.switchBook('${b.id}')">Buka</button>` : ''}
-                <button class="btn-mini" style="background:#f0f4ff; color:#3D6B6B; border:1px solid #c5d8ff;" onclick="window.renameBook('${b.id}')">Nama</button>
-                <button class="btn-mini" style="background:#FBEDD1; color:#B8842A; border:1px solid #F0D48A;" onclick="window.openCardVisibilityModal('${b.id}')" title="Pilih card yang ditampilkan untuk buku ini">Card</button>
+                <button class="btn-mini" style="background:#f0f4ff; color:#3E8FBF; border:1px solid #c5d8ff;" onclick="window.renameBook('${b.id}')">Nama</button>
+                <button class="btn-mini" style="background:#FBF0DC; color:#D8A13B; border:1px solid #E8C878;" onclick="window.openCardVisibilityModal('${b.id}')" title="Pilih card yang ditampilkan untuk buku ini">Card</button>
                 ${b.parentId && isCurrent ? `<button class="btn-mini" style="background:#6b46c1; color:#fff;" onclick="window.closeModal('bookManagerModal'); window.openTutupAnakBuku()">Tutup & Kirim</button>` : ''}
                 ${delBtn}
             </div>
@@ -292,17 +292,17 @@ window.formatBytes = function(bytes) {
 
 window.renderStorageBar = function(usedBytes, totalBytes, label) {
     const pct = Math.min((usedBytes / totalBytes) * 100, 100);
-    const colorClass = pct >= 90 ? '#DC4B37' : pct >= 70 ? '#B8842A' : '#3D6B6B';
+    const colorClass = pct >= 90 ? '#DC5A4E' : pct >= 70 ? '#D8A13B' : '#3E8FBF';
     return `
         <div style="margin-bottom:10px;">
             <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
                 <span style="font-size:.7rem; font-weight:600; color:#333;">${label}</span>
-                <span style="font-size:.68rem; color:#6E5D4B;">${window.formatBytes(usedBytes)} / ${window.formatBytes(totalBytes)} &nbsp;·&nbsp; <b style="color:${colorClass}">${pct.toFixed(1)}%</b></span>
+                <span style="font-size:.68rem; color:#5B6472;">${window.formatBytes(usedBytes)} / ${window.formatBytes(totalBytes)} &nbsp;·&nbsp; <b style="color:${colorClass}">${pct.toFixed(1)}%</b></span>
             </div>
             <div style="height:8px; background:#dde8ff; border-radius: var(--radius-sm); overflow:hidden;">
                 <div style="height:100%; width:${pct}%; background:${colorClass}; border-radius: var(--radius-sm); transition:width .4s;"></div>
             </div>
-            <div style="font-size:.63rem; color:#9C8B72; margin-top:3px; text-align:right;">Sisa: ${window.formatBytes(totalBytes - usedBytes)}</div>
+            <div style="font-size:.63rem; color:#98A1AD; margin-top:3px; text-align:right;">Sisa: ${window.formatBytes(totalBytes - usedBytes)}</div>
         </div>`;
 };
 
@@ -310,12 +310,12 @@ window.refreshStorageEstimate = async function() {
     const el  = document.getElementById('storageEstimContent');
     const btn = document.getElementById('storageRefreshBtn');
     if (!el) return;
-    el.innerHTML = '<div style="font-size:.7rem; color:#9C8B72; text-align:center; padding:8px 0;">Menghitung...</div>';
+    el.innerHTML = '<div style="font-size:.7rem; color:#98A1AD; text-align:center; padding:8px 0;">Menghitung...</div>';
     if (btn) btn.disabled = true;
     const data = await window.estimateSupabaseStorage();
     if (btn) btn.disabled = false;
     if (!data) {
-        el.innerHTML = '<div style="font-size:.7rem; color:#DC4B37; text-align:center; padding:8px 0;">Tidak dapat memuat — pastikan koneksi Supabase aktif.</div>';
+        el.innerHTML = '<div style="font-size:.7rem; color:#DC5A4E; text-align:center; padding:8px 0;">Tidak dapat memuat — pastikan koneksi Supabase aktif.</div>';
         return;
     }
     const { txCount, logCount, settCount, estimatedBytes } = data;
@@ -323,13 +323,13 @@ window.refreshStorageEstimate = async function() {
     const SUPABASE_FREE_DB_BYTES = 500 * 1024 * 1024;
     const dbBar   = window.renderStorageBar(estimatedBytes, SUPABASE_FREE_DB_BYTES, 'Database (estimasi)');
     const pctNum  = Math.min((estimatedBytes / SUPABASE_FREE_DB_BYTES) * 100, 100);
-    const statusColor = pctNum >= 90 ? '#DC4B37' : pctNum >= 70 ? '#B8842A' : '#2C6B2E';
+    const statusColor = pctNum >= 90 ? '#DC5A4E' : pctNum >= 70 ? '#D8A13B' : '#1F7A54';
     const statusText  = pctNum >= 90 ? 'Hampir penuh! Pertimbangkan arsipkan data lama.' :
                         pctNum >= 70 ? 'Mendekati batas — pantau secara berkala.' :
                                        'Kapasitas masih aman.';
     el.innerHTML = `
         ${dbBar}
-        <div style="background:#f5f5f5; border-radius: var(--radius-sm); padding:10px 12px; font-size:.68rem; color:#4A3C2C; line-height:1.8; margin-bottom:10px;">
+        <div style="background:#f5f5f5; border-radius: var(--radius-sm); padding:10px 12px; font-size:.68rem; color:#333B48; line-height:1.8; margin-bottom:10px;">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px 16px;">
                 <span>Transaksi</span><b>${txCount.toLocaleString('id-ID')} baris</b>
                 <span>Log Aktivitas</span><b>${logCount.toLocaleString('id-ID')} baris</b>
@@ -340,7 +340,7 @@ window.refreshStorageEstimate = async function() {
         <div style="font-size:.68rem; color:${statusColor}; font-weight:600; text-align:center; padding:4px 8px; background:${pctNum>=90?'#fff5f5':pctNum>=70?'#fffbeb':'#e3fcef'}; border-radius: var(--radius-sm);">
             ${statusText}
         </div>
-        <div style="font-size:.6rem; color:#9C8B72; margin-top:8px; text-align:right;">
+        <div style="font-size:.6rem; color:#98A1AD; margin-top:8px; text-align:right;">
             * Estimasi berdasarkan jumlah baris × rata-rata ukuran baris. Free tier Supabase: DB 500 MB, File Storage 1 GB.
         </div>
     `;
@@ -430,24 +430,24 @@ window.openTutupAnakBuku = function() {
     if (el) {
         if (txCount === 0) {
             el.innerHTML = `
-                <div style="background:#FBEDD1; border:1px solid #F0D48A; border-radius: var(--radius-sm); padding:12px 14px; font-size:.78rem; line-height:1.8; color:#8C641C;">
+                <div style="background:#FBF0DC; border:1px solid #E8C878; border-radius: var(--radius-sm); padding:12px 14px; font-size:.78rem; line-height:1.8; color:#8F6B24;">
                     Tidak ada transaksi baru ${window.escapeHtml(sinceLabel)}. Tidak ada yang perlu dikirim ke buku induk.
                 </div>
             `;
         } else {
             el.innerHTML = `
-                <div style="background:#F2E4EE; border:1px solid #D9BFCF; border-radius: var(--radius-sm); padding:12px 14px; font-size:.78rem; line-height:1.8;">
+                <div style="background:#F2E4EE; border:1px solid #CFC7F2; border-radius: var(--radius-sm); padding:12px 14px; font-size:.78rem; line-height:1.8;">
                     <div><b>Anak Buku:</b> ${window.escapeHtml(book.name)}</div>
                     <div><b>Kirim ke Induk:</b> ${window.escapeHtml(parentBook.name)}</div>
                     <div style="font-size:.68rem; color:#6b46c1; margin-top:2px;">Dihitung ${window.escapeHtml(sinceLabel)}</div>
                     <hr style="margin:8px 0; border-color:#e9d8fd;">
                     <div>Jumlah transaksi: <b>${txCount}</b></div>
-                    <div>Total pemasukan: <b style="color:#4F7A3A">${window.rp(totalInc)}</b></div>
-                    <div>Total pengeluaran: <b style="color:#DC4B37">${window.rp(totalExp)}</b></div>
-                    <div><b>Net yang dikirim: <span style="color:${netTotal >= 0 ? '#4F7A3A' : '#DC4B37'}">${window.rp(Math.abs(netTotal))}</span></b>
+                    <div>Total pemasukan: <b style="color:#2F9E6E">${window.rp(totalInc)}</b></div>
+                    <div>Total pengeluaran: <b style="color:#DC5A4E">${window.rp(totalExp)}</b></div>
+                    <div><b>Net yang dikirim: <span style="color:${netTotal >= 0 ? '#2F9E6E' : '#DC5A4E'}">${window.rp(Math.abs(netTotal))}</span></b>
                         ${netTotal < 0 ? ' (pengeluaran)' : ' (pemasukan)'}</div>
                 </div>
-                <div style="margin-top:10px; font-size:.72rem; color:#6E5D4B;">
+                <div style="margin-top:10px; font-size:.72rem; color:#5B6472;">
                     Satu transaksi ringkasan akan ditambahkan ke buku <b>${window.escapeHtml(parentBook.name)}</b>.<br>
                     Anak buku ini <b>tidak dihapus</b> — tetap bisa dibuka sebagai arsip. Penutupan berikutnya hanya akan menghitung transaksi baru setelah ini.
                 </div>

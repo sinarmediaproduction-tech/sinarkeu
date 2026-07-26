@@ -47,7 +47,7 @@ async function generateMonthlyReport() {
   const reportContentEl = document.getElementById('reportContent');
   let allTx;
   if (window.isOnline() && typeof window.fetchMonthTransactionsFromCloud === 'function') {
-    if (reportContentEl) reportContentEl.innerHTML = '<div style="padding:24px;text-align:center;color:#9C8B72;">Memuat laporan...</div>';
+    if (reportContentEl) reportContentEl.innerHTML = '<div style="padding:24px;text-align:center;color:#98A1AD;">Memuat laporan...</div>';
     const cloudTx = await window.fetchMonthTransactionsFromCloud(window.currentBookId, year, month);
     allTx = cloudTx !== null ? cloudTx : (window.txs || []).filter(t => {
       const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
@@ -90,26 +90,26 @@ async function generateMonthlyReport() {
   // ── Token warna sesuai tema ──
   const dk = document.documentElement.getAttribute('data-theme') === 'dark';
   const C = {
-    bg:         dk ? '#1D1610' : '#FBF7F0',
-    ink:        dk ? '#F3E9DA' : '#2A2118',
-    inkMuted:   dk ? '#C4B29C' : '#6E5D4B',
-    inkFaint:   dk ? '#8C7A64' : '#A3907A',
-    rule:       dk ? '#3D2F20' : '#EAE0CB',
-    rowAlt:     dk ? '#251D14' : '#F8F1E3',
-    thead:      dk ? '#2A2115' : '#F1E4CE',
-    barBg:      dk ? '#3D2F20' : '#EDE4D3',
-    incBg:      dk ? '#1E2E16' : '#E1F0DF',
-    incBd:      dk ? '#4A6B38' : '#8FB06E',
-    incTxt:     dk ? '#8FBF6E' : '#2C6B2E',
-    expBg:      dk ? '#301C16' : '#FBE0DA',
-    expBd:      dk ? '#7A3E2E' : '#D48A6E',
-    expTxt:     dk ? '#E08066' : '#C23A28',
-    balPosBg:   dk ? '#182722' : '#DCF0EC',
-    balPosBd:   dk ? '#3D6B62' : '#6FA69C',
-    balPosTxt:  dk ? '#7FB3AC' : '#1F5C57',
-    budgetBg:   dk ? '#2E2412' : '#FBEDD1',
+    bg:         dk ? '#171B24' : '#FFFFFF',
+    ink:        dk ? '#E7E9EE' : '#1A2130',
+    inkMuted:   dk ? '#A0A8B4' : '#5B6472',
+    inkFaint:   dk ? '#6B7280' : '#98A1AD',
+    rule:       dk ? '#2E3440' : '#E4E7EC',
+    rowAlt:     dk ? '#1B2029' : '#F7F8FA',
+    thead:      dk ? '#1E232E' : '#F5F6F8',
+    barBg:      dk ? '#2E3440' : '#EEF0F3',
+    incBg:      dk ? '#1B2E27' : '#E3F5EC',
+    incBd:      dk ? '#2F5E48' : '#8FB06E',
+    incTxt:     dk ? '#4FC490' : '#1F7A54',
+    expBg:      dk ? '#33201E' : '#FBE7E5',
+    expBd:      dk ? '#6E3B34' : '#D48A6E',
+    expTxt:     dk ? '#E8776D' : '#B23B31',
+    balPosBg:   dk ? '#1B2B33' : '#E4F1F8',
+    balPosBd:   dk ? '#345A6E' : '#6FA69C',
+    balPosTxt:  dk ? '#6BB4DE' : '#2E6E93',
+    budgetBg:   dk ? '#332912' : '#FBF0DC',
     budgetBd:   dk ? '#6E5222' : '#D6B36A',
-    budgetTxt:  dk ? '#E0B056' : '#8C641C',
+    budgetTxt:  dk ? '#E8B75E' : '#8F6B24',
   };
 
   let catRows = cats.length
@@ -267,8 +267,8 @@ async function exportReportAsPDF() {
     bg:     dk2 ? '#161616' : '#ffffff',
     rowAlt: dk2 ? '#1E1E1B' : '#f9f9f9',
     barBg:  dk2 ? '#333330' : '#eeeeee',
-    incTxt: dk2 ? '#4ADE80' : '#2C6B2E',
-    expTxt: dk2 ? '#F87171' : '#DC4B37',
+    incTxt: dk2 ? '#4ADE80' : '#1F7A54',
+    expTxt: dk2 ? '#F87171' : '#DC5A4E',
     warnTxt:dk2 ? '#E0A850' : '#ff991f',
   };
 
@@ -380,7 +380,7 @@ async function exportReportAsPDF() {
     font-weight: 700;
     letter-spacing: 1.2px;
     text-transform: uppercase;
-    color: #6E5D4B;
+    color: #5B6472;
     border-bottom: 1.5px solid #e0e0e0;
     padding-bottom: 5px;
     margin: 18px 0 10px;
@@ -399,23 +399,23 @@ async function exportReportAsPDF() {
     padding: 12px 14px;
     border-left: 3px solid transparent;
   }
-  .kpi-income { background: #e8f8f0; border-color: #4F7A3A; }
-  .kpi-expense { background: #fff1ee; border-color: #DC4B37; }
+  .kpi-income { background: #e8f8f0; border-color: #2F9E6E; }
+  .kpi-expense { background: #fff1ee; border-color: #DC5A4E; }
   .kpi-balance-pos { background: #e8f0fe; border-color: #1a73e8; }
-  .kpi-balance-neg { background: #fff1ee; border-color: #DC4B37; }
+  .kpi-balance-neg { background: #fff1ee; border-color: #DC5A4E; }
   .kpi .label {
     font-size: 6.5pt;
     font-weight: 700;
     letter-spacing: .8px;
     text-transform: uppercase;
     margin-bottom: 4px;
-    color: #6E5D4B;
+    color: #5B6472;
   }
   .kpi .value {
     font-size: 12pt;
     font-weight: 700;
   }
-  .kpi-income .value { color: #2C6B2E; }
+  .kpi-income .value { color: #1F7A54; }
   .kpi-expense .value { color: #bf2600; }
   .kpi-balance-pos .value { color: #1155cc; }
   .kpi-balance-neg .value { color: #bf2600; }
@@ -460,10 +460,10 @@ async function exportReportAsPDF() {
   }
   tr:last-child td { border-bottom: none; }
   .money { text-align: right; font-family: 'Courier New', monospace; }
-  .income { color: #2C6B2E; font-weight: 600; }
+  .income { color: #1F7A54; font-weight: 600; }
   .expense { color: #bf2600; font-weight: 600; }
   .center { text-align: center; }
-  .muted { color: #9C8B72; }
+  .muted { color: #98A1AD; }
 
   /* ── Table wrapper ── */
   .tbl-wrap {
@@ -490,11 +490,11 @@ async function exportReportAsPDF() {
     justify-content: space-between;
     align-items: center;
     font-size: 7pt;
-    color: #9C8B72;
+    color: #98A1AD;
   }
   .doc-footer .watermark {
     font-weight: 700;
-    color: #D6C6A8;
+    color: #D6DAE1;
     letter-spacing: 1px;
     text-transform: uppercase;
     font-size: 7pt;
@@ -546,7 +546,7 @@ async function exportReportAsPDF() {
     </div>
     <div class="ba-sisa">
       <div class="ba-label">Sisa Anggaran</div>
-      <div class="ba-value" style="color:${totalBudget - expense >= 0 ? '#2C6B2E' : '#bf2600'};">${fmtRp(totalBudget - expense)}</div>
+      <div class="ba-value" style="color:${totalBudget - expense >= 0 ? '#1F7A54' : '#bf2600'};">${fmtRp(totalBudget - expense)}</div>
     </div>
   </div>` : ''}
 
@@ -598,7 +598,7 @@ async function exportReportAsPDF() {
         </tr>
         <tr class="tbl-foot">
           <td colspan="4" style="text-align:right;"><b>SALDO BERSIH</b></td>
-          <td colspan="2" class="money" style="color:${balance >= 0 ? '#2C6B2E' : '#bf2600'};"><b>${fmtRp(balance)}</b></td>
+          <td colspan="2" class="money" style="color:${balance >= 0 ? '#1F7A54' : '#bf2600'};"><b>${fmtRp(balance)}</b></td>
         </tr>
       </tfoot>
     </table>

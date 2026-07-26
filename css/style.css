@@ -1,51 +1,52 @@
 /* ===================================================
-   SINARKEU — Modern Warm Redesign
-   Palette: Ink #221A12, Paper #FDFBF6, Coral-Clay #E2672F,
-            Success #3F9142, Danger #DC4B37, Warning #E5A429
-   Signature: crisp warm-neutral surfaces, vivid coral-clay
-   brand, tight modern shadows, confident rounded shapes.
-   Font: Manrope (display/numbers) + Inter (body/data)
+   SINARKEU — Minimal Institutional Redesign
+   Palette: Ink #1A2130, Paper #FFFFFF, Soft Indigo #4F63D2,
+            Success #2F9E6E, Danger #DC5A4E, Warning #D8A13B
+   Signature: cool-neutral surfaces, one restrained soft-
+   indigo accent, quiet low-opacity shadows, single-family
+   type system for a calm, trustworthy, tech-forward feel.
+   Font: Inter (display + body — one family, weight-driven)
 =================================================== */
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --ink:        #221A12;
-  --ink-muted:  #6B5C4A;
-  --ink-faint:  #9C8C74;
-  --paper:      #FDFBF6;
-  --paper-warm: #F6EEDE;
-  --rule:       #EAE0CB;
-  --accent:     #E2672F;
-  --accent-lt:  #FCE3D2;
-  --success:    #3F9142;
-  --success-lt: #E1F0DF;
-  --danger:     #DC4B37;
-  --danger-lt:  #FBE0DA;
-  --warning:    #E5A429;
-  --warning-lt: #FBEDD1;
-  --purple:     #8A5A78;
-  --purple-lt:  #F2E4EE;
-  --brand:      #E2672F; /* selaras dengan --accent, dipakai di sidebar */
-  --brand-dark: #B84D1F;
+  --ink:        #1A2130;
+  --ink-muted:  #5B6472;
+  --ink-faint:  #98A1AD;
+  --paper:      #FFFFFF;
+  --paper-warm: #F5F6F8;
+  --rule:       #E4E7EC;
+  --accent:     #4F63D2;
+  --accent-lt:  #E7EAFB;
+  --success:    #2F9E6E;
+  --success-lt: #E3F5EC;
+  --danger:     #DC5A4E;
+  --danger-lt:  #FBE7E5;
+  --warning:    #D8A13B;
+  --warning-lt: #FBF0DC;
+  --purple:     #7C6FD6;
+  --purple-lt:  #ECE9FB;
+  --brand:      #4F63D2; /* selaras dengan --accent, dipakai di sidebar */
+  --brand-dark: #37449C;
   /* Extended palette */
-  --fase:       #C2607A;
-  --fase-lt:    #F8E3E9;
-  --info:       #2E8480;
-  --info-lt:    #DCF0EC;
-  --chat-user:  #4F9153;
-  --ink-inv:    #FFF8EE;   /* teks di atas background gelap (btn-primary dark) */
-  --paper-inv:  #221A12;  /* bg di atas ink terang */
-  --row-alt:    #F8F1E3;
+  --fase:       #C77A9A;
+  --fase-lt:    #F8E9EF;
+  --info:       #3E8FBF;
+  --info-lt:    #E4F1F8;
+  --chat-user:  #35A08C;
+  --ink-inv:    #FFFFFF;   /* teks di atas background gelap (btn-primary dark) */
+  --paper-inv:  #1A2130;  /* bg di atas ink terang */
+  --row-alt:    #F7F8FA;
   /* Shape & elevation */
-  --radius-sm:  14px;
-  --radius:     16px;
-  --radius-lg:  26px;
+  --radius-sm:  10px;
+  --radius:     12px;
+  --radius-lg:  20px;
   --radius-pill: 999px;
-  --shadow-sm:  0 1px 3px rgba(34,26,18,0.08);
-  --shadow-md:  0 6px 20px rgba(226,103,47,0.18);
-  --shadow-lg:  0 16px 40px rgba(34,26,18,0.16);
-  --font-display: 'Manrope', 'Inter', sans-serif;
+  --shadow-sm:  0 1px 2px rgba(23,27,36,0.06);
+  --shadow-md:  0 4px 12px rgba(23,27,36,0.08);
+  --shadow-lg:  0 12px 32px rgba(23,27,36,0.10);
+  --font-display: 'Inter', sans-serif;
 }
 
 /* ── Base ── */
@@ -427,7 +428,7 @@ h1, h2, h3, h4,
   background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
   border: none;
   border-radius: var(--radius-lg);
-  box-shadow: 0 12px 32px rgba(226,103,47,0.28);
+  box-shadow: 0 12px 32px rgba(79,99,210,0.20);
   padding: 26px 28px;
   margin-bottom: 18px;
 }
@@ -822,9 +823,9 @@ button:disabled, .btn:disabled,
   color: #fff;
   border-color: var(--accent);
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(226,103,47,0.32);
+  box-shadow: 0 4px 14px rgba(79,99,210,0.22);
 }
-.btn-primary:hover:not(:disabled) { background: var(--brand-dark); border-color: var(--brand-dark); box-shadow: 0 6px 18px rgba(226,103,47,0.4); transform: translateY(-1px); }
+.btn-primary:hover:not(:disabled) { background: var(--brand-dark); border-color: var(--brand-dark); box-shadow: 0 6px 18px rgba(79,99,210,0.28); transform: translateY(-1px); }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; background: var(--ink-faint); border-color: var(--ink-faint); box-shadow: none; }
 
 .btn-secondary {
@@ -1099,7 +1100,7 @@ tr:hover td { background: var(--accent-lt); }
   position: fixed;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  background: rgba(34,26,18,0.6);
+  background: rgba(26,33,48,0.6);
   display: none;
   align-items: center;
   justify-content: center;
@@ -2146,9 +2147,9 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   cursor: pointer;
   transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
   font-family: inherit;
-  box-shadow: 0 4px 14px rgba(226,103,47,0.32);
+  box-shadow: 0 4px 14px rgba(79,99,210,0.22);
 }
-.lock-btn:hover { background: var(--brand-dark); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(226,103,47,0.4); }
+.lock-btn:hover { background: var(--brand-dark); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(79,99,210,0.28); }
 .lock-btn:active { opacity: 0.9; }
 .lock-btn:disabled { background: var(--ink-faint); cursor: not-allowed; box-shadow: none; }
 
@@ -2639,31 +2640,31 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
    DARK MODE — [data-theme="dark"]
 ====================================================== */
 [data-theme="dark"] {
-  --ink:        #F5EDE0;
-  --ink-muted:  #C9B8A0;
-  --ink-faint:  #8F7C64;
-  --paper:      #1E170F;
-  --paper-warm: #251C12;
-  --rule:       #3C2E1C;
-  --accent:     #F0824A;
-  --accent-lt:  #3D2416;
-  --success:    #6FC26A;
-  --success-lt: #1E2E1C;
-  --danger:     #F0705A;
-  --danger-lt:  #3A2018;
-  --warning:    #F0BE5A;
-  --warning-lt: #3A2E14;
-  --purple:     #C593B0;
-  --purple-lt:  #34222E;
+  --ink:        #E7E9EE;
+  --ink-muted:  #A0A8B4;
+  --ink-faint:  #6B7280;
+  --paper:      #171B24;
+  --paper-warm: #1E232E;
+  --rule:       #2E3440;
+  --accent:     #7C8CF0;
+  --accent-lt:  #262B45;
+  --success:    #4FC490;
+  --success-lt: #1B2E27;
+  --danger:     #E8776D;
+  --danger-lt:  #33201E;
+  --warning:    #E8B75E;
+  --warning-lt: #332912;
+  --purple:     #A79AE8;
+  --purple-lt:  #2A2640;
   /* Extended palette — dark overrides */
-  --fase:       #E08CA0;
-  --fase-lt:    #3A2028;
-  --info:       #5CBBB4;
-  --info-lt:    #1C2E2C;
-  --chat-user:  #7FC97F;
-  --ink-inv:    #1E170F;
-  --paper-inv:  #F5EDE0;
-  --row-alt:    #241B10;
+  --fase:       #D98FB0;
+  --fase-lt:    #332028;
+  --info:       #6BB4DE;
+  --info-lt:    #1B2B33;
+  --chat-user:  #4FC490;
+  --ink-inv:    #171B24;
+  --paper-inv:  #E7E9EE;
+  --row-alt:    #1B2029;
 }
 
 [data-theme="dark"] body {
@@ -2673,7 +2674,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 
 /* Account bar stays dark — slightly deeper in dark mode */
 [data-theme="dark"] .account-bar {
-  background: #171009;
+  background: #12151C;
   border-bottom-color: rgba(255,255,255,0.05);
 }
 [data-theme="dark"] .account-tab { border-right-color: rgba(255,255,255,0.05); }
@@ -2792,13 +2793,13 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 [data-theme="dark"] select.form-control {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239A9A96' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 }
-[data-theme="dark"] select.form-control option { background: #1E170F; color: #F5EDE0; }
+[data-theme="dark"] select.form-control option { background: #171B24; color: #E7E9EE; }
 
 /* Fase dropdown */
 [data-theme="dark"] .fase-dropdown-trigger { background: var(--paper); border-color: var(--rule); }
 [data-theme="dark"] .fase-dropdown-menu { background: var(--paper); border-color: var(--fase); }
-[data-theme="dark"] .fase-option:hover { background: #3A2028; }
-[data-theme="dark"] .fase-option.selected { background: #3A2028; }
+[data-theme="dark"] .fase-option:hover { background: #332028; }
+[data-theme="dark"] .fase-option.selected { background: #332028; }
 
 /* Budget select */
 [data-theme="dark"] .budget-select {
@@ -2830,7 +2831,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 [data-theme="dark"] input[type="file"]::file-selector-button:hover { background: var(--rule); }
 
 /* Offline warning */
-[data-theme="dark"] .offline-warning-bar { background: var(--warning-lt); border-color: #6E4A1C; }
+[data-theme="dark"] .offline-warning-bar { background: var(--warning-lt); border-color: #5C4620; }
 
 /* Setelan panel overrides — undo inline light colors */
 
@@ -2876,11 +2877,11 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   background: var(--purple-lt) !important;
   color: var(--purple) !important;
 }
-[data-theme="dark"] #cardDanaDarurat [style*="background:#FBEDD1"] {
+[data-theme="dark"] #cardDanaDarurat [style*="background:#FBF0DC"] {
   background: var(--warning-lt) !important;
   color: var(--warning) !important;
 }
-[data-theme="dark"] #cardFaseKehidupan [style*="background:#F8E3E9"] {
+[data-theme="dark"] #cardFaseKehidupan [style*="background:#F8E9EF"] {
   background: var(--fase-lt) !important;
   color: var(--fase) !important;
 }
