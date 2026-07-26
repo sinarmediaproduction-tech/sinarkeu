@@ -284,7 +284,7 @@ window.saveNewAccount = async function() {
     const pwd    = document.getElementById('newAccPwd').value;
     const pwd2   = document.getElementById('newAccPwdConfirm').value;
     const st     = document.getElementById('newAccStatus');
-    if (!name) { st.style.color='#AE3B2A'; st.innerText=window.t('acc_name_required'); return; }
+    if (!name) { st.style.color='#DC4B37'; st.innerText=window.t('acc_name_required'); return; }
     const isEdit = !!editId;
     const hasCredentials = url && key && pwd;
 
@@ -293,17 +293,17 @@ window.saveNewAccount = async function() {
     // membingungkan kalau user tidak sengaja menambah nama yang sama dua kali.
     const existingAccounts = window.getAllAccounts();
     const dupName = existingAccounts.find(a => a.id !== editId && a.name.trim().toLowerCase() === name.toLowerCase());
-    if (dupName) { st.style.color='#AE3B2A'; st.innerText = `Nama akun "${name}" sudah dipakai. Gunakan nama lain.`; return; }
+    if (dupName) { st.style.color='#DC4B37'; st.innerText = `Nama akun "${name}" sudah dipakai. Gunakan nama lain.`; return; }
 
-    if (!isEdit && (!url || !key || !pwd || pwd.length < 6)) { st.style.color='#AE3B2A'; st.innerText='URL, Anon Key, dan Password (min 6 karakter) wajib diisi!'; return; }
-    if (isEdit && hasCredentials && pwd.length < 6) { st.style.color='#AE3B2A'; st.innerText='Password minimal 6 karakter!'; return; }
-    if (hasCredentials && pwd !== pwd2) { st.style.color='#AE3B2A'; st.innerText='Konfirmasi password tidak cocok! Pastikan kedua password sama.'; return; }
+    if (!isEdit && (!url || !key || !pwd || pwd.length < 6)) { st.style.color='#DC4B37'; st.innerText='URL, Anon Key, dan Password (min 6 karakter) wajib diisi!'; return; }
+    if (isEdit && hasCredentials && pwd.length < 6) { st.style.color='#DC4B37'; st.innerText='Password minimal 6 karakter!'; return; }
+    if (hasCredentials && pwd !== pwd2) { st.style.color='#DC4B37'; st.innerText='Konfirmasi password tidak cocok! Pastikan kedua password sama.'; return; }
     // [FIX] Validasi format URL SEBELUM menghubungi jaringan -- sebelumnya URL
     // ngawur (tanpa http/https, typo, dsb.) langsung dilempar ke fetch() dan
     // baru gagal dengan pesan generik "Koneksi gagal" yang tidak jelas
     // penyebabnya.
     if (hasCredentials && !/^https?:\/\/.+\..+/i.test(url)) {
-        st.style.color='#AE3B2A';
+        st.style.color='#DC4B37';
         st.innerText = 'Format Supabase Project URL tidak valid. Harus diawali https:// (contoh: https://xxxxxxxx.supabase.co)';
         return;
     }
@@ -313,7 +313,7 @@ window.saveNewAccount = async function() {
         st.style.color='#9C8B72'; st.innerText = 'Memeriksa URL akun lain…';
         const dupAcc = await window._findAccountWithSameUrl(url, editId || null);
         if (dupAcc) {
-            st.style.color='#AE3B2A';
+            st.style.color='#DC4B37';
             st.innerText = `Project Supabase ini sudah terdaftar untuk akun "${dupAcc.name}". Satu project Supabase hanya boleh dipakai oleh satu akun di aplikasi ini.`;
             return;
         }
@@ -352,7 +352,7 @@ window.saveNewAccount = async function() {
                 window.globalSupabaseUrl = url; window.globalSupabaseKey = key;
                 const test = await window.callSupabaseAPI('transactions', 'GET', null, '?limit=1');
                 if (test === null) {
-                    st.style.color='#AE3B2A';
+                    st.style.color='#DC4B37';
                     st.innerText = window.t('acc_connection_failed') + ' Pastikan URL & Anon Key benar, dan tabel sudah di-setup (lihat Panduan Pengguna).';
                     return;
                 }
@@ -378,7 +378,7 @@ window.saveNewAccount = async function() {
                         const boot = await window.bootstrapCryptoForBackend(pwd, url, key);
                         cryptoKey = boot.key; saltB64 = boot.saltB64; checkB64 = boot.checkB64;
                     } catch (e) {
-                        st.style.color='#AE3B2A';
+                        st.style.color='#DC4B37';
                         st.innerText = (e && e.code === 'PASSWORD_MISMATCH')
                             ? 'Backend ini sudah tersambung dari perangkat lain dengan password berbeda. Gunakan password yang sama.'
                             : 'Gagal menyiapkan enkripsi: ' + (e && e.message ? e.message : 'error tidak diketahui');

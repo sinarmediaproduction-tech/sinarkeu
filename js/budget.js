@@ -128,8 +128,8 @@ window._applyBudgetActualUI = function(totalTarget, totalActual) {
     if (pct >= 100 && totalTarget > 0) {
         fill.className = "budget-mini-progress-fill danger";
         if (fill2) fill2.className = "budget-mini-progress-fill danger";
-        pctEl.style.color = '#AE3B2A';
-        if (pctEl2) pctEl2.style.color = '#AE3B2A';
+        pctEl.style.color = '#DC4B37';
+        if (pctEl2) pctEl2.style.color = '#DC4B37';
     } else if (pct >= 80) {
         fill.className = "budget-mini-progress-fill warning";
         if (fill2) fill2.className = "budget-mini-progress-fill warning";
@@ -209,7 +209,7 @@ window.renderBudgetFormFields = function() {
     if (source === 'default') {
         infoDiv.innerHTML = '<b>Menggunakan Anggaran Bulanan</b> — Anda dapat mengubahnya di sini untuk membuat versi khusus bulan ini.';
         infoDiv.style.background = '#e3fcef';
-        infoDiv.style.color = '#3E5C2E';
+        infoDiv.style.color = '#2C6B2E';
     } else if (source === 'custom') {
         infoDiv.innerHTML = '<b>Anggaran Khusus Bulan Ini</b> — Bulan berikutnya akan kembali ke Anggaran Bulanan.';
         infoDiv.style.background = '#e8f0fe';
@@ -446,7 +446,7 @@ window._renderAnnualRow = function(idx) {
             value="${row.amount ? Number(row.amount).toLocaleString('id-ID') : ''}"
             oninput="window.formatRupiah(this); window._annualBudgetRows[${idx}].amount = window.unRp(this.value); window.updateAnnualBudgetSummary();">
         ${isOnlyRow ? '' : `<button onclick="window.removeAnnualBudgetRow(${idx})" 
-            style="background:none; border:1.5px solid #AE3B2A; color:#AE3B2A; border-radius: var(--radius-sm); padding:4px 10px; cursor:pointer; font-size:.85rem; flex-shrink:0;">Hapus</button>`}
+            style="background:none; border:1.5px solid #DC4B37; color:#DC4B37; border-radius: var(--radius-sm); padding:4px 10px; cursor:pointer; font-size:.85rem; flex-shrink:0;">Hapus</button>`}
     `;
     container.appendChild(div);
 };

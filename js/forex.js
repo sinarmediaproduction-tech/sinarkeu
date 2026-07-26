@@ -120,7 +120,7 @@ window.updateGoldValueDisplay = function(pricePerGram) {
 window.testEmasApiKey = async function() {
     const key = (document.getElementById('emasApiKeyInput')?.value || '').trim();
     const st  = document.getElementById('emasApiTestStatus');
-    if (!key) { st.style.color = '#AE3B2A'; st.innerText = 'Isi API key dulu.'; return; }
+    if (!key) { st.style.color = '#DC4B37'; st.innerText = 'Isi API key dulu.'; return; }
     st.style.color = '#B8842A'; st.innerText = 'Menghubungi server...';
     try {
         const res = await fetch('/api/emas', {
@@ -133,11 +133,11 @@ window.testEmasApiKey = async function() {
             st.style.color = '#4F7A3A';
             st.innerText = 'API key valid! Data Antam berhasil diakses.';
         } else {
-            st.style.color = '#AE3B2A';
+            st.style.color = '#DC4B37';
             st.innerText = `Server menolak: status ${res.status}. Periksa API key Anda.`;
         }
     } catch (e) {
-        st.style.color = '#AE3B2A';
+        st.style.color = '#DC4B37';
         st.innerText = `Gagal terhubung: ${e.message}`;
     }
 };
@@ -145,7 +145,7 @@ window.saveEmasApiKey = function() {
     const key  = (document.getElementById('emasApiKeyInput')?.value || '').trim();
     const gram = parseFloat(document.getElementById('emasGramInput')?.value) || 0;
     const st   = document.getElementById('emasApiTestStatus');
-    if (!key) { st.style.color = '#AE3B2A'; st.innerText = 'API key tidak boleh kosong!'; return; }
+    if (!key) { st.style.color = '#DC4B37'; st.innerText = 'API key tidak boleh kosong!'; return; }
     const keyChanged = (localStorage.getItem('sk_emas_api_key') || '') !== key;
     localStorage.setItem('sk_emas_api_key', key);
     if (gram > 0) localStorage.setItem('sk_emas_gram', gram);
@@ -230,7 +230,7 @@ window.fetchGoldPrice = async function(forceRefresh) {
                 _emasQuotaTrack();
                 window.updateEmasQuotaDisplay();
                 srcEl.textContent = 'Kuota API bulanan habis, beralih ke estimasi spot';
-                srcEl.style.color = '#AE3B2A';
+                srcEl.style.color = '#DC4B37';
                 // Kalau masih ada cache lama (walau kadaluarsa), lebih baik pakai itu daripada estimasi spot kasar
                 if (cache) {
                     priceEl.textContent = 'Rp ' + Math.round(cache.pricePerGram).toLocaleString('id-ID');
@@ -245,7 +245,7 @@ window.fetchGoldPrice = async function(forceRefresh) {
                 // itu cuma noise (JSON mentah upstream), pesan di card cukup
                 // ringkas: kenapa gagal + fallback yang dipakai.
                 srcEl.textContent = 'API key emas ditolak, beralih ke estimasi spot';
-                srcEl.style.color = '#AE3B2A';
+                srcEl.style.color = '#DC4B37';
                 if (cache) {
                     priceEl.textContent = 'Rp ' + Math.round(cache.pricePerGram).toLocaleString('id-ID');
                     window.updateGoldValueDisplay(cache.pricePerGram);
@@ -283,7 +283,7 @@ window.fetchGoldPrice = async function(forceRefresh) {
     }
     priceEl.textContent = '— Tidak tersedia';
     srcEl.textContent   = 'Semua sumber gagal';
-    srcEl.style.color = '#AE3B2A';
+    srcEl.style.color = '#DC4B37';
 };
 
 // Zakat

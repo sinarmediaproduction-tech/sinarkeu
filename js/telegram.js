@@ -40,7 +40,7 @@ window.updateTgStatusBadge = async function() {
     let cfg = await window.getTgConfig();
     if (cfg.active) {
         badge.style.background = '#e3fcef';
-        badge.style.color = '#3E5C2E';
+        badge.style.color = '#2C6B2E';
         badge.innerText = window.t('telegram_active');
     } else {
         badge.style.background = '#EDE4D3';
@@ -109,10 +109,10 @@ window.testTelegramNotif = async function() {
             });
             data = await res.json();
             if (data.ok) {
-                statusEl.innerHTML = '<span style="color:#3E5C2E;">Berhasil via Edge Function!</span>';
+                statusEl.innerHTML = '<span style="color:#2C6B2E;">Berhasil via Edge Function!</span>';
                 window.showToast('Tes Telegram berhasil! ', 'success');
             } else {
-                statusEl.innerHTML = `<span style="color:#AE3B2A;">Gagal: ${window.escapeHtml(data.error || JSON.stringify(data))}</span>`;
+                statusEl.innerHTML = `<span style="color:#DC4B37;">Gagal: ${window.escapeHtml(data.error || JSON.stringify(data))}</span>`;
             }
         } else {
             res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -122,17 +122,17 @@ window.testTelegramNotif = async function() {
             });
             data = await res.json();
             if (data.ok) {
-                statusEl.innerHTML = '<span style="color:#3E5C2E;">Berhasil! Cek Telegram kamu.</span>';
+                statusEl.innerHTML = '<span style="color:#2C6B2E;">Berhasil! Cek Telegram kamu.</span>';
                 window.showToast('Tes Telegram berhasil! ', 'success');
             } else {
                 let errMsg = data.description || JSON.stringify(data);
                 if (errMsg.includes('chat not found')) errMsg = 'Chat ID tidak ditemukan. Pastikan bot sudah di-/start atau ditambah ke grup.';
                 if (errMsg.includes('Unauthorized')) errMsg = 'Bot Token tidak valid. Cek kembali dari @BotFather.';
-                statusEl.innerHTML = `<span style="color:#AE3B2A;">${window.escapeHtml(errMsg)}</span>`;
+                statusEl.innerHTML = `<span style="color:#DC4B37;">${window.escapeHtml(errMsg)}</span>`;
             }
         }
     } catch(e) {
-        statusEl.innerHTML = `<span style="color:#AE3B2A;">Error jaringan: ${window.escapeHtml(e.message)}</span>`;
+        statusEl.innerHTML = `<span style="color:#DC4B37;">Error jaringan: ${window.escapeHtml(e.message)}</span>`;
     }
 };
 

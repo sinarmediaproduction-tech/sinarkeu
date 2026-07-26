@@ -505,7 +505,7 @@ window.evalSetupPwdStrength = function() {
     if (/[A-Z]/.test(pwd)) score++;
     if (/[0-9]/.test(pwd)) score++;
     if (/[^A-Za-z0-9]/.test(pwd)) score++;
-    const levels = [{ w: '0%', bg: '#EDE4D3', t: '' }, { w: '25%', bg: '#AE3B2A', t: 'Sangat lemah' }, { w: '50%', bg: '#ff8b00', t: 'Lemah' }, { w: '70%', bg: '#ffab00', t: 'Cukup' }, { w: '88%', bg: '#4F7A3A', t: 'Kuat' }, { w: '100%', bg: '#3E5C2E', t: 'Sangat kuat' }];
+    const levels = [{ w: '0%', bg: '#EDE4D3', t: '' }, { w: '25%', bg: '#DC4B37', t: 'Sangat lemah' }, { w: '50%', bg: '#ff8b00', t: 'Lemah' }, { w: '70%', bg: '#ffab00', t: 'Cukup' }, { w: '88%', bg: '#4F7A3A', t: 'Kuat' }, { w: '100%', bg: '#2C6B2E', t: 'Sangat kuat' }];
     const l = levels[score] || levels[0];
     fill.style.width = l.w;
     fill.style.background = l.bg;

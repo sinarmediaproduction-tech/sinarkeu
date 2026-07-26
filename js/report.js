@@ -94,22 +94,22 @@ async function generateMonthlyReport() {
     ink:        dk ? '#F3E9DA' : '#2A2118',
     inkMuted:   dk ? '#C4B29C' : '#6E5D4B',
     inkFaint:   dk ? '#8C7A64' : '#A3907A',
-    rule:       dk ? '#3D2F20' : '#E3D3B4',
-    rowAlt:     dk ? '#251D14' : '#F6EFE3',
+    rule:       dk ? '#3D2F20' : '#EAE0CB',
+    rowAlt:     dk ? '#251D14' : '#F8F1E3',
     thead:      dk ? '#2A2115' : '#F1E4CE',
     barBg:      dk ? '#3D2F20' : '#EDE4D3',
-    incBg:      dk ? '#1E2E16' : '#E5EDDA',
+    incBg:      dk ? '#1E2E16' : '#E1F0DF',
     incBd:      dk ? '#4A6B38' : '#8FB06E',
-    incTxt:     dk ? '#8FBF6E' : '#3E5C2E',
-    expBg:      dk ? '#301C16' : '#F5E0D9',
+    incTxt:     dk ? '#8FBF6E' : '#2C6B2E',
+    expBg:      dk ? '#301C16' : '#FBE0DA',
     expBd:      dk ? '#7A3E2E' : '#D48A6E',
-    expTxt:     dk ? '#E08066' : '#8F2E20',
-    balPosBg:   dk ? '#182722' : '#DCEAE7',
+    expTxt:     dk ? '#E08066' : '#C23A28',
+    balPosBg:   dk ? '#182722' : '#DCF0EC',
     balPosBd:   dk ? '#3D6B62' : '#6FA69C',
-    balPosTxt:  dk ? '#7FB3AC' : '#2E5450',
-    budgetBg:   dk ? '#2E2412' : '#F4E8D0',
+    balPosTxt:  dk ? '#7FB3AC' : '#1F5C57',
+    budgetBg:   dk ? '#2E2412' : '#FBEDD1',
     budgetBd:   dk ? '#6E5222' : '#D6B36A',
-    budgetTxt:  dk ? '#E0B056' : '#7A5A1E',
+    budgetTxt:  dk ? '#E0B056' : '#8C641C',
   };
 
   let catRows = cats.length
@@ -267,8 +267,8 @@ async function exportReportAsPDF() {
     bg:     dk2 ? '#161616' : '#ffffff',
     rowAlt: dk2 ? '#1E1E1B' : '#f9f9f9',
     barBg:  dk2 ? '#333330' : '#eeeeee',
-    incTxt: dk2 ? '#4ADE80' : '#3E5C2E',
-    expTxt: dk2 ? '#F87171' : '#AE3B2A',
+    incTxt: dk2 ? '#4ADE80' : '#2C6B2E',
+    expTxt: dk2 ? '#F87171' : '#DC4B37',
     warnTxt:dk2 ? '#E0A850' : '#ff991f',
   };
 
@@ -400,9 +400,9 @@ async function exportReportAsPDF() {
     border-left: 3px solid transparent;
   }
   .kpi-income { background: #e8f8f0; border-color: #4F7A3A; }
-  .kpi-expense { background: #fff1ee; border-color: #AE3B2A; }
+  .kpi-expense { background: #fff1ee; border-color: #DC4B37; }
   .kpi-balance-pos { background: #e8f0fe; border-color: #1a73e8; }
-  .kpi-balance-neg { background: #fff1ee; border-color: #AE3B2A; }
+  .kpi-balance-neg { background: #fff1ee; border-color: #DC4B37; }
   .kpi .label {
     font-size: 6.5pt;
     font-weight: 700;
@@ -415,7 +415,7 @@ async function exportReportAsPDF() {
     font-size: 12pt;
     font-weight: 700;
   }
-  .kpi-income .value { color: #3E5C2E; }
+  .kpi-income .value { color: #2C6B2E; }
   .kpi-expense .value { color: #bf2600; }
   .kpi-balance-pos .value { color: #1155cc; }
   .kpi-balance-neg .value { color: #bf2600; }
@@ -460,7 +460,7 @@ async function exportReportAsPDF() {
   }
   tr:last-child td { border-bottom: none; }
   .money { text-align: right; font-family: 'Courier New', monospace; }
-  .income { color: #3E5C2E; font-weight: 600; }
+  .income { color: #2C6B2E; font-weight: 600; }
   .expense { color: #bf2600; font-weight: 600; }
   .center { text-align: center; }
   .muted { color: #9C8B72; }
@@ -546,7 +546,7 @@ async function exportReportAsPDF() {
     </div>
     <div class="ba-sisa">
       <div class="ba-label">Sisa Anggaran</div>
-      <div class="ba-value" style="color:${totalBudget - expense >= 0 ? '#3E5C2E' : '#bf2600'};">${fmtRp(totalBudget - expense)}</div>
+      <div class="ba-value" style="color:${totalBudget - expense >= 0 ? '#2C6B2E' : '#bf2600'};">${fmtRp(totalBudget - expense)}</div>
     </div>
   </div>` : ''}
 
@@ -598,7 +598,7 @@ async function exportReportAsPDF() {
         </tr>
         <tr class="tbl-foot">
           <td colspan="4" style="text-align:right;"><b>SALDO BERSIH</b></td>
-          <td colspan="2" class="money" style="color:${balance >= 0 ? '#3E5C2E' : '#bf2600'};"><b>${fmtRp(balance)}</b></td>
+          <td colspan="2" class="money" style="color:${balance >= 0 ? '#2C6B2E' : '#bf2600'};"><b>${fmtRp(balance)}</b></td>
         </tr>
       </tfoot>
     </table>

@@ -198,7 +198,7 @@ window.changePassword = async function() {
     var newPwd2 = document.getElementById('changePwdNew2').value;
     var status = document.getElementById('changePwdStatus');
     
-    status.style.color = '#AE3B2A';
+    status.style.color = '#DC4B37';
     
     if (!oldPwd || !newPwd || !newPwd2) {
         status.innerText = window.t('all_fields_required');
@@ -218,7 +218,7 @@ window.changePassword = async function() {
     
     var saltB64 = localStorage.getItem('sk_crypto_salt');
     if (!saltB64) {
-        status.style.color = '#AE3B2A';
+        status.style.color = '#DC4B37';
         status.innerText = window.t('encryption_data_not_found');
         return;
     }
@@ -231,7 +231,7 @@ window.changePassword = async function() {
         var plain = await window.decryptStr(oldKey, localStorage.getItem('sk_crypto_check'));
         if (plain !== 'sinarkeu_ok') throw new Error('wrong');
     } catch (e) {
-        status.style.color = '#AE3B2A';
+        status.style.color = '#DC4B37';
         status.innerText = window.t('old_pwd_wrong');
         return;
     }
@@ -241,7 +241,7 @@ window.changePassword = async function() {
         url = await window.decryptStr(oldKey, localStorage.getItem('sk_enc_supabase_url'));
         apiKey = await window.decryptStr(oldKey, localStorage.getItem('sk_enc_supabase_key'));
     } catch (e) {
-        status.style.color = '#AE3B2A';
+        status.style.color = '#DC4B37';
         status.innerText = window.t('failed_read_encrypted');
         return;
     }
@@ -544,7 +544,7 @@ window.loadConnectedDevices = async function() {
             html += '<span style="font-size:.78rem; font-weight:700; color:var(--ink); word-break:break-word;">';
             html += '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:' + dotColor + '; margin-right:5px; vertical-align:middle;"></span>';
             html += window.escapeHtml(d.device_id);
-            if (isMe) html += ' <span style="font-size:.6rem; background:#e3fcef; color:#3E5C2E; padding:1px 7px; border-radius: var(--radius-sm); font-weight:600; vertical-align:middle;">Perangkat ini</span>';
+            if (isMe) html += ' <span style="font-size:.6rem; background:#e3fcef; color:#2C6B2E; padding:1px 7px; border-radius: var(--radius-sm); font-weight:600; vertical-align:middle;">Perangkat ini</span>';
             html += '</span>';
             html += '<span style="font-size:.65rem; color:#9C8B72;">' + d.count + ' aksi</span>';
             html += '</div>';

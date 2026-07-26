@@ -134,7 +134,7 @@ window.renderBookList = function() {
             <div class="book-list-actions">
                 ${!isCurrent ? `<button class="btn-mini" onclick="window.switchBook('${b.id}')">Buka</button>` : ''}
                 <button class="btn-mini" style="background:#f0f4ff; color:#3D6B6B; border:1px solid #c5d8ff;" onclick="window.renameBook('${b.id}')">Nama</button>
-                <button class="btn-mini" style="background:#F4E8D0; color:#B8842A; border:1px solid #E0C589;" onclick="window.openCardVisibilityModal('${b.id}')" title="Pilih card yang ditampilkan untuk buku ini">Card</button>
+                <button class="btn-mini" style="background:#FBEDD1; color:#B8842A; border:1px solid #F0D48A;" onclick="window.openCardVisibilityModal('${b.id}')" title="Pilih card yang ditampilkan untuk buku ini">Card</button>
                 ${b.parentId && isCurrent ? `<button class="btn-mini" style="background:#6b46c1; color:#fff;" onclick="window.closeModal('bookManagerModal'); window.openTutupAnakBuku()">Tutup & Kirim</button>` : ''}
                 ${delBtn}
             </div>
@@ -292,7 +292,7 @@ window.formatBytes = function(bytes) {
 
 window.renderStorageBar = function(usedBytes, totalBytes, label) {
     const pct = Math.min((usedBytes / totalBytes) * 100, 100);
-    const colorClass = pct >= 90 ? '#AE3B2A' : pct >= 70 ? '#B8842A' : '#3D6B6B';
+    const colorClass = pct >= 90 ? '#DC4B37' : pct >= 70 ? '#B8842A' : '#3D6B6B';
     return `
         <div style="margin-bottom:10px;">
             <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
@@ -315,7 +315,7 @@ window.refreshStorageEstimate = async function() {
     const data = await window.estimateSupabaseStorage();
     if (btn) btn.disabled = false;
     if (!data) {
-        el.innerHTML = '<div style="font-size:.7rem; color:#AE3B2A; text-align:center; padding:8px 0;">Tidak dapat memuat — pastikan koneksi Supabase aktif.</div>';
+        el.innerHTML = '<div style="font-size:.7rem; color:#DC4B37; text-align:center; padding:8px 0;">Tidak dapat memuat — pastikan koneksi Supabase aktif.</div>';
         return;
     }
     const { txCount, logCount, settCount, estimatedBytes } = data;
@@ -323,7 +323,7 @@ window.refreshStorageEstimate = async function() {
     const SUPABASE_FREE_DB_BYTES = 500 * 1024 * 1024;
     const dbBar   = window.renderStorageBar(estimatedBytes, SUPABASE_FREE_DB_BYTES, 'Database (estimasi)');
     const pctNum  = Math.min((estimatedBytes / SUPABASE_FREE_DB_BYTES) * 100, 100);
-    const statusColor = pctNum >= 90 ? '#AE3B2A' : pctNum >= 70 ? '#B8842A' : '#3E5C2E';
+    const statusColor = pctNum >= 90 ? '#DC4B37' : pctNum >= 70 ? '#B8842A' : '#2C6B2E';
     const statusText  = pctNum >= 90 ? 'Hampir penuh! Pertimbangkan arsipkan data lama.' :
                         pctNum >= 70 ? 'Mendekati batas — pantau secara berkala.' :
                                        'Kapasitas masih aman.';
@@ -430,21 +430,21 @@ window.openTutupAnakBuku = function() {
     if (el) {
         if (txCount === 0) {
             el.innerHTML = `
-                <div style="background:#F4E8D0; border:1px solid #E0C589; border-radius: var(--radius-sm); padding:12px 14px; font-size:.78rem; line-height:1.8; color:#7A5A1E;">
+                <div style="background:#FBEDD1; border:1px solid #F0D48A; border-radius: var(--radius-sm); padding:12px 14px; font-size:.78rem; line-height:1.8; color:#8C641C;">
                     Tidak ada transaksi baru ${window.escapeHtml(sinceLabel)}. Tidak ada yang perlu dikirim ke buku induk.
                 </div>
             `;
         } else {
             el.innerHTML = `
-                <div style="background:#EEE0E7; border:1px solid #CBA8B8; border-radius: var(--radius-sm); padding:12px 14px; font-size:.78rem; line-height:1.8;">
+                <div style="background:#F2E4EE; border:1px solid #D9BFCF; border-radius: var(--radius-sm); padding:12px 14px; font-size:.78rem; line-height:1.8;">
                     <div><b>Anak Buku:</b> ${window.escapeHtml(book.name)}</div>
                     <div><b>Kirim ke Induk:</b> ${window.escapeHtml(parentBook.name)}</div>
                     <div style="font-size:.68rem; color:#6b46c1; margin-top:2px;">Dihitung ${window.escapeHtml(sinceLabel)}</div>
                     <hr style="margin:8px 0; border-color:#e9d8fd;">
                     <div>Jumlah transaksi: <b>${txCount}</b></div>
                     <div>Total pemasukan: <b style="color:#4F7A3A">${window.rp(totalInc)}</b></div>
-                    <div>Total pengeluaran: <b style="color:#AE3B2A">${window.rp(totalExp)}</b></div>
-                    <div><b>Net yang dikirim: <span style="color:${netTotal >= 0 ? '#4F7A3A' : '#AE3B2A'}">${window.rp(Math.abs(netTotal))}</span></b>
+                    <div>Total pengeluaran: <b style="color:#DC4B37">${window.rp(totalExp)}</b></div>
+                    <div><b>Net yang dikirim: <span style="color:${netTotal >= 0 ? '#4F7A3A' : '#DC4B37'}">${window.rp(Math.abs(netTotal))}</span></b>
                         ${netTotal < 0 ? ' (pengeluaran)' : ' (pemasukan)'}</div>
                 </div>
                 <div style="margin-top:10px; font-size:.72rem; color:#6E5D4B;">

@@ -1,6 +1,6 @@
 // ==================== EXPENSE CHART (Pengeluaran per Kategori) ====================
 window._EXPENSE_CHART_COLORS = [
-    '#AE3B2A', '#ff991f', '#ffc400', '#36b37e', '#4F7A3A',
+    '#DC4B37', '#ff991f', '#ffc400', '#36b37e', '#4F7A3A',
     '#00a3bf', '#0065ff', '#6554c0', '#8777d9', '#ff5630',
     '#ff7452', '#998dd9', '#79e2f2', '#57d9a3', '#B8842A'
 ];

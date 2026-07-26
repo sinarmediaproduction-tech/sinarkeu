@@ -1,52 +1,51 @@
 /* ===================================================
-   SINARKEU — Warm & Earthy Redesign
-   Palette: Ink #2A2118, Paper #FBF7F0, Clay #A8572E,
-            Success (olive) #4F7A3A, Danger (brick) #AE3B2A,
-            Warning (ochre) #B8842A
-   Signature: warm terracotta-clay brand, sand & linen
-   surfaces, soft warm shadows, buku-kas paper feel.
-   Font: Fraunces (display/numbers) + Inter (body/data)
+   SINARKEU — Modern Warm Redesign
+   Palette: Ink #221A12, Paper #FDFBF6, Coral-Clay #E2672F,
+            Success #3F9142, Danger #DC4B37, Warning #E5A429
+   Signature: crisp warm-neutral surfaces, vivid coral-clay
+   brand, tight modern shadows, confident rounded shapes.
+   Font: Manrope (display/numbers) + Inter (body/data)
 =================================================== */
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --ink:        #2A2118;
-  --ink-muted:  #6E5D4B;
-  --ink-faint:  #A3907A;
-  --paper:      #FBF7F0;
-  --paper-warm: #F1E4CE;
-  --rule:       #E3D3B4;
-  --accent:     #A8572E;
-  --accent-lt:  #F3E0CE;
-  --success:    #4F7A3A;
-  --success-lt: #E5EDDA;
-  --danger:     #AE3B2A;
-  --danger-lt:  #F5E0D9;
-  --warning:    #B8842A;
-  --warning-lt: #F4E8D0;
-  --purple:     #74495F;
-  --purple-lt:  #EEE0E7;
-  --brand:      #A8572E; /* selaras dengan --accent, dipakai di sidebar */
-  --brand-dark: #7A3E1F;
+  --ink:        #221A12;
+  --ink-muted:  #6B5C4A;
+  --ink-faint:  #9C8C74;
+  --paper:      #FDFBF6;
+  --paper-warm: #F6EEDE;
+  --rule:       #EAE0CB;
+  --accent:     #E2672F;
+  --accent-lt:  #FCE3D2;
+  --success:    #3F9142;
+  --success-lt: #E1F0DF;
+  --danger:     #DC4B37;
+  --danger-lt:  #FBE0DA;
+  --warning:    #E5A429;
+  --warning-lt: #FBEDD1;
+  --purple:     #8A5A78;
+  --purple-lt:  #F2E4EE;
+  --brand:      #E2672F; /* selaras dengan --accent, dipakai di sidebar */
+  --brand-dark: #B84D1F;
   /* Extended palette */
-  --fase:       #A85668;
-  --fase-lt:    #F3E1E4;
-  --info:       #3D6B6B;
-  --info-lt:    #DCEAE7;
-  --chat-user:  #5C7A52;
+  --fase:       #C2607A;
+  --fase-lt:    #F8E3E9;
+  --info:       #2E8480;
+  --info-lt:    #DCF0EC;
+  --chat-user:  #4F9153;
   --ink-inv:    #FFF8EE;   /* teks di atas background gelap (btn-primary dark) */
-  --paper-inv:  #241B12;  /* bg di atas ink terang */
-  --row-alt:    #F6EEDF;
+  --paper-inv:  #221A12;  /* bg di atas ink terang */
+  --row-alt:    #F8F1E3;
   /* Shape & elevation */
-  --radius-sm:  12px;
-  --radius:     14px;
-  --radius-lg:  24px;
+  --radius-sm:  14px;
+  --radius:     16px;
+  --radius-lg:  26px;
   --radius-pill: 999px;
-  --shadow-sm:  0 2px 8px rgba(42,33,24,0.10);
-  --shadow-md:  0 8px 24px rgba(168,87,46,0.16);
-  --shadow-lg:  0 18px 44px rgba(42,33,24,0.20);
-  --font-display: 'Fraunces', 'Georgia', serif;
+  --shadow-sm:  0 1px 3px rgba(34,26,18,0.08);
+  --shadow-md:  0 6px 20px rgba(226,103,47,0.18);
+  --shadow-lg:  0 16px 40px rgba(34,26,18,0.16);
+  --font-display: 'Manrope', 'Inter', sans-serif;
 }
 
 /* ── Base ── */
@@ -428,7 +427,7 @@ h1, h2, h3, h4,
   background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
   border: none;
   border-radius: var(--radius-lg);
-  box-shadow: 0 12px 32px rgba(168,87,46,0.28);
+  box-shadow: 0 12px 32px rgba(226,103,47,0.28);
   padding: 26px 28px;
   margin-bottom: 18px;
 }
@@ -823,9 +822,9 @@ button:disabled, .btn:disabled,
   color: #fff;
   border-color: var(--accent);
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(168,87,46,0.32);
+  box-shadow: 0 4px 14px rgba(226,103,47,0.32);
 }
-.btn-primary:hover:not(:disabled) { background: var(--brand-dark); border-color: var(--brand-dark); box-shadow: 0 6px 18px rgba(168,87,46,0.4); transform: translateY(-1px); }
+.btn-primary:hover:not(:disabled) { background: var(--brand-dark); border-color: var(--brand-dark); box-shadow: 0 6px 18px rgba(226,103,47,0.4); transform: translateY(-1px); }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; background: var(--ink-faint); border-color: var(--ink-faint); box-shadow: none; }
 
 .btn-secondary {
@@ -1100,7 +1099,7 @@ tr:hover td { background: var(--accent-lt); }
   position: fixed;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  background: rgba(42,33,24,0.6);
+  background: rgba(34,26,18,0.6);
   display: none;
   align-items: center;
   justify-content: center;
@@ -2147,9 +2146,9 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   cursor: pointer;
   transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
   font-family: inherit;
-  box-shadow: 0 4px 14px rgba(168,87,46,0.32);
+  box-shadow: 0 4px 14px rgba(226,103,47,0.32);
 }
-.lock-btn:hover { background: var(--brand-dark); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(168,87,46,0.4); }
+.lock-btn:hover { background: var(--brand-dark); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(226,103,47,0.4); }
 .lock-btn:active { opacity: 0.9; }
 .lock-btn:disabled { background: var(--ink-faint); cursor: not-allowed; box-shadow: none; }
 
@@ -2640,31 +2639,31 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
    DARK MODE — [data-theme="dark"]
 ====================================================== */
 [data-theme="dark"] {
-  --ink:        #F3E9DA;
-  --ink-muted:  #C4B29C;
-  --ink-faint:  #8C7A64;
-  --paper:      #1D1610;
-  --paper-warm: #251C13;
-  --rule:       #3D2F20;
-  --accent:     #D98A54;
-  --accent-lt:  #3A2A1C;
-  --success:    #8FBF6E;
-  --success-lt: #263420;
-  --danger:     #E08066;
-  --danger-lt:  #3A241E;
-  --warning:    #E0B056;
-  --warning-lt: #3A2E18;
-  --purple:     #C08FA8;
-  --purple-lt:  #35232C;
+  --ink:        #F5EDE0;
+  --ink-muted:  #C9B8A0;
+  --ink-faint:  #8F7C64;
+  --paper:      #1E170F;
+  --paper-warm: #251C12;
+  --rule:       #3C2E1C;
+  --accent:     #F0824A;
+  --accent-lt:  #3D2416;
+  --success:    #6FC26A;
+  --success-lt: #1E2E1C;
+  --danger:     #F0705A;
+  --danger-lt:  #3A2018;
+  --warning:    #F0BE5A;
+  --warning-lt: #3A2E14;
+  --purple:     #C593B0;
+  --purple-lt:  #34222E;
   /* Extended palette — dark overrides */
-  --fase:       #E0899E;
-  --fase-lt:    #3A222A;
-  --info:       #7FB3AC;
-  --info-lt:    #1E302C;
-  --chat-user:  #9BC17E;
-  --ink-inv:    #1D1610;
-  --paper-inv:  #F3E9DA;
-  --row-alt:    #251D14;
+  --fase:       #E08CA0;
+  --fase-lt:    #3A2028;
+  --info:       #5CBBB4;
+  --info-lt:    #1C2E2C;
+  --chat-user:  #7FC97F;
+  --ink-inv:    #1E170F;
+  --paper-inv:  #F5EDE0;
+  --row-alt:    #241B10;
 }
 
 [data-theme="dark"] body {
@@ -2674,7 +2673,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 
 /* Account bar stays dark — slightly deeper in dark mode */
 [data-theme="dark"] .account-bar {
-  background: #150F0A;
+  background: #171009;
   border-bottom-color: rgba(255,255,255,0.05);
 }
 [data-theme="dark"] .account-tab { border-right-color: rgba(255,255,255,0.05); }
@@ -2793,13 +2792,13 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 [data-theme="dark"] select.form-control {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239A9A96' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 }
-[data-theme="dark"] select.form-control option { background: #1D1610; color: #F3E9DA; }
+[data-theme="dark"] select.form-control option { background: #1E170F; color: #F5EDE0; }
 
 /* Fase dropdown */
 [data-theme="dark"] .fase-dropdown-trigger { background: var(--paper); border-color: var(--rule); }
 [data-theme="dark"] .fase-dropdown-menu { background: var(--paper); border-color: var(--fase); }
-[data-theme="dark"] .fase-option:hover { background: #3A222A; }
-[data-theme="dark"] .fase-option.selected { background: #3A222A; }
+[data-theme="dark"] .fase-option:hover { background: #3A2028; }
+[data-theme="dark"] .fase-option.selected { background: #3A2028; }
 
 /* Budget select */
 [data-theme="dark"] .budget-select {
@@ -2831,7 +2830,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 [data-theme="dark"] input[type="file"]::file-selector-button:hover { background: var(--rule); }
 
 /* Offline warning */
-[data-theme="dark"] .offline-warning-bar { background: var(--warning-lt); border-color: #5A3E14; }
+[data-theme="dark"] .offline-warning-bar { background: var(--warning-lt); border-color: #6E4A1C; }
 
 /* Setelan panel overrides — undo inline light colors */
 
@@ -2873,15 +2872,15 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 }
 
 /* Badge inline di dalam stat-card */
-[data-theme="dark"] #cardAnggaranTahunan [style*="background:#EEE0E7"] {
+[data-theme="dark"] #cardAnggaranTahunan [style*="background:#F2E4EE"] {
   background: var(--purple-lt) !important;
   color: var(--purple) !important;
 }
-[data-theme="dark"] #cardDanaDarurat [style*="background:#F4E8D0"] {
+[data-theme="dark"] #cardDanaDarurat [style*="background:#FBEDD1"] {
   background: var(--warning-lt) !important;
   color: var(--warning) !important;
 }
-[data-theme="dark"] #cardFaseKehidupan [style*="background:#F3E1E4"] {
+[data-theme="dark"] #cardFaseKehidupan [style*="background:#F8E3E9"] {
   background: var(--fase-lt) !important;
   color: var(--fase) !important;
 }
