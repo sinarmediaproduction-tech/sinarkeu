@@ -387,6 +387,11 @@ window.applyTheme = function(dark) {
     } else {
         document.documentElement.removeAttribute('data-theme');
     }
+    // Samakan warna title bar (browser/PWA) dengan tema aktif
+    var themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) {
+        themeColorMeta.setAttribute('content', dark ? '#12151C' : '#4F63D2');
+    }
     var icon = document.getElementById('darkModeIcon');
     if (icon) {
         // Sun icon for dark mode (click to go light), moon icon for light mode

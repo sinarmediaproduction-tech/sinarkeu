@@ -50,6 +50,8 @@
         (function() {
             if (localStorage.getItem('sk_dark_mode') === '1') {
                 document.documentElement.setAttribute('data-theme', 'dark');
+                var tc = document.querySelector('meta[name="theme-color"]');
+                if (tc) tc.setAttribute('content', '#12151C');
             }
         })();
     </script>

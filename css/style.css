@@ -2666,6 +2666,10 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   --warning-lt: #332912;
   --purple:     #A79AE8;
   --purple-lt:  #2A2640;
+  /* Brand (title bar / sidebar / balance hero) — dark overrides,
+     supaya tidak lagi tampil ungu terang di mode gelap */
+  --brand:      #262B38;
+  --brand-dark: #12151C;
   /* Extended palette — dark overrides */
   --fase:       #D98FB0;
   --fase-lt:    #332028;
