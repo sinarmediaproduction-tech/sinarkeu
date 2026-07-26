@@ -2575,15 +2575,15 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   margin-top: 2px;
 }
 
-/* ── Icon-only buttons (sync, setelan, reminder) ── */
-#manualSyncBtn, #setelanBtn, #reminderBtn {
+/* ── Icon-only buttons (sync, reminder) ── */
+#manualSyncBtn, #reminderBtn {
   background: none !important;
   border-color: transparent !important;
   color: var(--ink-faint);
   opacity: 0.6;
   transition: opacity 0.15s, color 0.15s, transform 0.15s;
 }
-#manualSyncBtn:hover, #setelanBtn:hover, #reminderBtn:hover {
+#manualSyncBtn:hover, #reminderBtn:hover {
   opacity: 1;
   color: var(--ink);
   background: none !important;

@@ -29,7 +29,7 @@ window.updateSyncTimeBadge = function() {
 window.updateUIForOnlineStatus = function() {
     const online = window.isOnline();
     const offlineWarning = document.getElementById('offlineWarningBar');
-    const actionButtons = ['tambahTransaksiBtn', 'kelolaBukuBtn', 'setelanBtn', 'manualSyncBtn', 'anggaranBtn', 'anggaranDasarBtn', 'backupBtn'];
+    const actionButtons = ['tambahTransaksiBtn', 'navBookBtn', 'navSetelanBtn', 'manualSyncBtn', 'anggaranBtn', 'anggaranDasarBtn', 'backupBtn'];
     if (online) {
         if (offlineWarning) offlineWarning.classList.remove('show');
         actionButtons.forEach(id => { const btn = document.getElementById(id); if (btn) { btn.removeAttribute('disabled'); btn.style.opacity = '1'; } });
