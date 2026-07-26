@@ -916,7 +916,7 @@ alter table public.settings
                 <input type="text" id="aiWorkerUrlInput" class="form-control" placeholder="https://nama-worker-anda.workers.dev" data-i18n="worker_placeholder" data-i18n-attr="placeholder" oninput="updateAiWorkerBadge()">
             </div>
             <div id="aiWorkerTestStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
-            <div style="display:flex; gap:8px;">
+            <div class="setelan-actions-row">
                 <button class="btn btn-secondary" style="flex:1;" onclick="testAiWorkerUrl()" data-i18n="test_connection">Tes Koneksi</button>
                 <button class="btn btn-danger" style="flex:1;" onclick="clearAiWorkerUrl()">Hapus</button>
                 <button class="btn btn-primary" style="flex:2;" onclick="saveAiWorkerUrl()">Simpan</button>
@@ -943,7 +943,7 @@ alter table public.settings
                 <div id="emasGramPreview" class="setelan-preview--amber"></div>
             </div>
             <div id="emasApiTestStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
-            <div style="display:flex; gap:8px;">
+            <div class="setelan-actions-row">
                 <button class="btn btn-secondary" style="flex:1;" onclick="testEmasApiKey()">Tes</button>
                 <button class="btn btn-danger" style="flex:1;" onclick="clearEmasApiKey()">Hapus</button>
                 <button class="btn btn-primary" style="flex:2;" onclick="saveEmasApiKey()">Simpan</button>
@@ -967,7 +967,7 @@ alter table public.settings
                 <div id="connectionStatus" style="margin-top:8px"></div>
                 <div class="setelan-divider"></div>
                 <label class="setelan-label-strong">Nama Perangkat Ini</label>
-                <div style="display:flex; gap:8px; align-items:center;">
+                <div class="setelan-device-row">
                     <input type="text" id="deviceNameInput" class="form-control" placeholder="cth: HP Saya, Laptop Kantor" maxlength="24" autocomplete="off" style="flex:1;">
                     <button class="btn btn-secondary" onclick="window.saveDeviceName()" style="white-space:nowrap;">Simpan</button>
                 </div>
@@ -1012,7 +1012,7 @@ alter table public.settings
             <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)">
             <div style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--rule);">
                 <label class="setelan-label-strong" data-i18n="sheets_url_label">Google Sheets Web App URL</label>
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <div class="setelan-sheets-row">
                     <input type="text" id="googleSheetsUrlInput" class="form-control" style="flex:2; min-width:200px;" placeholder="https://script.google.com/macros/s/.../exec">
                     <button class="btn btn-secondary" onclick="saveGoogleSheetsUrl()" style="flex:0 0 auto;" data-i18n="save_url">Simpan URL</button>
                     <button class="btn btn-success" onclick="backupToGoogleSheets()" style="flex:0 0 auto;" data-i18n="backup_to_sheets">Backup ke Google Sheets</button>
@@ -1031,7 +1031,7 @@ alter table public.settings
                 <span data-i18n="migration_desc">Pindahkan semua data (anggaran, jadwal pembayaran) dari Local Storage ke Supabase agar tersinkronisasi di semua perangkat.</span>
             </div>
             <div id="migrationStatus" class="setelan-test-status" style="color:var(--ink-faint);"></div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <div class="setelan-actions-row">
                 <button class="btn btn-primary" style="flex:1;" 
                         onclick="window.runFullMigration()" data-i18n="migrate_all">
                     Migrasi Semua Data
