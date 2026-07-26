@@ -1150,10 +1150,7 @@ tr:hover td { background: var(--accent-lt); }
   padding: 2px 2px 12px;
   margin-bottom: 0;
   border-bottom: 1px solid var(--rule);
-  scrollbar-width: thin;
 }
-.setelan-tabs::-webkit-scrollbar { width: 4px; }
-.setelan-tabs::-webkit-scrollbar-thumb { background: var(--rule); border-radius: var(--radius-sm); }
 
 .setelan-tab-btn {
   flex: 0 0 auto;
@@ -2212,11 +2209,12 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 .telegram-badge { background: #185FA5; color: var(--paper); border-color: #185FA5; }
 .telegram-badge:hover:not(:disabled) { background: #0C447C; border-color: var(--accent); }
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: var(--paper-warm); }
-::-webkit-scrollbar-thumb { background: var(--rule); border-radius: var(--radius-sm); }
-::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
+/* ── Scrollbar (disembunyikan di semua elemen; scroll tetap jalan) ── */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge lama */
+}
+::-webkit-scrollbar { width: 0; height: 0; display: none; } /* Chrome/Safari/WebView */
 
 /* ── Responsive helpers ── */
 .desktop-only { display: inline-flex; }
@@ -2240,11 +2238,8 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge lama */
     padding-bottom: 2px;
   }
-  .book-selector::-webkit-scrollbar { display: none; } /* Chrome/Safari */
   /* Label, badge, dan tombol tidak boleh menyusut (nanti tulisannya gepeng);
      dropdown buku (.book-select) sengaja DIKECUALIKAN supaya lebar minimumnya
      sendiri (diatur di bawah) yang menentukan, bukan flex-shrink:0 di sini. */
@@ -2743,11 +2738,6 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 /* Sync badge */
 [data-theme="dark"] .device-id-badge { background: var(--ink); color: var(--paper-warm); }
 [data-theme="dark"] .sync-time-badge { color: var(--ink-faint); }
-
-/* Scrollbar */
-[data-theme="dark"] ::-webkit-scrollbar-track { background: var(--paper); }
-[data-theme="dark"] ::-webkit-scrollbar-thumb { background: var(--rule); }
-[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
 
 /* Select arrow untuk dark mode */
 [data-theme="dark"] select.form-control {

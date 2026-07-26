@@ -202,9 +202,16 @@ window.fetchGoldPrice = async function(forceRefresh) {
                 headers: { 'X-API-Key': emasApiKey },
                 signal: AbortSignal.timeout(8000)
             });
-            _emasQuotaTrack();
-            window.updateEmasQuotaDisplay();
             if (res.ok) {
+                // [FIX BUG KUOTA] _emasQuotaTrack() sebelumnya dipanggil untuk SEMUA
+                // respons (termasuk 403/expired key yang gagal auth) -- akibatnya kuota
+                // lokal (tampilan "Kuota API bulan ini" di Setelan) ikut berkurang
+                // walau request-nya gagal dan kemungkinan tidak dihitung sama sekali
+                // oleh provider upstream. Sekarang hanya di-track saat request benar2
+                // diproses (berhasil, atau 429 yang memang berarti kuota upstream
+                // sudah kepakai) -- BUKAN saat gagal auth (403) atau error jaringan.
+                _emasQuotaTrack();
+                window.updateEmasQuotaDisplay();
                 const json = await res.json();
                 const item = json?.data?.[0];
                 if (item?.sell_price) {
@@ -220,6 +227,8 @@ window.fetchGoldPrice = async function(forceRefresh) {
                     return;
                 }
             } else if (res.status === 429) {
+                _emasQuotaTrack();
+                window.updateEmasQuotaDisplay();
                 srcEl.textContent = 'Kuota API bulanan habis, beralih ke estimasi spot';
                 srcEl.style.color = '#de350b';
                 // Kalau masih ada cache lama (walau kadaluarsa), lebih baik pakai itu daripada estimasi spot kasar
@@ -228,8 +237,32 @@ window.fetchGoldPrice = async function(forceRefresh) {
                     window.updateGoldValueDisplay(cache.pricePerGram);
                     return;
                 }
+            } else if (res.status === 403) {
+                // Bukan kuota habis (itu 429) -- 403 berarti request DITOLAK sebelum
+                // sempat diproses (API key salah/kadaluarsa/dicabut, atau permintaan
+                // diblokir di level proxy/Vercel). Coba baca detail dari body error
+                // proxy (lihat api/emas.js) supaya penyebabnya kelihatan, bukan cuma
+                // kode angka yang membingungkan.
+                let detail = '';
+                try {
+                    const errJson = await res.json();
+                    const d = errJson?.detail;
+                    detail = errJson?.error ? `${errJson.error}${d ? ' — ' + (typeof d === 'string' ? d : JSON.stringify(d)) : ''}` : '';
+                } catch { /* body bukan JSON / kosong, lewati */ }
+                srcEl.textContent = `Ditolak (403)${detail ? ': ' + detail : ' -- kemungkinan API key emas salah/kadaluarsa'}, beralih ke estimasi spot`;
+                srcEl.style.color = '#de350b';
+                if (cache) {
+                    priceEl.textContent = 'Rp ' + Math.round(cache.pricePerGram).toLocaleString('id-ID');
+                    window.updateGoldValueDisplay(cache.pricePerGram);
+                    return;
+                }
             } else {
-                srcEl.textContent = `API error (${res.status}), beralih ke estimasi spot`;
+                let detail = '';
+                try {
+                    const errJson = await res.json();
+                    detail = errJson?.error || '';
+                } catch { /* body bukan JSON / kosong, lewati */ }
+                srcEl.textContent = `API error (${res.status})${detail ? ': ' + detail : ''}, beralih ke estimasi spot`;
                 srcEl.style.color = '#cc7b00';
             }
         } catch (e) {
