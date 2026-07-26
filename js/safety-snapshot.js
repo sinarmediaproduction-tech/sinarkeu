@@ -128,7 +128,6 @@ window.renderSafetySnapshotList = function() {
             </div>
             <div style="display:flex; gap:6px; flex:0 0 auto;">
                 <button class="btn-mini" onclick="window.restoreSafetySnapshot('${s.id}')">Pulihkan</button>
-                <button class="btn-mini btn-mini-danger" onclick="window.deleteSafetySnapshot('${s.id}')">X</button>
             </div>
         </div>
     `).join('');
@@ -159,12 +158,4 @@ window.restoreSafetySnapshot = async function(id) {
 
     window.showToast('Data lokal dipulihkan dari snapshot keamanan, memuat ulang...', 'success');
     setTimeout(() => location.reload(), 900);
-};
-
-window.deleteSafetySnapshot = function(id) {
-    let list = window.getSafetySnapshots();
-    list = list.filter(s => s.id !== id);
-    localStorage.setItem(window.SAFETY_SNAPSHOT_KEY, JSON.stringify(list));
-    window.renderSafetySnapshotList();
-    window.showToast('Snapshot keamanan dihapus', 'warning');
 };
