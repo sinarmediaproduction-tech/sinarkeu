@@ -243,9 +243,17 @@ window.pushSetting = async function(key, value, bookId) {
 };
 
 window.pushSettingBooks = async function() {
-    if (!window.isOnline()) return;
-    await window.pushSetting('books', window.books, 'global');
+    if (!window.isOnline()) return false;
+    // [FIX BOOKS LOST-UPDATE] Dulu fungsi ini tidak pernah `return` apa pun,
+    // jadi pemanggil (mis. deleteBook di book.js) tidak pernah tahu pasti
+    // apakah push-nya sungguhan berhasil -- penting sekarang karena
+    // deleteBook memakai hasil ini utk memutuskan kapan boleh membersihkan
+    // marker "pending delete" (lihat window.markBookPendingDelete/
+    // clearBookPendingDelete di bawah & pullAllSettings untuk union-merge
+    // yang memakainya).
+    const result = await window.pushSetting('books', window.books, 'global');
     console.log('[Sync] Books saved to cloud:', window.books.length);
+    return !!result;
 };
 
 window.pushSettingBudgets = async function() {
@@ -395,25 +403,89 @@ window.pullAllSettings = async function() {
             try { parsed = JSON.parse(decryptedValue); } catch { continue; }
             if (parsed === null || typeof parsed === 'undefined') { continue; } // JSON.parse(null) = null, skip
             if (row.key === 'books' && Array.isArray(parsed) && parsed.length > 0) {
-                const cloudIds = new Set(parsed.map(b => b.id));
-                const localIds = new Set(window.books.map(b => b.id));
+                // [FIX LOST-UPDATE BOOKS LIST] Dulu window.books SELALU
+                // ditimpa TOTAL oleh array dari cloud (settings key 'books'
+                // memang cuma satu blob JSON, bukan baris per-buku seperti
+                // transaksi -- lihat pushSettingBooks). Skenario yang rusak:
+                // Device A menambah buku baru lalu push. Device B (belum
+                // sempat pull perubahan A) menghapus/mengubah buku lain,
+                // lalu ikut push -- push B menimpa TOTAL isi cloud dengan
+                // daftarnya sendiri yang tidak tahu-menahu soal buku baru A.
+                // Begitu A pull, buku yang baru saja dibuatnya raib begitu
+                // saja -- dan lebih parah, cache lokalnya (transaksi,
+                // anggaran, log) ikut DIHAPUS oleh kode lama karena
+                // "tidak ada di cloud" dulu langsung diartikan "sudah
+                // dihapus device lain".
+                //
+                // FIX: union-merge per id (bukan overwrite total array):
+                //  - Ada di cloud & lokal -> pakai field dari cloud (rename
+                //    dari device lain menang, sama seperti perilaku lama).
+                //  - Ada di cloud saja -> buku baru dari device lain, KECUALI
+                //    id ini ada di daftar "baru saja kita hapus sendiri,
+                //    push-nya belum ke-confirm" (window._loadBooksPendingDeletes,
+                //    diisi oleh markBookPendingDelete di book.js) -- dalam
+                //    kasus itu JANGAN dihidupkan lagi, biarkan hilang lokal.
+                //  - Ada di lokal saja -> JANGAN dihapus (buku baru yang
+                //    belum sempat ke-push, ATAU korban overwrite-total push
+                //    device lain). Pertahankan datanya, lalu push ulang di
+                //    bawah supaya cloud ikut "sembuh" -- KECUALI kita sendiri
+                //    yang barusan menghapusnya (ada di pending-delete): baru
+                //    di situ aman membersihkan cache lokal terkait buku itu,
+                //    karena sekarang benar-benar terkonfirmasi hilang juga
+                //    di cloud.
+                const localById = {};
+                window.books.forEach(b => { localById[b.id] = b; });
+                const pendingDeletes = window._loadBooksPendingDeletes ? window._loadBooksPendingDeletes() : new Set();
                 let changed = false;
-                let merged = parsed.map(cb => {
-                    const localBook = window.books.find(b => b.id === cb.id);
-                    if (!localBook) { changed = true; }
-                    else if (localBook.name !== cb.name) { changed = true; }
-                    return cb;
+                let needsHealPush = false;
+                const merged = [];
+                const seenIds = new Set();
+
+                parsed.forEach(cb => {
+                    seenIds.add(cb.id);
+                    const lb = localById[cb.id];
+                    if (!lb) {
+                        if (pendingDeletes.has(cb.id)) {
+                            // Kita sendiri baru saja menghapus buku ini
+                            // secara lokal; cloud belum sempat ter-update
+                            // (push delete-nya masih pending/gagal) --
+                            // jangan hidupkan lagi di sini.
+                            changed = true;
+                            needsHealPush = true;
+                        } else {
+                            merged.push(cb);
+                            changed = true;
+                        }
+                    } else {
+                        if (lb.name !== cb.name || lb.parentId !== cb.parentId) changed = true;
+                        merged.push(cb);
+                    }
                 });
+
                 window.books.forEach(lb => {
-                    if (!cloudIds.has(lb.id)) {
-                        console.log('[Sync] Buku dihapus dari cloud, hapus lokal:', lb.name);
+                    if (seenIds.has(lb.id)) return; // sudah diproses di atas
+                    if (pendingDeletes.has(lb.id)) {
+                        // Penghapusan buku ini sekarang terkonfirmasi juga
+                        // hilang di cloud -- baru di sini aman membersihkan
+                        // cache lokal terkait buku itu.
+                        console.log('[Sync] Penghapusan buku terkonfirmasi cloud, bersihkan cache lokal:', lb.name);
                         localStorage.removeItem('sk_txs_' + lb.id);
                         localStorage.removeItem('sk_budgets_' + lb.id);
                         localStorage.removeItem('sk_logs_' + lb.id);
                         localStorage.removeItem('sk_default_budget_' + lb.id);
+                        if (window.clearBookPendingDelete) window.clearBookPendingDelete(lb.id);
                         changed = true;
+                    } else {
+                        // Ada di lokal, tidak ada di cloud, dan KITA TIDAK
+                        // PERNAH menghapusnya -- buku belum sempat ke-push
+                        // atau korban overwrite-total push device lain.
+                        // Pertahankan datanya, push ulang supaya cloud ikut
+                        // sinkron dengan keberadaan buku ini.
+                        merged.push(lb);
+                        needsHealPush = true;
                     }
                 });
+
                 if (changed) {
                     window.books = merged;
                     localStorage.setItem('sk_books', JSON.stringify(window.books));
@@ -421,6 +493,10 @@ window.pullAllSettings = async function() {
                     if (!window.books.find(b => b.id === window.currentBookId) && window.books.length > 0) {
                         window.currentBookId = window.books[0].id;
                         localStorage.setItem('sk_current_book_id', window.currentBookId);
+                    }
+                    if (needsHealPush && window.isOnline()) {
+                        console.log('[Sync] Menyembuhkan daftar buku di cloud (union-merge lokal vs cloud)...');
+                        window.pushSettingBooks();
                     }
                 }
             }
@@ -535,6 +611,57 @@ window.pullAllSettings = async function() {
 
     }
     window.updateSettingsSyncStatus('pull');
+};
+
+// ==================== BOOKS: PENDING-DELETE TRACKING ====================
+// [FIX BOOKS LOST-UPDATE] Dipakai oleh union-merge daftar buku di
+// pullAllSettings (lihat blok row.key === 'books' di atas) supaya bisa
+// membedakan 2 kondisi yang keduanya terlihat sama ("buku ada di lokal,
+// tidak ada di cloud"):
+//   1. Buku itu baru dibuat lokal & belum sempat ke-push (atau ke-drop
+//      gara-gara push penuh device lain menimpa total daftar cloud) ->
+//      HARUS dipertahankan, jangan dianggap terhapus.
+//   2. Kita sendiri yang baru saja menghapus buku itu (deleteBook di
+//      book.js), push penghapusannya cuma belum sempat ke-confirm ke cloud
+//      (offline sesaat/gagal jaringan) -> JANGAN dihidupkan lagi kalau
+//      cloud pull berikutnya kebetulan masih menunjukkan buku itu ada
+//      (mis. push sebelumnya gagal separuh jalan).
+// Tanpa pembeda ini, fix union-merge yang "mempertahankan buku lokal-saja"
+// akan salah menghidupkan kembali buku yang justru sengaja dihapus user.
+window._booksPendingDeleteKey = 'sk_books_delete_pending';
+
+window._loadBooksPendingDeletes = function() {
+    try { return new Set(JSON.parse(localStorage.getItem(window._booksPendingDeleteKey) || '[]')); }
+    catch (e) { return new Set(); }
+};
+window._saveBooksPendingDeletes = function(idSet) {
+    try { localStorage.setItem(window._booksPendingDeleteKey, JSON.stringify(Array.from(idSet))); }
+    catch (e) { /* localStorage penuh/nonaktif -- tetap dicoba lagi sesi ini */ }
+};
+window.markBookPendingDelete = function(id) {
+    const s = window._loadBooksPendingDeletes();
+    s.add(id);
+    window._saveBooksPendingDeletes(s);
+};
+window.clearBookPendingDelete = function(id) {
+    const s = window._loadBooksPendingDeletes();
+    if (s.delete(id)) window._saveBooksPendingDeletes(s);
+};
+
+// Dipanggil saat app start & setiap kali koneksi online lagi (lihat app.js),
+// pola sama seperti window.flushPendingDeletesOnStart untuk transaksi.
+// window.books di localStorage (sk_books) sudah benar (buku terhapus sudah
+// di-filter keluar oleh deleteBook SEBELUM fungsi ini dipanggil) -- yang
+// perlu diselesaikan cuma memastikan cloud ikut menerima daftar terbaru itu
+// kalau push sebelumnya sempat gagal/terputus.
+window.flushPendingBookDeletesOnStart = async function() {
+    if (!window.isOnline()) return;
+    const pending = window._loadBooksPendingDeletes();
+    if (pending.size === 0) return;
+    const ok = await window.pushSettingBooks();
+    if (ok) {
+        pending.forEach(id => window.clearBookPendingDelete(id));
+    }
 };
 
 window.updateSettingsSyncStatus = function(direction) {

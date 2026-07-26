@@ -60,6 +60,7 @@ window.startAutoSync = function() {
             // continueAppInit(): supaya baris yang harusnya sudah dihapus tidak
             // sempat "hidup lagi" gara-gara pull duluan menariknya balik.
             await window.flushPendingDeletesOnStart();
+            if (window.flushPendingBookDeletesOnStart) await window.flushPendingBookDeletesOnStart();
             await window.flushPendingPaymentReminders();
             await window.pullAllSettings();
             await window.pullFromCloudSilently();
@@ -187,6 +188,7 @@ window.continueAppInit = async function() {
             // js/transaction.js untuk detail.
             await window.flushPendingDirtyOnStart();
             await window.flushPendingDeletesOnStart();
+            if (window.flushPendingBookDeletesOnStart) await window.flushPendingBookDeletesOnStart();
             await window.flushPendingPaymentReminders();
             await window.pullAllSettings();
             // Self-heal: kalau device ini sudah lama pakai salt lokal sendiri tapi
@@ -255,7 +257,7 @@ window.continueAppInit = async function() {
     // listener menumpuk dan forceFullSync() dipanggil berkali-kali.
     if (!window._globalListenersRegistered) {
         window._globalListenersRegistered = true;
-        window.addEventListener('online', () => { window.updateSyncStatusBadge(); window.updateUIForOnlineStatus(); Promise.all([window.flushPendingDeletesOnStart(), window.flushPendingPaymentReminders()]).then(() => window.forceFullSync()); });
+        window.addEventListener('online', () => { window.updateSyncStatusBadge(); window.updateUIForOnlineStatus(); Promise.all([window.flushPendingDeletesOnStart(), window.flushPendingBookDeletesOnStart ? window.flushPendingBookDeletesOnStart() : Promise.resolve(), window.flushPendingPaymentReminders()]).then(() => window.forceFullSync()); });
         window.addEventListener('offline', () => { window.updateSyncStatusBadge(); window.updateUIForOnlineStatus(); });
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden && window.isOnline()) {

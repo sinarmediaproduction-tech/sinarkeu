@@ -268,12 +268,21 @@ window.deleteBook = async function(id) {
     localStorage.removeItem('sk_last_auto_backup_' + id);
     localStorage.removeItem('sk_last_cloud_backup_' + id);
     localStorage.removeItem('sk_default_budget_' + id);
+    // [FIX BOOKS LOST-UPDATE] Tandai id ini sebagai "sengaja dihapus lokal"
+    // SEBELUM difilter dari window.books, supaya union-merge di
+    // pullAllSettings (js/db.js) tidak salah menghidupkannya lagi kalau
+    // pull berikutnya kebetulan masih melihat buku ini di cloud (mis. push
+    // di bawah gagal/terputus). Baru dibersihkan setelah push benar-benar
+    // dikonfirmasi berhasil (lihat window.clearBookPendingDelete di bawah
+    // dan window.flushPendingBookDeletesOnStart di app.js untuk retry-nya).
+    if (window.markBookPendingDelete) window.markBookPendingDelete(id);
     window.books = window.books.filter(x => x.id !== id);
     localStorage.setItem('sk_books', JSON.stringify(window.books));
     window.renderBookList();
     window.updateBookSelectDropdown();
     window.showToast(`Buku "${b.name}" & data cloud dihapus`, "warning");
-    await window.pushSettingBooks();
+    const pushOk = await window.pushSettingBooks();
+    if (pushOk && window.clearBookPendingDelete) window.clearBookPendingDelete(id);
     if (cfg.active) window.sendTelegramNotif(`<b>Buku Dihapus</b>\n\nBuku <b>${b.name}</b> telah dihapus permanen.\nDevice: ${window.deviceId}`);
 };
 
@@ -414,8 +423,65 @@ window.openTelegramSettings = async function() {
 // PERTAMA KALI (saat lastClosedAt belum ada) -- pada penutupan berikutnya,
 // riwayat lama itu sudah pernah terhitung & terkirim sebelumnya, sehingga
 // tidak boleh ditambahkan lagi.
-window._getUnclosedChildTxs = function(book) {
+// [FIX LOGIKA KEUANGAN - TRANSAKSI HILANG SAAT TUTUP ANAK BUKU] Sebelumnya
+// fungsi ini SELALU mengandalkan window.txs, yang (lihat trimAndSaveLocal di
+// transaction.js) cuma menyimpan MAX_LOCAL_TXS (1000) transaksi TERBARU per
+// buku. Untuk anak buku yang jumlah transaksinya (sejak lastClosedAt, atau
+// sejak awal kalau belum pernah ditutup) melebihi 1000, filter
+// `window.txs.filter(...)` TIDAK PERNAH melihat transaksi yang sudah
+// ter-trim dari cache -- padahal transaksi itu sah dan belum pernah dikirim
+// ke buku induk. Karena lastClosedAt langsung maju ke waktu SEKARANG setelah
+// ringkasan terkirim, transaksi yang ter-skip itu TIDAK PERNAH bisa terkirim
+// ke induk lagi -- uangnya hilang permanen dari ringkasan konsolidasi, tanpa
+// peringatan apa pun. Ini persis kelas bug yang sudah diperbaiki di
+// report.js/budget.js/telegram.js (selalu tarik LANGSUNG dari cloud, tidak
+// mengandalkan window.txs, untuk operasi yang butuh total lengkap) tapi
+// kelewat di fitur ini.
+//
+// FIX: kalau online, tarik SEMUA transaksi anak buku ini langsung dari
+// Supabase (paginated, tanpa batas MAX_LOCAL_TXS, difilter date > lastClosedAt
+// kalau ada), dekripsi, jumlahkan -- otomatis lengkap, tidak butuh
+// balanceOffset lagi sama sekali (bukan cuma mengandalkan cache lokal).
+// Offline atau fetch gagal total: fallback ke window.txs + balanceOffset
+// seperti sebelumnya (best effort, sama seperti pola fallback offline di
+// tempat lain di codebase ini).
+window._getUnclosedChildTxs = async function(book) {
     const lastClosedAt = book && book.lastClosedAt ? book.lastClosedAt : null;
+    const bookId = window.currentBookId;
+
+    if (window.isOnline()) {
+        const tag = window.getAccountTag ? window.getAccountTag() : null;
+        const tagFilter = window.tagOrFilter(tag);
+        const dateFilter = lastClosedAt ? `&date=gt.${encodeURIComponent(lastClosedAt)}` : '';
+        const PAGE_SIZE = 1000;
+        let allRows = [];
+        let offset = 0;
+        let fetchFailed = false;
+        while (true) {
+            const query = `?book_id=eq.${bookId}&is_deleted=eq.false${dateFilter}&order=date.asc&limit=${PAGE_SIZE}&offset=${offset}${tagFilter}`;
+            const rows = await window.callSupabaseAPI('transactions', 'GET', null, query);
+            if (rows === null) { fetchFailed = true; break; } // network/error -- callSupabaseAPI sudah toast
+            if (!Array.isArray(rows) || rows.length === 0) break; // benar-benar habis (bisa nol baris, itu valid)
+            allRows = allRows.concat(rows);
+            if (rows.length < PAGE_SIZE) break;
+            offset += PAGE_SIZE;
+        }
+        if (!fetchFailed) {
+            // Hasil cloud lengkap & otoritatif (walau allRows kosong -- itu valid,
+            // artinya memang belum ada transaksi baru sejak penutupan terakhir).
+            const decoded = await Promise.all(allRows.map(r => window.decodeCloudTxRow(r)));
+            let totalInc = 0, totalExp = 0;
+            decoded.forEach(t => {
+                const amt = Number(t.amount) || 0;
+                if (t.type === 'income') totalInc += amt; else totalExp += amt;
+            });
+            return { txs: decoded, totalInc, totalExp, balanceOffset: 0, netTotal: totalInc - totalExp, lastClosedAt };
+        }
+        // fetchFailed -- lanjut ke fallback lokal di bawah.
+    }
+
+    // Offline atau cloud fetch gagal total: fallback best-effort ke cache lokal
+    // (mungkin tidak lengkap untuk anak buku dengan >MAX_LOCAL_TXS transaksi).
     const txs = lastClosedAt
         ? window.txs.filter(t => {
             const d = window.parseTxDate(t.date);
@@ -424,7 +490,7 @@ window._getUnclosedChildTxs = function(book) {
         : window.txs;
     const balanceOffset = lastClosedAt
         ? 0
-        : (Number(localStorage.getItem('sk_balance_offset_' + window.currentBookId)) || 0);
+        : (Number(localStorage.getItem('sk_balance_offset_' + bookId)) || 0);
     let totalInc = 0, totalExp = 0;
     txs.forEach(t => {
         const amt = Number(t.amount) || 0;
@@ -434,7 +500,7 @@ window._getUnclosedChildTxs = function(book) {
     return { txs, totalInc, totalExp, balanceOffset, netTotal: totalInc - totalExp + balanceOffset, lastClosedAt };
 };
 
-window.openTutupAnakBuku = function() {
+window.openTutupAnakBuku = async function() {
     const book = window.books.find(b => b.id === window.currentBookId);
     if (!book || !book.parentId) {
         window.showToast('Buku ini bukan anak buku.', 'warning');
@@ -446,9 +512,19 @@ window.openTutupAnakBuku = function() {
         return;
     }
 
+    // Tampilkan modal dulu dengan status "menghitung", karena
+    // _getUnclosedChildTxs sekarang bisa menarik data langsung dari cloud
+    // (paginated) supaya totalnya lengkap -- lihat catatan [FIX LOGIKA
+    // KEUANGAN] di window._getUnclosedChildTxs untuk alasannya.
+    const elLoading = document.getElementById('tutupAnakBukuInfo');
+    if (elLoading) elLoading.innerHTML = `<div style="padding:12px 14px; font-size:.78rem; color:var(--ink-faint);">Menghitung total transaksi...</div>`;
+    const submitBtnLoading = document.getElementById('tutupAnakBukuSubmitBtn');
+    if (submitBtnLoading) submitBtnLoading.disabled = true;
+    window.openModal('tutupAnakBukuModal');
+
     // Hitung total — HANYA transaksi yang belum pernah dikirim ke induk
     // (lihat window._getUnclosedChildTxs, [BUG FIX] double-count).
-    const calc = window._getUnclosedChildTxs(book);
+    const calc = await window._getUnclosedChildTxs(book);
     const { totalInc, totalExp, netTotal } = calc;
     const txCount = calc.txs.length;
     const sinceLabel = calc.lastClosedAt
@@ -493,8 +569,6 @@ window.openTutupAnakBuku = function() {
     // terakhir — mencegah klik tak sengaja yang tidak akan mengirim apa pun.
     const submitBtn = document.getElementById('tutupAnakBukuSubmitBtn');
     if (submitBtn) submitBtn.disabled = (txCount === 0);
-
-    window.openModal('tutupAnakBukuModal');
 };
 
 window.tutupAnakBuku = async function() {
@@ -509,8 +583,9 @@ window.tutupAnakBuku = async function() {
     const deskripsi = (descEl ? descEl.value.trim() : '') || `Ringkasan: ${book.name}`;
 
     // Hitung net — HANYA transaksi yang belum pernah dikirim ke induk
-    // (lihat window._getUnclosedChildTxs, [BUG FIX] double-count).
-    const calc = window._getUnclosedChildTxs(book);
+    // (lihat window._getUnclosedChildTxs, [BUG FIX] double-count &
+    // [FIX LOGIKA KEUANGAN] tarik lengkap dari cloud, bukan cuma window.txs).
+    const calc = await window._getUnclosedChildTxs(book);
     const { netTotal } = calc;
     const closeTimestamp = new Date().toISOString();
 

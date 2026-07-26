@@ -198,6 +198,24 @@ window.pullFromCloudSilently = async function() {
                 // supaya perbandingan updated_at/is_deleted tetap pakai data mentah dari cloud.
                 const decoded = await Promise.all(cloudData.map(c => window.decodeCloudTxRow(c)));
                 cloudData.forEach((c, i) => {
+                    // [FIX RACE PULL-VS-DIRTY-EDIT] Baris yang statusnya masih dirty
+                    // (sudah diedit di device ini tapi belum berhasil di-push -- lihat
+                    // window._dirtyTxIds di atas) TIDAK BOLEH ikut ditimpa merge biasa
+                    // di sini. updated_at milik versi lokal-dirty itu diisi dari jam
+                    // DEVICE ini sendiri (lihat handleEditSubmit/handleSubmit di
+                    // render.js), belum tervalidasi/diseragamkan oleh trigger jam
+                    // server seperti updated_at hasil push (lihat catatan clock-skew
+                    // window._maxUpdatedAt di atas). Kalau device lain kebetulan
+                    // push baris yang sama dalam jendela debounce 1.5 detik ini,
+                    // membandingkan cloudUpdated (jam server) >= localUpdated (jam
+                    // device, belum tentu akurat) bisa keliru dan diam-diam menimpa
+                    // edit lokal yang belum sempat ke-cloud sama sekali -- padahal
+                    // edit itu semestinya baru dicek lewat push kondisional
+                    // (js/sync-conflict.js), yang bisa mendeteksi konflik sungguhan
+                    // dan menampilkannya ke user, bukan ditimpa diam-diam di sini.
+                    // Jadi: lewati baris dirty, biarkan jalur push kondisional yang
+                    // menentukan menang/kalah/konflik saat baris itu akhirnya di-push.
+                    if (window._dirtyTxIds && window._dirtyTxIds.has(c.id)) return;
                     const cloudUpdated = c.updated_at || '1970-01-01T00:00:00.000Z';
                     const local = localMap[c.id];
                     const localUpdated = local ? (local.updated_at || '1970-01-01T00:00:00.000Z') : '1970-01-01T00:00:00.000Z';
