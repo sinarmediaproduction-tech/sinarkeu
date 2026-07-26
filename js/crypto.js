@@ -5,6 +5,24 @@ window.deriveKey = async function(password, saltBuf) {
     return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: saltBuf, iterations: 300000, hash: 'SHA-256' }, baseKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
 };
 
+// [FIX BUG - RangeError: Maximum call stack size exceeded] btoa(String.fromCharCode(...bytes))
+// memakai spread operator ke SELURUH isi array byte sebagai argumen fungsi terpisah.
+// Untuk payload kecil (IV, salt) ini aman, tapi window.encryptStr dipakai juga untuk
+// mengenkripsi backup SATU BUKU PENUH (lihat window.pushBackupToSupabaseForBook di
+// backup.js) yang ciphertext-nya bisa berukuran ratusan KB pada buku dengan banyak
+// transaksi -- jumlah argumen sebesar itu melebihi batas call stack JS engine dan
+// melempar RangeError, sehingga auto-backup harian gagal total di buku besar.
+// Perbaikan: proses per-chunk kecil (32KB) supaya jumlah argumen per pemanggilan
+// String.fromCharCode tetap kecil, tidak peduli seberapa besar total datanya.
+window._bytesToBase64 = function(bytes) {
+    let binary = '';
+    const CHUNK_SIZE = 0x8000; // 32768 byte per chunk -- jauh di bawah batas call stack manapun
+    for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK_SIZE));
+    }
+    return btoa(binary);
+};
+
 window.encryptStr = async function(cryptoKey, plaintext) {
     const enc = new TextEncoder();
     const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -12,7 +30,7 @@ window.encryptStr = async function(cryptoKey, plaintext) {
     const combined = new Uint8Array(iv.byteLength + ct.byteLength);
     combined.set(iv, 0);
     combined.set(new Uint8Array(ct), iv.byteLength);
-    return btoa(String.fromCharCode(...combined));
+    return window._bytesToBase64(combined);
 };
 
 window.decryptStr = async function(cryptoKey, b64) {

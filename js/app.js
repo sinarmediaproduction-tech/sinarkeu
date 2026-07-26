@@ -239,6 +239,10 @@ window.continueAppInit = async function() {
     }
     window.startAutoSync();
     window.updateUIForOnlineStatus();
+    // Snapshot Keamanan harian: tidak perlu online (murni localStorage), jadi
+    // dipanggil di sini -- di luar percabangan online/offline di atas -- supaya
+    // tetap berjalan walau user sedang offline.
+    setTimeout(window.checkAndRunDailySafetySnapshot, 2000);
     // Mulai auto-lock: kunci otomatis setelah tidak ada aktivitas
     if (typeof window.autoLock !== 'undefined') window.autoLock.start();
     // [BUG FIX 1] Event listener online/offline/visibilitychange hanya boleh

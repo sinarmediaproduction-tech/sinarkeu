@@ -23,7 +23,7 @@
 // user berubah pikiran sebelum sempat sinkron ulang.
 
 window.SAFETY_SNAPSHOT_KEY = 'sk_safety_snapshots';
-window.SAFETY_SNAPSHOT_MAX = 3; // dijaga kecil supaya tidak membengkakkan kuota localStorage
+window.SAFETY_SNAPSHOT_MAX = 10; // menampung snapshot harian otomatis (~10 hari terakhir) + snapshot sebelum aksi berisiko
 
 // Dipanggil oleh aksi-aksi berisiko, SETELAH semua dialog konfirmasi user selesai
 // (supaya tidak nyampah snapshot kalau user akhirnya batal) dan SEBELUM data
@@ -80,6 +80,29 @@ window.createSafetySnapshot = function(reason) {
 window.getSafetySnapshots = function() {
     try { return JSON.parse(localStorage.getItem(window.SAFETY_SNAPSHOT_KEY) || '[]'); }
     catch { return []; }
+};
+
+// Snapshot harian otomatis -- terpisah dari snapshot sebelum aksi berisiko, tapi
+// disimpan di daftar/pool yang sama (lihat SAFETY_SNAPSHOT_MAX di atas) supaya
+// user cukup lihat satu tab "Snapshot Keamanan" untuk semuanya. Dicek sekali di
+// setiap sesi/muat ulang aplikasi (lihat pemanggilannya di js/app.js), tapi hanya
+// benar-benar membuat snapshot kalau belum ada snapshot harian pada TANGGAL hari
+// ini -- jadi tetap cuma 1 snapshot harian per hari walau app dibuka berkali-kali.
+// Tidak butuh koneksi online karena murni menyalin localStorage.
+window.SAFETY_SNAPSHOT_LAST_DAILY_KEY = 'sk_last_daily_safety_snapshot';
+window.checkAndRunDailySafetySnapshot = function() {
+    try {
+        const now = new Date();
+        const last = localStorage.getItem(window.SAFETY_SNAPSHOT_LAST_DAILY_KEY);
+        if (last && new Date(last).toDateString() === now.toDateString()) return; // sudah ada snapshot harian hari ini
+        const ok = window.createSafetySnapshot('Snapshot Harian Otomatis');
+        if (ok) {
+            localStorage.setItem(window.SAFETY_SNAPSHOT_LAST_DAILY_KEY, now.toISOString());
+            if (typeof window.renderSafetySnapshotList === 'function') window.renderSafetySnapshotList();
+        }
+    } catch (e) {
+        console.error('[SafetySnapshot] Gagal menjalankan snapshot harian otomatis:', e);
+    }
 };
 
 window.renderSafetySnapshotList = function() {
