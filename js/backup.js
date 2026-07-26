@@ -73,6 +73,7 @@ window.restoreFromIndex = async function(i) {
     if (!window.requireOnline('memulihkan data dari snapshot')) return;
     let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + window.currentBookId) || '[]');
     if (localBackups[i] && confirm("Pulihkan data dari snapshot cadangan ini? Data saat ini akan diganti.")) {
+        window.createSafetySnapshot(`Restore Cadangan Data (buku "${window.getCurrentBookName ? window.getCurrentBookName() : window.currentBookId}")`);
         window.txs = localBackups[i].data;
         // forceFullPush=true: restore sengaja mengganti seluruh data buku ini,
         // jadi semua baris harus di-push, bukan cuma yang "dirty".
@@ -257,6 +258,7 @@ window.handleJsonImport = function(e) {
                 if (duplicates > 0) message += `\n${duplicates} transaksi duplikat (ID sama) akan dilewati.`;
                 message += `\n\n${newTxs.length} transaksi baru akan ditambahkan. Lanjutkan?`;
                 if (confirm(message)) {
+                    window.createSafetySnapshot('Impor JSON transaksi (Cadangan Data)');
                     window.txs = [...window.txs, ...newTxs];
                     const uniqueTxs = [];
                     const seenIds = new Set();
@@ -304,6 +306,7 @@ window.archiveAndClearData = async function() {
         confirmLabel: 'Hapus Permanen'
     });
     if (!confirm3) return;
+    window.createSafetySnapshot(`Arsipkan & kosongkan buku "${bookName}"`);
     const cfg = window.getTgConfig();
     if (cfg.active) {
         window.sendTelegramNotif(`<b>PERINGATAN!</b>\n\nPengguna dari device <code>${window.deviceId}</code> akan menghapus SEMUA data buku <b>${bookName}</b>\n\nWaktu: ${new Date().toLocaleString('id-ID')}\n\nData akan dihapus dalam 5 detik...`);
@@ -556,6 +559,8 @@ window.resetAllApplication = async function() {
     });
     if (!confirm3) return;
 
+    window.createSafetySnapshot('Reset Total Aplikasi');
+
     // Tampilkan status
     const st = document.getElementById('resetAppStatus');
     const show = (color, bg, msg) => {
@@ -696,6 +701,8 @@ window.importAllDataFromFile = async function(input) {
         if (st) st.style.display = 'none';
         return;
     }
+
+    window.createSafetySnapshot(`Impor semua data (${totalBuku} buku, ${totalTx} transaksi)`);
 
     show('var(--warning)', 'var(--warning-lt)', 'Memulai import...');
 

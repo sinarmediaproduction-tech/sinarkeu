@@ -888,6 +888,7 @@ alter table public.settings
             <button type="button" class="setelan-tab-btn" data-tab="password" onclick="window.switchSetelanTab('password')"><span data-i18n="change_password_section">Ganti Password Keamanan</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="sync" onclick="window.switchSetelanTab('sync')"><span data-i18n="settings_sync_section">Sinkronisasi Setelan</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="backup" onclick="window.switchSetelanTab('backup')"><span data-i18n="data_backup_section">Cadangan Data</span></button>
+            <button type="button" class="setelan-tab-btn" data-tab="safety-snapshot" onclick="window.switchSetelanTab('safety-snapshot'); window.renderSafetySnapshotList()">Snapshot Keamanan</button>
             <button type="button" class="setelan-tab-btn" data-tab="migration" onclick="window.switchSetelanTab('migration')"><span data-i18n="migration_section">Migrasi Data ke Cloud</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="reset" onclick="window.switchSetelanTab('reset')"><span data-i18n="reset_app_section">Reset Total Aplikasi</span></button>
             <button type="button" class="setelan-tab-btn" data-tab="archive" onclick="window.switchSetelanTab('archive')"><span data-i18n="archive_section">Arsipkan & Kosongkan Database</span></button>
@@ -1040,6 +1041,17 @@ alter table public.settings
                 <div id="googleSheetsStatus" style="font-size:.7rem; margin-top:6px; min-height:16px;"></div>
                 <div id="googleSheetsLastBackup" class="setelan-hint"></div>
             </div>
+        </div>
+
+        <!-- ===== SNAPSHOT KEAMANAN (Restore Point Otomatis) ===== -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="safety-snapshot">
+            <div class="panel-title">Snapshot Keamanan</div>
+            <div class="setelan-desc" style="margin-bottom:12px;">
+                Berbeda dari <b>Cadangan Data</b>: snapshot di sini dibuat <b>otomatis</b> oleh aplikasi tepat sebelum aksi berisiko dijalankan &mdash; hapus buku, hapus akun, reset total aplikasi, arsipkan &amp; kosongkan database, restore Cadangan Data, atau impor JSON. Gunakan untuk berjaga-jaga kalau ada error atau hasil aksi tersebut ternyata keliru.
+                <br><br>
+                Menyimpan <b>seluruh data lokal akun ini</b> (semua buku, anggaran, pengingat pembayaran, setelan) pada perangkat ini saja &mdash; maksimal 3 snapshot terbaru disimpan. <b>Catatan:</b> jika aksi terkait sudah menghapus data secara permanen di cloud/Supabase, snapshot ini hanya memulihkan salinan lokal, bukan data di cloud.
+            </div>
+            <div id="safetySnapshotListContainer"></div>
         </div>
 
         <!-- ===== MIGRASI DATA KE CLOUD ===== -->
@@ -1584,6 +1596,7 @@ alter table public.settings
 <script src="js/forecast.js" defer></script>
 <script src="js/report-shortcuts.js" defer></script>
 <script src="js/backup.js" defer></script>
+<script src="js/safety-snapshot.js" defer></script>
 <script src="js/forex.js" defer></script>
 <script src="js/ai.js" defer></script>
 <script src="js/settings.js" defer></script>

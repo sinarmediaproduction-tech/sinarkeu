@@ -473,6 +473,7 @@ window.deleteAccount = async function(accId) {
         confirmLabel: 'Hapus'
     });
     if (!ok) return;
+    window.createSafetySnapshot(`Hapus akun "${acc.name}"`);
     const nsPrefix = 'sk_a' + accId + '_';
     const toRemove = [];
     for (let i = 0; i < localStorage.length; i++) {

@@ -208,6 +208,7 @@ window.deleteBook = async function(id) {
         expectedValue: b.name
     });
     if (typedName === null) return;
+    window.createSafetySnapshot(`Hapus buku "${b.name}"`);
     const cfg = window.getTgConfig();
     if (cfg.active) {
         window.sendTelegramNotif(`<b>Penghapusan Buku</b>\n\nBuku <b>${b.name}</b> akan dihapus oleh device ${window.deviceId}\n\nData akan dihapus dalam 3 detik...`);
