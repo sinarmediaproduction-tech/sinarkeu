@@ -2383,6 +2383,8 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   .book-select { flex: 1; }
   .sync-status-container { font-size: .58rem; }
   .device-id-badge { display: none; }
+  .sync-status-badge { display: none; }
+  .sync-time-badge { display: none; }
   .budget-mini {
     flex-direction: column;
     align-items: stretch;
