@@ -25,6 +25,32 @@ window.INCOME_CATEGORIES = [
 ];
 window.PAGE_SIZE = 21;
 
+// ==================== LAZY-LOADED LIBRARIES ====================
+// [PERF] chart.js & html2pdf.js sebelumnya dimuat lewat <script defer> statis
+// di <head>, jadi ikut di-download & dieksekusi di SETIAP kali app dibuka,
+// walau baru benar-benar dipakai saat user buka grafik pengeluaran / export
+// PDF laporan. Sekarang keduanya dimuat on-demand lewat loadScriptOnce().
+window.CHART_JS_URL    = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+window.HTML2PDF_JS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+
+window._scriptLoadPromises = {};
+// Memuat <script src="url"> sekali saja (cache promise per-URL) -- aman
+// dipanggil berkali-kali dari beberapa tempat tanpa duplikat request.
+window.loadScriptOnce = function(url) {
+    if (window._scriptLoadPromises[url]) return window._scriptLoadPromises[url];
+    window._scriptLoadPromises[url] = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = url;
+        s.onload = () => resolve();
+        s.onerror = () => {
+            delete window._scriptLoadPromises[url];
+            reject(new Error('Gagal memuat skrip: ' + url));
+        };
+        document.head.appendChild(s);
+    });
+    return window._scriptLoadPromises[url];
+};
+
 // ==================== GLOBAL VARIABLES (shared) ====================
 window.txs = [];
 window.books = [];

@@ -220,6 +220,15 @@ async function generateMonthlyReport() {
 
 // ── Export PDF Profesional ───────────────────────────────────
 async function exportReportAsPDF() {
+  // [PERF] html2pdf.js dimuat lazy (bukan lagi <script defer> statis di
+  // setiap load app) -- mulai download di sini, paralel dengan proses
+  // ambil data & susun HTML laporan di bawah, supaya waktu tunggu terasa
+  // sekecil mungkin (bukan ditambah di depan, tapi "numpang" di waktu
+  // yang sudah dipakai fetch data).
+  const _html2pdfReady = window.loadScriptOnce(window.HTML2PDF_JS_URL).catch((err) => {
+    console.error('[ExportPDF] Gagal memuat html2pdf.js:', err);
+    return null;
+  });
   const month    = parseInt(document.getElementById('reportMonth').value);
   const year     = parseInt(document.getElementById('reportYear').value);
   const key      = `${year}-${String(month).padStart(2, '0')}`;
@@ -629,7 +638,8 @@ async function exportReportAsPDF() {
   iDoc.open(); iDoc.write(html); iDoc.close();
 
   // Tunggu font/gambar load
-  setTimeout(() => {
+  setTimeout(async () => {
+    await _html2pdfReady;
     const opt = {
       margin:      [0, 0, 0, 0],
       filename:    `Sinarkeu_${bookName.replace(/\s+/g, '_')}_${monthName(month)}_${year}.pdf`,

@@ -37,10 +37,21 @@
     ">
     <meta name="referrer" content="strict-origin-when-cross-origin">
 
+    <!-- [PERF] preconnect/dns-prefetch supaya DNS+TLS handshake ke domain
+         eksternal (font, CDN) sudah jalan paralel sedari awal, bukan baru
+         mulai pas request pertama benar-benar dikirim. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+    <!-- [PERF] chart.js & html2pdf.js DIPINDAH ke lazy-load (lihat
+         js/config.js: loadScriptOnce) -- baru di-download saat grafik
+         pengeluaran pertama kali dirender / saat user klik Export PDF,
+         bukan di setiap kali app dibuka. -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Custom CSS -->

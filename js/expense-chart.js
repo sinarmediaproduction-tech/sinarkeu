@@ -34,6 +34,21 @@ window.renderExpenseChart = function() {
     const body = document.getElementById('expenseChartBody');
     if (!body) return;
 
+    // [PERF] Chart.js sekarang dimuat lazy (lihat js/config.js:
+    // loadScriptOnce), bukan lewat <script defer> statis di setiap load
+    // app. Kalau library belum siap, tampilkan status sebentar, muat
+    // library-nya, lalu panggil ulang fungsi ini begitu selesai.
+    if (typeof Chart === 'undefined') {
+        body.innerHTML = '<div class="expense-chart-empty">Memuat grafik…</div>';
+        window.loadScriptOnce(window.CHART_JS_URL).then(() => {
+            window.renderExpenseChart();
+        }).catch((err) => {
+            console.error('[ExpenseChart] Gagal memuat chart.js:', err);
+            body.innerHTML = '<div class="expense-chart-empty">Gagal memuat grafik. Periksa koneksi internet.</div>';
+        });
+        return;
+    }
+
     const now = new Date();
     let source = window.txs.filter(t => t.type === 'expense');
     if (window.expenseChartMode === 'month') {
