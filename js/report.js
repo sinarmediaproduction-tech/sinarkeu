@@ -111,6 +111,7 @@ async function generateMonthlyReport() {
     budgetBd:   dk ? '#6E5222' : '#D6B36A',
     budgetTxt:  dk ? '#E8B75E' : '#8F6B24',
   };
+  const FM = "'JetBrains Mono', monospace"; // font angka
 
   let catRows = cats.length
     ? cats.map(([c, v]) => {
@@ -122,15 +123,15 @@ async function generateMonthlyReport() {
              </div>` : '';
         return `<tr>
           <td style="padding:8px 10px; color:${C.ink};">${c}</td>
-          <td style="padding:8px 10px; text-align:right; color:${C.ink};">${fmtRp(v)}</td>
-          <td style="padding:8px 10px; text-align:right; color:${C.inkFaint};">${budget > 0 ? fmtRp(budget) : '—'}</td>
+          <td style="padding:8px 10px; text-align:right; font-family:${FM}; color:${C.ink};">${fmtRp(v)}</td>
+          <td style="padding:8px 10px; text-align:right; font-family:${FM}; color:${C.inkFaint};">${budget > 0 ? fmtRp(budget) : '—'}</td>
           <td style="padding:8px 10px; width:100px; color:${C.ink};">${budget > 0 ? `${pct}%${bar}` : '—'}</td>
         </tr>`;
       }).join('')
     : `<tr><td colspan="4" style="padding:16px; text-align:center; color:${C.inkFaint};">Tidak ada pengeluaran</td></tr>`;
 
   document.getElementById('reportContent').innerHTML = `
-    <div style="font-family:'Inter',sans-serif; color:${C.ink}; background:${C.bg};">
+    <div style="font-family:'Plus Jakarta Sans',sans-serif; color:${C.ink}; background:${C.bg};">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
         <div>
           <div style="font-size:.75rem; color:${C.inkFaint};">${accName} · ${bookName}</div>
@@ -143,15 +144,15 @@ async function generateMonthlyReport() {
       <div class="laporan-summary-grid" style="margin-bottom:20px;">
         <div style="background:${C.incBg}; border:1.5px solid ${C.incBd}; border-radius: var(--radius-sm); padding:14px 16px;">
           <div style="font-size:.65rem; color:${C.incTxt}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Total Pemasukan</div>
-          <div style="font-size:1rem; font-weight:700; color:${C.incTxt}; margin-top:4px;">${fmtRp(income)}</div>
+          <div style="font-size:1rem; font-weight:700; font-family:${FM}; color:${C.incTxt}; margin-top:4px;">${fmtRp(income)}</div>
         </div>
         <div style="background:${C.expBg}; border:1.5px solid ${C.expBd}; border-radius: var(--radius-sm); padding:14px 16px;">
           <div style="font-size:.65rem; color:${C.expTxt}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Total Pengeluaran</div>
-          <div style="font-size:1rem; font-weight:700; color:${C.expTxt}; margin-top:4px;">${fmtRp(expense)}</div>
+          <div style="font-size:1rem; font-weight:700; font-family:${FM}; color:${C.expTxt}; margin-top:4px;">${fmtRp(expense)}</div>
         </div>
         <div style="background:${balance >= 0 ? C.balPosBg : C.expBg}; border:1.5px solid ${balance >= 0 ? C.balPosBd : C.expBd}; border-radius: var(--radius-sm); padding:14px 16px;">
           <div style="font-size:.65rem; color:${balance >= 0 ? C.balPosTxt : C.expTxt}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Saldo Bersih</div>
-          <div style="font-size:1rem; font-weight:700; color:${balance >= 0 ? C.balPosTxt : C.expTxt}; margin-top:4px;">${fmtRp(balance)}</div>
+          <div style="font-size:1rem; font-weight:700; font-family:${FM}; color:${balance >= 0 ? C.balPosTxt : C.expTxt}; margin-top:4px;">${fmtRp(balance)}</div>
         </div>
       </div>
 
@@ -159,11 +160,11 @@ async function generateMonthlyReport() {
       <div style="background:${C.budgetBg}; border:1.5px solid ${C.budgetBd}; border-radius: var(--radius-sm); padding:12px 16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
         <div>
           <div style="font-size:.65rem; color:${C.budgetTxt}; font-weight:600;">Total Anggaran Bulan Ini</div>
-          <div style="font-size:.95rem; font-weight:700; color:${C.budgetTxt};">${fmtRp(totalBudget)}</div>
+          <div style="font-size:.95rem; font-weight:700; font-family:${FM}; color:${C.budgetTxt};">${fmtRp(totalBudget)}</div>
         </div>
         <div style="text-align:right;">
           <div style="font-size:.65rem; color:${C.budgetTxt}; font-weight:600;">Sisa Anggaran</div>
-          <div style="font-size:.95rem; font-weight:700; color:${totalBudget - expense >= 0 ? C.incTxt : C.expTxt};">${fmtRp(totalBudget - expense)}</div>
+          <div style="font-size:.95rem; font-weight:700; font-family:${FM}; color:${totalBudget - expense >= 0 ? C.incTxt : C.expTxt};">${fmtRp(totalBudget - expense)}</div>
         </div>
       </div>` : ''}
 
@@ -203,7 +204,7 @@ async function generateMonthlyReport() {
                       <td style="padding:7px 10px; white-space:nowrap; color:${C.ink};">${fmtDate(t.date)}</td>
                       <td style="padding:7px 10px; color:${C.ink};">${t.category || (t.type === 'income' ? 'Pemasukan' : 'Lainnya')}</td>
                       <td style="padding:7px 10px; color:${C.inkMuted};">${t.description || '-'}</td>
-                      <td style="padding:7px 10px; text-align:right; font-weight:600; color:${t.type === 'income' ? C.incTxt : C.expTxt};">
+                      <td style="padding:7px 10px; text-align:right; font-weight:600; font-family:${FM}; color:${t.type === 'income' ? C.incTxt : C.expTxt};">
                         ${t.type === 'income' ? '+' : '-'}${fmtRp(t.amount)}
                       </td>
                     </tr>`)
@@ -310,6 +311,9 @@ async function exportReportAsPDF() {
 <html lang="id">
 <head>
 <meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -318,7 +322,7 @@ async function exportReportAsPDF() {
     overflow-x: hidden;
   }
   body {
-    font-family: 'Inter', Arial, sans-serif;
+    font-family: 'Plus Jakarta Sans', Arial, sans-serif;
     font-size: 9pt;
     color: #1a1a1a;
     background: #fff;
@@ -412,6 +416,7 @@ async function exportReportAsPDF() {
     color: #5B6472;
   }
   .kpi .value {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
     font-size: 12pt;
     font-weight: 700;
   }
@@ -433,7 +438,7 @@ async function exportReportAsPDF() {
     font-size: 8.5pt;
   }
   .budget-alert .ba-label { color: #874d00; font-weight: 600; }
-  .budget-alert .ba-value { font-size: 10pt; font-weight: 700; color: #874d00; }
+  .budget-alert .ba-value { font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10pt; font-weight: 700; color: #874d00; }
   .budget-alert .ba-sisa { text-align: right; }
 
   /* ── Tables ── */
@@ -459,7 +464,7 @@ async function exportReportAsPDF() {
     overflow-wrap: break-word;
   }
   tr:last-child td { border-bottom: none; }
-  .money { text-align: right; font-family: 'Courier New', monospace; }
+  .money { text-align: right; font-family: 'JetBrains Mono', 'Courier New', monospace; }
   .income { color: #1F7A54; font-weight: 600; }
   .expense { color: #bf2600; font-weight: 600; }
   .center { text-align: center; }
