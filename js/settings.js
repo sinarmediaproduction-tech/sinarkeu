@@ -1,38 +1,15 @@
 // ==================== SETTINGS ====================
 
+// Semua section Setelan sekarang tampil sekaligus dalam satu halaman
+// panjang (tidak lagi per-tab). Fungsi ini dipertahankan hanya untuk
+// menggulir ke section tertentu -- dipakai oleh link deep-link seperti
+// "Setelan -> Analisis AI" dari modal lain.
 window.switchSetelanTab = function(tabId) {
-    var tabs = document.querySelectorAll('#setelanTabs .setelan-tab-btn');
-    var panels = document.querySelectorAll('#setelanTabContent .setelan-tab-panel');
-    var found = false;
-
-    panels.forEach(function(panel) {
-        if (panel.getAttribute('data-tab-panel') === tabId) {
-            panel.classList.add('active');
-            found = true;
-        } else {
-            panel.classList.remove('active');
-        }
-    });
-
-    // Fallback: jika tabId tidak valid, tetap tampilkan tab pertama
-    if (!found && panels.length) {
-        panels[0].classList.add('active');
-        tabId = panels[0].getAttribute('data-tab-panel');
+    if (!tabId) return;
+    var panel = document.querySelector('#setelanTabContent [data-tab-panel="' + tabId + '"]');
+    if (panel && typeof panel.scrollIntoView === 'function') {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-
-    tabs.forEach(function(btn) {
-        if (btn.getAttribute('data-tab') === tabId) {
-            btn.classList.add('active');
-            if (typeof btn.scrollIntoView === 'function') {
-                btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }
-        } else {
-            btn.classList.remove('active');
-        }
-    });
-
-    var contentEl = document.getElementById('setelanTabContent');
-    if (contentEl) contentEl.scrollTop = 0;
 };
 
 window.openSetelanModal = function(initialTab) {
@@ -60,6 +37,10 @@ window.openSetelanModal = function(initialTab) {
     
     var emasGramInp = document.getElementById('emasGramInput');
     if (emasGramInp) emasGramInp.value = localStorage.getItem('sk_emas_gram') || '';
+
+    if (typeof window.updateEmasQuotaDisplay === 'function') {
+        window.updateEmasQuotaDisplay();
+    }
     
     if (typeof window.updateEmasApiBadge === 'function') {
         window.updateEmasApiBadge();
@@ -97,7 +78,7 @@ window.openSetelanModal = function(initialTab) {
     document.body.classList.remove('view-fullpage');
 
     window.openModal('setelanModal');
-    window.switchSetelanTab(initialTab || 'lang');
+    if (initialTab) window.switchSetelanTab(initialTab);
 
     // Sidebar mobile ikut menutup begitu menu "Pengaturan" dipilih (selaras
     // dengan pola goSection() di merdeka-main yang selalu menutup sidebar

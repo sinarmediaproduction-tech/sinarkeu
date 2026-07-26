@@ -891,21 +891,6 @@ alter table public.settings
     <div class="modal-content setelan-modal-content" style="max-width:880px;">
         <div class="modal-header"><h3 data-i18n="settings_title">Setelan</h3><button class="modal-close" onclick="closeModal('setelanModal')" aria-label="Kembali"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button></div>
 
-        <!-- Tab navigation -->
-        <div class="setelan-tabs" id="setelanTabs">
-            <button type="button" class="setelan-tab-btn active" data-tab="lang" onclick="window.switchSetelanTab('lang')"><span data-i18n="language_section">Bahasa / Language</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="ai" onclick="window.switchSetelanTab('ai')"><span data-i18n="ai_analysis_section">Analisis AI</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="gold" onclick="window.switchSetelanTab('gold'); window.updateEmasQuotaDisplay()"><span data-i18n="gold_price_section">Harga Emas Antam</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="charity" onclick="window.switchSetelanTab('charity')"><span data-i18n="charity_section">Sedekah</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="supabase" onclick="window.switchSetelanTab('supabase')"><span data-i18n="supabase_section">Koneksi Supabase</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="password" onclick="window.switchSetelanTab('password')"><span data-i18n="change_password_section">Ganti Password Keamanan</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="sync" onclick="window.switchSetelanTab('sync')"><span data-i18n="settings_sync_section">Sinkronisasi Setelan</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="backup" onclick="window.switchSetelanTab('backup')"><span data-i18n="data_backup_section">Cadangan Data</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="migration" onclick="window.switchSetelanTab('migration')"><span data-i18n="migration_section">Migrasi Data ke Cloud</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="reset" onclick="window.switchSetelanTab('reset')"><span data-i18n="reset_app_section">Reset Total Aplikasi</span></button>
-            <button type="button" class="setelan-tab-btn" data-tab="archive" onclick="window.switchSetelanTab('archive')"><span data-i18n="archive_section">Arsipkan & Kosongkan Database</span></button>
-        </div>
-
         <div class="setelan-tab-content" id="setelanTabContent">
 
         <!-- Bahasa / Language -->
