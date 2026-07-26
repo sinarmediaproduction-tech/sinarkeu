@@ -1320,10 +1320,7 @@ tr:hover td { background: var(--accent-lt); }
     overflow-y: auto;
   }
   body.view-settings #setelanModal .modal-header {
-    position: sticky;
-    top: 0;
     background: var(--paper);
-    z-index: 1;
     padding: 16px 16px 12px;
     margin: 0 0 8px;
     border-bottom: 1px solid var(--rule);
@@ -1425,10 +1422,7 @@ tr:hover td { background: var(--accent-lt); }
     overflow-y: auto;
   }
   body.view-fullpage .fullview-modal.show .modal-header {
-    position: sticky;
-    top: 0;
     background: var(--paper);
-    z-index: 1;
     padding: 16px 16px 12px;
     margin: 0 0 8px;
     border-bottom: 1px solid var(--rule);
