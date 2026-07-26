@@ -161,7 +161,7 @@ window.requireOnline = function(operationName) {
 // Lihat CLAUDE.md bagian "Sidebar/nav" untuk konvensinya.
 window.FULLVIEW_MODALS = {
     monthlyReportModal:   'laporan',
-    budgetModal:          'anggaran',
+    defaultBudgetModal:   'anggaran',
     paymentReminderModal: 'reminder',
     bookManagerModal:     'buku',
     accountManagerModal:  'akun',
