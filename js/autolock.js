@@ -9,7 +9,19 @@
 (function () {
     'use strict';
 
-    const LOCK_TIMEOUT = 60 * 1000; // 1 menit (ms)
+    // ── Deteksi jenis perangkat ─────────────────────────────────────────────
+    // Hape/tablet dianggap lebih "pribadi" (jarang dipakai bergantian di meja
+    // terbuka) sehingga diberi toleransi diam lebih lama daripada PC/laptop.
+    function _isMobileDevice() {
+        const ua = navigator.userAgent || '';
+        const uaMatch = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(ua);
+        const touchMatch = (navigator.maxTouchPoints || 0) > 0 && /Android|iPhone|iPad|iPod/i.test(ua);
+        return uaMatch || touchMatch;
+    }
+
+    const LOCK_TIMEOUT_PC     = 60 * 1000;  // 1 menit untuk PC/laptop
+    const LOCK_TIMEOUT_MOBILE = 3 * 60 * 1000; // 3 menit untuk hape/tablet
+    const LOCK_TIMEOUT = _isMobileDevice() ? LOCK_TIMEOUT_MOBILE : LOCK_TIMEOUT_PC;
     const WARN_BEFORE  = 15 * 1000; // munculkan peringatan 15 detik sebelum kunci
 
     let _lockTimer   = null;
