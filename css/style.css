@@ -1317,6 +1317,12 @@ tr:hover td { background: var(--accent-lt); }
     padding: 16px 16px 12px;
     margin: 0 0 8px;
     border-bottom: 1px solid var(--rule);
+    justify-content: flex-start;
+    gap: 10px;
+  }
+  body.view-settings #setelanModal .modal-header .modal-close {
+    order: -1;
+    position: static;
   }
   body.view-settings #setelanModal .setelan-tabs,
   body.view-settings #setelanModal .setelan-tab-content {
@@ -1416,6 +1422,12 @@ tr:hover td { background: var(--accent-lt); }
     padding: 16px 16px 12px;
     margin: 0 0 8px;
     border-bottom: 1px solid var(--rule);
+    justify-content: flex-start;
+    gap: 10px;
+  }
+  body.view-fullpage .fullview-modal.show .modal-header .modal-close {
+    order: -1;
+    position: static;
   }
 }
 
@@ -1472,6 +1484,11 @@ tr:hover td { background: var(--accent-lt); }
   line-height: 1;
 }
 .modal-close:hover { color: var(--danger); background: var(--danger-lt); }
+body.view-fullpage .fullview-modal.show .modal-close:hover,
+body.view-settings #setelanModal .modal-close:hover {
+  color: var(--ink);
+  background: var(--paper-warm);
+}
 
 .modal-footer {
   display: flex;
