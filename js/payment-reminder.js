@@ -415,17 +415,19 @@ window.renderPaymentReminders = async function() {
         const dayLabel = days === 0 ? 'Hari ini!' : `${days} hari lagi`;
         
         const el = document.createElement('div');
-        el.style.cssText = `display:flex; align-items:center; gap:10px; background:${isUrgent ? 'var(--warning-lt)' : 'var(--paper-warm)'}; border:1.5px solid ${isUrgent ? 'var(--warning)' : 'var(--rule)'}; border-radius: var(--radius-sm); padding:10px 12px;`;
+        el.style.cssText = `display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px; background:${isUrgent ? 'var(--warning-lt)' : 'var(--paper-warm)'}; border:1.5px solid ${isUrgent ? 'var(--warning)' : 'var(--rule)'}; border-radius: var(--radius-sm); padding:10px 12px;`;
         el.innerHTML = `
-            <div style="flex:1; min-width:0;">
+            <div style="flex:1 1 180px; min-width:0;">
                 <div style="font-size:.8rem; font-weight:700; color:var(--ink);">${window.escapeHtml(item.name)}</div>
                 <div style="font-size:.68rem; color:var(--ink-muted); margin-top:2px;">${recLabel} &nbsp;·&nbsp; Berikutnya: ${window.formatNextDate(item)}</div>
                 ${item.note ? `<div style="font-size:.65rem; color:var(--ink-faint); margin-top:2px; font-style:italic;">${window.escapeHtml(item.note)}</div>` : ''}
             </div>
-            <div style="font-size:.68rem; font-weight:700; white-space:nowrap; color:${isUrgent ? 'var(--warning)' : 'var(--ink-muted)'};">${dayLabel}</div>
-            <div style="display:flex; gap:4px;">
-                <button onclick="window.editPaymentReminder('${item.id}')" style="background:none; border:1px solid var(--rule); border-radius: var(--radius-sm); padding:3px 7px; cursor:pointer; font-size:.7rem; color:var(--ink-muted);" title="Edit">Edit</button>
-                <button onclick="window.deletePaymentReminderHandler('${item.id}')" style="background:none; border:1px solid var(--danger-lt); border-radius: var(--radius-sm); padding:3px 7px; cursor:pointer; font-size:.7rem; color:var(--danger);" title="Hapus">Hapus</button>
+            <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+                <div style="font-size:.68rem; font-weight:700; white-space:nowrap; color:${isUrgent ? 'var(--warning)' : 'var(--ink-muted)'};">${dayLabel}</div>
+                <div style="display:flex; gap:4px;">
+                    <button onclick="window.editPaymentReminder('${item.id}')" style="background:none; border:1px solid var(--rule); border-radius: var(--radius-sm); padding:3px 7px; cursor:pointer; font-size:.7rem; color:var(--ink-muted);" title="Edit">Edit</button>
+                    <button onclick="window.deletePaymentReminderHandler('${item.id}')" style="background:none; border:1px solid var(--danger-lt); border-radius: var(--radius-sm); padding:3px 7px; cursor:pointer; font-size:.7rem; color:var(--danger);" title="Hapus">Hapus</button>
+                </div>
             </div>
         `;
         container.appendChild(el);
