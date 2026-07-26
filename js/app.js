@@ -204,6 +204,10 @@ window.continueAppInit = async function() {
             window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
             window.updateTgStatusBadge();
             await window.pullAllBooksFromCloud();
+            // Render ulang dropdown SETELAH data semua buku ditarik dari Supabase,
+            // supaya saldo per buku yang ditampilkan sudah yang terbaru dari cloud
+            // -- bukan cache lokal lama dari updateBookSelectDropdown() sebelumnya.
+            window.updateBookSelectDropdown();
             
             // ── LOAD PAYMENT REMINDERS DARI CLOUD ──
             // Cache disimpan per-buku (sk_payment_reminders_{bookId}) agar tidak
