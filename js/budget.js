@@ -128,18 +128,18 @@ window._applyBudgetActualUI = function(totalTarget, totalActual) {
     if (pct >= 100 && totalTarget > 0) {
         fill.className = "budget-mini-progress-fill danger";
         if (fill2) fill2.className = "budget-mini-progress-fill danger";
-        pctEl.style.color = '#de350b';
-        if (pctEl2) pctEl2.style.color = '#de350b';
+        pctEl.style.color = '#AE3B2A';
+        if (pctEl2) pctEl2.style.color = '#AE3B2A';
     } else if (pct >= 80) {
         fill.className = "budget-mini-progress-fill warning";
         if (fill2) fill2.className = "budget-mini-progress-fill warning";
-        pctEl.style.color = '#cc7b00';
-        if (pctEl2) pctEl2.style.color = '#cc7b00';
+        pctEl.style.color = '#B8842A';
+        if (pctEl2) pctEl2.style.color = '#B8842A';
     } else {
         fill.className = "budget-mini-progress-fill";
         if (fill2) fill2.className = "budget-mini-progress-fill";
-        pctEl.style.color = '#00875a';
-        if (pctEl2) pctEl2.style.color = '#00875a';
+        pctEl.style.color = '#4F7A3A';
+        if (pctEl2) pctEl2.style.color = '#4F7A3A';
     }
 };
 
@@ -205,19 +205,19 @@ window.renderBudgetFormFields = function() {
     const currentBudget = effective.budget;
     const source = effective.source;
     const infoDiv = document.createElement('div');
-    infoDiv.style.cssText = 'font-size:.72rem; color:#666; margin-bottom:12px; padding:8px 12px; border-radius: var(--radius-sm); background:#f5f5f5;';
+    infoDiv.style.cssText = 'font-size:.72rem; color:#6E5D4B; margin-bottom:12px; padding:8px 12px; border-radius: var(--radius-sm); background:#f5f5f5;';
     if (source === 'default') {
         infoDiv.innerHTML = '<b>Menggunakan Anggaran Bulanan</b> — Anda dapat mengubahnya di sini untuk membuat versi khusus bulan ini.';
         infoDiv.style.background = '#e3fcef';
-        infoDiv.style.color = '#006644';
+        infoDiv.style.color = '#3E5C2E';
     } else if (source === 'custom') {
         infoDiv.innerHTML = '<b>Anggaran Khusus Bulan Ini</b> — Bulan berikutnya akan kembali ke Anggaran Bulanan.';
         infoDiv.style.background = '#e8f0fe';
-        infoDiv.style.color = '#1a56db';
+        infoDiv.style.color = '#3D6B6B';
     } else {
         infoDiv.innerHTML = '<b>Belum ada anggaran</b> — Atur anggaran di bawah, atau klik kartu Anggaran Bulanan untuk mengaturnya.';
         infoDiv.style.background = '#fff3e0';
-        infoDiv.style.color = '#cc7b00';
+        infoDiv.style.color = '#B8842A';
     }
     container.appendChild(infoDiv);
     window.EXPENSE_CATEGORIES.forEach(cat => {
@@ -446,7 +446,7 @@ window._renderAnnualRow = function(idx) {
             value="${row.amount ? Number(row.amount).toLocaleString('id-ID') : ''}"
             oninput="window.formatRupiah(this); window._annualBudgetRows[${idx}].amount = window.unRp(this.value); window.updateAnnualBudgetSummary();">
         ${isOnlyRow ? '' : `<button onclick="window.removeAnnualBudgetRow(${idx})" 
-            style="background:none; border:1.5px solid #de350b; color:#de350b; border-radius: var(--radius-sm); padding:4px 10px; cursor:pointer; font-size:.85rem; flex-shrink:0;">Hapus</button>`}
+            style="background:none; border:1.5px solid #AE3B2A; color:#AE3B2A; border-radius: var(--radius-sm); padding:4px 10px; cursor:pointer; font-size:.85rem; flex-shrink:0;">Hapus</button>`}
     `;
     container.appendChild(div);
 };

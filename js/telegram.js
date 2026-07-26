@@ -40,11 +40,11 @@ window.updateTgStatusBadge = async function() {
     let cfg = await window.getTgConfig();
     if (cfg.active) {
         badge.style.background = '#e3fcef';
-        badge.style.color = '#006644';
+        badge.style.color = '#3E5C2E';
         badge.innerText = window.t('telegram_active');
     } else {
-        badge.style.background = '#eee';
-        badge.style.color = '#666';
+        badge.style.background = '#EDE4D3';
+        badge.style.color = '#6E5D4B';
         badge.innerText = window.t('telegram_not_configured');
     }
 };
@@ -97,7 +97,7 @@ window.testTelegramNotif = async function() {
     // Simpan terenkripsi
     await window.saveTelegramConfigEncrypted(token, chatId, edgeUrl);
     window.updateTgStatusBadge();
-    statusEl.innerHTML = '<span style="color:#cc7b00;">Mengirim pesan tes...</span>';
+    statusEl.innerHTML = '<span style="color:#B8842A;">Mengirim pesan tes...</span>';
     const testMsg = `<b>Sinarkeu — Tes Notifikasi</b>\n\nKonfigurasi berhasil! Notifikasi transaksi akan dikirim ke sini.\n\n<i>Chat ID: ${chatId}</i>`;
     try {
         let res, data;
@@ -109,10 +109,10 @@ window.testTelegramNotif = async function() {
             });
             data = await res.json();
             if (data.ok) {
-                statusEl.innerHTML = '<span style="color:#006644;">Berhasil via Edge Function!</span>';
+                statusEl.innerHTML = '<span style="color:#3E5C2E;">Berhasil via Edge Function!</span>';
                 window.showToast('Tes Telegram berhasil! ', 'success');
             } else {
-                statusEl.innerHTML = `<span style="color:#de350b;">Gagal: ${window.escapeHtml(data.error || JSON.stringify(data))}</span>`;
+                statusEl.innerHTML = `<span style="color:#AE3B2A;">Gagal: ${window.escapeHtml(data.error || JSON.stringify(data))}</span>`;
             }
         } else {
             res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -122,17 +122,17 @@ window.testTelegramNotif = async function() {
             });
             data = await res.json();
             if (data.ok) {
-                statusEl.innerHTML = '<span style="color:#006644;">Berhasil! Cek Telegram kamu.</span>';
+                statusEl.innerHTML = '<span style="color:#3E5C2E;">Berhasil! Cek Telegram kamu.</span>';
                 window.showToast('Tes Telegram berhasil! ', 'success');
             } else {
                 let errMsg = data.description || JSON.stringify(data);
                 if (errMsg.includes('chat not found')) errMsg = 'Chat ID tidak ditemukan. Pastikan bot sudah di-/start atau ditambah ke grup.';
                 if (errMsg.includes('Unauthorized')) errMsg = 'Bot Token tidak valid. Cek kembali dari @BotFather.';
-                statusEl.innerHTML = `<span style="color:#de350b;">${window.escapeHtml(errMsg)}</span>`;
+                statusEl.innerHTML = `<span style="color:#AE3B2A;">${window.escapeHtml(errMsg)}</span>`;
             }
         }
     } catch(e) {
-        statusEl.innerHTML = `<span style="color:#de350b;">Error jaringan: ${window.escapeHtml(e.message)}</span>`;
+        statusEl.innerHTML = `<span style="color:#AE3B2A;">Error jaringan: ${window.escapeHtml(e.message)}</span>`;
     }
 };
 

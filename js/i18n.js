@@ -681,14 +681,14 @@
         var btnId = document.getElementById('langBtnId');
         var btnEn = document.getElementById('langBtnEn');
         if (btnId) {
-            btnId.style.background = lang === 'id' ? '#1a56db' : '#eee';
+            btnId.style.background = lang === 'id' ? '#3D6B6B' : '#EDE4D3';
             btnId.style.color = lang === 'id' ? '#fff' : '#333';
-            btnId.style.borderColor = lang === 'id' ? '#1a56db' : '#ccc';
+            btnId.style.borderColor = lang === 'id' ? '#3D6B6B' : '#D6C6A8';
         }
         if (btnEn) {
-            btnEn.style.background = lang === 'en' ? '#1a56db' : '#eee';
+            btnEn.style.background = lang === 'en' ? '#3D6B6B' : '#EDE4D3';
             btnEn.style.color = lang === 'en' ? '#fff' : '#333';
-            btnEn.style.borderColor = lang === 'en' ? '#1a56db' : '#ccc';
+            btnEn.style.borderColor = lang === 'en' ? '#3D6B6B' : '#D6C6A8';
         }
     }
 

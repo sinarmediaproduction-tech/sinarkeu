@@ -198,7 +198,7 @@ window.changePassword = async function() {
     var newPwd2 = document.getElementById('changePwdNew2').value;
     var status = document.getElementById('changePwdStatus');
     
-    status.style.color = '#de350b';
+    status.style.color = '#AE3B2A';
     
     if (!oldPwd || !newPwd || !newPwd2) {
         status.innerText = window.t('all_fields_required');
@@ -213,12 +213,12 @@ window.changePassword = async function() {
         return;
     }
     
-    status.style.color = '#cc7b00';
+    status.style.color = '#B8842A';
     status.innerText = window.t('verifying');
     
     var saltB64 = localStorage.getItem('sk_crypto_salt');
     if (!saltB64) {
-        status.style.color = '#de350b';
+        status.style.color = '#AE3B2A';
         status.innerText = window.t('encryption_data_not_found');
         return;
     }
@@ -231,7 +231,7 @@ window.changePassword = async function() {
         var plain = await window.decryptStr(oldKey, localStorage.getItem('sk_crypto_check'));
         if (plain !== 'sinarkeu_ok') throw new Error('wrong');
     } catch (e) {
-        status.style.color = '#de350b';
+        status.style.color = '#AE3B2A';
         status.innerText = window.t('old_pwd_wrong');
         return;
     }
@@ -241,7 +241,7 @@ window.changePassword = async function() {
         url = await window.decryptStr(oldKey, localStorage.getItem('sk_enc_supabase_url'));
         apiKey = await window.decryptStr(oldKey, localStorage.getItem('sk_enc_supabase_key'));
     } catch (e) {
-        status.style.color = '#de350b';
+        status.style.color = '#AE3B2A';
         status.innerText = window.t('failed_read_encrypted');
         return;
     }
@@ -278,7 +278,7 @@ window.changePassword = async function() {
     status.innerText = window.t('re_syncing_settings');
     await window.reEncryptAllCloudSettings();
     
-    status.style.color = '#00875a';
+    status.style.color = '#4F7A3A';
     status.innerText = window.t('pwd_changed_success');
     
     document.getElementById('changePwdOld').value = '';
@@ -454,7 +454,7 @@ window.saveDeviceName = function() {
     localStorage.setItem('sk_device_id', newId);
     var badge = document.getElementById('deviceIdDisplay');
     if (badge) badge.innerText = newId;
-    if (st) { st.style.color = '#00875a'; st.innerText = 'Tersimpan: ' + newId; }
+    if (st) { st.style.color = '#4F7A3A'; st.innerText = 'Tersimpan: ' + newId; }
     window.showToast('Nama perangkat diperbarui!', 'success');
 };
 
@@ -497,7 +497,7 @@ window.loadConnectedDevices = async function() {
 
         if (!logs || !Array.isArray(logs) || logs.length === 0) {
             if (statusEl) statusEl.innerText = '';
-            listEl.innerHTML = '<div style="font-size:.72rem; color:#aaa; text-align:center; padding:20px 0;">Belum ada log aktivitas di cloud.</div>';
+            listEl.innerHTML = '<div style="font-size:.72rem; color:#9C8B72; text-align:center; padding:20px 0;">Belum ada log aktivitas di cloud.</div>';
             return;
         }
 
@@ -534,7 +534,7 @@ window.loadConnectedDevices = async function() {
                 : diffDays < 365 ? Math.floor(diffDays / 30) + ' bulan lalu'
                 : Math.floor(diffDays / 365) + ' tahun lalu';
 
-            var dotColor = diffDays <= 7 ? '#00875a' : diffDays <= 30 ? '#cc7b00' : '#bbb';
+            var dotColor = diffDays <= 7 ? '#4F7A3A' : diffDays <= 30 ? '#B8842A' : '#A3907A';
             var topActions = Object.entries(d.actions)
                 .sort(function(a, b) { return b[1] - a[1]; })
                 .slice(0, 3).map(function(a) { return a[0]; }).join(', ');
@@ -544,11 +544,11 @@ window.loadConnectedDevices = async function() {
             html += '<span style="font-size:.78rem; font-weight:700; color:var(--ink); word-break:break-word;">';
             html += '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:' + dotColor + '; margin-right:5px; vertical-align:middle;"></span>';
             html += window.escapeHtml(d.device_id);
-            if (isMe) html += ' <span style="font-size:.6rem; background:#e3fcef; color:#006644; padding:1px 7px; border-radius: var(--radius-sm); font-weight:600; vertical-align:middle;">Perangkat ini</span>';
+            if (isMe) html += ' <span style="font-size:.6rem; background:#e3fcef; color:#3E5C2E; padding:1px 7px; border-radius: var(--radius-sm); font-weight:600; vertical-align:middle;">Perangkat ini</span>';
             html += '</span>';
-            html += '<span style="font-size:.65rem; color:#888;">' + d.count + ' aksi</span>';
+            html += '<span style="font-size:.65rem; color:#9C8B72;">' + d.count + ' aksi</span>';
             html += '</div>';
-            html += '<div style="font-size:.65rem; color:#888; line-height:1.7;">';
+            html += '<div style="font-size:.65rem; color:#9C8B72; line-height:1.7;">';
             html += 'Terakhir aktif: <b style="color:var(--ink-mid);">' + lastLabel + '</b> &nbsp;&middot;&nbsp; ';
             html += lastDate.toLocaleDateString("id-ID", {day:"numeric", month:"short", year:"numeric"}) + ' ' + lastDate.toLocaleTimeString("id-ID", {hour:"2-digit", minute:"2-digit"});
             html += '<br>Aktivitas: ' + window.escapeHtml(topActions);

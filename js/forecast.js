@@ -131,7 +131,7 @@ window.renderForecastCard = function() {
         ? topCat.map(([cat, amt]) =>
             `<span class="fc-tag">${cat} <b>${window.rp ? window.rp(amt) : amt}</b></span>`
           ).join('')
-        : '<span class="fc-tag" style="color:#aaa;">—</span>';
+        : '<span class="fc-tag" style="color:#9C8B72;">—</span>';
 
     const proyeksiColor = proyeksiBulan >= 6 ? '#1D4B36' : proyeksiBulan >= 3 ? '#854F0B' : '#993C1D';
     const basisSubLabel = basisIncludesCurrent

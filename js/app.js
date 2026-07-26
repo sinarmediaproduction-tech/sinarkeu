@@ -20,10 +20,10 @@ window.updateSyncTimeBadge = function() {
     if (window._lastSyncTime) {
         const timeStr = window._lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         el.innerText = `${timeStr}`;
-        el.style.color = '#00875a';
+        el.style.color = '#4F7A3A';
     } else {
         el.innerText = `--:--:--`;
-        el.style.color = '#888';
+        el.style.color = '#9C8B72';
     }
 };
 window.updateUIForOnlineStatus = function() {
