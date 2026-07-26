@@ -824,7 +824,7 @@ button:disabled, .btn:disabled,
   cursor: not-allowed;
 }
 
-.btn { border-radius: var(--radius-pill); padding: 7px 16px; }
+.btn { border-radius: var(--radius-sm); padding: 7px 16px; }
 
 .btn-primary {
   background: var(--accent);

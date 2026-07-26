@@ -292,17 +292,17 @@ window.formatBytes = function(bytes) {
 
 window.renderStorageBar = function(usedBytes, totalBytes, label) {
     const pct = Math.min((usedBytes / totalBytes) * 100, 100);
-    const colorClass = pct >= 90 ? '#DC5A4E' : pct >= 70 ? '#D8A13B' : '#3E8FBF';
+    const colorClass = pct >= 90 ? 'var(--danger)' : pct >= 70 ? 'var(--warning)' : 'var(--info)';
     return `
         <div style="margin-bottom:10px;">
             <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
-                <span style="font-size:.7rem; font-weight:600; color:#333;">${label}</span>
-                <span style="font-size:.68rem; color:#5B6472;">${window.formatBytes(usedBytes)} / ${window.formatBytes(totalBytes)} &nbsp;·&nbsp; <b style="color:${colorClass}">${pct.toFixed(1)}%</b></span>
+                <span style="font-size:.7rem; font-weight:600; color:var(--ink);">${label}</span>
+                <span style="font-size:.68rem; color:var(--ink-muted);">${window.formatBytes(usedBytes)} / ${window.formatBytes(totalBytes)} &nbsp;·&nbsp; <b style="color:${colorClass}">${pct.toFixed(1)}%</b></span>
             </div>
-            <div style="height:8px; background:#dde8ff; border-radius: var(--radius-sm); overflow:hidden;">
+            <div style="height:8px; background:var(--rule); border-radius: var(--radius-sm); overflow:hidden;">
                 <div style="height:100%; width:${pct}%; background:${colorClass}; border-radius: var(--radius-sm); transition:width .4s;"></div>
             </div>
-            <div style="font-size:.63rem; color:#98A1AD; margin-top:3px; text-align:right;">Sisa: ${window.formatBytes(totalBytes - usedBytes)}</div>
+            <div style="font-size:.63rem; color:var(--ink-faint); margin-top:3px; text-align:right;">Sisa: ${window.formatBytes(totalBytes - usedBytes)}</div>
         </div>`;
 };
 
@@ -310,12 +310,12 @@ window.refreshStorageEstimate = async function() {
     const el  = document.getElementById('storageEstimContent');
     const btn = document.getElementById('storageRefreshBtn');
     if (!el) return;
-    el.innerHTML = '<div style="font-size:.7rem; color:#98A1AD; text-align:center; padding:8px 0;">Menghitung...</div>';
+    el.innerHTML = '<div style="font-size:.7rem; color:var(--ink-faint); text-align:center; padding:8px 0;">Menghitung...</div>';
     if (btn) btn.disabled = true;
     const data = await window.estimateSupabaseStorage();
     if (btn) btn.disabled = false;
     if (!data) {
-        el.innerHTML = '<div style="font-size:.7rem; color:#DC5A4E; text-align:center; padding:8px 0;">Tidak dapat memuat — pastikan koneksi Supabase aktif.</div>';
+        el.innerHTML = '<div style="font-size:.7rem; color:var(--danger); text-align:center; padding:8px 0;">Tidak dapat memuat — pastikan koneksi Supabase aktif.</div>';
         return;
     }
     const { txCount, logCount, settCount, estimatedBytes } = data;
@@ -323,13 +323,14 @@ window.refreshStorageEstimate = async function() {
     const SUPABASE_FREE_DB_BYTES = 500 * 1024 * 1024;
     const dbBar   = window.renderStorageBar(estimatedBytes, SUPABASE_FREE_DB_BYTES, 'Database (estimasi)');
     const pctNum  = Math.min((estimatedBytes / SUPABASE_FREE_DB_BYTES) * 100, 100);
-    const statusColor = pctNum >= 90 ? '#DC5A4E' : pctNum >= 70 ? '#D8A13B' : '#1F7A54';
+    const statusColor = pctNum >= 90 ? 'var(--danger)' : pctNum >= 70 ? 'var(--warning)' : 'var(--success)';
+    const statusBg     = pctNum >= 90 ? 'var(--danger-lt)' : pctNum >= 70 ? 'var(--warning-lt)' : 'var(--success-lt)';
     const statusText  = pctNum >= 90 ? 'Hampir penuh! Pertimbangkan arsipkan data lama.' :
                         pctNum >= 70 ? 'Mendekati batas — pantau secara berkala.' :
                                        'Kapasitas masih aman.';
     el.innerHTML = `
         ${dbBar}
-        <div style="background:#f5f5f5; border-radius: var(--radius-sm); padding:10px 12px; font-size:.68rem; color:#333B48; line-height:1.8; margin-bottom:10px;">
+        <div style="background:var(--paper-warm); border-radius: var(--radius-sm); padding:10px 12px; font-size:.68rem; color:var(--ink); line-height:1.8; margin-bottom:10px;">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px 16px;">
                 <span>Transaksi</span><b>${txCount.toLocaleString('id-ID')} baris</b>
                 <span>Log Aktivitas</span><b>${logCount.toLocaleString('id-ID')} baris</b>
@@ -337,10 +338,10 @@ window.refreshStorageEstimate = async function() {
                 <span>Total Baris</span><b>${totalRows.toLocaleString('id-ID')} baris</b>
             </div>
         </div>
-        <div style="font-size:.68rem; color:${statusColor}; font-weight:600; text-align:center; padding:4px 8px; background:${pctNum>=90?'#fff5f5':pctNum>=70?'#fffbeb':'#e3fcef'}; border-radius: var(--radius-sm);">
+        <div style="font-size:.68rem; color:${statusColor}; font-weight:600; text-align:center; padding:4px 8px; background:${statusBg}; border-radius: var(--radius-sm);">
             ${statusText}
         </div>
-        <div style="font-size:.6rem; color:#98A1AD; margin-top:8px; text-align:right;">
+        <div style="font-size:.6rem; color:var(--ink-faint); margin-top:8px; text-align:right;">
             * Estimasi berdasarkan jumlah baris × rata-rata ukuran baris. Free tier Supabase: DB 500 MB, File Storage 1 GB.
         </div>
     `;
