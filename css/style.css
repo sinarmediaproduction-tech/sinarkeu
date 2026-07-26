@@ -1382,6 +1382,7 @@ tr:hover td { background: var(--accent-lt); }
     max-width: none !important;
     height: 100%;
     max-height: none;
+    margin: 0;
     border: none;
     border-radius: 0;
     box-shadow: none;
