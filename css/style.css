@@ -1,79 +1,79 @@
 /* ===================================================
-   SINARKEU — Warm Formal Redesign
-   Palette: Espresso Ink #2B241D, Warm Linen #FBF7F1,
-            Wine #7A2E42, Antique Gold #B4863A,
-            Deep Sage #3E7A5D, Brick #B23B34
-   Signature: a warm-espresso sidebar that stays constant
-   across light & dark mode, a wine→espresso balance hero,
-   quiet warm-tinted shadows, and a restrained serif
-   (Fraunces) reserved for the brand wordmark, the balance
-   figure and the lock screen — the rest of the interface
-   stays calm, formal, functional sans.
-   Font: Fraunces (signature display), Plus Jakarta Sans
-   (body/UI), JetBrains Mono (angka)
+   SINARKEU — Institutional Formal Redesign
+   Palette: Navy Formal #1B2A4A, Abu Netral #F4F5F7/#DCE0E6,
+            Ink #1C2430, Aksen Emas tipis #A9832E (highlight only),
+            Deep Green #2E6B4F, Brick #A13A3A
+   Signature: a navy sidebar that stays constant across
+   light & dark mode, a navy balance hero, tight cool-toned
+   shadows, tighter corner radius, and a single thin gold
+   accent reserved for active nav state and key highlights —
+   the rest of the interface stays quiet, formal, functional.
+   Font: IBM Plex Sans (display/headings), Inter (body/UI),
+   JetBrains Mono (angka)
 =================================================== */
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --ink:        #2B241D;
-  --ink-muted:  #746A5C;
-  --ink-faint:  #A79C8B;
+  /* Institutional palette: Navy Formal #1B2A4A, Abu Netral #F4F5F7,
+     Aksen Emas tipis #A9832E — dipakai sangat terbatas untuk highlight. */
+  --ink:        #1C2430;
+  --ink-muted:  #5B6472;
+  --ink-faint:  #9AA2AC;
   --paper:      #FFFFFF;
-  --paper-warm: #F6F1E9;
-  --rule:       #E8E0D2;
-  --accent:     #7A2E42;
-  --accent-lt:  #F4E3E7;
-  --success:    #3E7A5D;
-  --success-lt: #E2EEE6;
-  --danger:     #B23B34;
-  --danger-lt:  #F7E5E3;
-  --warning:    #B4863A;
-  --warning-lt: #F3EAD6;
-  --purple:     #7A2E42;
-  --purple-lt:  #F4E3E7;
-  --brand:      #7A2E42; /* dipakai tombol utama & badge peran */
-  --brand-dark: #5C2233;
-  /* Sidebar & title bar — espresso gelap yang tetap konsisten di
-     light & dark mode, terpisah dari --brand supaya tombol utama
-     tetap memakai warna brand. Aksen aktif memakai gold hangat. */
-  --topbar-bg:          linear-gradient(160deg, #332A21 0%, #1F1911 100%);
-  --topbar-text:        #F6F1E9;
-  --topbar-text-muted:  rgba(246,241,233,0.68);
-  --topbar-border:      rgba(246,241,233,0.14);
-  --topbar-btn-bg:      rgba(246,241,233,0.10);
-  --topbar-btn-hover-bg: rgba(246,241,233,0.18);
-  --topbar-item-color:  rgba(246,241,233,.80);
-  --topbar-item-hover-bg: rgba(246,241,233,.14);
-  --topbar-item-active-bg: #B4863A;
-  --topbar-item-active-color: #241D14;
-  --topbar-footer-border: rgba(246,241,233,.14);
-  --topbar-active-shadow: 0 4px 14px rgba(20,15,8,0.28);
-  /* Balance Hero (kartu "Saldo Akhir") — gradasi wine ke espresso,
-     senada dengan sidebar, dengan teks hangat di atasnya. */
-  --hero-bg-from:  #8B3A4E;
-  --hero-bg-to:    #4A1F2E;
-  --hero-text:       #F8F3EA;
-  --hero-text-muted: rgba(248,243,234,0.75);
+  --paper-warm: #F4F5F7;
+  --rule:       #DCE0E6;
+  --accent:     #1B2A4A;
+  --accent-lt:  #E8EBF1;
+  --success:    #2E6B4F;
+  --success-lt: #E3F0E9;
+  --danger:     #A13A3A;
+  --danger-lt:  #F5E6E6;
+  --warning:    #9C7A2E;
+  --warning-lt: #F1EBDA;
+  --purple:     #4A5578;
+  --purple-lt:  #E9EBF2;
+  --brand:      #1B2A4A; /* dipakai tombol utama & badge peran */
+  --brand-dark: #101A2E;
+  /* Sidebar & title bar — navy formal konsisten di light & dark mode.
+     Aksen aktif memakai gold tipis, satu-satunya sentuhan warna hangat. */
+  --topbar-bg:          linear-gradient(160deg, #16233F 0%, #0A1220 100%);
+  --topbar-text:        #F2F4F7;
+  --topbar-text-muted:  rgba(242,244,247,0.66);
+  --topbar-border:      rgba(242,244,247,0.12);
+  --topbar-btn-bg:      rgba(242,244,247,0.08);
+  --topbar-btn-hover-bg: rgba(242,244,247,0.16);
+  --topbar-item-color:  rgba(242,244,247,.78);
+  --topbar-item-hover-bg: rgba(242,244,247,.12);
+  --topbar-item-active-bg: #A9832E;
+  --topbar-item-active-color: #1C1608;
+  --topbar-footer-border: rgba(242,244,247,.12);
+  --topbar-active-shadow: 0 4px 14px rgba(6,10,20,0.30);
+  /* Balance Hero (kartu "Saldo Akhir") — gradasi navy formal, senada
+     dengan sidebar, dengan teks netral di atasnya. */
+  --hero-bg-from:  #22335A;
+  --hero-bg-to:    #0C1424;
+  --hero-text:       #F2F4F7;
+  --hero-text-muted: rgba(242,244,247,0.72);
   /* Extended palette */
-  --fase:       #A9637A;
-  --fase-lt:    #F3E5EA;
-  --info:       #4A7A9E;
-  --info-lt:    #E4EDF2;
-  --chat-user:  #3E8F82;
-  --ink-inv:    #F8F3EA;   /* teks di atas background gelap (btn-primary dark) */
-  --paper-inv:  #2B241D;  /* bg di atas ink terang */
-  --row-alt:    #FAF5EC;
-  /* Shape & elevation */
-  --radius-sm:  10px;
-  --radius:     14px;
-  --radius-lg:  22px;
+  --fase:       #4A5578;
+  --fase-lt:    #E9EBF2;
+  --info:       #2E5C82;
+  --info-lt:    #E3ECF3;
+  --chat-user:  #2E6B67;
+  --ink-inv:    #F2F4F7;   /* teks di atas background gelap (btn-primary dark) */
+  --paper-inv:  #1C2430;  /* bg di atas ink terang */
+  --row-alt:    #F7F8FA;
+  /* Shape & elevation — radius diperkecil, shadow lebih tipis untuk kesan formal */
+  --radius-sm:  4px;
+  --radius:     6px;
+  --radius-lg:  10px;
   --radius-pill: 999px;
-  --shadow-sm:  0 1px 2px rgba(43,36,29,0.08);
-  --shadow-md:  0 6px 16px rgba(43,36,29,0.10);
-  --shadow-lg:  0 18px 40px rgba(43,36,29,0.14);
-  --font-display: 'Fraunces', 'Plus Jakarta Sans', serif;
-  --font-body:    'Plus Jakarta Sans', sans-serif;
+  --shadow-sm:  0 1px 2px rgba(16,22,34,0.07);
+  --shadow-md:  0 3px 10px rgba(16,22,34,0.09);
+  --shadow-lg:  0 12px 28px rgba(16,22,34,0.13);
+  --font-display: 'IBM Plex Sans', 'Inter', sans-serif;
+  --font-body:    'Inter', sans-serif;
   --font-mono:    'JetBrains Mono', ui-monospace, monospace;
 }
 
@@ -2770,57 +2770,57 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
    DARK MODE — [data-theme="dark"]
 ====================================================== */
 [data-theme="dark"] {
-  --ink:        #EDE6DA;
-  --ink-muted:  #B3A99B;
-  --ink-faint:  #7D7364;
-  --paper:      #211A13;
-  --paper-warm: #17120D;
-  --rule:       #3A2F23;
-  --accent:     #D98BA0;
-  --accent-lt:  #3A2027;
-  --success:    #5FA981;
-  --success-lt: #1E2B23;
-  --danger:     #E0776A;
-  --danger-lt:  #33201C;
-  --warning:    #D9A857;
-  --warning-lt: #332913;
-  --purple:     #D98BA0;
-  --purple-lt:  #3A2027;
+  --ink:        #E6E9EE;
+  --ink-muted:  #A3ABB8;
+  --ink-faint:  #6C7684;
+  --paper:      #16213A;
+  --paper-warm: #0D1526;
+  --rule:       #29354E;
+  --accent:     #7C93BC;
+  --accent-lt:  #212D48;
+  --success:    #4F9C79;
+  --success-lt: #17332A;
+  --danger:     #D2726B;
+  --danger-lt:  #3A2320;
+  --warning:    #C9A159;
+  --warning-lt: #332A16;
+  --purple:     #8B98C4;
+  --purple-lt:  #232B45;
   /* Brand (tombol utama) — sedikit lebih terang dari mode terang supaya
      tetap kontras & mudah dibaca di atas permukaan gelap */
-  --brand:      #A8506A;
-  --brand-dark: #7A2E42;
-  /* Sidebar & title bar — espresso yang sama persis dengan mode terang,
+  --brand:      #4A6FA5;
+  --brand-dark: #2E4970;
+  /* Sidebar & title bar — navy formal yang sama persis dengan mode terang,
      jadi identitas brand tetap konsisten di kedua tema */
-  --topbar-bg:          linear-gradient(160deg, #332A21 0%, #1F1911 100%);
-  --topbar-text:        #F6F1E9;
-  --topbar-text-muted:  rgba(246,241,233,0.68);
-  --topbar-border:      rgba(246,241,233,0.14);
-  --topbar-btn-bg:      rgba(246,241,233,0.10);
-  --topbar-btn-hover-bg: rgba(246,241,233,0.18);
-  --topbar-item-color:  rgba(246,241,233,.80);
-  --topbar-item-hover-bg: rgba(246,241,233,.14);
-  --topbar-item-active-bg: #D9A857;
-  --topbar-item-active-color: #201709;
-  --topbar-footer-border: rgba(246,241,233,.14);
-  --topbar-active-shadow: 0 4px 14px rgba(0,0,0,0.35);
-  /* Balance Hero — versi gelap dari gradasi wine ke espresso di atas */
-  --hero-bg-from:  #6E2C3E;
-  --hero-bg-to:    #2A1620;
-  --hero-text:       #F8F3EA;
-  --hero-text-muted: rgba(248,243,234,0.75);
+  --topbar-bg:          linear-gradient(160deg, #16233F 0%, #0A1220 100%);
+  --topbar-text:        #F2F4F7;
+  --topbar-text-muted:  rgba(242,244,247,0.66);
+  --topbar-border:      rgba(242,244,247,0.12);
+  --topbar-btn-bg:      rgba(242,244,247,0.08);
+  --topbar-btn-hover-bg: rgba(242,244,247,0.16);
+  --topbar-item-color:  rgba(242,244,247,.78);
+  --topbar-item-hover-bg: rgba(242,244,247,.12);
+  --topbar-item-active-bg: #C9A159;
+  --topbar-item-active-color: #1A1608;
+  --topbar-footer-border: rgba(242,244,247,.12);
+  --topbar-active-shadow: 0 4px 14px rgba(0,0,0,0.40);
+  /* Balance Hero — versi gelap dari gradasi navy formal di atas */
+  --hero-bg-from:  #1B2C4D;
+  --hero-bg-to:    #060A14;
+  --hero-text:       #F2F4F7;
+  --hero-text-muted: rgba(242,244,247,0.72);
   /* Extended palette — dark overrides */
-  --fase:       #C97C93;
-  --fase-lt:    #3A2027;
-  --info:       #6FA0BE;
-  --info-lt:    #1E2B33;
-  --chat-user:  #5FA991;
-  --ink-inv:    #F8F3EA;
-  --paper-inv:  #EDE6DA;
-  --row-alt:    #1D1811;
-  --shadow-sm:  0 1px 2px rgba(0,0,0,0.24);
-  --shadow-md:  0 6px 16px rgba(0,0,0,0.30);
-  --shadow-lg:  0 18px 40px rgba(0,0,0,0.38);
+  --fase:       #8B98C4;
+  --fase-lt:    #232B45;
+  --info:       #6FA0C9;
+  --info-lt:    #1B2B36;
+  --chat-user:  #4F9C93;
+  --ink-inv:    #F2F4F7;
+  --paper-inv:  #E6E9EE;
+  --row-alt:    #111A2C;
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.28);
+  --shadow-md:  0 4px 12px rgba(0,0,0,0.34);
+  --shadow-lg:  0 14px 32px rgba(0,0,0,0.42);
 }
 
 [data-theme="dark"] body {
@@ -2830,7 +2830,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 
 /* Account bar stays dark — slightly deeper in dark mode */
 [data-theme="dark"] .account-bar {
-  background: #150F09;
+  background: #0A101D;
   border-bottom-color: rgba(255,255,255,0.05);
 }
 [data-theme="dark"] .account-tab { border-right-color: rgba(255,255,255,0.05); }
@@ -2949,7 +2949,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 [data-theme="dark"] select.form-control {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239A9A96' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 }
-[data-theme="dark"] select.form-control option { background: #211A13; color: #EDE6DA; }
+[data-theme="dark"] select.form-control option { background: #16213A; color: #E6E9EE; }
 
 /* Fase dropdown */
 [data-theme="dark"] .fase-dropdown-trigger { background: var(--paper); border-color: var(--rule); }
