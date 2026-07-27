@@ -152,7 +152,11 @@ window.renderBookList = function() {
         let div = document.createElement('div');
         div.className = 'book-list-item';
         let isCurrent = b.id === window.currentBookId;
-        let delBtn = window.books.length > 1 ? `<button class="btn-mini btn-mini-danger" onclick="window.deleteBook('${b.id}')">Hapus</button>` : '';
+        // [FIX BUG #1 & #2] Buku bersama cuma boleh dihapus/diganti nama
+        // oleh admin buku itu. Sebelumnya tombol ini muncul untuk semua
+        // role (viewer/editor termasuk) tanpa pengecekan apa pun.
+        const canManageThisBook = !b._isShared || (typeof window.skGetRoleForBook === 'function' && window.skGetRoleForBook(b.id) === 'admin');
+        let delBtn = (window.books.length > 1 && canManageThisBook) ? `<button class="btn-mini btn-mini-danger" onclick="window.deleteBook('${b.id}')">Hapus</button>` : '';
         if (isCurrent) delBtn = '<span style="font-size:.65rem; color:#2F9E6E; font-weight:bold;">SEDANG AKTIF</span>';
         const parentBook = b.parentId ? window.books.find(x => x.id === b.parentId) : null;
         const parentLabel = parentBook ? `<div style="font-size:.6rem; color:#6b46c1; margin-top:2px;">↳ Anak dari: <b>${window.escapeHtml(parentBook.name)}</b></div>` : '';
@@ -167,7 +171,7 @@ window.renderBookList = function() {
             </span>
             <div class="book-list-actions">
                 ${!isCurrent ? `<button class="btn-mini" onclick="window.switchBook('${b.id}')">Buka</button>` : ''}
-                <button class="btn-mini" style="background:#f0f4ff; color:#3E8FBF; border:1px solid #c5d8ff;" onclick="window.renameBook('${b.id}')">Nama</button>
+                <button class="btn-mini" style="background:#f0f4ff; color:#3E8FBF; border:1px solid #c5d8ff;" onclick="window.renameBook('${b.id}')" ${canManageThisBook ? '' : 'disabled title="Hanya admin yang bisa mengganti nama buku bersama ini"'}>Nama</button>
                 <button class="btn-mini" style="background:#FBF0DC; color:#D8A13B; border:1px solid #E8C878;" onclick="window.openCardVisibilityModal('${b.id}')" title="Pilih card yang ditampilkan untuk buku ini">Card</button>
                 ${makeSharedBtn}
                 ${b.parentId && isCurrent ? `<button class="btn-mini" style="background:#6b46c1; color:#fff;" onclick="window.closeModal('bookManagerModal'); window.openTutupAnakBuku()">Tutup & Kirim</button>` : ''}
@@ -182,10 +186,47 @@ window.renameBook = async function(id) {
     if (!window.requireOnline('mengganti nama buku')) return;
     const book = window.books.find(b => b.id === id);
     if (!book) return;
+
+    // [FIX BUG #2] Sama seperti deleteBook: penjagaan role admin di level
+    // fungsi juga (tombol sudah di-disable, ini lapis kedua).
+    if (book._isShared && (typeof window.skGetRoleForBook !== 'function' || window.skGetRoleForBook(id) !== 'admin')) {
+        window.showToast('Hanya admin yang bisa mengganti nama buku bersama ini.', 'error');
+        return;
+    }
+
     const newName = prompt(`Nama baru untuk buku "${book.name}":`, book.name);
     if (!newName || !newName.trim()) return;
     if (newName.trim() === book.name) return;
-    book.name = newName.trim();
+    const trimmedName = newName.trim();
+
+    // [FIX BUG #2] Sebelumnya rename buku bersama HANYA menulis ke setting
+    // pribadi 'books' (localStorage + pushSettingBooks -> tabel `settings`),
+    // padahal sistem buku bersama membaca nama dari tabel Supabase
+    // `sk_books` (lihat skRefreshSharedAccess di js/auth.js). Akibatnya:
+    // 1) anggota lain tidak pernah melihat nama baru, dan
+    // 2) nama baru bahkan balik lagi ke nama lama di device sendiri begitu
+    //    skRefreshSharedAccess() jalan ulang (mis. reload halaman), karena
+    //    fungsi itu selalu menimpa `existing.name = row.name` dari baris
+    //    lama di sk_books. Sekarang untuk buku bersama, tabel sk_books
+    //    di-update dulu -- kalau ini gagal, jangan lanjut ubah state lokal
+    //    supaya tidak ikut "revert sendiri" nanti.
+    if (book._isShared) {
+        const authClient = window.getSupabaseAuthClient ? window.getSupabaseAuthClient() : null;
+        if (!authClient) {
+            window.showToast('Klien auth Supabase belum siap, coba lagi.', 'error');
+            return;
+        }
+        try {
+            const res = await authClient.from('sk_books').update({ name: trimmedName }).eq('id', id);
+            if (res.error) throw res.error;
+        } catch (e) {
+            console.error('[renameBook] Gagal update nama di sk_books:', e);
+            window.showToast('Gagal mengganti nama buku bersama: ' + (e && e.message ? e.message : 'error'), 'error');
+            return;
+        }
+    }
+
+    book.name = trimmedName;
     localStorage.setItem('sk_books', JSON.stringify(window.books));
     await window.pushSettingBooks();
     window.renderBookList();
@@ -231,9 +272,19 @@ window.deleteBook = async function(id) {
     }
     let b = window.books.find(x => x.id === id);
     if (!b) { window.showToast('Buku sudah tidak ada (mungkin sudah dihapus device lain)', 'warning'); return; }
+
+    // [FIX BUG #1] Penjagaan sisi klien: buku bersama hanya boleh dihapus
+    // oleh admin. Tombol di renderBookList sudah disembunyikan untuk
+    // non-admin, ini lapis kedua (defense-in-depth) kalau dipicu lewat
+    // jalur lain.
+    if (b._isShared && (typeof window.skGetRoleForBook !== 'function' || window.skGetRoleForBook(id) !== 'admin')) {
+        window.showToast('Hanya admin yang bisa menghapus buku bersama ini.', 'error');
+        return;
+    }
+
     const confirm1 = await window.customConfirm({
         title: 'Hapus Buku Permanen',
-        message: `Hapus permanen buku "${b.name}"?\n\nData yang dihapus:\n- Semua transaksi dalam buku ini\n- Anggaran bulanan\n- Anggaran Dasar\n- Log aktivitas\n\nData TIDAK BISA dikembalikan!`,
+        message: `Hapus permanen buku "${b.name}"?\n\nData yang dihapus:\n- Semua transaksi dalam buku ini\n- Anggaran bulanan\n- Anggaran Dasar\n- Log aktivitas${b._isShared ? '\n- Semua anggota & akses buku bersama ini' : ''}\n\nData TIDAK BISA dikembalikan!`,
         confirmLabel: 'Lanjut'
     });
     if (!confirm1) return;
@@ -255,13 +306,45 @@ window.deleteBook = async function(id) {
         try {
             const tag_del = window.getAccountTag ? window.getAccountTag() : null;
             const tagFilter_del = tag_del ? `&account_tag=eq.${tag_del}` : '';
-            await window.callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${id}${tagFilter_del}`);
-            await window.callSupabaseAPI('audit_logs', 'DELETE', null, `?book_id=eq.${id}${tagFilter_del}`);
-            await window.callSupabaseAPI('settings', 'DELETE', null, `?book_id=eq.${id}${tagFilter_del}`);
+            // [FIX BUG #1] callSupabaseAPI TIDAK PERNAH throw kalau request
+            // gagal (baik versi asli di db.js maupun versi yang dibungkus
+            // auth.js untuk buku shared) -- keduanya catch sendiri lalu
+            // return null. Sebelumnya hasil ketiga panggilan ini tidak
+            // pernah dicek sama sekali, jadi kalau salah satunya ditolak
+            // server (mis. RLS menolak non-admin di buku bersama, atau
+            // error lain), blok try ini tetap dianggap "berhasil" -- toast
+            // sukses tetap muncul & buku tetap dihapus dari device ini
+            // padahal data cloud-nya utuh. Sekarang null dianggap gagal
+            // eksplisit, sama seperti exception.
+            const r1 = await window.callSupabaseAPI('transactions', 'DELETE', null, `?book_id=eq.${id}${tagFilter_del}`);
+            const r2 = await window.callSupabaseAPI('audit_logs', 'DELETE', null, `?book_id=eq.${id}${tagFilter_del}`);
+            const r3 = await window.callSupabaseAPI('settings', 'DELETE', null, `?book_id=eq.${id}${tagFilter_del}`);
+            if (r1 === null || r2 === null || r3 === null) {
+                throw new Error('Salah satu penghapusan data cloud ditolak/gagal (cek console untuk detail).');
+            }
+
+            // [FIX BUG #1] Buku bersama tersimpan di tabel sk_books +
+            // book_members (sistem terpisah, lihat js/auth.js) -- BUKAN
+            // cuma di setting 'books' pribadi yang dibersihkan di bawah.
+            // Sebelumnya baris ini tidak pernah dihapus, sehingga
+            // skRefreshSharedAccess() akan menghidupkan lagi buku "yang
+            // sudah dihapus" ini pada kunjungan berikutnya (baik untuk
+            // admin sendiri maupun anggota lain), karena baris
+            // book_members & sk_books-nya masih utuh di server.
+            if (b._isShared) {
+                const authClient = window.getSupabaseAuthClient ? window.getSupabaseAuthClient() : null;
+                if (!authClient) throw new Error('Klien auth Supabase belum siap, tidak bisa menghapus akses buku bersama.');
+                const resMembers = await authClient.from('book_members').delete().eq('book_id', id);
+                if (resMembers.error) throw resMembers.error;
+                const resBook = await authClient.from('sk_books').delete().eq('id', id);
+                if (resBook.error) throw resBook.error;
+                if (window._skSharedRoles) delete window._skSharedRoles[id];
+            }
+
             console.log(`Data cloud buku "${b.name}" berhasil dihapus.`);
         } catch (e) {
             console.error('Gagal hapus data cloud:', e);
-            window.showToast('Gagal menghapus data cloud, coba lagi', 'error');
+            window.showToast('Gagal menghapus data cloud, coba lagi' + (e && e.message ? ': ' + e.message : ''), 'error');
             window.currentBookId = prevBookId;
             return;
         }
