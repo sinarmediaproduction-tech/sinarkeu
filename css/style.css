@@ -183,11 +183,14 @@ h1, h2, h3, h4,
 }
 .account-bar-add:hover { color: #fff; }
 
-/* ── Header ── */
+/* ── Header (title bar) — warna disamakan dengan sidebar (var(--brand)) ── */
 .header {
   margin: 28px 0 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--rule);
+  padding: 14px 20px;
+  background: linear-gradient(160deg, var(--brand) 0%, var(--brand-dark) 100%);
+  border-radius: var(--radius);
+  border-bottom: none;
+  box-shadow: var(--shadow-md);
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
@@ -195,10 +198,16 @@ h1, h2, h3, h4,
   gap: 16px;
 }
 
+/* Kontras teks/ikon di atas title bar berwarna */
+.header .sync-time-badge { color: rgba(255,255,255,0.7); border-left-color: rgba(255,255,255,0.2); }
+.header .sync-status-container { border-color: rgba(255,255,255,0.25); }
+#manualSyncBtn { color: rgba(255,255,255,0.7) !important; }
+.header .hamburger-btn { background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.25); }
+.header .hamburger-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.4); }
 
 .header p {
   font-size: .68rem;
-  color: var(--ink-faint);
+  color: rgba(255,255,255,0.7);
   margin-top: 3px;
   font-weight: 400;
 }
@@ -434,7 +443,7 @@ h1, h2, h3, h4,
   background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
   border: none;
   border-radius: var(--radius-lg);
-  box-shadow: 0 12px 32px rgba(163,38,56,0.20);
+  box-shadow: var(--shadow-lg);
   padding: 26px 28px;
   margin-bottom: 18px;
 }
