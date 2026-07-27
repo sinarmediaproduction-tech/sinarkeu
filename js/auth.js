@@ -411,8 +411,79 @@ window._skHandleInviteSubmit = function(ev) {
     });
 };
 
+// ── Batasi UI sesuai peran (bukan cuma diblokir pas diklik) ─────────────
+// Sebelumnya openSetelanModal & callSupabaseAPI sudah menolak aksi non-admin/
+// viewer, tapi tombolnya sendiri masih kelihatan & bisa diklik dulu baru
+// ketahuan ditolak. Ini menyembunyikan/menonaktifkan tombolnya duluan untuk
+// buku bersama yang perannya tidak berhak, supaya tidak menyesatkan.
+// Buku pribadi (bukan shared) TIDAK terpengaruh sama sekali.
+window.skIsViewerOnCurrentBook = function() {
+    const bookId = window.currentBookId;
+    return window.skIsSharedBookId(bookId) && window.skGetRoleForBook(bookId) === 'viewer';
+};
+
+window.skApplyRoleUI = function() {
+    const bookId = window.currentBookId;
+    const isShared = window.skIsSharedBookId(bookId);
+    const role = isShared ? window.skGetRoleForBook(bookId) : null;
+    const hideSettings = isShared && role !== 'admin';
+    const isViewer = isShared && role === 'viewer';
+
+    // Menu "Setelan" disembunyikan untuk non-admin di buku bersama --
+    // openSetelanModal tetap ditolak juga (defense-in-depth) kalau ada yang
+    // memicunya lewat jalur lain (mis. deep-link "Setelan -> Analisis AI").
+    const settingsBtn = document.getElementById('navSetelanBtn');
+    if (settingsBtn) settingsBtn.style.display = hideSettings ? 'none' : '';
+
+    // Viewer read-only: sembunyikan tombol tambah transaksi. Tombol ubah/
+    // hapus (menu "⋮" per baris) tidak perlu disembunyikan satu-satu di sini
+    // -- window.openActionMenu di bawah sudah menolaknya duluan sebelum menu
+    // sempat terbuka.
+    const addTxBtn = document.getElementById('tambahTransaksiBtn');
+    if (addTxBtn) addTxBtn.style.display = isViewer ? 'none' : '';
+};
+
+// ── Patch openModal: viewer tidak boleh buka form tambah/ubah transaksi ─
+const _originalOpenModal = window.openModal;
+window.openModal = function(id) {
+    if ((id === 'addModal' || id === 'editModal') && window.skIsViewerOnCurrentBook()) {
+        window.showToast && window.showToast('Peran viewer di buku bersama ini hanya bisa melihat, tidak bisa menambah/mengubah transaksi.', 'error');
+        return;
+    }
+    return _originalOpenModal.apply(this, arguments);
+};
+
+// ── Patch openActionMenu: viewer tidak perlu lihat menu Ubah/Hapus ──────
+const _originalOpenActionMenu = window.openActionMenu;
+window.openActionMenu = function(id) {
+    if (window.skIsViewerOnCurrentBook()) {
+        window.showToast && window.showToast('Peran viewer di buku bersama ini hanya bisa melihat transaksi.', 'error');
+        return;
+    }
+    return _originalOpenActionMenu.apply(this, arguments);
+};
+
+// ── Patch confirmDelete: defense-in-depth kalau dipanggil dari jalur lain ─
+const _originalConfirmDelete = window.confirmDelete;
+window.confirmDelete = function(id) {
+    if (window.skIsViewerOnCurrentBook()) {
+        window.showToast && window.showToast('Peran viewer di buku bersama ini tidak bisa menghapus transaksi.', 'error');
+        return;
+    }
+    return _originalConfirmDelete.apply(this, arguments);
+};
+
+// ── Patch switchBook: pindah buku = peran ikut berubah, refresh UI-nya ──
+const _originalSwitchBook = window.switchBook;
+window.switchBook = async function(id) {
+    const result = await _originalSwitchBook.apply(this, arguments);
+    if (typeof window.skApplyRoleUI === 'function') window.skApplyRoleUI();
+    return result;
+};
+
 // ── Panel login sederhana di modal Kelola Buku ──────────────────────────
 window.skRenderAuthPanel = function() {
+    if (typeof window.skApplyRoleUI === 'function') window.skApplyRoleUI();
     const el = document.getElementById('skAuthPanelContent');
     if (!el) return;
     if (window._skAuthUser) {
