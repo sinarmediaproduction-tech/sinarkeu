@@ -47,7 +47,7 @@ async function generateMonthlyReport() {
   const reportContentEl = document.getElementById('reportContent');
   let allTx;
   if (window.isOnline() && typeof window.fetchMonthTransactionsFromCloud === 'function') {
-    if (reportContentEl) reportContentEl.innerHTML = '<div style="padding:24px;text-align:center;color:#98A1AD;">Memuat laporan...</div>';
+    if (reportContentEl) reportContentEl.innerHTML = '<div style="padding:24px;text-align:center;color:#A79C8B;">Memuat laporan...</div>';
     const cloudTx = await window.fetchMonthTransactionsFromCloud(window.currentBookId, year, month);
     allTx = cloudTx !== null ? cloudTx : (window.txs || []).filter(t => {
       const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
@@ -90,26 +90,26 @@ async function generateMonthlyReport() {
   // ── Token warna sesuai tema ──
   const dk = document.documentElement.getAttribute('data-theme') === 'dark';
   const C = {
-    bg:         dk ? '#171B24' : '#FFFFFF',
-    ink:        dk ? '#E7E9EE' : '#1A2130',
-    inkMuted:   dk ? '#A0A8B4' : '#5B6472',
-    inkFaint:   dk ? '#6B7280' : '#98A1AD',
-    rule:       dk ? '#2E3440' : '#E4E7EC',
-    rowAlt:     dk ? '#1B2029' : '#F7F8FA',
-    thead:      dk ? '#1E232E' : '#F5F6F8',
-    barBg:      dk ? '#2E3440' : '#EEF0F3',
-    incBg:      dk ? '#1B2E27' : '#E3F5EC',
-    incBd:      dk ? '#2F5E48' : '#8FB06E',
-    incTxt:     dk ? '#4FC490' : '#1F7A54',
-    expBg:      dk ? '#33201E' : '#FBE7E5',
-    expBd:      dk ? '#6E3B34' : '#D48A6E',
-    expTxt:     dk ? '#E8776D' : '#B23B31',
-    balPosBg:   dk ? '#1B2B33' : '#E4F1F8',
-    balPosBd:   dk ? '#345A6E' : '#6FA69C',
-    balPosTxt:  dk ? '#6BB4DE' : '#2E6E93',
-    budgetBg:   dk ? '#332912' : '#FBF0DC',
-    budgetBd:   dk ? '#6E5222' : '#D6B36A',
-    budgetTxt:  dk ? '#E8B75E' : '#8F6B24',
+    bg:         dk ? '#211A13' : '#FFFFFF',
+    ink:        dk ? '#EDE6DA' : '#2B241D',
+    inkMuted:   dk ? '#B3A99B' : '#746A5C',
+    inkFaint:   dk ? '#7D7364' : '#A79C8B',
+    rule:       dk ? '#3A2F23' : '#E8E0D2',
+    rowAlt:     dk ? '#1D1811' : '#F6F1E9',
+    thead:      dk ? '#17120D' : '#F6F1E9',
+    barBg:      dk ? '#3A2F23' : '#EFE7D8',
+    incBg:      dk ? '#1E2B23' : '#E2EEE6',
+    incBd:      dk ? '#3D6B52' : '#8FA97D',
+    incTxt:     dk ? '#5FA981' : '#2E5C46',
+    expBg:      dk ? '#33201C' : '#F7E5E3',
+    expBd:      dk ? '#6B392F' : '#C68868',
+    expTxt:     dk ? '#E0776A' : '#8A2E28',
+    balPosBg:   dk ? '#1E2B33' : '#E4EDF2',
+    balPosBd:   dk ? '#3F5C63' : '#6FA69C',
+    balPosTxt:  dk ? '#6FA0BE' : '#345A70',
+    budgetBg:   dk ? '#332913' : '#F3EAD6',
+    budgetBd:   dk ? '#6E5222' : '#D0AE72',
+    budgetTxt:  dk ? '#D9A857' : '#7A5A1E',
   };
   const FM = "'JetBrains Mono', monospace"; // font angka
 
@@ -119,7 +119,7 @@ async function generateMonthlyReport() {
         const pct    = budget > 0 ? Math.min(100, Math.round(v / budget * 100)) : null;
         const bar    = budget > 0
           ? `<div style="height:6px;border-radius: var(--radius-sm);background:${C.barBg};margin-top:3px;">
-               <div style="height:6px;border-radius: var(--radius-sm);background:${pct >= 100 ? C.expTxt : pct >= 80 ? (dk ? '#E0A850' : '#ff991f') : C.incTxt};width:${pct}%;"></div>
+               <div style="height:6px;border-radius: var(--radius-sm);background:${pct >= 100 ? C.expTxt : pct >= 80 ? (dk ? '#D9A857' : '#C4922D') : C.incTxt};width:${pct}%;"></div>
              </div>` : '';
         return `<tr>
           <td style="padding:8px 10px; color:${C.ink};">${c}</td>
@@ -274,12 +274,12 @@ async function exportReportAsPDF() {
   // ── Token warna sesuai tema (PDF export) ──
   const dk2 = document.documentElement.getAttribute('data-theme') === 'dark';
   const CPDF = {
-    bg:     dk2 ? '#161616' : '#ffffff',
-    rowAlt: dk2 ? '#1E1E1B' : '#f9f9f9',
-    barBg:  dk2 ? '#333330' : '#eeeeee',
-    incTxt: dk2 ? '#4ADE80' : '#1F7A54',
-    expTxt: dk2 ? '#F87171' : '#DC5A4E',
-    warnTxt:dk2 ? '#E0A850' : '#ff991f',
+    bg:     dk2 ? '#211A13' : '#FFFFFF',
+    rowAlt: dk2 ? '#1D1811' : '#FAF5EC',
+    barBg:  dk2 ? '#3A2F23' : '#F0E9DC',
+    incTxt: dk2 ? '#5FA981' : '#2E5C46',
+    expTxt: dk2 ? '#E0776A' : '#B23B34',
+    warnTxt:dk2 ? '#D9A857' : '#C4922D',
   };
 
   // ── Sorted transactions ──────────────────────────────────
@@ -333,7 +333,7 @@ async function exportReportAsPDF() {
   body {
     font-family: 'Plus Jakarta Sans', Arial, sans-serif;
     font-size: 9pt;
-    color: #1a1a1a;
+    color: #2B241D;
     background: #fff;
     padding: 0;
   }
@@ -341,7 +341,7 @@ async function exportReportAsPDF() {
 
   /* ── Cover Header ── */
   .doc-header {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+    background: linear-gradient(135deg, #2B1620 0%, #241D14 60%, #17120D 100%);
     color: #fff;
     padding: 28px 32px 22px;
     position: relative;
@@ -393,8 +393,8 @@ async function exportReportAsPDF() {
     font-weight: 700;
     letter-spacing: 1.2px;
     text-transform: uppercase;
-    color: #5B6472;
-    border-bottom: 1.5px solid #e0e0e0;
+    color: #746A5C;
+    border-bottom: 1.5px solid #E8E0D2;
     padding-bottom: 5px;
     margin: 18px 0 10px;
   }
@@ -412,32 +412,32 @@ async function exportReportAsPDF() {
     padding: 12px 14px;
     border-left: 3px solid transparent;
   }
-  .kpi-income { background: #e8f8f0; border-color: #2F9E6E; }
-  .kpi-expense { background: #fff1ee; border-color: #DC5A4E; }
-  .kpi-balance-pos { background: #e8f0fe; border-color: #1a73e8; }
-  .kpi-balance-neg { background: #fff1ee; border-color: #DC5A4E; }
+  .kpi-income { background: #E2EEE6; border-color: #3E7A5D; }
+  .kpi-expense { background: #F7E5E3; border-color: #B23B34; }
+  .kpi-balance-pos { background: #E4EDF2; border-color: #345A70; }
+  .kpi-balance-neg { background: #F7E5E3; border-color: #B23B34; }
   .kpi .label {
     font-size: 6.5pt;
     font-weight: 700;
     letter-spacing: .8px;
     text-transform: uppercase;
     margin-bottom: 4px;
-    color: #5B6472;
+    color: #746A5C;
   }
   .kpi .value {
     font-family: 'JetBrains Mono', 'Courier New', monospace;
     font-size: 12pt;
     font-weight: 700;
   }
-  .kpi-income .value { color: #1F7A54; }
-  .kpi-expense .value { color: #bf2600; }
-  .kpi-balance-pos .value { color: #1155cc; }
-  .kpi-balance-neg .value { color: #bf2600; }
+  .kpi-income .value { color: #2E5C46; }
+  .kpi-expense .value { color: #8A2E28; }
+  .kpi-balance-pos .value { color: #2E4A5C; }
+  .kpi-balance-neg .value { color: #8A2E28; }
 
   /* ── Budget Alert ── */
   .budget-alert {
-    background: #fffbe6;
-    border: 1px solid #ffe58f;
+    background: #F3EAD6;
+    border: 1px solid #D9BE86;
     border-radius: var(--radius-sm);
     padding: 10px 14px;
     margin: 10px 0;
@@ -446,8 +446,8 @@ async function exportReportAsPDF() {
     align-items: center;
     font-size: 8.5pt;
   }
-  .budget-alert .ba-label { color: #874d00; font-weight: 600; }
-  .budget-alert .ba-value { font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10pt; font-weight: 700; color: #874d00; }
+  .budget-alert .ba-label { color: #7A5A1E; font-weight: 600; }
+  .budget-alert .ba-value { font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10pt; font-weight: 700; color: #7A5A1E; }
   .budget-alert .ba-sisa { text-align: right; }
 
   /* ── Tables ── */
@@ -457,40 +457,40 @@ async function exportReportAsPDF() {
     font-size: 7.5pt;
   }
   th {
-    background: #f0f2f5;
+    background: #F6F1E9;
     padding: 6px 6px;
     font-weight: 700;
     font-size: 7pt;
     text-align: left;
-    border-bottom: 2px solid #d0d5dd;
+    border-bottom: 2px solid #E8E0D2;
     word-break: break-word;
   }
   td {
     padding: 5.5px 6px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid #F0E9DC;
     vertical-align: middle;
     word-break: break-word;
     overflow-wrap: break-word;
   }
   tr:last-child td { border-bottom: none; }
   .money { text-align: right; font-family: 'JetBrains Mono', 'Courier New', monospace; }
-  .income { color: #1F7A54; font-weight: 600; }
-  .expense { color: #bf2600; font-weight: 600; }
+  .income { color: #2E5C46; font-weight: 600; }
+  .expense { color: #8A2E28; font-weight: 600; }
   .center { text-align: center; }
-  .muted { color: #98A1AD; }
+  .muted { color: #A79C8B; }
 
   /* ── Table wrapper ── */
   .tbl-wrap {
-    border: 1.5px solid #e0e0e0;
+    border: 1.5px solid #E8E0D2;
     border-radius: var(--radius-sm);
     overflow: hidden;
   }
 
   /* ── Summary row ── */
   .tbl-foot td {
-    background: #f0f2f5;
+    background: #F6F1E9;
     font-weight: 700;
-    border-top: 2px solid #d0d5dd;
+    border-top: 2px solid #E8E0D2;
     border-bottom: none;
     padding: 8px 9px;
   }
@@ -499,16 +499,16 @@ async function exportReportAsPDF() {
   .doc-footer {
     margin: 20px 32px 0;
     padding: 10px 0 14px;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid #E8E0D2;
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-size: 7pt;
-    color: #98A1AD;
+    color: #A79C8B;
   }
   .doc-footer .watermark {
     font-weight: 700;
-    color: #D6DAE1;
+    color: #D9CFBE;
     letter-spacing: 1px;
     text-transform: uppercase;
     font-size: 7pt;
@@ -560,7 +560,7 @@ async function exportReportAsPDF() {
     </div>
     <div class="ba-sisa">
       <div class="ba-label">Sisa Anggaran</div>
-      <div class="ba-value" style="color:${totalBudget - expense >= 0 ? '#1F7A54' : '#bf2600'};">${fmtRp(totalBudget - expense)}</div>
+      <div class="ba-value" style="color:${totalBudget - expense >= 0 ? '#2E5C46' : '#8A2E28'};">${fmtRp(totalBudget - expense)}</div>
     </div>
   </div>` : ''}
 
@@ -612,7 +612,7 @@ async function exportReportAsPDF() {
         </tr>
         <tr class="tbl-foot">
           <td colspan="4" style="text-align:right;"><b>SALDO BERSIH</b></td>
-          <td colspan="2" class="money" style="color:${balance >= 0 ? '#1F7A54' : '#bf2600'};"><b>${fmtRp(balance)}</b></td>
+          <td colspan="2" class="money" style="color:${balance >= 0 ? '#2E5C46' : '#8A2E28'};"><b>${fmtRp(balance)}</b></td>
         </tr>
       </tfoot>
     </table>

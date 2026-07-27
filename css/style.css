@@ -1,78 +1,85 @@
 /* ===================================================
-   SINARKEU — Minimal Institutional Redesign
-   Palette: Ink #1A2130, Paper #FFFFFF, Soft Indigo #4F63D2,
-            Success #2F9E6E, Danger #DC5A4E, Warning #D8A13B
-   Signature: cool-neutral surfaces, one restrained soft-
-   indigo accent, quiet low-opacity shadows, single-family
-   type system for a calm, trustworthy, tech-forward feel.
-   Font: Plus Jakarta Sans (display + body), JetBrains Mono (angka)
+   SINARKEU — Warm Formal Redesign
+   Palette: Espresso Ink #2B241D, Warm Linen #FBF7F1,
+            Wine #7A2E42, Antique Gold #B4863A,
+            Deep Sage #3E7A5D, Brick #B23B34
+   Signature: a warm-espresso sidebar that stays constant
+   across light & dark mode, a wine→espresso balance hero,
+   quiet warm-tinted shadows, and a restrained serif
+   (Fraunces) reserved for the brand wordmark, the balance
+   figure and the lock screen — the rest of the interface
+   stays calm, formal, functional sans.
+   Font: Fraunces (signature display), Plus Jakarta Sans
+   (body/UI), JetBrains Mono (angka)
 =================================================== */
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --ink:        #1A2130;
-  --ink-muted:  #5B6472;
-  --ink-faint:  #98A1AD;
+  --ink:        #2B241D;
+  --ink-muted:  #746A5C;
+  --ink-faint:  #A79C8B;
   --paper:      #FFFFFF;
-  --paper-warm: #F5F6F8;
-  --rule:       #E4E7EC;
-  --accent:     #A32638;
-  --accent-lt:  #F7E4E7;
-  --success:    #2F9E6E;
-  --success-lt: #E3F5EC;
-  --danger:     #DC5A4E;
-  --danger-lt:  #FBE7E5;
-  --warning:    #D8A13B;
-  --warning-lt: #FBF0DC;
-  --purple:     #A32638;
-  --purple-lt:  #F7E4E7;
-  --brand:      #A32638; /* dipakai tombol utama & badge peran */
-  --brand-dark: #7A1C2A;
-  /* Sidebar & title bar — pastel lavender-blue yang lembut, terpisah dari
-     --brand supaya tombol utama tetap memakai warna brand. */
-  --topbar-bg:          #EEF1FA;
-  --topbar-text:        var(--ink);
-  --topbar-text-muted:  var(--ink-muted);
-  --topbar-border:      #DDE3F2;
-  --topbar-btn-bg:      #E3E8F6;
-  --topbar-btn-hover-bg: #D3DBF0;
-  --topbar-item-color:  var(--ink-muted);
-  --topbar-item-hover-bg: #E3E8F6;
-  --topbar-item-active-bg: var(--accent-lt);
-  --topbar-item-active-color: var(--accent);
-  --topbar-footer-border: #DDE3F2;
-  --topbar-active-shadow: none;
-  /* Balance Hero (kartu "Saldo Akhir") — pastel indigo-blue yang senada
-     dengan sidebar/title bar, bukan merah brand lagi. */
-  --hero-bg-from:  #CBD6F5;
-  --hero-bg-to:    #B4C3ED;
-  --hero-text:       var(--ink);
-  --hero-text-muted: var(--ink-muted);
+  --paper-warm: #F6F1E9;
+  --rule:       #E8E0D2;
+  --accent:     #7A2E42;
+  --accent-lt:  #F4E3E7;
+  --success:    #3E7A5D;
+  --success-lt: #E2EEE6;
+  --danger:     #B23B34;
+  --danger-lt:  #F7E5E3;
+  --warning:    #B4863A;
+  --warning-lt: #F3EAD6;
+  --purple:     #7A2E42;
+  --purple-lt:  #F4E3E7;
+  --brand:      #7A2E42; /* dipakai tombol utama & badge peran */
+  --brand-dark: #5C2233;
+  /* Sidebar & title bar — espresso gelap yang tetap konsisten di
+     light & dark mode, terpisah dari --brand supaya tombol utama
+     tetap memakai warna brand. Aksen aktif memakai gold hangat. */
+  --topbar-bg:          linear-gradient(160deg, #332A21 0%, #1F1911 100%);
+  --topbar-text:        #F6F1E9;
+  --topbar-text-muted:  rgba(246,241,233,0.68);
+  --topbar-border:      rgba(246,241,233,0.14);
+  --topbar-btn-bg:      rgba(246,241,233,0.10);
+  --topbar-btn-hover-bg: rgba(246,241,233,0.18);
+  --topbar-item-color:  rgba(246,241,233,.80);
+  --topbar-item-hover-bg: rgba(246,241,233,.14);
+  --topbar-item-active-bg: #B4863A;
+  --topbar-item-active-color: #241D14;
+  --topbar-footer-border: rgba(246,241,233,.14);
+  --topbar-active-shadow: 0 4px 14px rgba(20,15,8,0.28);
+  /* Balance Hero (kartu "Saldo Akhir") — gradasi wine ke espresso,
+     senada dengan sidebar, dengan teks hangat di atasnya. */
+  --hero-bg-from:  #8B3A4E;
+  --hero-bg-to:    #4A1F2E;
+  --hero-text:       #F8F3EA;
+  --hero-text-muted: rgba(248,243,234,0.75);
   /* Extended palette */
-  --fase:       #C77A9A;
-  --fase-lt:    #F8E9EF;
-  --info:       #3E8FBF;
-  --info-lt:    #E4F1F8;
-  --chat-user:  #35A08C;
-  --ink-inv:    #FFFFFF;   /* teks di atas background gelap (btn-primary dark) */
-  --paper-inv:  #1A2130;  /* bg di atas ink terang */
-  --row-alt:    #F7F8FA;
+  --fase:       #A9637A;
+  --fase-lt:    #F3E5EA;
+  --info:       #4A7A9E;
+  --info-lt:    #E4EDF2;
+  --chat-user:  #3E8F82;
+  --ink-inv:    #F8F3EA;   /* teks di atas background gelap (btn-primary dark) */
+  --paper-inv:  #2B241D;  /* bg di atas ink terang */
+  --row-alt:    #FAF5EC;
   /* Shape & elevation */
   --radius-sm:  10px;
-  --radius:     12px;
-  --radius-lg:  20px;
+  --radius:     14px;
+  --radius-lg:  22px;
   --radius-pill: 999px;
-  --shadow-sm:  0 1px 2px rgba(23,27,36,0.06);
-  --shadow-md:  0 4px 12px rgba(23,27,36,0.08);
-  --shadow-lg:  0 12px 32px rgba(23,27,36,0.10);
-  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --shadow-sm:  0 1px 2px rgba(43,36,29,0.08);
+  --shadow-md:  0 6px 16px rgba(43,36,29,0.10);
+  --shadow-lg:  0 18px 40px rgba(43,36,29,0.14);
+  --font-display: 'Fraunces', 'Plus Jakarta Sans', serif;
+  --font-body:    'Plus Jakarta Sans', sans-serif;
   --font-mono:    'JetBrains Mono', ui-monospace, monospace;
 }
 
 /* ── Base ── */
 body {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: var(--font-body);
   background: var(--paper-warm);
   color: var(--ink);
   padding: 0;
@@ -81,13 +88,22 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Judul fungsional (modal, section, dsb) tetap sans — formal & calm,
+   supaya serif tidak dipakai berlebihan di seluruh UI. */
 h1, h2, h3, h4,
+.modal-header h3 {
+  font-family: var(--font-body);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Momen signature — wordmark brand, angka saldo besar, layar kunci —
+   memakai serif hangat Fraunces, dipakai secukupnya. */
 .app-sidebar-brand,
 .stat-value,
-.modal-header h3,
 .lock-title {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.01em;
 }
 
@@ -870,9 +886,9 @@ button:disabled, .btn:disabled,
   color: #fff;
   border-color: var(--accent);
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(163,38,56,0.22);
+  box-shadow: 0 4px 14px rgba(122,46,66,0.24);
 }
-.btn-primary:hover:not(:disabled) { background: var(--brand-dark); border-color: var(--brand-dark); box-shadow: 0 6px 18px rgba(163,38,56,0.28); transform: translateY(-1px); }
+.btn-primary:hover:not(:disabled) { background: var(--brand-dark); border-color: var(--brand-dark); box-shadow: 0 6px 18px rgba(122,46,66,0.30); transform: translateY(-1px); }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; background: var(--ink-faint); border-color: var(--ink-faint); box-shadow: none; }
 
 .btn-secondary {
@@ -1154,7 +1170,7 @@ tr:hover td { background: var(--accent-lt); }
   position: fixed;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  background: rgba(26,33,48,0.6);
+  background: rgba(31,25,17,0.6);
   display: none;
   align-items: center;
   justify-content: center;
@@ -2754,53 +2770,57 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
    DARK MODE — [data-theme="dark"]
 ====================================================== */
 [data-theme="dark"] {
-  --ink:        #E7E9EE;
-  --ink-muted:  #A0A8B4;
-  --ink-faint:  #6B7280;
-  --paper:      #171B24;
-  --paper-warm: #1E232E;
-  --rule:       #2E3440;
-  --accent:     #E0707F;
+  --ink:        #EDE6DA;
+  --ink-muted:  #B3A99B;
+  --ink-faint:  #7D7364;
+  --paper:      #211A13;
+  --paper-warm: #17120D;
+  --rule:       #3A2F23;
+  --accent:     #D98BA0;
   --accent-lt:  #3A2027;
-  --success:    #4FC490;
-  --success-lt: #1B2E27;
-  --danger:     #E8776D;
-  --danger-lt:  #33201E;
-  --warning:    #E8B75E;
-  --warning-lt: #332912;
-  --purple:     #E0707F;
+  --success:    #5FA981;
+  --success-lt: #1E2B23;
+  --danger:     #E0776A;
+  --danger-lt:  #33201C;
+  --warning:    #D9A857;
+  --warning-lt: #332913;
+  --purple:     #D98BA0;
   --purple-lt:  #3A2027;
-  /* Brand (tombol utama) — dark overrides,
-     supaya tidak lagi tampil ungu terang di mode gelap */
-  --brand:      #262B38;
-  --brand-dark: #12151C;
-  /* Sidebar & title bar tetap gelap ala semula di dark mode (tidak putih) */
-  --topbar-bg:          linear-gradient(160deg, #262B38 0%, #12151C 100%);
-  --topbar-text:        #fff;
-  --topbar-text-muted:  rgba(255,255,255,0.7);
-  --topbar-border:      rgba(255,255,255,0.25);
-  --topbar-btn-bg:      rgba(255,255,255,0.12);
-  --topbar-btn-hover-bg: rgba(255,255,255,0.2);
-  --topbar-item-color:  rgba(255,255,255,.82);
-  --topbar-item-hover-bg: rgba(255,255,255,.16);
-  --topbar-item-active-bg: #fff;
-  --topbar-item-active-color: #12151C;
-  --topbar-footer-border: rgba(255,255,255,.16);
-  --topbar-active-shadow: 0 4px 14px rgba(0,0,0,0.18);
-  /* Balance Hero — versi gelap dari pastel indigo-blue di atas */
-  --hero-bg-from:  #3A4566;
-  --hero-bg-to:    #262E48;
-  --hero-text:       #fff;
-  --hero-text-muted: rgba(255,255,255,0.75);
+  /* Brand (tombol utama) — sedikit lebih terang dari mode terang supaya
+     tetap kontras & mudah dibaca di atas permukaan gelap */
+  --brand:      #A8506A;
+  --brand-dark: #7A2E42;
+  /* Sidebar & title bar — espresso yang sama persis dengan mode terang,
+     jadi identitas brand tetap konsisten di kedua tema */
+  --topbar-bg:          linear-gradient(160deg, #332A21 0%, #1F1911 100%);
+  --topbar-text:        #F6F1E9;
+  --topbar-text-muted:  rgba(246,241,233,0.68);
+  --topbar-border:      rgba(246,241,233,0.14);
+  --topbar-btn-bg:      rgba(246,241,233,0.10);
+  --topbar-btn-hover-bg: rgba(246,241,233,0.18);
+  --topbar-item-color:  rgba(246,241,233,.80);
+  --topbar-item-hover-bg: rgba(246,241,233,.14);
+  --topbar-item-active-bg: #D9A857;
+  --topbar-item-active-color: #201709;
+  --topbar-footer-border: rgba(246,241,233,.14);
+  --topbar-active-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  /* Balance Hero — versi gelap dari gradasi wine ke espresso di atas */
+  --hero-bg-from:  #6E2C3E;
+  --hero-bg-to:    #2A1620;
+  --hero-text:       #F8F3EA;
+  --hero-text-muted: rgba(248,243,234,0.75);
   /* Extended palette — dark overrides */
-  --fase:       #D98FB0;
-  --fase-lt:    #332028;
-  --info:       #6BB4DE;
-  --info-lt:    #1B2B33;
-  --chat-user:  #4FC490;
-  --ink-inv:    #171B24;
-  --paper-inv:  #E7E9EE;
-  --row-alt:    #1B2029;
+  --fase:       #C97C93;
+  --fase-lt:    #3A2027;
+  --info:       #6FA0BE;
+  --info-lt:    #1E2B33;
+  --chat-user:  #5FA991;
+  --ink-inv:    #F8F3EA;
+  --paper-inv:  #EDE6DA;
+  --row-alt:    #1D1811;
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.24);
+  --shadow-md:  0 6px 16px rgba(0,0,0,0.30);
+  --shadow-lg:  0 18px 40px rgba(0,0,0,0.38);
 }
 
 [data-theme="dark"] body {
@@ -2810,7 +2830,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 
 /* Account bar stays dark — slightly deeper in dark mode */
 [data-theme="dark"] .account-bar {
-  background: #12151C;
+  background: #150F09;
   border-bottom-color: rgba(255,255,255,0.05);
 }
 [data-theme="dark"] .account-tab { border-right-color: rgba(255,255,255,0.05); }
@@ -2854,17 +2874,18 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   color: var(--ink);
 }
 [data-theme="dark"] .btn-primary {
-  background: var(--ink);
-  color: var(--paper-warm);
-  border-color: var(--ink);
+  background: var(--brand);
+  color: var(--ink-inv);
+  border-color: var(--brand);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
 }
-[data-theme="dark"] .btn-primary:hover:not(:disabled) { background: var(--ink-muted); border-color: var(--ink-muted); }
+[data-theme="dark"] .btn-primary:hover:not(:disabled) { background: var(--brand-dark); border-color: var(--brand-dark); }
 [data-theme="dark"] .manage-books-btn {
-  background: var(--ink);
-  color: var(--paper-warm);
-  border-color: var(--ink);
+  background: var(--brand);
+  color: var(--ink-inv);
+  border-color: var(--brand);
 }
-[data-theme="dark"] .manage-books-btn:hover:not(:disabled) { background: var(--ink-muted); }
+[data-theme="dark"] .manage-books-btn:hover:not(:disabled) { background: var(--brand-dark); }
 
 /* Table */
 [data-theme="dark"] th { background: var(--paper-warm); color: var(--ink-faint); }
@@ -2928,7 +2949,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 [data-theme="dark"] select.form-control {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239A9A96' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 }
-[data-theme="dark"] select.form-control option { background: #171B24; color: #E7E9EE; }
+[data-theme="dark"] select.form-control option { background: #211A13; color: #EDE6DA; }
 
 /* Fase dropdown */
 [data-theme="dark"] .fase-dropdown-trigger { background: var(--paper); border-color: var(--rule); }
@@ -3012,7 +3033,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   background: var(--purple-lt) !important;
   color: var(--purple) !important;
 }
-[data-theme="dark"] #cardDanaDarurat [style*="background:#FBF0DC"] {
+[data-theme="dark"] #cardDanaDarurat [style*="background:#F3EAD6"] {
   background: var(--warning-lt) !important;
   color: var(--warning) !important;
 }

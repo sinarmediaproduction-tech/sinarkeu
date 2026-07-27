@@ -162,12 +162,12 @@ window.renderAccModalList = function(highlightId) {
     const accounts = window.getAllAccounts();
     const activeId = window.getActiveAccountId();
     const el = document.getElementById('accModalList');
-    if (!accounts.length) { el.innerHTML = '<div style="text-align:center;color:#98A1AD;font-size:.75rem;padding:10px 0;">Belum ada akun tersimpan.</div>'; return; }
+    if (!accounts.length) { el.innerHTML = '<div style="text-align:center;color:#A79C8B;font-size:.75rem;padding:10px 0;">Belum ada akun tersimpan.</div>'; return; }
     el.innerHTML = accounts.map(acc => {
         const isActive  = acc.id === activeId;
         const hasConfig = window.isAccountConfigured(acc.id);
         const hasSess   = !!sessionStorage.getItem('sk_acc_sess_' + acc.id);
-        const badge = isActive ? '<span class="acc-modal-item-badge acc-badge-active">● Aktif</span>' : (hasSess ? '<span class="acc-modal-item-badge" style="background:#e8f0fe;color:#3E8FBF;">Terbuka</span>' : (hasConfig ? '<span class="acc-modal-item-badge acc-badge-locked">Terkunci</span>' : '<span class="acc-modal-item-badge acc-badge-noconn">Belum setup</span>'));
+        const badge = isActive ? '<span class="acc-modal-item-badge acc-badge-active">● Aktif</span>' : (hasSess ? '<span class="acc-modal-item-badge" style="background:#E4EDF2;color:#4A7A9E;">Terbuka</span>' : (hasConfig ? '<span class="acc-modal-item-badge acc-badge-locked">Terkunci</span>' : '<span class="acc-modal-item-badge acc-badge-noconn">Belum setup</span>'));
         return `<div class="acc-modal-item${isActive ? ' current' : ''}" onclick="window.handleAccModalItemClick('${acc.id}')">
             <div><div class="acc-modal-item-name">${window.escapeHtml(acc.name)}</div></div>
             <div class="acc-item-actions">${badge}<button class="btn-mini" onclick="event.stopPropagation(); window.editAccount('${acc.id}')">Edit</button>${!isActive ? `<button class="btn-mini btn-mini-danger" onclick="event.stopPropagation(); window.deleteAccount('${acc.id}')">Hapus</button>` : ''}</div>
@@ -292,7 +292,7 @@ window.saveNewAccount = async function() {
     const pwd    = document.getElementById('newAccPwd').value;
     const pwd2   = document.getElementById('newAccPwdConfirm').value;
     const st     = document.getElementById('newAccStatus');
-    if (!name) { st.style.color='#DC5A4E'; st.innerText=window.t('acc_name_required'); return; }
+    if (!name) { st.style.color='#B23B34'; st.innerText=window.t('acc_name_required'); return; }
     const isEdit = !!editId;
     const hasCredentials = url && key && pwd;
 
@@ -301,27 +301,27 @@ window.saveNewAccount = async function() {
     // membingungkan kalau user tidak sengaja menambah nama yang sama dua kali.
     const existingAccounts = window.getAllAccounts();
     const dupName = existingAccounts.find(a => a.id !== editId && a.name.trim().toLowerCase() === name.toLowerCase());
-    if (dupName) { st.style.color='#DC5A4E'; st.innerText = `Nama akun "${name}" sudah dipakai. Gunakan nama lain.`; return; }
+    if (dupName) { st.style.color='#B23B34'; st.innerText = `Nama akun "${name}" sudah dipakai. Gunakan nama lain.`; return; }
 
-    if (!isEdit && (!url || !key || !pwd || pwd.length < 6)) { st.style.color='#DC5A4E'; st.innerText='URL, Anon Key, dan Password (min 6 karakter) wajib diisi!'; return; }
-    if (isEdit && hasCredentials && pwd.length < 6) { st.style.color='#DC5A4E'; st.innerText='Password minimal 6 karakter!'; return; }
-    if (hasCredentials && pwd !== pwd2) { st.style.color='#DC5A4E'; st.innerText='Konfirmasi password tidak cocok! Pastikan kedua password sama.'; return; }
+    if (!isEdit && (!url || !key || !pwd || pwd.length < 6)) { st.style.color='#B23B34'; st.innerText='URL, Anon Key, dan Password (min 6 karakter) wajib diisi!'; return; }
+    if (isEdit && hasCredentials && pwd.length < 6) { st.style.color='#B23B34'; st.innerText='Password minimal 6 karakter!'; return; }
+    if (hasCredentials && pwd !== pwd2) { st.style.color='#B23B34'; st.innerText='Konfirmasi password tidak cocok! Pastikan kedua password sama.'; return; }
     // [FIX] Validasi format URL SEBELUM menghubungi jaringan -- sebelumnya URL
     // ngawur (tanpa http/https, typo, dsb.) langsung dilempar ke fetch() dan
     // baru gagal dengan pesan generik "Koneksi gagal" yang tidak jelas
     // penyebabnya.
     if (hasCredentials && !/^https?:\/\/.+\..+/i.test(url)) {
-        st.style.color='#DC5A4E';
+        st.style.color='#B23B34';
         st.innerText = 'Format Supabase Project URL tidak valid. Harus diawali https:// (contoh: https://xxxxxxxx.supabase.co)';
         return;
     }
     // [FIX] Tolak kalau URL Supabase ini sudah dipakai akun lain di aplikasi
     // ini -- lihat penjelasan window._findAccountWithSameUrl di atas.
     if (hasCredentials) {
-        st.style.color='#98A1AD'; st.innerText = 'Memeriksa URL akun lain…';
+        st.style.color='#A79C8B'; st.innerText = 'Memeriksa URL akun lain…';
         const dupAcc = await window._findAccountWithSameUrl(url, editId || null);
         if (dupAcc) {
-            st.style.color='#DC5A4E';
+            st.style.color='#B23B34';
             st.innerText = `Project Supabase ini sudah terdaftar untuk akun "${dupAcc.name}". Satu project Supabase hanya boleh dipakai oleh satu akun di aplikasi ini.`;
             return;
         }
@@ -336,7 +336,7 @@ window.saveNewAccount = async function() {
         else accounts.push({ id: accId, name });
 
         if (hasCredentials) {
-            st.style.color='#98A1AD'; st.innerText=window.t('testing_supabase');
+            st.style.color='#A79C8B'; st.innerText=window.t('testing_supabase');
             const oldUrl = window.globalSupabaseUrl, oldKey = window.globalSupabaseKey;
             // [FIX RACE CONDITION] window.globalSupabaseUrl/Key adalah state GLOBAL
             // yang juga dibaca oleh proses background: autosync tiap 30 detik
@@ -360,7 +360,7 @@ window.saveNewAccount = async function() {
                 window.globalSupabaseUrl = url; window.globalSupabaseKey = key;
                 const test = await window.callSupabaseAPI('transactions', 'GET', null, '?limit=1');
                 if (test === null) {
-                    st.style.color='#DC5A4E';
+                    st.style.color='#B23B34';
                     st.innerText = window.t('acc_connection_failed') + ' Pastikan URL & Anon Key benar, dan tabel sudah di-setup (lihat Panduan Pengguna).';
                     return;
                 }
@@ -386,7 +386,7 @@ window.saveNewAccount = async function() {
                         const boot = await window.bootstrapCryptoForBackend(pwd, url, key);
                         cryptoKey = boot.key; saltB64 = boot.saltB64; checkB64 = boot.checkB64;
                     } catch (e) {
-                        st.style.color='#DC5A4E';
+                        st.style.color='#B23B34';
                         st.innerText = (e && e.code === 'PASSWORD_MISMATCH')
                             ? 'Backend ini sudah tersambung dari perangkat lain dengan password berbeda. Gunakan password yang sama.'
                             : 'Gagal menyiapkan enkripsi: ' + (e && e.message ? e.message : 'error tidak diketahui');
@@ -429,7 +429,7 @@ window.saveNewAccount = async function() {
                 sessionStorage.setItem('sk_acc_sess_' + accId, '1');
 
                 window.saveAllAccounts(accounts);
-                st.style.color='#2F9E6E';
+                st.style.color='#3E7A5D';
                 st.innerText = isEdit ? window.t('acc_updated') : window.t('acc_added');
                 window.showToast(isEdit ? 'Akun diperbarui!' : 'Akun baru ditambahkan!', 'success');
                 window.cancelEditAccount();
@@ -457,7 +457,7 @@ window.saveNewAccount = async function() {
 
         // Tidak ada kredensial baru (hanya ganti nama akun saat edit) -> langsung simpan.
         window.saveAllAccounts(accounts);
-        st.style.color='#2F9E6E';
+        st.style.color='#3E7A5D';
         st.innerText = isEdit ? window.t('acc_updated') : window.t('acc_added');
         window.showToast(isEdit ? 'Akun diperbarui!' : 'Akun baru ditambahkan!', 'success');
         window.cancelEditAccount();

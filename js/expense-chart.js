@@ -1,8 +1,8 @@
 // ==================== EXPENSE CHART (Pengeluaran per Kategori) ====================
 window._EXPENSE_CHART_COLORS = [
-    '#DC5A4E', '#ff991f', '#ffc400', '#36b37e', '#2F9E6E',
-    '#00a3bf', '#0065ff', '#6554c0', '#8777d9', '#ff5630',
-    '#ff7452', '#998dd9', '#79e2f2', '#57d9a3', '#D8A13B'
+    '#7A2E42', '#B4863A', '#3E7A5D', '#B23B34', '#4A7A9E',
+    '#A9637A', '#C4922D', '#5C8A6E', '#8B5E3C', '#6B7A8C',
+    '#D98BA0', '#E0A85E', '#7DA98F', '#A65C4E', '#5C6E8C'
 ];
 
 window.toggleExpenseChart = function() {
@@ -103,7 +103,7 @@ window.renderExpenseChart = function() {
                 data: values,
                 backgroundColor: colors,
                 borderWidth: 2,
-                borderColor: '#fff'
+                borderColor: getComputedStyle(document.documentElement).getPropertyValue('--paper').trim() || '#fff'
             }]
         },
         options: {

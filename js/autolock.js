@@ -40,7 +40,7 @@
             'bottom:72px',
             'left:50%',
             'transform:translateX(-50%) translateY(20px)',
-            'background:#1a1a1a',
+            'background:#2B241D',
             'color:#fff',
             'padding:10px 18px',
             'border-radius: var(--radius-sm)',
