@@ -27,8 +27,24 @@
   --warning-lt: #FBF0DC;
   --purple:     #A32638;
   --purple-lt:  #F7E4E7;
-  --brand:      #A32638; /* selaras dengan --accent, dipakai di sidebar */
+  --brand:      #A32638; /* selaras dengan --accent, dipakai di balance hero & tombol utama */
   --brand-dark: #7A1C2A;
+  /* Sidebar & title bar — putih, terpisah dari --brand supaya balance
+     hero/tombol utama tetap memakai warna brand seperti semula. */
+  /* Sidebar & title bar — pastel lavender-blue yang lembut, terpisah dari
+     --brand supaya balance hero/tombol utama tetap memakai warna brand. */
+  --topbar-bg:          #EEF1FA;
+  --topbar-text:        var(--ink);
+  --topbar-text-muted:  var(--ink-muted);
+  --topbar-border:      #DDE3F2;
+  --topbar-btn-bg:      #E3E8F6;
+  --topbar-btn-hover-bg: #D3DBF0;
+  --topbar-item-color:  var(--ink-muted);
+  --topbar-item-hover-bg: #E3E8F6;
+  --topbar-item-active-bg: var(--accent-lt);
+  --topbar-item-active-color: var(--accent);
+  --topbar-footer-border: #DDE3F2;
+  --topbar-active-shadow: none;
   /* Extended palette */
   --fase:       #C77A9A;
   --fase-lt:    #F8E9EF;
@@ -183,13 +199,13 @@ h1, h2, h3, h4,
 }
 .account-bar-add:hover { color: #fff; }
 
-/* ── Header (title bar) — warna disamakan dengan sidebar (var(--brand)) ── */
+/* ── Header (title bar) — warna disamakan dengan sidebar (var(--topbar-bg)) ── */
 .header {
   margin: 28px 0 24px;
   padding: 14px 20px;
-  background: linear-gradient(160deg, var(--brand) 0%, var(--brand-dark) 100%);
+  background: var(--topbar-bg);
+  border: 1px solid var(--topbar-border);
   border-radius: var(--radius);
-  border-bottom: none;
   box-shadow: var(--shadow-md);
   display: flex;
   justify-content: space-between;
@@ -198,16 +214,16 @@ h1, h2, h3, h4,
   gap: 16px;
 }
 
-/* Kontras teks/ikon di atas title bar berwarna */
-.header .sync-time-badge { color: rgba(255,255,255,0.7); border-left-color: rgba(255,255,255,0.2); }
-.header .sync-status-container { border-color: rgba(255,255,255,0.25); }
-#manualSyncBtn { color: rgba(255,255,255,0.7) !important; }
-.header .hamburger-btn { background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.25); }
-.header .hamburger-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.4); }
+/* Kontras teks/ikon di atas title bar (mengikuti tema terang/gelap) */
+.header .sync-time-badge { color: var(--topbar-text-muted); border-left-color: var(--topbar-border); }
+.header .sync-status-container { border-color: var(--topbar-border); }
+#manualSyncBtn { color: var(--topbar-text-muted) !important; }
+.header .hamburger-btn { background: var(--topbar-btn-bg); color: var(--topbar-text); border-color: var(--topbar-border); }
+.header .hamburger-btn:hover { background: var(--topbar-btn-hover-bg); border-color: var(--topbar-border); }
 
 .header p {
   font-size: .68rem;
-  color: rgba(255,255,255,0.7);
+  color: var(--topbar-text-muted);
   margin-top: 3px;
   font-weight: 400;
 }
@@ -1217,7 +1233,8 @@ tr:hover td { background: var(--accent-lt); }
   top: 0; left: 0;
   width: 240px;
   height: 100%;
-  background: linear-gradient(160deg, var(--brand) 0%, var(--brand-dark) 100%);
+  background: var(--topbar-bg);
+  border-right: 1px solid var(--topbar-border);
   z-index: 3001;
   padding: 22px 14px;
   overflow-y: auto;
@@ -1242,7 +1259,7 @@ tr:hover td { background: var(--accent-lt); }
   font-size: .85rem;
   font-weight: 600;
   letter-spacing: .01em;
-  color: #fff;
+  color: var(--topbar-text);
   padding: 4px 10px 18px;
 }
 .app-nav-group {
@@ -1255,13 +1272,13 @@ tr:hover td { background: var(--accent-lt); }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .08em;
-  color: rgba(255, 255, 255, .48);
+  color: var(--topbar-text-muted);
   padding: 8px 13px 2px;
 }
 .app-nav-footer {
   margin-top: auto;
   padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, .16);
+  border-top: 1px solid var(--topbar-footer-border);
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -1279,13 +1296,13 @@ tr:hover td { background: var(--accent-lt); }
   background: none;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  color: rgba(255, 255, 255, .82);
+  color: var(--topbar-item-color);
   cursor: pointer;
   transition: background .15s, color .15s;
 }
 .app-nav-item svg { stroke: currentColor; }
-.app-nav-item:hover { background: rgba(255, 255, 255, .16); color: #fff; }
-.app-nav-item.active { background: #fff; color: var(--brand-dark); font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,0.18); }
+.app-nav-item:hover { background: var(--topbar-item-hover-bg); color: var(--topbar-text); }
+.app-nav-item.active { background: var(--topbar-item-active-bg); color: var(--topbar-item-active-color); font-weight: 700; box-shadow: var(--topbar-active-shadow); }
 .app-nav-badge {
   display: none;
   margin-left: auto;
@@ -2728,10 +2745,23 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   --warning-lt: #332912;
   --purple:     #E0707F;
   --purple-lt:  #3A2027;
-  /* Brand (title bar / sidebar / balance hero) — dark overrides,
+  /* Brand (balance hero / tombol utama) — dark overrides,
      supaya tidak lagi tampil ungu terang di mode gelap */
   --brand:      #262B38;
   --brand-dark: #12151C;
+  /* Sidebar & title bar tetap gelap ala semula di dark mode (tidak putih) */
+  --topbar-bg:          linear-gradient(160deg, #262B38 0%, #12151C 100%);
+  --topbar-text:        #fff;
+  --topbar-text-muted:  rgba(255,255,255,0.7);
+  --topbar-border:      rgba(255,255,255,0.25);
+  --topbar-btn-bg:      rgba(255,255,255,0.12);
+  --topbar-btn-hover-bg: rgba(255,255,255,0.2);
+  --topbar-item-color:  rgba(255,255,255,.82);
+  --topbar-item-hover-bg: rgba(255,255,255,.16);
+  --topbar-item-active-bg: #fff;
+  --topbar-item-active-color: #12151C;
+  --topbar-footer-border: rgba(255,255,255,.16);
+  --topbar-active-shadow: 0 4px 14px rgba(0,0,0,0.18);
   /* Extended palette — dark overrides */
   --fase:       #D98FB0;
   --fase-lt:    #332028;
