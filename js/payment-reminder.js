@@ -181,7 +181,7 @@ window.savePaymentReminder = async function(bookId, reminderData, skipLocalUpser
             const tag = window.getAccountTag ? window.getAccountTag() : null;
             // [SECURITY] name/note/day/recurrence/month dienkripsi jadi satu
             // kolom enc_payload -- lihat window.encodeCloudReminderPayload.
-            const encPayload = await window.encodeCloudReminderPayload(reminderData);
+            const encPayload = await window.encodeCloudReminderPayload(reminderData, bookId);
             const payload = encPayload
                 ? { id: reminderData.id, book_id: bookId, enc_payload: encPayload, name: null, day: null, recurrence: null, month: null, note: null, created_at: reminderData.created_at, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) }
                 : { ...reminderData, book_id: bookId, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) };
@@ -275,7 +275,7 @@ window.syncAllPaymentReminders = async function(bookId) {
         const tag = window.getAccountTag ? window.getAccountTag() : null;
         // [SECURITY] Enkripsi field sensitif -- lihat window.encodeCloudReminderPayload.
         const payload = await Promise.all(localReminders.map(async r => {
-            const encPayload = await window.encodeCloudReminderPayload(r);
+            const encPayload = await window.encodeCloudReminderPayload(r, bookId);
             if (encPayload) {
                 return { id: r.id, book_id: bookId, enc_payload: encPayload, name: null, day: null, recurrence: null, month: null, note: null, created_at: r.created_at, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) };
             }
@@ -357,7 +357,7 @@ window.migratePaymentReminders = async function(bookId) {
         const tag = window.getAccountTag ? window.getAccountTag() : null;
         // [SECURITY] Enkripsi field sensitif -- lihat window.encodeCloudReminderPayload.
         const payload = await Promise.all(toMigrate.map(async r => {
-            const encPayload = await window.encodeCloudReminderPayload(r);
+            const encPayload = await window.encodeCloudReminderPayload(r, r.book_id || bookId);
             if (encPayload) {
                 return { id: r.id, book_id: r.book_id || bookId, enc_payload: encPayload, name: null, day: null, recurrence: null, month: null, note: null, created_at: r.created_at, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) };
             }

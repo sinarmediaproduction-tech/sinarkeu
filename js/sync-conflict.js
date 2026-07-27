@@ -117,7 +117,7 @@ window._registerConflict = function(id, bookId, localTx, serverTx, serverDeleted
 window._pushSingleTxConditional = async function(bookId, tx, baseline) {
     const tag = window.getAccountTag ? window.getAccountTag() : null;
     const tagFilter = window.tagOrFilter(tag);
-    const encPayload = await window.encodeCloudTxPayload(tx);
+    const encPayload = await window.encodeCloudTxPayload(tx, bookId);
     const nowIso = new Date().toISOString();
     const base = {
         id: tx.id,
@@ -300,7 +300,7 @@ window.resolveConflictKeepMine = async function() {
     if (tx && window.isOnline()) {
         const tag = window.getAccountTag ? window.getAccountTag() : null;
         const tagFilter = window.tagOrFilter(tag);
-        const encPayload = await window.encodeCloudTxPayload(tx);
+        const encPayload = await window.encodeCloudTxPayload(tx, c.bookId);
         const body = {
             id: tx.id, book_id: c.bookId, device_id: window.deviceId, date: tx.date,
             updated_at: new Date().toISOString(), is_deleted: false,

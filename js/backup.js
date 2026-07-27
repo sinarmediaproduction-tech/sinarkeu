@@ -777,7 +777,7 @@ window.importAllDataFromFile = async function(input) {
                 // [SECURITY] Sama seperti pushToCloud() di transaction.js -- enkripsi
                 // field sensitif sebelum dikirim, bukan lagi plaintext.
                 const payload = await Promise.all(newTxs.map(async t => {
-                    const encPayload = await window.encodeCloudTxPayload(t);
+                    const encPayload = await window.encodeCloudTxPayload(t, bookData.id);
                     const base = {
                         id: t.id, book_id: bookData.id, device_id: window.deviceId,
                         date: t.date, updated_at: t.updated_at || new Date().toISOString(),

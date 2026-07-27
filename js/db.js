@@ -206,15 +206,29 @@ window.pullCryptoSaltCheckStrict = async function(tagOverride) {
 // mempercayai nilai return-nya untuk menampilkan status yang akurat ke user.
 window.pushSetting = async function(key, value, bookId) {
     if (!window.isOnline()) return false;
-    if (!window._sessionCryptoKey) {
-        console.warn(`[Sync] Crypto key sesi tidak tersedia, push '${key}' dibatalkan (mencegah kebocoran plain text ke cloud).`);
-        return false;
-    }
+    const resolvedBookId = bookId || window.currentBookId;
     const plainJson = JSON.stringify(value);
-    const encryptedValue = await window.encryptStr(window._sessionCryptoKey, plainJson);
+    let encryptedValue;
+    if (window.skIsSharedBookId && window.skIsSharedBookId(resolvedBookId)) {
+        // Buku bersama: SKIP enkripsi (sengaja) -- kunci sesi bersifat lokal
+        // per device/password, anggota lain di buku shared tidak akan
+        // pernah punya kunci yang sama untuk mendekripsinya. Buku shared
+        // sudah disepakati datanya bisa dibaca semua anggota, lihat catatan
+        // di window.encodeCloudTxPayload (js/crypto.js) untuk alasan yang
+        // sama persis. _decryptSettingValue() di bawah sudah punya fallback
+        // "kalau bukan ciphertext, anggap plain JSON", jadi baris ini tetap
+        // terbaca normal saat pull, tidak perlu perubahan lain.
+        encryptedValue = plainJson;
+    } else {
+        if (!window._sessionCryptoKey) {
+            console.warn(`[Sync] Crypto key sesi tidak tersedia, push '${key}' dibatalkan (mencegah kebocoran plain text ke cloud).`);
+            return false;
+        }
+        encryptedValue = await window.encryptStr(window._sessionCryptoKey, plainJson);
+    }
     const tag = window.getAccountTag();
     const payload = [{
-        book_id: bookId || window.currentBookId,
+        book_id: resolvedBookId,
         key: key,
         value: encryptedValue,
         updated_at: new Date().toISOString(),

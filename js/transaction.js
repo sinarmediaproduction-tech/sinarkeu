@@ -548,7 +548,7 @@ window.pushToCloud = async function(bookId, txs, dirtyIds) {
     // terkunci), fallback aman: tetap kirim plaintext ke kolom lama supaya
     // data tidak hilang, daripada gagal total.
     const payload = await Promise.all(toPush.map(async t => {
-        const encPayload = await window.encodeCloudTxPayload(t);
+        const encPayload = await window.encodeCloudTxPayload(t, bookId);
         const base = {
             id: t.id,
             book_id: bookId,
@@ -560,7 +560,9 @@ window.pushToCloud = async function(bookId, txs, dirtyIds) {
         if (encPayload) {
             return { ...base, enc_payload: encPayload, type: null, amount: null, category: null, description: null, attachment: null };
         }
-        console.warn('[Security] Kunci sesi tidak tersedia, transaksi', t.id, 'dikirim TIDAK terenkripsi (fallback).');
+        if (!(window.skIsSharedBookId && window.skIsSharedBookId(bookId))) {
+            console.warn('[Security] Kunci sesi tidak tersedia, transaksi', t.id, 'dikirim TIDAK terenkripsi (fallback).');
+        }
         return { ...base, type: t.type, amount: parseFloat(t.amount) || 0, category: t.category || '', description: t.description || '', attachment: t.attachment || null };
     }));
     if (payload.length === 0) return;

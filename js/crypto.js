@@ -382,7 +382,21 @@ window.getTelegramConfigDecrypted = async function() {
 // Kolom lama (amount/category/description/attachment/type) TIDAK diisi lagi
 // data asli -- lihat sql/harden_transactions_encryption.sql untuk migrasi
 // kolomnya (dibuat nullable, tidak perlu tahu skema live sebelumnya).
-window.encodeCloudTxPayload = async function(t) {
+// bookId (opsional): kalau diisi dan buku itu statusnya SHARED (lihat
+// window.skIsSharedBookId di js/auth.js), fungsi ini SENGAJA return null --
+// artinya "jangan enkripsi". Alasan: kunci sesi (_sessionCryptoKey)
+// diturunkan dari password LOKAL per device/akun -- anggota lain di buku
+// shared tidak akan pernah punya kunci yang sama, jadi data yang
+// dienkripsi dengan kunci ini TIDAK BISA dibaca siapa pun selain device
+// yang menulisnya. Buku shared memang sudah disepakati datanya bisa dibaca
+// semua anggota (role apa pun) -- lihat sql/shared_books_roles.sql -- jadi
+// untuk buku shared, field dikirim plaintext ke kolom lama (bukan
+// enc_payload). Pemanggil (transaction.js/sync-conflict.js/backup.js)
+// sudah punya fallback plaintext ini dari sebelumnya (dulu untuk kasus
+// "kunci sesi belum siap"), jadi tidak perlu perubahan lain di sana selain
+// mengoper bookId ke sini.
+window.encodeCloudTxPayload = async function(t, bookId) {
+    if (bookId && window.skIsSharedBookId && window.skIsSharedBookId(bookId)) return null;
     if (!window._sessionCryptoKey) return null; // seharusnya selalu ada saat sesi terbuka
     const plain = JSON.stringify({
         type: t.type,
@@ -426,7 +440,11 @@ window.decodeCloudTxRow = async function(c) {
 // Field sensitif: `name` (nama tagihan, mis. "Cicilan Motor", "SPP Anak")
 // dan `note`. day/recurrence/month juga ikut dienkripsi sekalian (tidak
 // pernah dipakai untuk query server-side, aman dienkripsi semua).
-window.encodeCloudReminderPayload = async function(r) {
+// bookId (opsional): sama seperti window.encodeCloudTxPayload -- kalau
+// buku itu shared, SENGAJA return null (skip enkripsi), lihat catatan di
+// window.encodeCloudTxPayload untuk alasannya.
+window.encodeCloudReminderPayload = async function(r, bookId) {
+    if (bookId && window.skIsSharedBookId && window.skIsSharedBookId(bookId)) return null;
     if (!window._sessionCryptoKey) return null;
     const plain = JSON.stringify({
         name: r.name || '', day: r.day, recurrence: r.recurrence,
