@@ -465,33 +465,9 @@ alter table public.settings
 
     <div class="app-nav-group">
         <div class="app-nav-group-label">Kelola</div>
-        <button type="button" class="app-nav-item" id="navAccountBtn" onclick="window.closeMobileDrawer(); openAccountManager()">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-            <span>Akun</span>
-        </button>
         <button type="button" class="app-nav-item" id="navUserManagerBtn" onclick="window.closeMobileDrawer(); window.openUserManager()" style="display:none;">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
             <span>Manajemen User</span>
-        </button>
-        <button type="button" class="app-nav-item" id="navBackupBtn" onclick="window.closeMobileDrawer(); openBackupManager()">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            <span>Cadangan Data</span>
-        </button>
-    </div>
-
-    <div class="app-nav-group">
-        <div class="app-nav-group-label">Keamanan & Perangkat</div>
-        <button type="button" class="app-nav-item" id="navTelegramBtn" onclick="window.closeMobileDrawer(); window.openTelegramSettings()">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
-            <span data-i18n="telegram_section">Notifikasi Telegram</span>
-        </button>
-        <button type="button" class="app-nav-item" id="navSafetySnapshotBtn" onclick="window.closeMobileDrawer(); window.openSafetySnapshotManager()">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path></svg>
-            <span>Snapshot Keamanan</span>
-        </button>
-        <button type="button" class="app-nav-item" id="navDeviceManagerBtn" onclick="window.closeMobileDrawer(); window.openDeviceManager()">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-            <span>Perangkat Terhubung</span>
         </button>
     </div>
 
@@ -943,6 +919,21 @@ alter table public.settings
         <div class="modal-header"><h3 data-i18n="settings_title">Setelan</h3><button class="modal-close" onclick="window.openMobileDrawer()" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button></div>
 
         <div class="setelan-tab-content" id="setelanTabContent">
+
+        <!-- Akun & Perangkat -- dipindah dari menu sidebar utama -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="akun-perangkat">
+            <div class="panel-title">Akun &amp; Perangkat</div>
+            <div class="setelan-desc">
+                <span>Kelola akun, cadangan data, notifikasi, snapshot keamanan, dan perangkat yang terhubung.</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <button type="button" class="btn btn-secondary" id="setelanBtnAkun" style="width:100%; text-align:left;" onclick="window.closeMobileDrawer(); openAccountManager()">Akun</button>
+                <button type="button" class="btn btn-secondary" id="setelanBtnBackup" style="width:100%; text-align:left;" onclick="window.closeMobileDrawer(); openBackupManager()">Cadangan Data</button>
+                <button type="button" class="btn btn-secondary" id="setelanBtnTelegram" style="width:100%; text-align:left;" onclick="window.closeMobileDrawer(); window.openTelegramSettings()">Notifikasi Telegram</button>
+                <button type="button" class="btn btn-secondary" id="setelanBtnSnapshot" style="width:100%; text-align:left;" onclick="window.closeMobileDrawer(); window.openSafetySnapshotManager()">Snapshot Keamanan</button>
+                <button type="button" class="btn btn-secondary" id="setelanBtnDevice" style="width:100%; text-align:left;" onclick="window.closeMobileDrawer(); window.openDeviceManager()">Perangkat Terhubung</button>
+            </div>
+        </div>
 
         <div class="data-management-panel setelan-tab-panel active" data-tab-panel="ai">
             <div class="panel-title setelan-title--purple">

@@ -939,18 +939,21 @@ window.skApplyRoleUI = function() {
     // juga sekarang, bukan cuma buku bersama. openSetelanModal tetap
     // ditolak juga (defense-in-depth) kalau ada yang memicunya lewat jalur
     // lain (mis. deep-link "Setelan -> Analisis AI").
+    // [PINDAH KE SETELAN] Akun/Cadangan Data/Telegram/Snapshot/Perangkat
+    // sudah tidak punya tombol sidebar sendiri -- targetnya sekarang
+    // tombol di panel "Akun & Perangkat" pada halaman Setelan.
     setVisible('navSetelanBtn', window.skGetMenuVisible(bookId, 'setelan'));
-    setVisible('navBackupBtn', window.skGetMenuVisible(bookId, 'backup'));
-    setVisible('navDeviceManagerBtn', window.skGetMenuVisible(bookId, 'device'));
+    setVisible('setelanBtnBackup', window.skGetMenuVisible(bookId, 'backup'));
+    setVisible('setelanBtnDevice', window.skGetMenuVisible(bookId, 'device'));
     setVisible('navBudgetBtn', window.skGetMenuVisible(bookId, 'budget'));
     setVisible('tambahTransaksiBtn', window.skGetMenuVisible(bookId, 'tambahTransaksi'));
     // [PERMINTAAN] Sembunyikan dari user selain admin -- ikut skema
     // menu_visibility yang sama supaya admin tetap bisa menyalakannya lagi
     // per-role kalau perlu (lihat SK_MENU_DEFAULTS).
     setVisible('navBookBtn', window.skGetMenuVisible(bookId, 'bukuKas'));
-    setVisible('navAccountBtn', window.skGetMenuVisible(bookId, 'akun'));
-    setVisible('navTelegramBtn', window.skGetMenuVisible(bookId, 'telegram'));
-    setVisible('navSafetySnapshotBtn', window.skGetMenuVisible(bookId, 'snapshot'));
+    setVisible('setelanBtnAkun', window.skGetMenuVisible(bookId, 'akun'));
+    setVisible('setelanBtnTelegram', window.skGetMenuVisible(bookId, 'telegram'));
+    setVisible('setelanBtnSnapshot', window.skGetMenuVisible(bookId, 'snapshot'));
 
     // [MENU MANAJEMEN USER] Relevan selama role global admin (admin di
     // buku bersama MANA PUN), terlepas dari buku apa yang sedang dibuka --

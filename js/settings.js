@@ -118,11 +118,14 @@ window.APP_NAV_BTN_MAP = {
     anggaran:  'navBudgetBtn',
     reminder:  'navReminderBtn',
     buku:      'navBookBtn',
-    akun:      'navAccountBtn',
-    backup:    'navBackupBtn',
-    telegram:  'navTelegramBtn',
-    snapshot:  'navSafetySnapshotBtn',
-    devices:   'navDeviceManagerBtn',
+    // [PINDAH KE SETELAN] Halaman ini sekarang dibuka dari panel "Akun &
+    // Perangkat" di Setelan (bukan tombol sidebar sendiri lagi) -- tetap
+    // menyorot navSetelanBtn supaya sidebar tidak terlihat kosong aktifnya.
+    akun:      'navSetelanBtn',
+    backup:    'navSetelanBtn',
+    telegram:  'navSetelanBtn',
+    snapshot:  'navSetelanBtn',
+    devices:   'navSetelanBtn',
     userManager: 'navUserManagerBtn'
 };
 window.updateAppSidebarNav = function(which) {

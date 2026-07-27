@@ -167,6 +167,10 @@ window.requireOnline = function(operationName) {
 // Daftar modal yang sekarang tampil sebagai halaman penuh di area utama
 // (pola sama seperti Setelan) alih-alih kotak dialog mengambang -- dipetakan
 // ke id tombol nav sidebar masing-masing supaya nav bisa ikut ditandai aktif.
+// [PINDAH KE SETELAN] akun/backup/telegram/snapshot/devices sudah tidak
+// punya tombol sidebar sendiri lagi -- dibuka dari panel "Akun & Perangkat"
+// di halaman Setelan (index.html), tapi tetap tampil sebagai halaman penuh
+// lewat mekanisme yang sama, jadi entri map di bawah tetap dipertahankan.
 // Lihat CLAUDE.md bagian "Sidebar/nav" untuk konvensinya.
 window.FULLVIEW_MODALS = {
     monthlyReportModal:    'laporan',
