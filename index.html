@@ -8,7 +8,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-    <meta name="theme-color" content="#7A2E42">
+    <meta name="theme-color" content="#1F1911">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -61,8 +61,6 @@
         (function() {
             if (localStorage.getItem('sk_dark_mode') === '1') {
                 document.documentElement.setAttribute('data-theme', 'dark');
-                var tc = document.querySelector('meta[name="theme-color"]');
-                if (tc) tc.setAttribute('content', '#1F1911');
             }
         })();
     </script>
