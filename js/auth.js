@@ -145,8 +145,15 @@ window.skComputeGlobalRole = function() {
 // lagi. bookId dipakai HANYA untuk menu_visibility kustom kalau buku aktif
 // itu buku bersama yang sudah diatur admin-nya -- kalau tidak ada
 // pengaturan khusus, jatuh ke SK_MENU_DEFAULTS berdasarkan role global.
-window.skGetMenuVisible = function(bookId, menuKey) {
-    const role = window.skComputeGlobalRole();
+// [FIX BUG LOGIKA MULTIUSER] roleOverride (opsional): kalau diisi, dipakai
+// APA ADANYA sebagai peran acuan, tidak lagi menghitung ulang dari
+// skComputeGlobalRole(). Dipakai oleh gerbang addModal di bawah supaya toggle
+// "tambahTransaksi" dicek dengan peran EFEKTIF di buku itu (viewer), bukan
+// peran global yang mungkin lebih longgar (mis. editor di buku lain) --
+// tanpa roleOverride, perilaku lama (Setelan/Backup/dst, yang memang sengaja
+// global) tidak berubah sama sekali.
+window.skGetMenuVisible = function(bookId, menuKey, roleOverride) {
+    const role = roleOverride || window.skComputeGlobalRole();
     if (role === 'admin') return true;
     const cfg = window._skBookMenuVisibility[bookId];
     const roleCfg = cfg && cfg[role];
@@ -168,6 +175,23 @@ window.skIsSharedBookId = function(bookId) {
 
 window.skGetRoleForBook = function(bookId) {
     return window._skSharedRoles[bookId] || null;
+};
+
+// [FIX BUG LOGIKA MULTIUSER] Peran EFEKTIF untuk buku tertentu -- dipakai
+// khusus untuk gerbang CRUD transaksi (skIsViewerOnCurrentBook & sekitarnya),
+// BUKAN untuk gerbang Setelan/Backup/dst yang memang sengaja global (lihat
+// skComputeGlobalRole di atas). Sebelumnya skIsViewerOnCurrentBook memakai
+// skComputeGlobalRole() langsung -- akibatnya user yang editor di Buku A
+// tapi viewer di Buku B tetap bisa Tambah/Ubah/Hapus transaksi saat sedang
+// membuka Buku B, karena peran "tertinggi di buku manapun" (editor) menang,
+// padahal peran dia DI BUKU B sendiri cuma viewer. Fungsi ini mengembalikan
+// peran user KHUSUS untuk bookId itu kalau dia anggota buku bersama itu
+// (null berarti bukan buku bersama / bukan anggota -> jatuh ke peran global,
+// sama seperti perilaku lama untuk buku pribadi -- lihat aturan #3 di
+// skComputeGlobalRole).
+window.skGetEffectiveRoleForBook = function(bookId) {
+    const perBookRole = window.skGetRoleForBook(bookId);
+    return perBookRole || window.skComputeGlobalRole();
 };
 
 window.skSignIn = async function(email, password) {
@@ -918,7 +942,7 @@ window.skRenderUserManagerPage = function(selectedBookId) {
 // diklik dulu baru ketahuan ditolak. Ini menyembunyikan/menonaktifkan
 // tombolnya duluan supaya tidak menyesatkan.
 window.skIsViewerOnCurrentBook = function() {
-    return window.skComputeGlobalRole() === 'viewer';
+    return window.skGetEffectiveRoleForBook(window.currentBookId) === 'viewer';
 };
 
 window.skApplyRoleUI = function() {
@@ -984,7 +1008,7 @@ window.openModal = function(id) {
         // kalau admin menyalakan menu ini untuk viewer lewat panel "Atur
         // Tampilan Menu per Peran", tombolnya tampil (skApplyRoleUI) DAN
         // beneran bisa dipakai di sini, bukan cuma tampil lalu ditolak.
-        if (id === 'addModal' && !window.skGetMenuVisible(window.currentBookId, 'tambahTransaksi')) {
+        if (id === 'addModal' && !window.skGetMenuVisible(window.currentBookId, 'tambahTransaksi', 'viewer')) {
             window.showToast && window.showToast('Peran viewer di buku bersama ini hanya bisa melihat, tidak bisa menambah transaksi.', 'error');
             return;
         }
