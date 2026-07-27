@@ -75,7 +75,7 @@ window.getSupabaseAuthClient = getSupabaseAuthClient;
 
 window._skAuthUser = null;      // {id, email} kalau sedang login
 window._skSharedRoles = {};     // { [bookId]: 'admin' | 'editor' | 'viewer' }
-window._skAuthMode = 'login';   // 'login' | 'signup' -- tampilan panel saat logout
+window._skAuthMode = 'login';   // selalu 'login' -- menu daftar manual (signup) sudah dihapus
 
 // ── Atur Tampilan Menu per Peran (bisa diubah admin, lihat sql/menu_visibility.sql) ──
 // window._skBookMenuVisibility[bookId] = { editor: {menuKey: bool}, viewer: {menuKey: bool} }
@@ -184,39 +184,6 @@ window.skSignIn = async function(email, password) {
     window._skAuthUser = data.user ? { id: data.user.id, email: data.user.email } : null;
     await window.skRefreshSharedAccess();
     window.showToast && window.showToast('Berhasil login: ' + (window._skAuthUser ? window._skAuthUser.email : ''));
-    if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
-    return true;
-};
-
-// Daftar akun baru (Supabase Auth). Ini TIDAK otomatis jadi anggota buku
-// mana pun -- setelah daftar, orangnya kasih tahu emailnya ke admin buku
-// shared yang mau dia ikuti, baru admin undang lewat panel "Kelola Anggota".
-window.skSignUp = async function(email, password) {
-    const client = getSupabaseAuthClient();
-    if (!client) {
-        window.showToast && window.showToast('Supabase belum di-setup (cek Setelan → Supabase).', 'error');
-        return false;
-    }
-    if (!password || password.length < 6) {
-        window.showToast && window.showToast('Password minimal 6 karakter.', 'error');
-        return false;
-    }
-    const { data, error } = await client.auth.signUp({ email: email, password: password });
-    if (error) {
-        window.showToast && window.showToast('Daftar gagal: ' + error.message, 'error');
-        return false;
-    }
-    // Kalau project Supabase-nya mewajibkan konfirmasi email, data.session
-    // akan null meski data.user ada -- artinya belum bisa langsung dipakai
-    // sampai email diklik. Kalau konfirmasi email dimatikan, session langsung
-    // ada dan kita bisa auto-login seperti skSignIn.
-    if (data.session) {
-        window._skAuthUser = data.user ? { id: data.user.id, email: data.user.email } : null;
-        await window.skRefreshSharedAccess();
-        window.showToast && window.showToast('Berhasil daftar & login: ' + (window._skAuthUser ? window._skAuthUser.email : ''));
-    } else {
-        window.showToast && window.showToast('Akun dibuat. Cek email untuk konfirmasi, lalu login.', 'success');
-    }
     if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
     return true;
 };
@@ -449,7 +416,7 @@ window.openSetelanModal = function(initialTab) {
 };
 
 // ── Jadikan buku pribadi jadi buku bersama (bootstrap admin pertama) ────
-// Syarat: sudah login (skSignIn/skSignUp), dan sudah jalankan
+// Syarat: sudah login (skSignIn), dan sudah jalankan
 // sql/bootstrap_shared_book.sql (jalur RLS khusus buat baris admin pertama).
 window.skMakeBookShared = async function(bookId) {
     const client = getSupabaseAuthClient();
@@ -1088,29 +1055,17 @@ window.skRenderAuthPanel = function() {
             '<div style="margin-top:4px; color:var(--ink-faint);">Tombol logout ada di footer sidebar.</div></div>' +
             memberPanel;
         if (role === 'admin') window.skRenderMemberList(bookId);
-    } else if (window._skAuthMode === 'signup') {
-        el.innerHTML =
-            '<form onsubmit="window._skHandleSignUpSubmit(event)">' +
-                '<input type="email" id="skAuthEmail" class="form-control" placeholder="Email" required autocomplete="username" style="margin-bottom:6px;">' +
-                '<input type="password" id="skAuthPassword" class="form-control" placeholder="Password (min. 6 karakter)" required minlength="6" autocomplete="new-password" style="margin-bottom:8px;">' +
-                '<button type="submit" class="btn btn-primary" style="width:100%;">Daftar Akun Buku Bersama</button>' +
-            '</form>' +
-            '<div style="font-size:.68rem; color:var(--ink-faint); margin-top:8px; line-height:1.6;">Daftar dulu di sini, lalu kasih tahu email kamu ke admin buku bersama yang mau kamu ikuti.</div>' +
-            '<button type="button" class="btn btn-secondary" style="margin-top:8px; width:100%;" onclick="window._skToggleAuthMode(\'login\')">Sudah punya akun? Login</button>';
     } else {
+        // [MENU DAFTAR MANUAL DIHAPUS] Tidak ada lagi opsi self-signup di
+        // sini -- akun anggota baru sekarang HARUS dibuatkan admin lewat
+        // skAdminCreateMemberAccount (panel Manajemen User / Kelola Anggota).
         el.innerHTML =
             '<form onsubmit="window._skHandleLoginSubmit(event)">' +
                 '<input type="email" id="skAuthEmail" class="form-control" placeholder="Email" required autocomplete="username" style="margin-bottom:6px;">' +
                 '<input type="password" id="skAuthPassword" class="form-control" placeholder="Password" required autocomplete="current-password" style="margin-bottom:8px;">' +
                 '<button type="submit" class="btn btn-primary" style="width:100%;">Login Buku Bersama</button>' +
-            '</form>' +
-            '<button type="button" class="btn btn-secondary" style="margin-top:8px; width:100%;" onclick="window._skToggleAuthMode(\'signup\')">Belum punya akun? Daftar</button>';
+            '</form>';
     }
-};
-
-window._skToggleAuthMode = function(mode) {
-    window._skAuthMode = mode;
-    window.skRenderAuthPanel();
 };
 
 window._skHandleLoginSubmit = function(ev) {
@@ -1118,13 +1073,6 @@ window._skHandleLoginSubmit = function(ev) {
     const email = document.getElementById('skAuthEmail').value.trim();
     const password = document.getElementById('skAuthPassword').value;
     window.skSignIn(email, password);
-};
-
-window._skHandleSignUpSubmit = function(ev) {
-    ev.preventDefault();
-    const email = document.getElementById('skAuthEmail').value.trim();
-    const password = document.getElementById('skAuthPassword').value;
-    window.skSignUp(email, password);
 };
 
 // ── [MULTIROLE GATE] Halaman login wajib sebelum masuk app ──────────────
@@ -1168,29 +1116,15 @@ window.skHideLoginGate = function() {
 window.skRenderGateAuthPanel = function() {
     const el = document.getElementById('skGateAuthPanelContent');
     if (!el) return;
-    if (window._skGateAuthMode === 'signup') {
-        el.innerHTML =
-            '<form onsubmit="window._skHandleGateSignUpSubmit(event)">' +
-                '<input type="email" id="skGateAuthEmail" class="form-control" placeholder="Email" required autocomplete="username" style="margin-bottom:6px;">' +
-                '<input type="password" id="skGateAuthPassword" class="form-control" placeholder="Password (min. 6 karakter)" required minlength="6" autocomplete="new-password" style="margin-bottom:8px;">' +
-                '<button type="submit" class="btn btn-primary" style="width:100%;">Daftar Akun Buku Bersama</button>' +
-            '</form>' +
-            '<div style="font-size:.68rem; color:var(--ink-faint); margin-top:8px; line-height:1.6;">Daftar dulu di sini, lalu kasih tahu email kamu ke admin buku bersama yang mau kamu ikuti. Setelah daftar, kamu tetap perlu login di sini.</div>' +
-            '<button type="button" class="btn btn-secondary" style="margin-top:8px; width:100%;" onclick="window._skToggleGateAuthMode(\'login\')">Sudah punya akun? Login</button>';
-    } else {
-        el.innerHTML =
-            '<form onsubmit="window._skHandleGateLoginSubmit(event)">' +
-                '<input type="email" id="skGateAuthEmail" class="form-control" placeholder="Email" required autocomplete="username" style="margin-bottom:6px;">' +
-                '<input type="password" id="skGateAuthPassword" class="form-control" placeholder="Password" required autocomplete="current-password" style="margin-bottom:8px;">' +
-                '<button type="submit" class="btn btn-primary" style="width:100%;">Login Buku Bersama</button>' +
-            '</form>' +
-            '<button type="button" class="btn btn-secondary" style="margin-top:8px; width:100%;" onclick="window._skToggleGateAuthMode(\'signup\')">Belum punya akun? Daftar</button>';
-    }
-};
-
-window._skToggleGateAuthMode = function(mode) {
-    window._skGateAuthMode = mode;
-    window.skRenderGateAuthPanel();
+    // [MENU DAFTAR MANUAL DIHAPUS] Gerbang login ini sekarang hanya
+    // menampilkan form login -- tidak ada lagi opsi self-signup. Akun
+    // anggota baru harus dibuatkan admin lewat skAdminCreateMemberAccount.
+    el.innerHTML =
+        '<form onsubmit="window._skHandleGateLoginSubmit(event)">' +
+            '<input type="email" id="skGateAuthEmail" class="form-control" placeholder="Email" required autocomplete="username" style="margin-bottom:6px;">' +
+            '<input type="password" id="skGateAuthPassword" class="form-control" placeholder="Password" required autocomplete="current-password" style="margin-bottom:8px;">' +
+            '<button type="submit" class="btn btn-primary" style="width:100%;">Login Buku Bersama</button>' +
+        '</form>';
 };
 
 window._skHandleGateLoginSubmit = async function(ev) {
@@ -1202,24 +1136,6 @@ window._skHandleGateLoginSubmit = async function(ev) {
         const resolve = window._skGateResolve;
         window._skGateResolve = null;
         resolve();
-    }
-};
-
-window._skHandleGateSignUpSubmit = async function(ev) {
-    ev.preventDefault();
-    const email = document.getElementById('skGateAuthEmail').value.trim();
-    const password = document.getElementById('skGateAuthPassword').value;
-    const ok = await window.skSignUp(email, password);
-    // Kalau project Supabase-nya mewajibkan konfirmasi email, skSignUp
-    // berhasil (ok=true) TAPI window._skAuthUser masih null (session belum
-    // ada sampai email dikonfirmasi) -- gerbang JANGAN diloloskan, balik ke
-    // mode login supaya user login manual setelah konfirmasi email.
-    if (ok && window._skAuthUser && window._skGateResolve) {
-        const resolve = window._skGateResolve;
-        window._skGateResolve = null;
-        resolve();
-    } else if (ok && !window._skAuthUser) {
-        window._skToggleGateAuthMode('login');
     }
 };
 
