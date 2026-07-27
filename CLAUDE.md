@@ -18,6 +18,28 @@ Tidak ada build step — buka `index.html` langsung di browser, atau serve
 statis (mis. `npx serve .`). Tidak ada test runner otomatis di repo ini;
 verifikasi manual lewat browser setelah perubahan.
 
+## Deploy
+
+Static site murni, tidak ada proses compile/bundle apa pun — file yang ada
+di repo ini SAMA PERSIS dengan yang disajikan ke browser.
+
+- **Vercel:** ada `vercel.json` di root yang secara EKSPLISIT mendeklarasikan
+  `buildCommand`/`installCommand` sebagai perintah no-op (`echo ...`),
+  `outputDirectory: "."`, dan `framework: null`. Ini BUKAN build sungguhan --
+  tujuannya cuma supaya Vercel tidak mencoba auto-detect framework/build step
+  sendiri (yang pernah bikin preview deployment nyangkut lama di status
+  "In Progress" untuk repo tanpa `package.json` seperti ini). Kalau nanti ada
+  yang mau menambah proses build SUNGGUHAN (bundler, minifier, dst), ganti isi
+  `buildCommand` di `vercel.json` ini -- jangan cuma edit dashboard Vercel,
+  supaya config-nya tetap tercermin di repo.
+- **Cloudflare Pages:** tidak butuh file config build khusus untuk static
+  site sepert ini -- cukup set "Build command" KOSONG dan "Build output
+  directory" ke `/` di dashboard project-nya. `_headers` di root sudah
+  otomatis dibaca Cloudflare Pages untuk custom response header (saat ini
+  masih kosong/placeholder).
+- **GitHub Pages:** tidak butuh build command sama sekali, langsung serve
+  isi repo apa adanya.
+
 ## Arsitektur
 
 - **Tanpa bundler.** Semua modul di `js/*.js` di-load sebagai `<script>` tag

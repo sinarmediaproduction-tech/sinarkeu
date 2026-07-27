@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "echo 'SinarKeu: static site, tidak ada build step sungguhan -- lihat CLAUDE.md bagian Deploy'",
+  "installCommand": "echo 'Tidak ada dependency npm untuk di-install'",
+  "outputDirectory": ".",
+  "framework": null
+}
