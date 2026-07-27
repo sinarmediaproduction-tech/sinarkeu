@@ -27,12 +27,10 @@
   --warning-lt: #FBF0DC;
   --purple:     #A32638;
   --purple-lt:  #F7E4E7;
-  --brand:      #A32638; /* selaras dengan --accent, dipakai di balance hero & tombol utama */
+  --brand:      #A32638; /* dipakai tombol utama & badge peran */
   --brand-dark: #7A1C2A;
-  /* Sidebar & title bar — putih, terpisah dari --brand supaya balance
-     hero/tombol utama tetap memakai warna brand seperti semula. */
   /* Sidebar & title bar — pastel lavender-blue yang lembut, terpisah dari
-     --brand supaya balance hero/tombol utama tetap memakai warna brand. */
+     --brand supaya tombol utama tetap memakai warna brand. */
   --topbar-bg:          #EEF1FA;
   --topbar-text:        var(--ink);
   --topbar-text-muted:  var(--ink-muted);
@@ -45,6 +43,12 @@
   --topbar-item-active-color: var(--accent);
   --topbar-footer-border: #DDE3F2;
   --topbar-active-shadow: none;
+  /* Balance Hero (kartu "Saldo Akhir") — pastel indigo-blue yang senada
+     dengan sidebar/title bar, bukan merah brand lagi. */
+  --hero-bg-from:  #CBD6F5;
+  --hero-bg-to:    #B4C3ED;
+  --hero-text:       var(--ink);
+  --hero-text-muted: var(--ink-muted);
   /* Extended palette */
   --fase:       #C77A9A;
   --fase-lt:    #F8E9EF;
@@ -467,7 +471,7 @@ h1, h2, h3, h4,
 .balance-hero {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+  background: linear-gradient(135deg, var(--hero-bg-from) 0%, var(--hero-bg-to) 100%);
   border: none;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
@@ -480,7 +484,7 @@ h1, h2, h3, h4,
   width: 220px; height: 220px;
   border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, #fff, transparent 70%);
-  opacity: 0.12;
+  opacity: 0.35;
   pointer-events: none;
 }
 .balance-hero-label {
@@ -490,11 +494,11 @@ h1, h2, h3, h4,
   gap: 8px;
   font-size: .72rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.75);
+  color: var(--hero-text-muted);
 }
 .balance-hero-eye {
   background: none; border: none; padding: 0; cursor: pointer;
-  line-height: 1; color: rgba(255,255,255,0.75);
+  line-height: 1; color: var(--hero-text-muted);
 }
 .balance-hero-value {
   position: relative;
@@ -502,7 +506,7 @@ h1, h2, h3, h4,
   font-size: 2.2rem;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: #fff;
+  color: var(--hero-text);
   margin-top: 6px;
 }
 @media (max-width: 480px) {
@@ -2745,7 +2749,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   --warning-lt: #332912;
   --purple:     #E0707F;
   --purple-lt:  #3A2027;
-  /* Brand (balance hero / tombol utama) — dark overrides,
+  /* Brand (tombol utama) — dark overrides,
      supaya tidak lagi tampil ungu terang di mode gelap */
   --brand:      #262B38;
   --brand-dark: #12151C;
@@ -2762,6 +2766,11 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   --topbar-item-active-color: #12151C;
   --topbar-footer-border: rgba(255,255,255,.16);
   --topbar-active-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  /* Balance Hero — versi gelap dari pastel indigo-blue di atas */
+  --hero-bg-from:  #3A4566;
+  --hero-bg-to:    #262E48;
+  --hero-text:       #fff;
+  --hero-text-muted: rgba(255,255,255,0.75);
   /* Extended palette — dark overrides */
   --fase:       #D98FB0;
   --fase-lt:    #332028;
