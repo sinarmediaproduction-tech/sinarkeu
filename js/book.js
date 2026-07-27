@@ -156,9 +156,9 @@ window.renderBookList = function() {
         if (isCurrent) delBtn = '<span style="font-size:.65rem; color:#2F9E6E; font-weight:bold;">SEDANG AKTIF</span>';
         const parentBook = b.parentId ? window.books.find(x => x.id === b.parentId) : null;
         const parentLabel = parentBook ? `<div style="font-size:.6rem; color:#6b46c1; margin-top:2px;">↳ Anak dari: <b>${window.escapeHtml(parentBook.name)}</b></div>` : '';
-        const sharedLabel = b._isShared ? `<div style="font-size:.6rem; color:#2F9E6E; margin-top:2px;">🔗 Buku bersama · peran kamu: <b>${window.escapeHtml(b._role || '?')}</b></div>` : '';
+        const sharedLabel = b._isShared ? `<div style="font-size:.6rem; color:var(--success); margin-top:2px;">🔗 Buku bersama · peran kamu: <b>${window.escapeHtml(b._role || '?')}</b></div>` : '';
         const makeSharedBtn = (!b._isShared && typeof window.skMakeBookShared === 'function') ?
-            `<button class="btn-mini" style="background:#EAF7F0; color:#2F9E6E; border:1px solid #B7E4CB;" onclick="window.skMakeBookShared('${b.id}')" title="Undang orang lain untuk ikut mengelola buku ini">Jadikan Bersama</button>` : '';
+            `<button class="btn-mini" style="background:var(--success-lt); color:var(--success); border:1px solid var(--rule);" onclick="window.skMakeBookShared('${b.id}')" title="Undang orang lain untuk ikut mengelola buku ini">Jadikan Bersama</button>` : '';
         div.innerHTML = `
             <span class="book-list-name">
                 ${window.escapeHtml(b.name)}

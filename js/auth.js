@@ -537,7 +537,7 @@ window.skRenderAuthPanel = function() {
         const role = window.skGetRoleForBook(bookId);
         const roleLine = role ? `<div style="margin-top:4px;">Peran kamu di buku aktif: <b>${role}</b></div>` : '<div style="margin-top:4px; color:var(--ink-faint);">Buku aktif bukan buku bersama.</div>';
         const memberPanel = (role === 'admin') ?
-            '<div id="skMemberPanelWrap" style="margin-top:12px; border-top:1px dashed #D7DBE3; padding-top:12px;">' +
+            '<div id="skMemberPanelWrap" style="margin-top:12px; border-top:1px dashed var(--rule); padding-top:12px;">' +
                 '<div style="font-size:.7rem; font-weight:700; color:var(--ink-muted); margin-bottom:6px;">Kelola Anggota Buku Ini</div>' +
                 '<div id="skMemberListContent" style="font-size:.7rem; margin-bottom:8px;">Memuat anggota...</div>' +
                 '<form onsubmit="window._skHandleInviteSubmit(event)">' +
