@@ -1149,7 +1149,7 @@ window.skRenderAuthPanel = function() {
             '<form onsubmit="window._skHandleLoginSubmit(event)">' +
                 '<input type="email" id="skAuthEmail" class="form-control" placeholder="Email" required autocomplete="username" style="margin-bottom:6px;">' +
                 '<input type="password" id="skAuthPassword" class="form-control" placeholder="Password" required autocomplete="current-password" style="margin-bottom:8px;">' +
-                '<button type="submit" class="btn btn-primary" style="width:100%;">Login Buku Bersama</button>' +
+                '<button type="submit" class="btn btn-primary" style="width:100%;">Masuk</button>' +
             '</form>';
     }
 };
@@ -1209,7 +1209,7 @@ window.skRenderGateAuthPanel = function() {
         '<form onsubmit="window._skHandleGateLoginSubmit(event)">' +
             '<input type="email" id="skGateAuthEmail" class="form-control" placeholder="Email" required autocomplete="username" style="margin-bottom:6px;">' +
             '<input type="password" id="skGateAuthPassword" class="form-control" placeholder="Password" required autocomplete="current-password" style="margin-bottom:8px;">' +
-            '<button type="submit" class="btn btn-primary" style="width:100%;">Login Buku Bersama</button>' +
+            '<button type="submit" class="btn btn-primary" style="width:100%;">Masuk</button>' +
         '</form>';
 };
 
