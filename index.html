@@ -500,6 +500,10 @@ alter table public.settings
                  report.js (baris 62 & 201) dan openMobileDrawer() di app.js masih membaca
                  textContent elemen ini untuk nama akun di laporan & label drawer mobile. -->
             <span id="activeAccountLabel" style="display:none;font-size:.7rem;font-weight:700;color:var(--ink);padding:4px 10px;background:var(--info-lt);border-radius: var(--radius-sm);"></span>
+            <!-- [MULTIROLE] Badge peran Buku Bersama (admin/editor/viewer) -- disembunyikan
+                 default, ditampilkan & diisi oleh window.skApplyRoleUI() (js/auth.js) hanya
+                 saat buku aktif berstatus shared. Buku pribadi biasa tidak menampilkan ini. -->
+            <span id="skRoleBadge" class="sk-role-badge" style="display:none;"></span>
             <div id="syncStatusWrapper" class="sync-status-container offline">
                 <span id="syncStatusTag" class="sync-status-badge">CLOUD OFF</span>
                 <span id="deviceIdDisplay" class="device-id-badge">------</span>

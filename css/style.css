@@ -348,6 +348,17 @@ h1, h2, h3, h4,
   color: var(--ink-faint, #666);
   border-left: 1px solid var(--rule);
 }
+/* [MULTIROLE] Badge peran Buku Bersama -- lihat window.skApplyRoleUI di js/auth.js */
+.sk-role-badge {
+  font-size: .62rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--rule);
+}
+.sk-role-badge.sk-role-admin { background: var(--success-lt); color: var(--success); }
+.sk-role-badge.sk-role-editor { background: var(--info-lt); color: var(--brand); }
+.sk-role-badge.sk-role-viewer { background: var(--danger-lt); color: var(--danger); }
 
 /* ── Offline Warning ── */
 .offline-warning-bar {

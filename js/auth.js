@@ -251,6 +251,7 @@ window.skRefreshSharedAccess = async function() {
 
     if (bookIds.length === 0) {
         if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
+        if (typeof window.skApplyRoleUI === 'function') window.skApplyRoleUI();
         return;
     }
 
@@ -277,6 +278,7 @@ window.skRefreshSharedAccess = async function() {
     });
     if (typeof window.renderBookSelector === 'function') window.renderBookSelector();
     if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
+    if (typeof window.skApplyRoleUI === 'function') window.skApplyRoleUI();
 };
 
 // ── Patch callSupabaseAPI: pakai JWT user untuk request ke buku shared ──
@@ -541,21 +543,55 @@ window.skApplyRoleUI = function() {
     const bookId = window.currentBookId;
     const isShared = window.skIsSharedBookId(bookId);
     const role = isShared ? window.skGetRoleForBook(bookId) : null;
-    const hideSettings = isShared && role !== 'admin';
+    const isAdmin = isShared && role === 'admin';
+    const isEditor = isShared && role === 'editor';
     const isViewer = isShared && role === 'viewer';
+    const hideSettings = isShared && !isAdmin;
+
+    // Helper kecil: set display sebuah elemen kalau elemennya ada. Aman
+    // dipanggil untuk id yang mungkin tidak ada di semua versi markup.
+    function setVisible(id, visible) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = visible ? '' : 'none';
+    }
 
     // Menu "Setelan" disembunyikan untuk non-admin di buku bersama --
     // openSetelanModal tetap ditolak juga (defense-in-depth) kalau ada yang
     // memicunya lewat jalur lain (mis. deep-link "Setelan -> Analisis AI").
-    const settingsBtn = document.getElementById('navSetelanBtn');
-    if (settingsBtn) settingsBtn.style.display = hideSettings ? 'none' : '';
+    setVisible('navSetelanBtn', !hideSettings);
 
-    // Viewer read-only: sembunyikan tombol tambah transaksi. Tombol ubah/
-    // hapus (menu "⋮" per baris) tidak perlu disembunyikan satu-satu di sini
-    // -- window.openActionMenu di bawah sudah menolaknya duluan sebelum menu
-    // sempat terbuka.
-    const addTxBtn = document.getElementById('tambahTransaksiBtn');
-    if (addTxBtn) addTxBtn.style.display = isViewer ? 'none' : '';
+    // Aksi yang berdampak ke SELURUH buku (bukan cuma 1 transaksi) --
+    // Cadangan Data (bisa restore/timpa seluruh isi buku) dan Kelola
+    // Device -- dibatasi admin saja di buku bersama, sama seperti Setelan.
+    setVisible('navBackupBtn', !hideSettings);
+    setVisible('navDeviceManagerBtn', !hideSettings);
+
+    // Viewer read-only total: tidak boleh tambah transaksi maupun ubah
+    // anggaran. Tombol ubah/hapus transaksi (menu "⋮" per baris) tidak
+    // perlu disembunyikan satu-satu di sini -- window.openActionMenu di
+    // bawah sudah menolaknya duluan sebelum menu sempat terbuka.
+    setVisible('tambahTransaksiBtn', !isViewer);
+    setVisible('navBudgetBtn', !isViewer);
+
+    // Editor: boleh CRUD transaksi & anggaran, tapi tetap bukan admin --
+    // jadi Setelan/Backup/Device tetap tersembunyi (sudah dicover hideSettings
+    // di atas). Baris ini sengaja dikosongkan/no-op, disisakan sebagai
+    // penanda kalau nanti ada menu baru yang perlu dibedakan admin vs editor.
+    void isEditor;
+
+    // Badge kecil di header supaya jelas sedang login sebagai siapa & peran
+    // apa -- terutama penting sekarang karena UI langsung menyesuaikan
+    // otomatis begitu lockscreen terbuka, jadi user perlu indikator visual.
+    const badge = document.getElementById('skRoleBadge');
+    if (badge) {
+        if (isShared) {
+            badge.style.display = '';
+            badge.textContent = role === 'admin' ? 'Admin' : (role === 'editor' ? 'Editor' : 'Viewer (lihat saja)');
+            badge.className = 'sk-role-badge sk-role-' + role;
+        } else {
+            badge.style.display = 'none';
+        }
+    }
 };
 
 // ── Patch openModal: viewer tidak boleh buka form tambah/ubah transaksi ─

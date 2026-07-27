@@ -180,6 +180,20 @@ window.continueAppInit = async function() {
     // saat menambah akun baru (lihat window._backfillActiveAccountUrlHash di
     // account.js). Fire-and-forget, tidak menghalangi render UI.
     if (typeof window._backfillActiveAccountUrlHash === 'function') window._backfillActiveAccountUrlHash();
+
+    // [MULTIROLE] Lockscreen device sebagai gerbang utama: begitu password
+    // lokal benar (di atas), langsung tarik status Buku Bersama -- KALAU
+    // sesi Supabase Auth punya profil/device ini masih tersimpan (dari
+    // login manual sebelumnya di panel "Buku Bersama") -- dan terapkan
+    // pembatasan UI-nya seketika. Jadi tidak perlu login Buku Bersama lagi
+    // secara terpisah tiap kali buka app; role admin/editor/viewer langsung
+    // aktif begitu lockscreen terbuka. Kalau belum pernah login sama sekali
+    // (window._skAuthUser masih null), ini no-op aman -- treat seperti buku
+    // pribadi biasa, tidak ada pembatasan.
+    if (typeof window.skRefreshSharedAccess === 'function' && window.getCloudUrl && window.getCloudUrl()) {
+        try { await window.skRefreshSharedAccess(); } catch (e) { console.warn('[App] Gagal refresh akses Buku Bersama saat unlock:', e); }
+    }
+    if (typeof window.skApplyRoleUI === 'function') window.skApplyRoleUI();
     window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
     let currentYear = new Date().getFullYear();
     let selectYear = document.getElementById('budgetYear');
