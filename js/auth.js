@@ -77,6 +77,48 @@ window._skAuthUser = null;      // {id, email} kalau sedang login
 window._skSharedRoles = {};     // { [bookId]: 'admin' | 'editor' | 'viewer' }
 window._skAuthMode = 'login';   // 'login' | 'signup' -- tampilan panel saat logout
 
+// ── Atur Tampilan Menu per Peran (bisa diubah admin, lihat sql/menu_visibility.sql) ──
+// window._skBookMenuVisibility[bookId] = { editor: {menuKey: bool}, viewer: {menuKey: bool} }
+// -- diisi dari kolom sk_books.menu_visibility tiap skRefreshSharedAccess.
+// Key yang tidak ada di situ jatuh ke SK_MENU_DEFAULTS (perilaku lama/fix
+// sebelum fitur ini ada), jadi buku bersama yang belum pernah diatur
+// adminnya tetap berperilaku sama seperti sebelumnya.
+window._skBookMenuVisibility = {};
+
+window.SK_MENU_ITEMS = [
+    { key: 'setelan', label: 'Setelan' },
+    { key: 'backup', label: 'Cadangan Data' },
+    { key: 'device', label: 'Kelola Device' },
+    { key: 'budget', label: 'Anggaran (Budget)' },
+    { key: 'tambahTransaksi', label: 'Tambah Transaksi' }
+];
+
+window.SK_MENU_DEFAULTS = {
+    setelan:         { editor: false, viewer: false },
+    backup:          { editor: false, viewer: false },
+    device:          { editor: false, viewer: false },
+    budget:          { editor: true,  viewer: false },
+    tambahTransaksi: { editor: true,  viewer: false }
+};
+
+// Dipakai skApplyRoleUI & patch openModal (addModal) -- SATU sumber
+// kebenaran untuk "menu X boleh dilihat/dipakai role Y di buku Z". Admin
+// selalu true (tidak disimpan di kolom menu_visibility sama sekali) supaya
+// admin tidak bisa mengunci dirinya sendiri sampai tidak bisa buka Setelan
+// lagi. Buku pribadi (bukan shared) juga selalu true -- fitur ini memang
+// cuma berlaku untuk buku bersama.
+window.skGetMenuVisible = function(bookId, menuKey) {
+    if (!window.skIsSharedBookId(bookId)) return true;
+    const role = window.skGetRoleForBook(bookId);
+    if (role === 'admin') return true;
+    if (role !== 'editor' && role !== 'viewer') return false;
+    const cfg = window._skBookMenuVisibility[bookId];
+    const roleCfg = cfg && cfg[role];
+    if (roleCfg && Object.prototype.hasOwnProperty.call(roleCfg, menuKey)) return !!roleCfg[menuKey];
+    const def = window.SK_MENU_DEFAULTS[menuKey];
+    return def ? !!def[role] : false;
+};
+
 window.skIsSharedBookId = function(bookId) {
     return !!bookId && Object.prototype.hasOwnProperty.call(window._skSharedRoles, bookId);
 };
@@ -257,7 +299,15 @@ window.skRefreshSharedAccess = async function() {
 
     let bookRows;
     try {
-        const res = await client.from('sk_books').select('id, name').in('id', bookIds);
+        let res = await client.from('sk_books').select('id, name, menu_visibility').in('id', bookIds);
+        if (res.error) {
+            // [FALLBACK] kolom menu_visibility belum ada berarti admin belum
+            // menjalankan sql/menu_visibility.sql -- jangan sampai itu bikin
+            // SELURUH refresh akses buku bersama gagal, cukup ambil ulang
+            // tanpa kolom itu (fitur "Atur Tampilan Menu per Peran" saja
+            // yang tidak aktif sampai migrasinya dijalankan).
+            res = await client.from('sk_books').select('id, name').in('id', bookIds);
+        }
         if (res.error) throw res.error;
         bookRows = res.data;
     } catch (e) {
@@ -267,6 +317,12 @@ window.skRefreshSharedAccess = async function() {
 
     if (!window.books) window.books = [];
     (bookRows || []).forEach(function(row) {
+        // [MENU PER PERAN] simpan konfigurasi menu_visibility buku ini --
+        // dipakai window.skGetMenuVisible. row.menu_visibility bisa null
+        // kalau kolomnya belum ada (belum jalankan sql/menu_visibility.sql)
+        // -- fallback {} aman, berarti semua menu jatuh ke SK_MENU_DEFAULTS.
+        window._skBookMenuVisibility[row.id] = row.menu_visibility || {};
+
         const existing = window.books.find(function(b) { return b.id === row.id; });
         if (existing) {
             existing._isShared = true;
@@ -668,6 +724,87 @@ window.skBuildMemberManagementHtml = function(bookId, prefix) {
     );
 };
 
+// [MENU PER PERAN] Panel "Atur Tampilan Menu per Peran" -- checkbox
+// Editor/Viewer untuk tiap item di window.SK_MENU_ITEMS. Dipakai di halaman
+// "Manajemen User" (prefix 'um', lihat window.skRenderUserManagerPage),
+// bukan di modal "Kelola Buku Kas" -- supaya tidak terlalu ramai di sana.
+// Checkbox pakai data-attribute (bukan id per-bookId) supaya aman untuk
+// bookId apa pun tanpa perlu sanitasi karakter untuk id DOM.
+window.skBuildMenuVisibilityHtml = function(bookId) {
+    const esc = window.escapeHtml;
+    const cfg = window._skBookMenuVisibility[bookId] || {};
+    function isChecked(role, key) {
+        const roleCfg = cfg[role];
+        const has = roleCfg && Object.prototype.hasOwnProperty.call(roleCfg, key);
+        const val = has ? !!roleCfg[key] : !!(window.SK_MENU_DEFAULTS[key] && window.SK_MENU_DEFAULTS[key][role]);
+        return val ? ' checked' : '';
+    }
+    const rows = window.SK_MENU_ITEMS.map(function(item) {
+        return '<tr>' +
+            '<td style="padding:5px 6px; font-size:.72rem;">' + esc(item.label) + '</td>' +
+            '<td style="text-align:center;"><input type="checkbox" data-mv-book="' + esc(bookId) + '" data-mv-role="editor" data-mv-key="' + item.key + '"' + isChecked('editor', item.key) + '></td>' +
+            '<td style="text-align:center;"><input type="checkbox" data-mv-book="' + esc(bookId) + '" data-mv-role="viewer" data-mv-key="' + item.key + '"' + isChecked('viewer', item.key) + '></td>' +
+        '</tr>';
+    }).join('');
+
+    return (
+        '<div id="mvPanelWrap" style="margin-top:12px; border-top:1px dashed var(--rule); padding-top:12px;">' +
+            '<div style="font-size:.7rem; font-weight:700; color:var(--ink-muted); margin-bottom:6px;">Atur Tampilan Menu per Peran</div>' +
+            '<div style="font-size:.66rem; color:var(--ink-faint); margin-bottom:8px; line-height:1.5;">Admin selalu bisa lihat semua menu (tidak bisa dikunci sendiri lewat sini). Centang menu yang boleh dilihat Editor / Viewer khusus di buku ini.</div>' +
+            '<table style="width:100%; border-collapse:collapse;">' +
+                '<thead><tr>' +
+                    '<th style="text-align:left; font-size:.68rem; color:var(--ink-faint); padding:2px 6px;">Menu</th>' +
+                    '<th style="font-size:.68rem; color:var(--ink-faint);">Editor</th>' +
+                    '<th style="font-size:.68rem; color:var(--ink-faint);">Viewer</th>' +
+                '</tr></thead>' +
+                '<tbody>' + rows + '</tbody>' +
+            '</table>' +
+            '<div style="font-size:.64rem; color:var(--ink-faint); margin-top:8px; line-height:1.5;">Catatan: kalau proteksi database tambahan (sql/harden_shared_book_data_rls.sql) sudah dijalankan, Viewer tetap ditolak database saat menyimpan perubahan walau menu "Tambah Transaksi"/"Setelan" dinyalakan di sini. Kalau proteksi itu <b>belum</b> dijalankan, menyalakannya beneran memberi Viewer akses tulis -- pertimbangkan baik-baik sebelum mengaktifkan untuk Viewer.</div>' +
+            '<button type="button" class="btn btn-primary" style="width:100%; margin-top:8px;" onclick="window.skSaveMenuVisibility(\'' + esc(bookId) + '\')">Simpan Pengaturan Menu</button>' +
+        '</div>'
+    );
+};
+
+// Kumpulkan semua checkbox data-mv-book="<bookId>" di DOM lalu upsert ke
+// kolom sk_books.menu_visibility. RLS sk_books_update_admin (lihat
+// sql/shared_books_roles.sql) sudah menolak ini di database kalau bukan
+// admin -- cek role di sini cuma supaya pesan errornya jelas, bukan
+// pertahanan utama.
+window.skSaveMenuVisibility = async function(bookId) {
+    if (window.skGetRoleForBook(bookId) !== 'admin') {
+        window.showToast && window.showToast('Hanya admin yang bisa mengubah pengaturan menu.', 'error');
+        return;
+    }
+    const client = getSupabaseAuthClient();
+    if (!client) return;
+
+    const inputs = document.querySelectorAll('input[data-mv-book]');
+    const cfg = { editor: {}, viewer: {} };
+    inputs.forEach(function(el) {
+        if (el.getAttribute('data-mv-book') !== bookId) return;
+        const role = el.getAttribute('data-mv-role');
+        const key = el.getAttribute('data-mv-key');
+        if (cfg[role]) cfg[role][key] = el.checked;
+    });
+
+    try {
+        const res = await client.from('sk_books').update({ menu_visibility: cfg }).eq('id', bookId);
+        if (res.error) throw res.error;
+    } catch (e) {
+        console.error('[auth.js] Gagal simpan menu_visibility:', e);
+        // Kolom belum ada = migrasi sql/menu_visibility.sql belum dijalankan.
+        const msg = (e && /column .*menu_visibility/i.test(e.message || '')) ?
+            'Kolom menu_visibility belum ada di database. Jalankan sql/menu_visibility.sql dulu di Supabase SQL Editor.' :
+            'Gagal menyimpan pengaturan menu.';
+        window.showToast && window.showToast(msg, 'error');
+        return;
+    }
+
+    window._skBookMenuVisibility[bookId] = cfg;
+    window.showToast && window.showToast('Pengaturan menu disimpan.', 'success');
+    if (typeof window.skApplyRoleUI === 'function') window.skApplyRoleUI();
+};
+
 window._skHandleInviteSubmit = function(ev, bookId, prefix) {
     ev.preventDefault();
     prefix = prefix || 'sk';
@@ -760,7 +897,7 @@ window.skRenderUserManagerPage = function(selectedBookId) {
             : '<div style="font-size:.72rem; color:var(--ink-muted); margin-bottom:4px;">Buku: <b>' + window.escapeHtml((window.books || []).find(function(b) { return b.id === selectedBookId; }) ? window.books.find(function(b) { return b.id === selectedBookId; }).name : selectedBookId) + '</b></div>'
         );
 
-    wrap.innerHTML = selectorHtml + window.skBuildMemberManagementHtml(selectedBookId, 'um');
+    wrap.innerHTML = selectorHtml + window.skBuildMemberManagementHtml(selectedBookId, 'um') + window.skBuildMenuVisibilityHtml(selectedBookId);
     window.skRenderMemberList(selectedBookId, 'umMemberListContent');
 };
 
@@ -779,10 +916,6 @@ window.skApplyRoleUI = function() {
     const bookId = window.currentBookId;
     const isShared = window.skIsSharedBookId(bookId);
     const role = isShared ? window.skGetRoleForBook(bookId) : null;
-    const isAdmin = isShared && role === 'admin';
-    const isEditor = isShared && role === 'editor';
-    const isViewer = isShared && role === 'viewer';
-    const hideSettings = isShared && !isAdmin;
 
     // Helper kecil: set display sebuah elemen kalau elemennya ada. Aman
     // dipanggil untuk id yang mungkin tidak ada di semua versi markup.
@@ -791,39 +924,31 @@ window.skApplyRoleUI = function() {
         if (el) el.style.display = visible ? '' : 'none';
     }
 
-    // Menu "Setelan" disembunyikan untuk non-admin di buku bersama --
-    // openSetelanModal tetap ditolak juga (defense-in-depth) kalau ada yang
-    // memicunya lewat jalur lain (mis. deep-link "Setelan -> Analisis AI").
-    setVisible('navSetelanBtn', !hideSettings);
+    // [DIUBAH] Visibilitas 5 menu ini sekarang mengikuti
+    // window.skGetMenuVisible -- bisa diatur admin lewat panel "Atur
+    // Tampilan Menu per Peran" di halaman Manajemen User (lihat
+    // window.skBuildMenuVisibilityHtml), bukan fix di kode lagi. Untuk buku
+    // pribadi (bukan shared) atau role admin, skGetMenuVisible selalu true
+    // -- perilaku lama tidak berubah untuk kasus itu. openSetelanModal
+    // tetap ditolak juga (defense-in-depth) kalau ada yang memicunya lewat
+    // jalur lain (mis. deep-link "Setelan -> Analisis AI").
+    setVisible('navSetelanBtn', window.skGetMenuVisible(bookId, 'setelan'));
+    setVisible('navBackupBtn', window.skGetMenuVisible(bookId, 'backup'));
+    setVisible('navDeviceManagerBtn', window.skGetMenuVisible(bookId, 'device'));
+    setVisible('navBudgetBtn', window.skGetMenuVisible(bookId, 'budget'));
+    setVisible('tambahTransaksiBtn', window.skGetMenuVisible(bookId, 'tambahTransaksi'));
 
-    // Aksi yang berdampak ke SELURUH buku (bukan cuma 1 transaksi) --
-    // Cadangan Data (bisa restore/timpa seluruh isi buku) dan Kelola
-    // Device -- dibatasi admin saja di buku bersama, sama seperti Setelan.
-    setVisible('navBackupBtn', !hideSettings);
-    setVisible('navDeviceManagerBtn', !hideSettings);
-
-    // [MENU MANAJEMEN USER] Beda dengan Setelan/Backup/Device (yang
-    // tergantung role di buku yang SEDANG AKTIF): menu ini relevan selama
-    // user adalah admin di buku bersama MANA PUN, terlepas dari buku apa
-    // yang sedang dibuka -- supaya admin tetap bisa mengelola anggota buku
-    // bersama lain tanpa perlu pindah ke buku itu dulu.
+    // [MENU MANAJEMEN USER] Beda dengan 5 menu di atas (yang tergantung
+    // role & konfigurasi di buku yang SEDANG AKTIF): menu ini relevan
+    // selama user adalah admin di buku bersama MANA PUN, terlepas dari buku
+    // apa yang sedang dibuka -- supaya admin tetap bisa mengelola anggota
+    // buku bersama lain tanpa perlu pindah ke buku itu dulu. Menu ini
+    // SENGAJA TIDAK ikut masuk daftar yang bisa diatur admin (di luar
+    // cakupan fitur ini) -- selalu admin-only.
     const isAnyBookAdmin = !!window._skAuthUser && Object.keys(window._skSharedRoles).some(function(id) {
         return window._skSharedRoles[id] === 'admin';
     });
     setVisible('navUserManagerBtn', isAnyBookAdmin);
-
-    // Viewer read-only total: tidak boleh tambah transaksi maupun ubah
-    // anggaran. Tombol ubah/hapus transaksi (menu "⋮" per baris) tidak
-    // perlu disembunyikan satu-satu di sini -- window.openActionMenu di
-    // bawah sudah menolaknya duluan sebelum menu sempat terbuka.
-    setVisible('tambahTransaksiBtn', !isViewer);
-    setVisible('navBudgetBtn', !isViewer);
-
-    // Editor: boleh CRUD transaksi & anggaran, tapi tetap bukan admin --
-    // jadi Setelan/Backup/Device tetap tersembunyi (sudah dicover hideSettings
-    // di atas). Baris ini sengaja dikosongkan/no-op, disisakan sebagai
-    // penanda kalau nanti ada menu baru yang perlu dibedakan admin vs editor.
-    void isEditor;
 
     // Badge kecil di header supaya jelas sedang login sebagai siapa & peran
     // apa -- terutama penting sekarang karena UI langsung menyesuaikan
@@ -843,9 +968,22 @@ window.skApplyRoleUI = function() {
 // ── Patch openModal: viewer tidak boleh buka form tambah/ubah transaksi ─
 const _originalOpenModal = window.openModal;
 window.openModal = function(id) {
-    if ((id === 'addModal' || id === 'editModal') && window.skIsViewerOnCurrentBook()) {
-        window.showToast && window.showToast('Peran viewer di buku bersama ini hanya bisa melihat, tidak bisa menambah/mengubah transaksi.', 'error');
-        return;
+    if (window.skIsViewerOnCurrentBook()) {
+        // "Ubah transaksi" (editModal) TIDAK termasuk menu yang bisa diatur
+        // admin (di luar cakupan fitur "Atur Tampilan Menu per Peran") --
+        // tetap fix ditolak untuk viewer.
+        if (id === 'editModal') {
+            window.showToast && window.showToast('Peran viewer di buku bersama ini hanya bisa melihat, tidak bisa mengubah transaksi.', 'error');
+            return;
+        }
+        // "Tambah transaksi" (addModal) IKUT toggle skGetMenuVisible --
+        // kalau admin menyalakan menu ini untuk viewer lewat panel "Atur
+        // Tampilan Menu per Peran", tombolnya tampil (skApplyRoleUI) DAN
+        // beneran bisa dipakai di sini, bukan cuma tampil lalu ditolak.
+        if (id === 'addModal' && !window.skGetMenuVisible(window.currentBookId, 'tambahTransaksi')) {
+            window.showToast && window.showToast('Peran viewer di buku bersama ini hanya bisa melihat, tidak bisa menambah transaksi.', 'error');
+            return;
+        }
     }
     return _originalOpenModal.apply(this, arguments);
 };

@@ -1,0 +1,46 @@
+-- ============================================================
+-- FITUR: Atur Tampilan Menu per Peran (Setelan/Cadangan Data/Kelola
+-- Device/Anggaran/Tambah Transaksi) -- per buku bersama, bisa diubah
+-- admin lewat panel baru di halaman "Manajemen User" (js/auth.js:
+-- window.skBuildMenuVisibilityHtml / window.skSaveMenuVisibility).
+-- Jalankan SETELAH sql/shared_books_roles.sql.
+-- ============================================================
+--
+-- KONTEKS:
+-- Sebelumnya, 5 menu ini (Setelan/Backup/Device/Budget/Tambah Transaksi)
+-- visible-tidaknya untuk role editor/viewer FIX di kode (window.skApplyRoleUI
+-- di js/auth.js). Kolom ini menyimpan OVERRIDE per buku bersama supaya admin
+-- bisa mengatur sendiri lewat UI, tanpa perlu ubah kode.
+--
+-- BENTUK DATA (JSONB), contoh:
+--   {
+--     "editor": { "setelan": false, "backup": false, "device": false, "budget": true,  "tambahTransaksi": true },
+--     "viewer": { "setelan": false, "backup": false, "device": false, "budget": false, "tambahTransaksi": false }
+--   }
+-- Key yang tidak ada di JSON ini jatuh ke default bawaan (SK_MENU_DEFAULTS
+-- di js/auth.js -- sama persis dengan perilaku hardcode sebelumnya), jadi
+-- kolom '{}' (default) TIDAK mengubah perilaku buku bersama yang sudah ada.
+-- Role 'admin' TIDAK disimpan di sini -- admin selalu full akses semua
+-- menu, tidak bisa dikunci lewat panel ini (mencegah admin mengunci diri
+-- sendiri sampai tidak bisa buka Setelan lagi).
+--
+-- PENTING (baca sebelum pakai panel "Tambah Transaksi"/"Setelan" untuk
+-- Viewer): kolom ini HANYA mengatur tampilan menu di client. Kalau
+-- sql/harden_shared_book_data_rls.sql sudah dijalankan, Viewer tetap
+-- ditolak database saat mencoba INSERT/UPDATE/DELETE walau menunya
+-- dimunculkan di sini (RLS memang mengunci viewer read-only, terpisah
+-- dari kolom ini). Kalau file RLS itu BELUM dijalankan, memunculkan menu
+-- tulis untuk Viewer di sini BENAR-BENAR memberi mereka akses tulis --
+-- jadi hati-hati kalau proteksi RLS-nya belum aktif.
+-- ============================================================
+
+ALTER TABLE public.sk_books
+    ADD COLUMN IF NOT EXISTS menu_visibility JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+-- Tidak perlu policy RLS baru -- kolom ini ikut policy sk_books yang sudah
+-- ada di sql/shared_books_roles.sql:
+--   - SELECT: sk_books_select_member (semua anggota buku boleh baca, perlu
+--     supaya app tahu menu apa yang boleh ditampilkan ke dirinya sendiri).
+--   - UPDATE: sk_books_update_admin (hanya admin buku itu yang boleh ubah,
+--     jadi window.skSaveMenuVisibility otomatis ditolak database kalau
+--     dipanggil bukan oleh admin -- sama seperti rename buku).
