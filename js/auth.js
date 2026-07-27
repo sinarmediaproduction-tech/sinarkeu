@@ -975,6 +975,11 @@ window.skApplyRoleUI = function() {
     // admin-only.
     setVisible('navUserManagerBtn', role === 'admin' && !!window._skAuthUser);
 
+    // [MULTIROLE] Tombol logout Buku Bersama sekarang di footer sidebar
+    // (dipindah dari panel "Kelola Buku") -- tampil kapan pun sedang login,
+    // terlepas dari role & buku aktif.
+    setVisible('navSkLogoutBtn', !!window._skAuthUser);
+
     // Badge kecil di header supaya jelas sedang login sebagai siapa & peran
     // apa -- sekarang tampil terus (bukan cuma di buku bersama) karena
     // role global berlaku ke semua buku, termasuk saat belum login sama
@@ -1061,8 +1066,8 @@ window.skRenderAuthPanel = function() {
         // tanpa perlu pindah halaman.
         const memberPanel = (role === 'admin') ? window.skBuildMemberManagementHtml(bookId, 'sk') : '';
         el.innerHTML =
-            '<div style="font-size:.75rem;">Login sebagai <b>' + window._skAuthUser.email + '</b>' + roleLine + '</div>' +
-            '<button type="button" class="btn btn-secondary" style="margin-top:8px; width:100%;" onclick="window.skSignOut()">Logout Buku Bersama</button>' +
+            '<div style="font-size:.75rem;">Login sebagai <b>' + window._skAuthUser.email + '</b>' + roleLine +
+            '<div style="margin-top:4px; color:var(--ink-faint);">Tombol logout ada di footer sidebar.</div></div>' +
             memberPanel;
         if (role === 'admin') window.skRenderMemberList(bookId);
     } else if (window._skAuthMode === 'signup') {
