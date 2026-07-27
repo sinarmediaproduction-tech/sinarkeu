@@ -16,8 +16,13 @@
 //   3. window.callSupabaseAPI (asli dari js/db.js) di-bungkus: kalau
 //      request menyasar book_id yang statusnya shared, header Authorization
 //      pakai JWT user (bukan anon key) -- supaya RLS role admin/editor/
-//      viewer di server benar-benar berlaku (anon key tidak bisa lagi
-//      dipakai untuk buku shared, lihat PATCH KEAMANAN di file SQL).
+//      viewer di server benar-benar berlaku. CATATAN: ini HANYA berlaku
+//      efektif kalau sql/harden_shared_book_data_rls.sql SUDAH dijalankan
+//      -- file itu OPSIONAL dan tidak otomatis ikut ter-setup. Kalau belum
+//      dijalankan, anon key lama MASIH bisa baca/tulis tabel transactions
+//      buku ini tanpa peduli statusnya "bersama" -- lihat
+//      window.skCheckAnonHardeningForBook di bawah untuk pengecekan
+//      runtime-nya (jalan otomatis untuk buku yang diadmin-i user).
 //   4. window.openSetelanModal dibungkus: role bukan admin -> ditolak.
 //      Ini defense-in-depth di client saja -- garis pertahanan utama tetap
 //      RLS di server.
@@ -369,6 +374,56 @@ window.skRefreshSharedAccess = async function() {
     if (typeof window.renderBookSelector === 'function') window.renderBookSelector();
     if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
     if (typeof window.skApplyRoleUI === 'function') window.skApplyRoleUI();
+
+    // [DIAGNOSTIK KEAMANAN] Cek buku yang DIADMIN-I user ini apakah
+    // sql/harden_shared_book_data_rls.sql sudah aktif -- lihat
+    // window.skCheckAnonHardeningForBook di bawah. Fire-and-forget (tidak
+    // di-await) supaya tidak menunda proses refresh akses biasa.
+    bookIds.filter(function(id) { return window._skSharedRoles[id] === 'admin'; })
+        .forEach(function(id) { window.skCheckAnonHardeningForBook(id).catch(function() {}); });
+};
+
+// [DIAGNOSTIK KEAMANAN] Tes NYATA (bukan asumsi dari komentar kode) apakah
+// anon key masih bisa membaca tabel transactions buku bersama ini --
+// artinya sql/harden_shared_book_data_rls.sql (OPSIONAL, lihat catatan di
+// kepala file ini) belum dijalankan admin database. Dipanggil otomatis oleh
+// skRefreshSharedAccess, sekali per bookId per sesi (di-cache lewat
+// window._skHardeningWarnedBooks), khusus untuk buku yang diadmin-i user
+// yang sedang login -- supaya cuma orang yang bisa menindaklanjuti yang
+// diberi tahu.
+//
+// PRINSIP KEHATI-HATIAN: hasil GET yang kosong/gagal TIDAK disimpulkan
+// "berarti sudah aman" -- bisa saja karena buku itu memang belum punya
+// transaksi sama sekali, atau lagi offline. Peringatan HANYA muncul kalau
+// ada BUKTI KONKRET: anon key berhasil membaca baris data transaksi asli.
+window._skHardeningWarnedBooks = window._skHardeningWarnedBooks || new Set();
+window.skCheckAnonHardeningForBook = async function(bookId) {
+    if (window._skHardeningWarnedBooks.has(bookId)) return;
+    const baseUrl = window.getCloudUrl();
+    const apiKey = window.getSupabaseKey();
+    if (!baseUrl || !apiKey) return;
+    try {
+        // Sengaja pakai fetch mentah dengan HANYA anon key (tanpa JWT) --
+        // ini simulasi persis apa yang bisa dilakukan siapa pun yang punya
+        // URL+anon key project ini, terlepas dari login/keanggotaan.
+        const res = await fetch(
+            `${baseUrl}/rest/v1/transactions?book_id=eq.${encodeURIComponent(bookId)}&select=id&limit=1`,
+            { headers: { 'apikey': apiKey, 'Authorization': `Bearer ${apiKey}` } }
+        );
+        if (!res.ok) return; // ditolak (kemungkinan sudah terproteksi) -- tidak disimpulkan apa-apa lebih jauh
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows.length > 0) {
+            window._skHardeningWarnedBooks.add(bookId);
+            const book = (window.books || []).find(function(b) { return b.id === bookId; });
+            window.showToast && window.showToast(
+                'PERINGATAN KEAMANAN: buku bersama "' + (book ? book.name : bookId) + '" masih bisa dibaca lewat anon key tanpa login (RLS data belum diproteksi). ' +
+                'Jalankan sql/harden_shared_book_data_rls.sql di Supabase SQL Editor secepatnya.',
+                'error'
+            );
+        }
+    } catch (e) {
+        // Offline / gagal jaringan -- diamkan, jangan sok tahu ini "aman".
+    }
 };
 
 // ── Patch callSupabaseAPI: pakai JWT user untuk request ke buku shared ──
@@ -416,10 +471,14 @@ window.callSupabaseAPI = async function(table, method, body, queryString, option
                 return null;
             }
         }
-        // Belum login / sesi habis: JANGAN jatuh ke anon key (anon key tidak
-        // lagi punya akses ke buku shared sejak PATCH KEAMANAN) -- gagal
-        // eksplisit supaya user tahu perlu login ulang, bukan diam-diam
-        // dianggap sukses.
+        // Belum login / sesi habis: JANGAN jatuh ke anon key -- kalau
+        // sql/harden_shared_book_data_rls.sql sudah dijalankan, anon key
+        // memang sudah ditolak database untuk buku shared, jadi lebih baik
+        // gagal eksplisit di sini supaya user tahu perlu login ulang. Kalau
+        // migrasi itu BELUM dijalankan, anon key sebenarnya masih bisa
+        // tembus di level database -- tapi kita tetap TIDAK mau
+        // menggunakannya di jalur ini (client seharusnya tidak diam-diam
+        // memanfaatkan celah proteksi yang belum lengkap).
         window.showToast && window.showToast('Login diperlukan untuk mengakses buku bersama ini.', 'error');
         return null;
     }
