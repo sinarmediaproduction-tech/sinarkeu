@@ -280,6 +280,52 @@ window.openSetelanModal = function(initialTab) {
     return _originalOpenSetelanModal.apply(this, arguments);
 };
 
+// ── Jadikan buku pribadi jadi buku bersama (bootstrap admin pertama) ────
+// Syarat: sudah login (skSignIn/skSignUp), dan sudah jalankan
+// sql/bootstrap_shared_book.sql (jalur RLS khusus buat baris admin pertama).
+window.skMakeBookShared = async function(bookId) {
+    const client = getSupabaseAuthClient();
+    if (!client) {
+        window.showToast && window.showToast('Supabase belum di-setup (cek Setelan → Supabase).', 'error');
+        return;
+    }
+    if (!window._skAuthUser) {
+        window.showToast && window.showToast('Login dulu di panel "Buku Bersama" di atas sebelum menjadikan buku ini bersama.', 'error');
+        return;
+    }
+    const book = window.books.find(function(b) { return b.id === bookId; });
+    if (!book) return;
+    if (book._isShared) {
+        window.showToast && window.showToast('Buku ini sudah jadi buku bersama.', 'error');
+        return;
+    }
+    const ok = confirm(
+        'Jadikan "' + book.name + '" sebagai buku bersama?\n\n' +
+        'Setelah ini: buku hanya bisa diakses lewat login (bukan anon key lagi), ' +
+        'dan kamu jadi admin pertamanya. Aksi ini tidak bisa dibatalkan sendiri dari UI.'
+    );
+    if (!ok) return;
+    try {
+        const res1 = await client.from('sk_books').insert({ id: book.id, name: book.name, is_shared: true });
+        if (res1.error) throw res1.error;
+        const res2 = await client.from('book_members').insert({ book_id: book.id, user_id: window._skAuthUser.id, role: 'admin' });
+        if (res2.error) throw res2.error;
+
+        book._isShared = true;
+        book._role = 'admin';
+        window._skSharedRoles[book.id] = 'admin';
+        localStorage.setItem('sk_books', JSON.stringify(window.books));
+
+        window.showToast && window.showToast('"' + book.name + '" sekarang jadi buku bersama. Kamu adalah admin.', 'success');
+        if (typeof window.renderBookList === 'function') window.renderBookList();
+        if (typeof window.updateBookSelectDropdown === 'function') window.updateBookSelectDropdown();
+        if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
+    } catch (e) {
+        console.error('[auth.js] Gagal menjadikan buku bersama:', e);
+        window.showToast && window.showToast('Gagal: ' + e.message + ' (sudah jalankan sql/bootstrap_shared_book.sql?)', 'error');
+    }
+};
+
 // ── Kelola Anggota (undang / hapus / lihat daftar) ──────────────────────
 // Cari calon anggota berdasarkan email lewat public.profiles (lihat
 // sql/profiles_and_invite.sql). Cocok case-insensitive (ilike exact, tanpa
