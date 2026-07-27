@@ -119,6 +119,10 @@ window.submitLockPassword = async function() {
     window._lockUnlockInFlight = false;
     if (ok) {
         document.getElementById('passwordLockScreen').style.display = 'none';
+        // [SECURITY] Jaga-jaga: pastikan pembatasan akses "hanya panel Akun"
+        // (dipasang lewat window.openAccountManagerFromLock, lihat js/account.js)
+        // ikut lepas begitu password benar-benar terverifikasi.
+        document.body.classList.remove('lockscreen-restricted');
         window.continueAppInit();
     } else {
         inp.disabled = false;

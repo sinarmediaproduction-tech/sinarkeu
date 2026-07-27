@@ -2112,6 +2112,25 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   padding: 24px;
 }
 
+/* [SECURITY FIX] Saat user klik "＋ Tambah akun baru" di layar kunci
+   (window.openAccountManagerFromLock, js/account.js), password BELUM
+   diverifikasi sama sekali -- tapi sebelum fix ini, Setelan yang terbuka
+   memberi akses penuh ke sidebar (Dashboard, Laporan, Cadangan Data, dst)
+   DAN semua panel Setelan lain (Reset Total Aplikasi, Arsipkan & Kosongkan
+   Database, kredensial Supabase/Telegram/AI, dll) tanpa password sama
+   sekali. Selama body punya class ini, sembunyikan total sidebar & di
+   halaman Setelan cuma tampilkan panel "akun" -- satu-satunya jalan keluar
+   adalah tombol "Kembali ke Layar Kunci" (window.backToLockScreenFromAkun)
+   yang melepas class ini lagi. Lihat juga pelepasan defensifnya di
+   window.submitLockPassword (js/app.js) saat password benar. */
+body.lockscreen-restricted #appSidebar { display: none !important; }
+body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel="akun"]) {
+  display: none !important;
+}
+@media (min-width: 1024px) {
+  body.lockscreen-restricted #setelanModal { margin-left: 0 !important; }
+}
+
 /* [MULTIROLE GATE] Sama persis posisinya dengan #passwordLockScreen (fixed,
    full-screen, z-index sama) supaya menutup total UI app di belakangnya --
    TIDAK ADA tombol tutup/skip di sini secara sengaja. Lihat

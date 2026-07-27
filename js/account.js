@@ -563,6 +563,15 @@ window.openAccountManagerFromLock = function() {
     document.getElementById('passwordLockScreen').style.display = 'none';
     // Gunakan flag, bukan override global closeModal
     window._fromLockScreen = true;
+    // [SECURITY FIX] Flag _fromLockScreen di atas dulu TIDAK PERNAH benar-benar
+    // dipakai untuk membatasi apa pun -- akibatnya begitu Setelan terbuka dari
+    // sini, sidebar (Dashboard, Laporan, Cadangan Data, dst) dan SEMUA panel
+    // Setelan lain (Reset Total Aplikasi, Arsipkan & Kosongkan Database,
+    // kredensial Supabase/Telegram/AI, dll) tetap bisa diakses tanpa password
+    // sama sekali. Class ini yang benar-benar membatasi (lihat CSS
+    // "body.lockscreen-restricted" di css/style.css): sembunyikan sidebar
+    // total & di halaman Setelan cuma tampilkan panel "akun".
+    document.body.classList.add('lockscreen-restricted');
     window.openAccountManager();
     // [SERAGAM DENGAN SETELAN] Akun sekarang panel inline di halaman Setelan
     // (bukan modal terpisah lagi), jadi tombol "Kembali ke Layar Kunci" di
@@ -574,6 +583,7 @@ window.openAccountManagerFromLock = function() {
 
 window.backToLockScreenFromAkun = function() {
     window._fromLockScreen = false;
+    document.body.classList.remove('lockscreen-restricted');
     var backWrap = document.getElementById('setelanBackToLockWrap');
     if (backWrap) backWrap.style.display = 'none';
     window.closeModal('setelanModal');
