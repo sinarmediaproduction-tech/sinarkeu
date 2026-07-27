@@ -469,6 +469,10 @@ alter table public.settings
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
             <span>Manajemen User</span>
         </button>
+        <button type="button" class="app-nav-item" id="navBackupBtn" onclick="window.closeMobileDrawer(); window.openDataBackupView()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5V19A9 3 0 0 0 21 19V5"></path><path d="M3 12A9 3 0 0 0 21 12"></path></svg>
+            <span data-i18n="data_backup_section">Cadangan Data</span>
+        </button>
     </div>
 
     <div class="app-nav-footer">
@@ -1068,6 +1072,45 @@ alter table public.settings
             <div id="settingsSyncStatus" class="setelan-status-text"></div>
         </div>
 
+        <!-- Reset Aplikasi Total -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="reset">
+            <div class="panel-title setelan-title--red" data-i18n="reset_app_section">Reset Total Aplikasi</div>
+            <div class="setelan-desc" style="margin-bottom:12px;">
+                Hapus <b>semua buku, transaksi, dan setelan</b> baik di Supabase maupun di penyimpanan lokal. Aplikasi akan kembali ke kondisi <b>bersih seperti baru dipasang</b>. Gunakan saat ingin memulai dari awal atau berpindah akun Supabase.
+            </div>
+            <div id="resetAppStatus" style="font-size:.7rem; padding:6px 10px; border-radius: var(--radius-sm); margin-bottom:10px; display:none;"></div>
+            <button class="btn btn-primary" style="width:100%; margin-bottom:8px;" onclick="window.exportAllDataOnly()" data-i18n="export_all_json">Ekspor Semua Data (JSON)</button>
+            <label class="btn btn-success" style="width:100%; margin-bottom:8px; cursor:pointer; display:block; text-align:center; box-sizing:border-box;">
+                Import dari File JSON
+                <input type="file" id="importJsonFile" accept=".json" style="display:none;" onchange="window.importAllDataFromFile(this)">
+            </label>
+            <div id="importStatus" style="font-size:.7rem; padding:6px 10px; border-radius: var(--radius-sm); margin-bottom:10px; display:none;"></div>
+            <button class="btn btn-danger" style="width:100%;" onclick="window.resetAllApplication()">Reset Total — Hapus Semua Data</button>
+        </div>
+
+        <!-- Arsipkan JSON -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="archive">
+            <div class="panel-title setelan-title--red" data-i18n="archive_section">Arsipkan & Kosongkan Database</div>
+            <div class="setelan-desc" style="margin-bottom:12px;">
+                Export semua transaksi buku ini ke file JSON sebagai arsip, lalu <b>hapus permanen</b> seluruh data dari Supabase dan lokal. Gunakan saat storage hampir penuh.
+            </div>
+            <div id="archiveStatus" style="font-size:.7rem; padding:6px 10px; border-radius: var(--radius-sm); margin-bottom:10px; display:none;"></div>
+            <button class="btn btn-danger" style="width:100%;" onclick="archiveAndClearData()">Arsipkan JSON & Kosongkan Database</button>
+        </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ===== MENU CADANGAN DATA & MIGRASI (dipindah keluar dari Setelan, jadi
+     halaman penuh tersendiri di sidebar -- pola sama seperti Laporan/
+     Anggaran/dst., lihat window.FULLVIEW_MODALS di js/utils.js) ===== -->
+<div id="dataBackupModal" class="modal fullview-modal">
+    <div class="modal-content setelan-modal-content">
+        <div class="modal-header"><h3 data-i18n="data_backup_section">Cadangan Data</h3><button class="modal-close" onclick="window.openMobileDrawer()" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button></div>
+
+        <div class="setelan-tab-content" id="dataBackupTabContent">
+
         <!-- Cadangan Data -->
         <div class="data-management-panel setelan-tab-panel" data-tab-panel="backup">
             <div class="panel-title" data-i18n="data_backup_section">Cadangan Data</div>
@@ -1118,32 +1161,6 @@ alter table public.settings
                     Cek Status
                 </button>
             </div>
-        </div>
-
-        <!-- Reset Aplikasi Total -->
-        <div class="data-management-panel setelan-tab-panel" data-tab-panel="reset">
-            <div class="panel-title setelan-title--red" data-i18n="reset_app_section">Reset Total Aplikasi</div>
-            <div class="setelan-desc" style="margin-bottom:12px;">
-                Hapus <b>semua buku, transaksi, dan setelan</b> baik di Supabase maupun di penyimpanan lokal. Aplikasi akan kembali ke kondisi <b>bersih seperti baru dipasang</b>. Gunakan saat ingin memulai dari awal atau berpindah akun Supabase.
-            </div>
-            <div id="resetAppStatus" style="font-size:.7rem; padding:6px 10px; border-radius: var(--radius-sm); margin-bottom:10px; display:none;"></div>
-            <button class="btn btn-primary" style="width:100%; margin-bottom:8px;" onclick="window.exportAllDataOnly()" data-i18n="export_all_json">Ekspor Semua Data (JSON)</button>
-            <label class="btn btn-success" style="width:100%; margin-bottom:8px; cursor:pointer; display:block; text-align:center; box-sizing:border-box;">
-                Import dari File JSON
-                <input type="file" id="importJsonFile" accept=".json" style="display:none;" onchange="window.importAllDataFromFile(this)">
-            </label>
-            <div id="importStatus" style="font-size:.7rem; padding:6px 10px; border-radius: var(--radius-sm); margin-bottom:10px; display:none;"></div>
-            <button class="btn btn-danger" style="width:100%;" onclick="window.resetAllApplication()">Reset Total — Hapus Semua Data</button>
-        </div>
-
-        <!-- Arsipkan JSON -->
-        <div class="data-management-panel setelan-tab-panel" data-tab-panel="archive">
-            <div class="panel-title setelan-title--red" data-i18n="archive_section">Arsipkan & Kosongkan Database</div>
-            <div class="setelan-desc" style="margin-bottom:12px;">
-                Export semua transaksi buku ini ke file JSON sebagai arsip, lalu <b>hapus permanen</b> seluruh data dari Supabase dan lokal. Gunakan saat storage hampir penuh.
-            </div>
-            <div id="archiveStatus" style="font-size:.7rem; padding:6px 10px; border-radius: var(--radius-sm); margin-bottom:10px; display:none;"></div>
-            <button class="btn btn-danger" style="width:100%;" onclick="archiveAndClearData()">Arsipkan JSON & Kosongkan Database</button>
         </div>
 
         </div>

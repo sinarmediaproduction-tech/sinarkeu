@@ -1,6 +1,7 @@
 // ==================== SNAPSHOT KEAMANAN (Restore Point Otomatis) ====================
-// Fitur ini SENGAJA dipisah dari "Cadangan Data" (js/backup.js, tab Setelan >
-// Cadangan Data). Bedanya:
+// Fitur ini SENGAJA dipisah dari "Cadangan Data" (js/backup.js, menu
+// sidebar tersendiri "Cadangan Data" -- dulu tab di dalam Setelan, sekarang
+// halaman sendiri). Bedanya:
 //   - Cadangan Data   = backup transaksi BUKU AKTIF yang dibuat MANUAL oleh user
 //                        (lokal/cloud/Google Sheets), untuk kebutuhan arsip & laporan.
 //   - Snapshot Keamanan = jaring pengaman OTOMATIS. Setiap kali aplikasi akan

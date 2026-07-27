@@ -1,11 +1,9 @@
 // ==================== BACKUP & EXPORT ====================
 window.openBackupManager = function() {
-    // [SERAGAM DENGAN SETELAN] Konten Manajer Cadangan sudah digabung ke
-    // panel inline "Cadangan Data" di halaman Setelan (backupModal terpisah
-    // sudah dihapus dari HTML) -- jadi buka Setelan lalu gulir ke sana.
-    if (typeof window.openSetelanModal === 'function') window.openSetelanModal('backup');
-    window.renderBackupList();
-    window.loadCloudBackupList();
+    // [PINDAH DARI SETELAN] Cadangan Data sekarang halaman penuh tersendiri
+    // di sidebar (dataBackupModal, lihat js/settings.js), bukan lagi panel
+    // inline di dalam Setelan -- jadi buka halaman itu langsung.
+    if (typeof window.openDataBackupView === 'function') window.openDataBackupView('backup');
 };
 window.renderBackupList = function() {
     let info = document.getElementById('lastBackupInfo');

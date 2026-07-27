@@ -167,18 +167,23 @@ window.requireOnline = function(operationName) {
 // Daftar modal yang sekarang tampil sebagai halaman penuh di area utama
 // (pola sama seperti Setelan) alih-alih kotak dialog mengambang -- dipetakan
 // ke id tombol nav sidebar masing-masing supaya nav bisa ikut ditandai aktif.
-// [SERAGAM DENGAN SETELAN] akun/backup/telegram/snapshot/devices TIDAK lagi
-// masuk daftar ini -- section-nya sudah dipindah jadi panel inline langsung
-// di dalam halaman Setelan (index.html, #setelanTabContent), sama seperti
-// section Setelan lainnya, supaya semua section Setelan konsisten tampil
-// langsung tanpa perlu berpindah halaman/modal terpisah.
+// [SERAGAM DENGAN SETELAN] akun/telegram/snapshot/devices TIDAK masuk
+// daftar ini -- section-nya tetap panel inline langsung di dalam halaman
+// Setelan (index.html, #setelanTabContent). Pengecualian: backup & migrasi
+// SUDAH dikeluarkan lagi dari Setelan ke halaman fullview tersendiri
+// (dataBackupModal) karena dianggap cukup penting untuk punya menu sidebar
+// sendiri, terpisah dari setelan umum lainnya.
 // Lihat CLAUDE.md bagian "Sidebar/nav" untuk konvensinya.
 window.FULLVIEW_MODALS = {
     monthlyReportModal:    'laporan',
     defaultBudgetModal:    'anggaran',
     paymentReminderModal:  'reminder',
     bookManagerModal:      'buku',
-    userManagerModal:      'userManager'
+    userManagerModal:      'userManager',
+    // [PINDAH DARI SETELAN] Cadangan Data & Migrasi sekarang halaman penuh
+    // tersendiri di sidebar (dulu 2 tab di dalam Setelan) -- lihat
+    // js/settings.js window.openDataBackupView().
+    dataBackupModal:       'backupData'
 };
 
 // Modal utility (dipanggil dari onclick di HTML)

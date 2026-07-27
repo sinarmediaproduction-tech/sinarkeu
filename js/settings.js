@@ -1,12 +1,15 @@
 // ==================== SETTINGS ====================
 
-// Semua section Setelan sekarang tampil sekaligus dalam satu halaman
-// panjang (tidak lagi per-tab). Fungsi ini dipertahankan hanya untuk
-// menggulir ke section tertentu -- dipakai oleh link deep-link seperti
-// "Setelan -> Analisis AI" dari modal lain.
+// Semua section Setelan (dan sekarang juga halaman Cadangan Data) tampil
+// sekaligus dalam satu halaman panjang (tidak lagi per-tab). Fungsi ini
+// dipertahankan hanya untuk menggulir ke section tertentu -- dipakai oleh
+// link deep-link seperti "Setelan -> Analisis AI" dari modal lain. Selector
+// sengaja dicari di seluruh dokumen (bukan cuma #setelanTabContent) supaya
+// tetap jalan untuk panel "backup"/"migration" yang sekarang ada di
+// #dataBackupTabContent (lihat window.openDataBackupView).
 window.switchSetelanTab = function(tabId) {
     if (!tabId) return;
-    var panel = document.querySelector('#setelanTabContent [data-tab-panel="' + tabId + '"]');
+    var panel = document.querySelector('[data-tab-panel="' + tabId + '"]');
     if (panel && typeof panel.scrollIntoView === 'function') {
         panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -62,17 +65,17 @@ window.openSetelanModal = function(initialTab) {
     if (deviceNameSt) deviceNameSt.innerText = '';
 
     // [SERAGAM DENGAN SETELAN] Akun, Notifikasi Telegram, Snapshot Keamanan,
-    // Perangkat Terhubung, dan Cadangan Data sekarang panel inline di sini
-    // juga (bukan modal terpisah lagi) -- render semuanya setiap kali
-    // Setelan dibuka, apapun jalan masuknya (nav sidebar, deep-link, atau
-    // openAccountManager/openTelegramSettings/dst.), supaya isinya selalu
-    // ter-update, bukan cuma saat dipanggil lewat fungsi open*Manager saja.
+    // dan Perangkat Terhubung tetap panel inline di sini (bukan modal
+    // terpisah) -- render semuanya setiap kali Setelan dibuka, apapun jalan
+    // masuknya (nav sidebar, deep-link, atau openAccountManager/
+    // openTelegramSettings/dst.), supaya isinya selalu ter-update, bukan
+    // cuma saat dipanggil lewat fungsi open*Manager saja. Cadangan Data &
+    // Migrasi TIDAK lagi dirender di sini -- sudah pindah ke halaman
+    // tersendiri, lihat window.openDataBackupView().
     if (typeof window.renderAccModalList === 'function') window.renderAccModalList();
     if (typeof window.loadTgConfigToForm === 'function') window.loadTgConfigToForm();
     if (typeof window.renderSafetySnapshotList === 'function') window.renderSafetySnapshotList();
     if (typeof window.loadConnectedDevices === 'function') window.loadConnectedDevices();
-    if (typeof window.renderBackupList === 'function') window.renderBackupList();
-    if (typeof window.loadCloudBackupList === 'function') window.loadCloudBackupList();
 
     // Kalau lagi ada menu full-page sidebar lain yang terbuka (Laporan,
     // Anggaran, dst), tutup dulu supaya tidak tumpang tindih dengan Setelan.
@@ -107,6 +110,24 @@ window.showSetelanView = function(initialTab) {
     window.openSetelanModal(initialTab);
 };
 
+// [PINDAH DARI SETELAN] Halaman "Cadangan Data" (backup lokal/cloud, impor/
+// ekspor, Google Sheets, restore) + "Migrasi Data ke Cloud" -- dulu 2 tab
+// di dalam Setelan, sekarang menu sidebar tersendiri (id: dataBackupModal,
+// terdaftar di window.FULLVIEW_MODALS). Dipanggil dari tombol sidebar
+// #navBackupBtn maupun dari fungsi lama seperti openBackupManager().
+window.openDataBackupView = function(initialTab) {
+    if (typeof window.renderBackupList === 'function') window.renderBackupList();
+    if (typeof window.loadCloudBackupList === 'function') window.loadCloudBackupList();
+
+    var gsUrl = document.getElementById('googleSheetsUrlInput');
+    if (gsUrl) gsUrl.value = localStorage.getItem('sk_google_sheets_url') || '';
+    var gsStatus = document.getElementById('googleSheetsStatus');
+    if (gsStatus) gsStatus.innerText = '';
+
+    window.openModal('dataBackupModal');
+    if (initialTab) window.switchSetelanTab(initialTab);
+};
+
 window.showDashboardView = function() {
     document.body.classList.remove('view-settings', 'view-fullpage');
     window.updateAppSidebarNav('dashboard');
@@ -114,7 +135,8 @@ window.showDashboardView = function() {
     // pindah ke menu Dashboard di sidebar.
     if (typeof window.closeModal === 'function') window.closeModal('setelanModal');
     // Kalau lagi ada menu full-page lain yang terbuka (Laporan, Anggaran,
-    // Pengingat Pembayaran, Buku Kas, Akun, Cadangan Data), tutup juga.
+    // Pengingat Pembayaran, Buku Kas, Manajemen User, Cadangan Data), tutup
+    // juga.
     if (window.FULLVIEW_MODALS) {
         Object.keys(window.FULLVIEW_MODALS).forEach(function(id) {
             var el = document.getElementById(id);
@@ -135,11 +157,15 @@ window.APP_NAV_BTN_MAP = {
     // Perangkat" di Setelan (bukan tombol sidebar sendiri lagi) -- tetap
     // menyorot navSetelanBtn supaya sidebar tidak terlihat kosong aktifnya.
     akun:      'navSetelanBtn',
-    backup:    'navSetelanBtn',
     telegram:  'navSetelanBtn',
     snapshot:  'navSetelanBtn',
     devices:   'navSetelanBtn',
-    userManager: 'navUserManagerBtn'
+    userManager: 'navUserManagerBtn',
+    // [PINDAH DARI SETELAN] backup & migration sekarang punya tombol
+    // sidebar sendiri (lihat window.openDataBackupView, dataBackupModal).
+    backup:      'navBackupBtn',
+    migration:   'navBackupBtn',
+    backupData:  'navBackupBtn'
 };
 window.updateAppSidebarNav = function(which) {
     Object.keys(window.APP_NAV_BTN_MAP).forEach(function(key) {

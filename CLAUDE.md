@@ -82,8 +82,8 @@ di repo ini SAMA PERSIS dengan yang disajikan ke browser.
 | `payment-reminder.js` | Pengingat jadwal pembayaran |
 | `telegram.js` | Notifikasi Telegram |
 | `ai.js` | Analisis keuangan & chat berbasis AI |
-| `backup.js` | Backup & migrasi data ke cloud |
-| `settings.js` | Panel Setelan (13 tab: bahasa, AI, emas, sedekah, telegram, supabase, password, sync, backup, migrasi, reset, arsip, devices) |
+| `backup.js` | Backup & migrasi data ke cloud -- kini di halaman sidebar tersendiri "Cadangan Data" (`dataBackupModal`), bukan tab Setelan lagi |
+| `settings.js` | Panel Setelan (11 tab: akun, telegram, snapshot, devices, AI, emas, supabase, password, sync, reset, arsip) + `window.openDataBackupView()` untuk halaman "Cadangan Data" (backup & migrasi) yang terpisah dari Setelan |
 | `custom-select.js` | Komponen dropdown custom |
 
 `api/emas.js` — endpoint/helper harga emas Antam (dipakai fitur "Harga Emas"
@@ -107,8 +107,12 @@ di Setelan).
   aksi sekali-jalan tanpa halaman), panggil `window.closeMobileDrawer()`
   manual di `onclick`-nya.
 - **View vs modal:** Dashboard, Setelan, dan 6 menu sidebar lain (Laporan,
-  Anggaran, Pengingat Pembayaran, Buku Kas, Akun, Cadangan Data) semuanya
-  tampil sebagai **halaman penuh** di area utama, bukan modal mengambang.
+  Anggaran, Pengingat Pembayaran, Buku Kas, Manajemen User, Cadangan Data)
+  semuanya tampil sebagai **halaman penuh** di area utama, bukan modal
+  mengambang. Cadangan Data (backup lokal/cloud, impor/ekspor, restore, dan
+  Migrasi Data ke Cloud) sekarang menu sidebar tersendiri (`dataBackupModal`,
+  dibuka lewat `window.openDataBackupView()`) -- BUKAN lagi tab di dalam
+  Setelan.
   Mekanismenya digeneralisasi lewat `window.FULLVIEW_MODALS` (map id-modal
   → key-nav, didefinisikan di `js/utils.js`) + class `fullview-modal` di
   markup modal + `body.view-fullpage` (CSS di `css/style.css`, dekat blok
