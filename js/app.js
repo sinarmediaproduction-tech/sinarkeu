@@ -194,6 +194,20 @@ window.continueAppInit = async function() {
         try { await window.skRefreshSharedAccess(); } catch (e) { console.warn('[App] Gagal refresh akses Buku Bersama saat unlock:', e); }
     }
     if (typeof window.skApplyRoleUI === 'function') window.skApplyRoleUI();
+
+    // [AUTO LOGIN PANEL BUKU BERSAMA] Kalau belum ada sesi Supabase Auth
+    // (belum pernah login Buku Bersama di device ini, atau sesinya sudah
+    // habis), langsung buka modal Kelola Buku begitu lockscreen terbuka --
+    // form Login/Signup Buku Bersama (skAuthPanelContent) ada di dalam
+    // modal itu. Tujuannya supaya pembatasan UI sesuai role (skApplyRoleUI)
+    // bisa langsung aktif tanpa user harus cari-cari menunya dulu.
+    // Dilewati kalau offline (login butuh cloud, requireOnline di
+    // openBookManager akan menolak dengan toast peringatan tiap unlock
+    // yang tidak perlu) atau kalau sesi auth sudah ada (_skAuthUser sudah
+    // terisi dari skRefreshSharedAccess di atas -- tidak perlu login ulang).
+    if (!window._skAuthUser && window.isOnline && window.isOnline() && typeof window.openBookManager === 'function') {
+        window.openBookManager();
+    }
     window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
     let currentYear = new Date().getFullYear();
     let selectYear = document.getElementById('budgetYear');
