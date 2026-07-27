@@ -177,7 +177,8 @@ window.FULLVIEW_MODALS = {
     backupModal:           'backup',
     telegramSettingsModal: 'telegram',
     safetySnapshotModal:   'snapshot',
-    deviceManagerModal:    'devices'
+    deviceManagerModal:    'devices',
+    userManagerModal:      'userManager'
 };
 
 // Modal utility (dipanggil dari onclick di HTML)

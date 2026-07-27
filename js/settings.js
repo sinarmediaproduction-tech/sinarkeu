@@ -122,7 +122,8 @@ window.APP_NAV_BTN_MAP = {
     backup:    'navBackupBtn',
     telegram:  'navTelegramBtn',
     snapshot:  'navSafetySnapshotBtn',
-    devices:   'navDeviceManagerBtn'
+    devices:   'navDeviceManagerBtn',
+    userManager: 'navUserManagerBtn'
 };
 window.updateAppSidebarNav = function(which) {
     Object.keys(window.APP_NAV_BTN_MAP).forEach(function(key) {
