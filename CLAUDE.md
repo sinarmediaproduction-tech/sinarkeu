@@ -56,6 +56,16 @@ di repo ini SAMA PERSIS dengan yang disajikan ke browser.
 - **Sinkronisasi antar device:** deteksi konflik untuk row singleton
   (`js/sync-conflict.js`), butuh trigger `updated_at` di server — lihat
   `sql/fix_server_side_updated_at.sql`.
+- **Shared book / multi-user (opsional, per-buku):** satu buku kas bisa
+  "dibagikan" (`window.skMakeBookShared`, `js/auth.js`) ke user Supabase Auth
+  lain dengan role `admin`/`editor`/`viewer` (`book_members` table, RLS
+  berbasis `sk_role_for_book(book_id)`/`sk_is_admin(book_id)` — lihat
+  `sql/shared_books_roles.sql`, `sql/bootstrap_shared_book.sql`,
+  `sql/harden_shared_book_data_rls.sql`). Beda jalur otentikasi dari akun
+  lokal biasa: buku shared PAKAI Supabase Auth (login email/password),
+  sedangkan buku non-shared cuma pakai anon key + `account_tag` (lihat
+  catatan RLS di bawah). Visibility menu per role diatur lewat
+  `window.SK_MENU_ITEMS`/`skGetMenuVisible` di `js/auth.js`.
 - **PWA:** `manifest.json` + `sw.js` (service worker).
 
 ## Struktur modul (`js/`)
@@ -71,6 +81,7 @@ di repo ini SAMA PERSIS dengan yang disajikan ke browser.
 | `transaction.js` | CRUD transaksi |
 | `book.js` | Buku Kas (Buku Induk/Anak, multi-buku) |
 | `account.js` | Multi-akun, lock/unlock |
+| `auth.js` | Supabase Auth (login shared book), role per book (admin/editor/viewer via `window._skSharedRoles`), invite/hapus member, visibility menu per role, halaman "Manajemen User" |
 | `budget.js` | Anggaran bulanan & tahunan |
 | `expense-chart.js` | Grafik pengeluaran |
 | `forecast.js` | Proyeksi keuangan |
@@ -156,3 +167,25 @@ di Setelan).
 - Perubahan skema Supabase harus disertai file migrasi baru di `sql/`,
   mengikuti gaya komentar panjang yang menjelaskan masalah + fix (lihat
   file yang sudah ada sebagai contoh format).
+- **RLS harus dicek lewat `pg_policies`, bukan cuma file migrasi di repo** —
+  beberapa kali ditemukan policy legacy/duplikat (`Allow all`, `allow_all`,
+  bahkan `roles = {public}`) yang dibuat langsung lewat Supabase dashboard
+  UI, tidak pernah masuk migrasi terversi, dan baru ketahuan lewat query
+  manual (lihat `sql/cleanup_legacy_open_policies.sql`). Karena RLS bersifat
+  permissive-OR, satu policy longgar yang "nyangkut" bisa membuat semua
+  policy ketat lain di tabel yang sama jadi percuma. Kalau menambah/ubah
+  policy, verifikasi ulang isi `pg_policies` setelahnya, jangan asumsikan
+  state DB sama dengan yang tertulis di `sql/*.sql`.
+- `anon_full_access` pada tabel `backups` SENGAJA `qual = true` tanpa syarat
+  (dilindungi enkripsi, bukan RLS scoping) — jangan dikira bug dan di-drop.
+  Tabel lain (`transactions`, `settings`, `payment_reminders`) yang punya
+  nama sama HARUS dibatasi `NOT sk_is_shared_book(book_id)`.
+- `js/db.js.bak` adalah file sisa/backup manual yang nyangkut di repo —
+  bukan bagian dari build, tidak di-load `index.html`. Aman diabaikan atau
+  dihapus; jangan bingung dengan `js/db.js` yang aktif.
+- `_headers` (dibaca otomatis oleh Cloudflare Pages) harus berisi header
+  keamanan (X-Frame-Options, HSTS, dll) yang TIDAK bisa diset lewat meta
+  tag CSP di `index.html` — lihat komentar di bagian atas file `_headers`
+  itu sendiri untuk daftar lengkap & alasannya. **Cek isi file ini benar-benar
+  ada isinya**, bukan cuma placeholder kosong — sempat ketahuan pernah
+  kosong padahal isinya harusnya persis yang didokumentasikan.
