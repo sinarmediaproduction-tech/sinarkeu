@@ -128,6 +128,7 @@ window.openBookManager = function() {
     window.renderBookList();
     window.renderBookParentOptions();
     window.refreshStorageEstimate();
+    if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
 };
 
 window.renderBookParentOptions = function() {
