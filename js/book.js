@@ -477,7 +477,10 @@ window.refreshStorageEstimate = async function() {
 window.openTelegramSettings = async function() {
     if (!window.requireOnline('mengatur Telegram')) return;
     document.getElementById('tgTestStatus').innerHTML = '';
-    window.openModal('telegramSettingsModal');
+    // [SERAGAM DENGAN SETELAN] Notifikasi Telegram sekarang panel inline di
+    // halaman Setelan (telegramSettingsModal terpisah sudah dihapus dari
+    // HTML) -- buka Setelan lalu gulir ke sana.
+    if (typeof window.openSetelanModal === 'function') window.openSetelanModal('telegram');
     window.loadTgConfigToForm();
     if (window.isOnline()) {
         const _tgTag = window.getAccountTag ? window.getAccountTag() : null;

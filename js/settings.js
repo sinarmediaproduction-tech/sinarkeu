@@ -60,7 +60,20 @@ window.openSetelanModal = function(initialTab) {
     var deviceNameSt = document.getElementById('deviceNameStatus');
     if (deviceNameInp) deviceNameInp.value = localStorage.getItem('sk_device_id') || '';
     if (deviceNameSt) deviceNameSt.innerText = '';
-    
+
+    // [SERAGAM DENGAN SETELAN] Akun, Notifikasi Telegram, Snapshot Keamanan,
+    // Perangkat Terhubung, dan Cadangan Data sekarang panel inline di sini
+    // juga (bukan modal terpisah lagi) -- render semuanya setiap kali
+    // Setelan dibuka, apapun jalan masuknya (nav sidebar, deep-link, atau
+    // openAccountManager/openTelegramSettings/dst.), supaya isinya selalu
+    // ter-update, bukan cuma saat dipanggil lewat fungsi open*Manager saja.
+    if (typeof window.renderAccModalList === 'function') window.renderAccModalList();
+    if (typeof window.loadTgConfigToForm === 'function') window.loadTgConfigToForm();
+    if (typeof window.renderSafetySnapshotList === 'function') window.renderSafetySnapshotList();
+    if (typeof window.loadConnectedDevices === 'function') window.loadConnectedDevices();
+    if (typeof window.renderBackupList === 'function') window.renderBackupList();
+    if (typeof window.loadCloudBackupList === 'function') window.loadCloudBackupList();
+
     // Kalau lagi ada menu full-page sidebar lain yang terbuka (Laporan,
     // Anggaran, dst), tutup dulu supaya tidak tumpang tindih dengan Setelan.
     if (window.FULLVIEW_MODALS) {
@@ -438,10 +451,10 @@ window.saveDeviceName = function() {
 };
 
 // ── PERANGKAT TERHUBUNG ──
-// Dipanggil dari menu sidebar "Perangkat Terhubung" (sebelumnya tab di dalam
-// Setelan, sekarang halaman fullview tersendiri -- lihat FULLVIEW_MODALS).
+// Dipanggil dari panel "Perangkat Terhubung" -- sekarang panel inline di
+// halaman Setelan (deviceManagerModal terpisah sudah dihapus dari HTML).
 window.openDeviceManager = function() {
-    window.openModal('deviceManagerModal');
+    if (typeof window.openSetelanModal === 'function') window.openSetelanModal('devices');
     window.loadConnectedDevices();
 };
 

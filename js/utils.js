@@ -167,21 +167,17 @@ window.requireOnline = function(operationName) {
 // Daftar modal yang sekarang tampil sebagai halaman penuh di area utama
 // (pola sama seperti Setelan) alih-alih kotak dialog mengambang -- dipetakan
 // ke id tombol nav sidebar masing-masing supaya nav bisa ikut ditandai aktif.
-// [PINDAH KE SETELAN] akun/backup/telegram/snapshot/devices sudah tidak
-// punya tombol sidebar sendiri lagi -- dibuka dari panel "Akun & Perangkat"
-// di halaman Setelan (index.html), tapi tetap tampil sebagai halaman penuh
-// lewat mekanisme yang sama, jadi entri map di bawah tetap dipertahankan.
+// [SERAGAM DENGAN SETELAN] akun/backup/telegram/snapshot/devices TIDAK lagi
+// masuk daftar ini -- section-nya sudah dipindah jadi panel inline langsung
+// di dalam halaman Setelan (index.html, #setelanTabContent), sama seperti
+// section Setelan lainnya, supaya semua section Setelan konsisten tampil
+// langsung tanpa perlu berpindah halaman/modal terpisah.
 // Lihat CLAUDE.md bagian "Sidebar/nav" untuk konvensinya.
 window.FULLVIEW_MODALS = {
     monthlyReportModal:    'laporan',
     defaultBudgetModal:    'anggaran',
     paymentReminderModal:  'reminder',
     bookManagerModal:      'buku',
-    accountManagerModal:   'akun',
-    backupModal:           'backup',
-    telegramSettingsModal: 'telegram',
-    safetySnapshotModal:   'snapshot',
-    deviceManagerModal:    'devices',
     userManagerModal:      'userManager'
 };
 
@@ -218,7 +214,14 @@ window.openModal = function(id) {
         if (typeof window.updateAppSidebarNav === 'function') window.updateAppSidebarNav(window.FULLVIEW_MODALS[id]);
         if (typeof window.closeMobileDrawer === 'function') window.closeMobileDrawer();
     }
-    document.getElementById(id).classList.add('show');
+    // [FIX] Beberapa fungsi lama (mis. openBackupManager, openTelegramSettings)
+    // mungkin masih memanggil openModal() dengan id yang sudah tidak ada lagi
+    // di HTML karena section-nya sudah dipindah jadi panel inline di Setelan.
+    // Guard null di sini supaya panggilan lama itu tidak melempar error dan
+    // menghentikan sisa fungsi (mis. render list) yang seharusnya tetap jalan.
+    var _modalEl = document.getElementById(id);
+    if (!_modalEl) return;
+    _modalEl.classList.add('show');
     if (id === 'addModal') {
         document.getElementById('addForm').reset();
         // Sync custom selects setelah form.reset()
@@ -242,7 +245,13 @@ window.closeModal = function(id) {
         const editingId = document.getElementById('editId') && document.getElementById('editId').value;
         if (editingId) window.clearEditBaseline(editingId);
     }
-    document.getElementById(id).classList.remove('show');
+    // [FIX] Sama seperti di openModal() -- guard null supaya pemanggilan
+    // closeModal() dengan id modal lama yang sudah dihapus dari HTML (karena
+    // sudah jadi panel inline di Setelan) tidak melempar error dan
+    // menghentikan kode setelahnya (mis. window.switchAccount(accId)).
+    var _closeEl = document.getElementById(id);
+    if (!_closeEl) return;
+    _closeEl.classList.remove('show');
     if (id === 'setelanModal') {
         document.body.classList.remove('view-settings');
         if (typeof window.updateAppSidebarNav === 'function') window.updateAppSidebarNav('dashboard');

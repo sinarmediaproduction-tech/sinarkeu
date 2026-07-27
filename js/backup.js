@@ -1,6 +1,9 @@
 // ==================== BACKUP & EXPORT ====================
 window.openBackupManager = function() {
-    window.openModal('backupModal');
+    // [SERAGAM DENGAN SETELAN] Konten Manajer Cadangan sudah digabung ke
+    // panel inline "Cadangan Data" di halaman Setelan (backupModal terpisah
+    // sudah dihapus dari HTML) -- jadi buka Setelan lalu gulir ke sana.
+    if (typeof window.openSetelanModal === 'function') window.openSetelanModal('backup');
     window.renderBackupList();
     window.loadCloudBackupList();
 };
@@ -83,7 +86,6 @@ window.restoreFromIndex = async function(i) {
         // besar, jadi balanceOffset yang baru saja ditulis trimAndSaveLocal (0) perlu
         // dikoreksi dengan yang sebenarnya dari cloud.
         await window._fixBalanceOffsetAfterRestore(window.currentBookId);
-        window.closeModal('backupModal');
         window.showToast("Data berhasil dipulihkan");
     }
 };
@@ -211,7 +213,6 @@ window.restoreFromCloudBackup = async function(backupId) {
         // cloud ini juga cuma snapshot window.txs (≤1000 transaksi terbaru) pada saat
         // dibuat, jadi balanceOffset perlu dikoreksi ulang dari cloud setelah restore.
         await window._fixBalanceOffsetAfterRestore(window.currentBookId);
-        window.closeModal('backupModal');
         window.showToast('Data berhasil dipulihkan dari cloud!', 'success');
         await window.addCloudLog('RESTORE', 'Restore dari cloud backup id: ' + backupId);
     } catch (e) { window.showToast('Gagal memulihkan data dari cloud', 'error'); }

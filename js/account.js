@@ -149,7 +149,15 @@ window.submitAccountUnlock = async function() {
     window._doSwitch(currentId, accId);
 };
 
-window.openAccountManager = function(highlightId) { window.renderAccModalList(highlightId); window.cancelEditAccount(); window.openModal('accountManagerModal'); };
+window.openAccountManager = function(highlightId) {
+    window.renderAccModalList(highlightId);
+    window.cancelEditAccount();
+    // [SERAGAM DENGAN SETELAN] Akun sekarang panel inline di halaman Setelan,
+    // jadi "membuka" akun berarti navigasi ke Setelan lalu gulir ke bagian
+    // Akun -- bukan lagi membuka modal terpisah (accountManagerModal, sudah
+    // dihapus dari HTML).
+    if (typeof window.openSetelanModal === 'function') window.openSetelanModal('akun');
+};
 window.renderAccModalList = function(highlightId) {
     const accounts = window.getAllAccounts();
     const activeId = window.getActiveAccountId();
@@ -166,7 +174,7 @@ window.renderAccModalList = function(highlightId) {
         </div>`;
     }).join('');
 };
-window.handleAccModalItemClick = function(accId) { if (accId === window.getActiveAccountId()) return; window.closeModal('accountManagerModal'); window.switchAccount(accId); };
+window.handleAccModalItemClick = function(accId) { if (accId === window.getActiveAccountId()) return; window.switchAccount(accId); };
 window.editAccount = function(accId) {
     const acc = window.getAllAccounts().find(a => a.id === accId);
     if (!acc) return;
@@ -429,7 +437,7 @@ window.saveNewAccount = async function() {
                 window.renderAccountBar();
                 if (!isEdit && (!window.getActiveAccountId() || accounts.length === 1)) {
                     window._setActiveAccountId(accId);
-                    setTimeout(() => { window.closeModal('accountManagerModal'); location.reload(); }, 800);
+                    setTimeout(() => { location.reload(); }, 800);
                 }
                 return;
             } finally {
@@ -457,7 +465,7 @@ window.saveNewAccount = async function() {
         window.renderAccountBar();
         if (!isEdit && (!window.getActiveAccountId() || accounts.length === 1)) {
             window._setActiveAccountId(accId);
-            setTimeout(() => { window.closeModal('accountManagerModal'); location.reload(); }, 800);
+            setTimeout(() => { location.reload(); }, 800);
         }
     } finally {
         window._savingAccountInProgress = false;
@@ -553,20 +561,24 @@ window.logoutToLockScreen = function() {
 };
 window.openAccountManagerFromLock = function() {
     document.getElementById('passwordLockScreen').style.display = 'none';
-    window.openAccountManager();
     // Gunakan flag, bukan override global closeModal
     window._fromLockScreen = true;
+    window.openAccountManager();
+    // [SERAGAM DENGAN SETELAN] Akun sekarang panel inline di halaman Setelan
+    // (bukan modal terpisah lagi), jadi tombol "Kembali ke Layar Kunci" di
+    // panel Akun-lah yang dipakai untuk balik ke layar kunci -- bukan lagi
+    // lewat patch closeModal('accountManagerModal') seperti sebelumnya.
+    var backWrap = document.getElementById('setelanBackToLockWrap');
+    if (backWrap) backWrap.style.display = 'block';
 };
 
-// Patch closeModal agar aman: cek flag _fromLockScreen
-const _origCloseModal = window.closeModal;
-window.closeModal = function(id) {
-    _origCloseModal(id);
-    if (id === 'accountManagerModal' && window._fromLockScreen) {
-        window._fromLockScreen = false;
-        window.renderLockScreenPicker();
-        document.getElementById('passwordLockScreen').style.display = 'flex';
-    }
+window.backToLockScreenFromAkun = function() {
+    window._fromLockScreen = false;
+    var backWrap = document.getElementById('setelanBackToLockWrap');
+    if (backWrap) backWrap.style.display = 'none';
+    window.closeModal('setelanModal');
+    if (typeof window.renderLockScreenPicker === 'function') window.renderLockScreenPicker();
+    document.getElementById('passwordLockScreen').style.display = 'flex';
 };
 window.bootstrapMultiAccount = function() {
     const pendingSwitch = localStorage.getItem('sk_switching_in_progress');
