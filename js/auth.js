@@ -377,7 +377,11 @@ window.skMakeBookShared = async function(bookId) {
     );
     if (!ok) return;
     try {
-        const res1 = await client.from('sk_books').insert({ id: book.id, name: book.name, is_shared: true });
+        // [FIX] created_by wajib diisi -- kolom NOT NULL di sk_books & juga
+        // dipakai policy RLS sk_books_insert_self (WITH CHECK created_by =
+        // auth.uid()). Kalau tidak dikirim, Postgres menolaknya dengan
+        // error 23502 (null value in column "created_by").
+        const res1 = await client.from('sk_books').insert({ id: book.id, name: book.name, is_shared: true, created_by: window._skAuthUser.id });
         if (res1.error) throw res1.error;
         const res2 = await client.from('book_members').insert({ book_id: book.id, user_id: window._skAuthUser.id, role: 'admin' });
         if (res2.error) throw res2.error;
