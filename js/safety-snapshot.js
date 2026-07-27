@@ -1,7 +1,9 @@
 // ==================== SNAPSHOT KEAMANAN (Restore Point Otomatis) ====================
-// Fitur ini SENGAJA dipisah dari "Cadangan Data" (js/backup.js, menu
-// sidebar tersendiri "Cadangan Data" -- dulu tab di dalam Setelan, sekarang
-// halaman sendiri). Bedanya:
+// Fitur ini SENGAJA dipisah -- secara LOGIKA/KODE, bukan lagi secara halaman
+// -- dari "Cadangan Data" (js/backup.js). Sejak Snapshot Keamanan juga
+// dipindah ke halaman sidebar "Cadangan Data" (dataBackupModal, dulu
+// masing-masing tab sendiri di Setelan), keduanya memang tampil di halaman
+// yang sama, tapi konsepnya tetap beda:
 //   - Cadangan Data   = backup transaksi BUKU AKTIF yang dibuat MANUAL oleh user
 //                        (lokal/cloud/Google Sheets), untuk kebutuhan arsip & laporan.
 //   - Snapshot Keamanan = jaring pengaman OTOMATIS. Setiap kali aplikasi akan
@@ -12,8 +14,9 @@
 //                        buku, anggaran, pengingat pembayaran, setelan -- bukan cuma
 //                        transaksi 1 buku) tepat SEBELUM aksi itu benar-benar
 //                        dijalankan. Kalau ternyata prosesnya error atau hasilnya
-//                        salah, user bisa pulihkan lewat tab Setelan > Snapshot
-//                        Keamanan tanpa perlu sudah membuat Cadangan Data lebih dulu.
+//                        salah, user bisa pulihkan lewat halaman Cadangan Data >
+//                        Snapshot Keamanan tanpa perlu sudah membuat Cadangan Data
+//                        lebih dulu.
 //
 // [PENTING - BATASAN] Snapshot ini HANYA menyimpan salinan localStorage di
 // BROWSER INI. Untuk aksi yang juga menghapus data di Supabase (cloud) secara
@@ -106,11 +109,11 @@ window.checkAndRunDailySafetySnapshot = function() {
     }
 };
 
-// Dipanggil dari panel "Snapshot Keamanan" -- sekarang panel inline di
-// halaman Setelan (safetySnapshotModal terpisah sudah dihapus dari HTML).
+// Dipanggil dari panel "Snapshot Keamanan" -- sekarang halaman "Cadangan
+// Data" tersendiri (dataBackupModal), bukan panel inline di Setelan lagi.
 window.openSafetySnapshotManager = function() {
     window.renderSafetySnapshotList();
-    if (typeof window.openSetelanModal === 'function') window.openSetelanModal('snapshot');
+    if (typeof window.openDataBackupView === 'function') window.openDataBackupView('snapshot');
 };
 
 window.renderSafetySnapshotList = function() {

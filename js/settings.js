@@ -64,17 +64,16 @@ window.openSetelanModal = function(initialTab) {
     if (deviceNameInp) deviceNameInp.value = localStorage.getItem('sk_device_id') || '';
     if (deviceNameSt) deviceNameSt.innerText = '';
 
-    // [SERAGAM DENGAN SETELAN] Akun, Notifikasi Telegram, Snapshot Keamanan,
-    // dan Perangkat Terhubung tetap panel inline di sini (bukan modal
-    // terpisah) -- render semuanya setiap kali Setelan dibuka, apapun jalan
-    // masuknya (nav sidebar, deep-link, atau openAccountManager/
-    // openTelegramSettings/dst.), supaya isinya selalu ter-update, bukan
-    // cuma saat dipanggil lewat fungsi open*Manager saja. Cadangan Data &
-    // Migrasi TIDAK lagi dirender di sini -- sudah pindah ke halaman
+    // [SERAGAM DENGAN SETELAN] Akun, Notifikasi Telegram, dan Perangkat
+    // Terhubung tetap panel inline di sini (bukan modal terpisah) -- render
+    // semuanya setiap kali Setelan dibuka, apapun jalan masuknya (nav
+    // sidebar, deep-link, atau openAccountManager/openTelegramSettings/
+    // dst.), supaya isinya selalu ter-update, bukan cuma saat dipanggil
+    // lewat fungsi open*Manager saja. Cadangan Data, Migrasi, dan Snapshot
+    // Keamanan TIDAK lagi dirender di sini -- sudah pindah ke halaman
     // tersendiri, lihat window.openDataBackupView().
     if (typeof window.renderAccModalList === 'function') window.renderAccModalList();
     if (typeof window.loadTgConfigToForm === 'function') window.loadTgConfigToForm();
-    if (typeof window.renderSafetySnapshotList === 'function') window.renderSafetySnapshotList();
     if (typeof window.loadConnectedDevices === 'function') window.loadConnectedDevices();
 
     // Kalau lagi ada menu full-page sidebar lain yang terbuka (Laporan,
@@ -111,13 +110,16 @@ window.showSetelanView = function(initialTab) {
 };
 
 // [PINDAH DARI SETELAN] Halaman "Cadangan Data" (backup lokal/cloud, impor/
-// ekspor, Google Sheets, restore) + "Migrasi Data ke Cloud" -- dulu 2 tab
-// di dalam Setelan, sekarang menu sidebar tersendiri (id: dataBackupModal,
-// terdaftar di window.FULLVIEW_MODALS). Dipanggil dari tombol sidebar
-// #navBackupBtn maupun dari fungsi lama seperti openBackupManager().
+// ekspor, Google Sheets, restore), "Snapshot Keamanan" (restore point
+// otomatis), dan "Migrasi Data ke Cloud" -- dulu 3 tab di dalam Setelan,
+// sekarang menu sidebar tersendiri (id: dataBackupModal, terdaftar di
+// window.FULLVIEW_MODALS). Dipanggil dari tombol sidebar #navBackupBtn
+// maupun dari fungsi lama seperti openBackupManager()/
+// openSafetySnapshotManager().
 window.openDataBackupView = function(initialTab) {
     if (typeof window.renderBackupList === 'function') window.renderBackupList();
     if (typeof window.loadCloudBackupList === 'function') window.loadCloudBackupList();
+    if (typeof window.renderSafetySnapshotList === 'function') window.renderSafetySnapshotList();
 
     var gsUrl = document.getElementById('googleSheetsUrlInput');
     if (gsUrl) gsUrl.value = localStorage.getItem('sk_google_sheets_url') || '';
@@ -158,13 +160,13 @@ window.APP_NAV_BTN_MAP = {
     // menyorot navSetelanBtn supaya sidebar tidak terlihat kosong aktifnya.
     akun:      'navSetelanBtn',
     telegram:  'navSetelanBtn',
-    snapshot:  'navSetelanBtn',
     devices:   'navSetelanBtn',
     userManager: 'navUserManagerBtn',
-    // [PINDAH DARI SETELAN] backup & migration sekarang punya tombol
-    // sidebar sendiri (lihat window.openDataBackupView, dataBackupModal).
+    // [PINDAH DARI SETELAN] backup, migration & snapshot sekarang punya
+    // tombol sidebar sendiri (lihat window.openDataBackupView, dataBackupModal).
     backup:      'navBackupBtn',
     migration:   'navBackupBtn',
+    snapshot:    'navBackupBtn',
     backupData:  'navBackupBtn'
 };
 window.updateAppSidebarNav = function(which) {

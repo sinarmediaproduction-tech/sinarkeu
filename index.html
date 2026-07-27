@@ -947,17 +947,6 @@ alter table public.settings
             </div>
         </div>
 
-        <!-- Snapshot Keamanan -- dipindah dari modal terpisah -->
-        <div class="data-management-panel setelan-tab-panel" data-tab-panel="snapshot">
-            <div class="panel-title">Snapshot Keamanan</div>
-            <div class="setelan-desc" style="margin-bottom:12px;">
-                Berbeda dari <b>Cadangan Data</b>: snapshot di sini dibuat <b>otomatis</b> oleh aplikasi tanpa perlu diklik — baik <b>1x per hari</b> (snapshot harian), maupun tepat sebelum aksi berisiko dijalankan (hapus buku, hapus akun, reset total aplikasi, arsipkan &amp; kosongkan database, restore Cadangan Data, atau impor JSON). Gunakan untuk berjaga-jaga kalau ada error atau hasil aksi tersebut ternyata keliru.
-                <br><br>
-                Menyimpan <b>seluruh data lokal akun ini</b> (semua buku, anggaran, pengingat pembayaran, setelan) pada perangkat ini saja — maksimal 10 snapshot terbaru disimpan (snapshot tertua otomatis dihapus kalau sudah penuh). <b>Catatan:</b> jika aksi terkait sudah menghapus data secara permanen di cloud/Supabase, snapshot ini hanya memulihkan salinan lokal, bukan data di cloud.
-            </div>
-            <div id="safetySnapshotListContainer"></div>
-        </div>
-
         <!-- Perangkat Terhubung -- dipindah dari modal terpisah -->
         <div class="data-management-panel setelan-tab-panel" data-tab-panel="devices">
             <div class="panel-title" style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
@@ -1140,6 +1129,17 @@ alter table public.settings
                     <button class="btn btn-warning" onclick="restoreFromBackup()" style="flex:1">Pulihkan</button>
                 </div>
             </div>
+        </div>
+
+        <!-- Snapshot Keamanan -- dipindah dari Setelan -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="snapshot">
+            <div class="panel-title">Snapshot Keamanan</div>
+            <div class="setelan-desc" style="margin-bottom:12px;">
+                Berbeda dari <b>Cadangan Data</b>: snapshot di sini dibuat <b>otomatis</b> oleh aplikasi tanpa perlu diklik — baik <b>1x per hari</b> (snapshot harian), maupun tepat sebelum aksi berisiko dijalankan (hapus buku, hapus akun, reset total aplikasi, arsipkan &amp; kosongkan database, restore Cadangan Data, atau impor JSON). Gunakan untuk berjaga-jaga kalau ada error atau hasil aksi tersebut ternyata keliru.
+                <br><br>
+                Menyimpan <b>seluruh data lokal akun ini</b> (semua buku, anggaran, pengingat pembayaran, setelan) pada perangkat ini saja — maksimal 10 snapshot terbaru disimpan (snapshot tertua otomatis dihapus kalau sudah penuh). <b>Catatan:</b> jika aksi terkait sudah menghapus data secara permanen di cloud/Supabase, snapshot ini hanya memulihkan salinan lokal, bukan data di cloud.
+            </div>
+            <div id="safetySnapshotListContainer"></div>
         </div>
 
         <!-- ===== MIGRASI DATA KE CLOUD ===== -->

@@ -82,8 +82,9 @@ di repo ini SAMA PERSIS dengan yang disajikan ke browser.
 | `payment-reminder.js` | Pengingat jadwal pembayaran |
 | `telegram.js` | Notifikasi Telegram |
 | `ai.js` | Analisis keuangan & chat berbasis AI |
+| `safety-snapshot.js` | Snapshot Keamanan (restore point otomatis) -- kini di halaman sidebar tersendiri "Cadangan Data" (`dataBackupModal`), bukan tab Setelan lagi |
 | `backup.js` | Backup & migrasi data ke cloud -- kini di halaman sidebar tersendiri "Cadangan Data" (`dataBackupModal`), bukan tab Setelan lagi |
-| `settings.js` | Panel Setelan (11 tab: akun, telegram, snapshot, devices, AI, emas, supabase, password, sync, reset, arsip) + `window.openDataBackupView()` untuk halaman "Cadangan Data" (backup & migrasi) yang terpisah dari Setelan |
+| `settings.js` | Panel Setelan (10 tab: akun, telegram, devices, AI, emas, supabase, password, sync, reset, arsip) + `window.openDataBackupView()` untuk halaman "Cadangan Data" (backup, snapshot keamanan & migrasi) yang terpisah dari Setelan |
 | `custom-select.js` | Komponen dropdown custom |
 
 `api/emas.js` — endpoint/helper harga emas Antam (dipakai fitur "Harga Emas"
