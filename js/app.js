@@ -184,32 +184,35 @@ window.continueAppInit = async function() {
     // [MULTIROLE] Lockscreen device sebagai gerbang utama: begitu password
     // lokal benar (di atas), langsung tarik status Buku Bersama -- KALAU
     // sesi Supabase Auth punya profil/device ini masih tersimpan (dari
-    // login manual sebelumnya di panel "Buku Bersama") -- dan terapkan
-    // pembatasan UI-nya seketika. Jadi tidak perlu login Buku Bersama lagi
-    // secara terpisah tiap kali buka app; role admin/editor/viewer langsung
-    // aktif begitu lockscreen terbuka. Kalau belum pernah login sama sekali
-    // (window._skAuthUser masih null), ini no-op aman untuk fetch-nya --
-    // tapi skApplyRoleUI() di bawah tetap jalan dan akan mengunci
-    // Setelan/Backup/Kelola Device (default role global 'editor' kalau
-    // belum login, lihat skComputeGlobalRole di js/auth.js).
+    // login manual sebelumnya) -- dan terapkan pembatasan UI-nya seketika.
+    // Kalau belum pernah login sama sekali (window._skAuthUser masih
+    // null), ini no-op aman untuk fetch-nya -- tapi skApplyRoleUI() di
+    // bawah tetap jalan dan akan mengunci Setelan/Backup/Kelola Device
+    // (default role global 'editor' kalau belum login, lihat
+    // skComputeGlobalRole di js/auth.js).
     if (typeof window.skRefreshSharedAccess === 'function' && window.getCloudUrl && window.getCloudUrl()) {
         try { await window.skRefreshSharedAccess(); } catch (e) { console.warn('[App] Gagal refresh akses Buku Bersama saat unlock:', e); }
     }
     if (typeof window.skApplyRoleUI === 'function') window.skApplyRoleUI();
 
-    // [AUTO LOGIN PANEL BUKU BERSAMA] Kalau belum ada sesi Supabase Auth
-    // (belum pernah login Buku Bersama di device ini, atau sesinya sudah
-    // habis), langsung buka modal Kelola Buku begitu lockscreen terbuka --
-    // form Login/Signup Buku Bersama (skAuthPanelContent) ada di dalam
-    // modal itu. Tujuannya supaya pembatasan UI sesuai role (skApplyRoleUI)
-    // bisa langsung aktif tanpa user harus cari-cari menunya dulu.
-    // Dilewati kalau offline (login butuh cloud, requireOnline di
-    // openBookManager akan menolak dengan toast peringatan tiap unlock
-    // yang tidak perlu) atau kalau sesi auth sudah ada (_skAuthUser sudah
-    // terisi dari skRefreshSharedAccess di atas -- tidak perlu login ulang).
-    if (!window._skAuthUser && window.isOnline && window.isOnline() && typeof window.openBookManager === 'function') {
-        window.openBookManager();
+    // [MULTIROLE GATE] Wajib login Buku Bersama SEBELUM masuk app -- tapi
+    // HANYA kalau device ini sudah pernah di-setup ke cloud (kalau belum,
+    // panel login tidak mungkin dipakai -- butuh koneksi & akun cloud) DAN
+    // lagi online DAN belum ada sesi login tersimpan. Kalau salah satu
+    // syarat itu tidak terpenuhi, app tetap bisa dipakai seperti biasa
+    // (role default 'editor' dari skComputeGlobalRole) -- solo user
+    // offline murni tidak pernah nyangkut di gerbang yang tidak mungkin
+    // mereka lewati. Sesi yang sudah ada (dari kunjungan sebelumnya)
+    // membuat gerbang ini otomatis dilewati -- tidak perlu login ulang
+    // tiap buka app (lihat skShowLoginGate di js/auth.js untuk detail).
+    const needsLoginGate = !window._skAuthUser && window.getCloudUrl && window.getCloudUrl() &&
+        window.isOnline && window.isOnline() && typeof window.skShowLoginGate === 'function';
+    if (needsLoginGate) {
+        await window.skShowLoginGate();
+        if (typeof window.skHideLoginGate === 'function') window.skHideLoginGate();
+        if (typeof window.skApplyRoleUI === 'function') window.skApplyRoleUI();
     }
+
     window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
     let currentYear = new Date().getFullYear();
     let selectYear = document.getElementById('budgetYear');

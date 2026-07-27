@@ -2124,6 +2124,21 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   padding: 24px;
 }
 
+/* [MULTIROLE GATE] Sama persis posisinya dengan #passwordLockScreen (fixed,
+   full-screen, z-index sama) supaya menutup total UI app di belakangnya --
+   TIDAK ADA tombol tutup/skip di sini secara sengaja. Lihat
+   window.skShowLoginGate di js/auth.js. */
+#skLoginGateScreen {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(160deg, var(--accent-lt) 0%, var(--paper-warm) 55%, var(--paper-warm) 100%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  overflow-y: auto;
+}
+
 .lock-card-wrap {
   flex: 1;
   min-height: 0;

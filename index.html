@@ -92,6 +92,21 @@
     </div>
 </div>
 
+<!-- ===== LOGIN GATE (Buku Bersama) -- wajib login sebelum masuk app kalau =====
+     ===== cloud sudah pernah di-setup & lagi online. Tidak ada tombol tutup/ =====
+     ===== skip -- lihat window.skShowLoginGate di js/auth.js. ===== -->
+<div id="skLoginGateScreen" style="display:none;">
+    <div class="lock-card-wrap">
+        <div class="lock-card">
+            <div class="lock-title">Login Buku Bersama</div>
+            <div style="font-size:.72rem; color:var(--ink-faint); margin-bottom:16px; line-height:1.6;">
+                Login dulu dengan akun Buku Bersama untuk menentukan peran kamu (admin/editor/viewer) sebelum masuk aplikasi. Belum punya akun? Daftar di bawah.
+            </div>
+            <div id="skGateAuthPanelContent" style="text-align:left;"></div>
+        </div>
+    </div>
+</div>
+
 <!-- ===== MANUAL PENGGUNA MODAL ===== -->
 <div id="manualModal" class="modal" style="z-index:9999;">
     <div class="modal-content report" style="max-width:780px; max-height:90vh; padding:20px;">

@@ -1104,6 +1104,102 @@ window._skHandleSignUpSubmit = function(ev) {
     window.skSignUp(email, password);
 };
 
+// ── [MULTIROLE GATE] Halaman login wajib sebelum masuk app ──────────────
+// Dipanggil dari window.continueAppInit (js/app.js) SETELAH lockscreen
+// device terbuka -- KALAU cloud sudah pernah di-setup di device ini DAN
+// lagi online DAN belum ada sesi Buku Bersama tersimpan (_skAuthUser masih
+// null). Kalau cloud belum pernah di-setup sama sekali atau lagi offline,
+// continueAppInit TIDAK memanggil ini -- app tetap bisa dipakai seperti
+// biasa (role default 'editor', lihat skComputeGlobalRole) supaya user
+// solo/offline murni tidak pernah nyangkut di gerbang yang tidak mungkin
+// mereka lewati (login butuh koneksi & akun cloud).
+//
+// Beda dengan panel login di modal "Kelola Buku" (skRenderAuthPanel /
+// skAuthPanelContent): panel itu SELALU bisa ditutup/dilewati (cuma
+// shortcut, bukan gerbang). Layar ini (skLoginGateScreen) SENGAJA tidak
+// punya tombol tutup/skip apapun -- halaman ini yang PALING PERTAMA
+// terlihat begitu lockscreen device terbuka, dan tidak ada jalan lain
+// menuju app selain login/daftar berhasil di sini.
+//
+// Kalau sesi login sudah ada dari kunjungan sebelumnya (persist sampai
+// logout manual, lihat skRefreshSharedAccess), gerbang ini otomatis
+// dilewati -- tidak perlu login ulang tiap buka app.
+window._skGateResolve = null;
+window._skGateAuthMode = 'login';
+
+window.skShowLoginGate = function() {
+    return new Promise(function(resolve) {
+        window._skGateResolve = resolve;
+        window._skGateAuthMode = 'login';
+        const el = document.getElementById('skLoginGateScreen');
+        if (el) el.style.display = 'flex';
+        window.skRenderGateAuthPanel();
+    });
+};
+
+window.skHideLoginGate = function() {
+    const el = document.getElementById('skLoginGateScreen');
+    if (el) el.style.display = 'none';
+};
+
+window.skRenderGateAuthPanel = function() {
+    const el = document.getElementById('skGateAuthPanelContent');
+    if (!el) return;
+    if (window._skGateAuthMode === 'signup') {
+        el.innerHTML =
+            '<form onsubmit="window._skHandleGateSignUpSubmit(event)">' +
+                '<input type="email" id="skGateAuthEmail" class="form-control" placeholder="Email" required autocomplete="username" style="margin-bottom:6px;">' +
+                '<input type="password" id="skGateAuthPassword" class="form-control" placeholder="Password (min. 6 karakter)" required minlength="6" autocomplete="new-password" style="margin-bottom:8px;">' +
+                '<button type="submit" class="btn btn-primary" style="width:100%;">Daftar Akun Buku Bersama</button>' +
+            '</form>' +
+            '<div style="font-size:.68rem; color:var(--ink-faint); margin-top:8px; line-height:1.6;">Daftar dulu di sini, lalu kasih tahu email kamu ke admin buku bersama yang mau kamu ikuti. Setelah daftar, kamu tetap perlu login di sini.</div>' +
+            '<button type="button" class="btn btn-secondary" style="margin-top:8px; width:100%;" onclick="window._skToggleGateAuthMode(\'login\')">Sudah punya akun? Login</button>';
+    } else {
+        el.innerHTML =
+            '<form onsubmit="window._skHandleGateLoginSubmit(event)">' +
+                '<input type="email" id="skGateAuthEmail" class="form-control" placeholder="Email" required autocomplete="username" style="margin-bottom:6px;">' +
+                '<input type="password" id="skGateAuthPassword" class="form-control" placeholder="Password" required autocomplete="current-password" style="margin-bottom:8px;">' +
+                '<button type="submit" class="btn btn-primary" style="width:100%;">Login Buku Bersama</button>' +
+            '</form>' +
+            '<button type="button" class="btn btn-secondary" style="margin-top:8px; width:100%;" onclick="window._skToggleGateAuthMode(\'signup\')">Belum punya akun? Daftar</button>';
+    }
+};
+
+window._skToggleGateAuthMode = function(mode) {
+    window._skGateAuthMode = mode;
+    window.skRenderGateAuthPanel();
+};
+
+window._skHandleGateLoginSubmit = async function(ev) {
+    ev.preventDefault();
+    const email = document.getElementById('skGateAuthEmail').value.trim();
+    const password = document.getElementById('skGateAuthPassword').value;
+    const ok = await window.skSignIn(email, password);
+    if (ok && window._skAuthUser && window._skGateResolve) {
+        const resolve = window._skGateResolve;
+        window._skGateResolve = null;
+        resolve();
+    }
+};
+
+window._skHandleGateSignUpSubmit = async function(ev) {
+    ev.preventDefault();
+    const email = document.getElementById('skGateAuthEmail').value.trim();
+    const password = document.getElementById('skGateAuthPassword').value;
+    const ok = await window.skSignUp(email, password);
+    // Kalau project Supabase-nya mewajibkan konfirmasi email, skSignUp
+    // berhasil (ok=true) TAPI window._skAuthUser masih null (session belum
+    // ada sampai email dikonfirmasi) -- gerbang JANGAN diloloskan, balik ke
+    // mode login supaya user login manual setelah konfirmasi email.
+    if (ok && window._skAuthUser && window._skGateResolve) {
+        const resolve = window._skGateResolve;
+        window._skGateResolve = null;
+        resolve();
+    } else if (ok && !window._skAuthUser) {
+        window._skToggleGateAuthMode('login');
+    }
+};
+
 // Saat app dibuka & sesi Supabase Auth sebelumnya masih tersimpan (belum
 // expired), tarik ulang akses buku shared otomatis supaya tidak perlu
 // login manual tiap buka app. Delay kecil supaya window.getCloudUrl() dkk
