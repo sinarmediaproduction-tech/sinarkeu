@@ -134,11 +134,10 @@ di Setelan).
   `window.FULLVIEW_MODALS` dan `window.APP_NAV_BTN_MAP`, (3) pastikan
   fungsi pembukanya tetap lewat `window.openModal(id)` — tidak perlu CSS
   atau JS tambahan lain.
-- **Styling:** semua di `css/style.css` (bukan `style.css` di root — file itu
-  bukan stylesheet asli, abaikan). Palet warna didefinisikan sebagai CSS
-  variable di `:root` (`--brand`, `--accent`, `--danger`, dll) — pakai
-  variable ini, jangan hardcode hex baru kecuali memang warna baru yang
-  disengaja.
+- **Styling:** semua di `css/style.css`, di-link dari `index.html`. Palet
+  warna didefinisikan sebagai CSS variable di `:root` (`--brand`, `--accent`,
+  `--danger`, dll) — pakai variable ini, jangan hardcode hex baru kecuali
+  memang warna baru yang disengaja.
 - **Ikon:** inline SVG gaya stroke (viewBox 24, stroke-width 2,
   stroke-linecap/linejoin round), bukan file ikon eksternal, agar konsisten
   dengan `.app-nav-item svg` yang sudah ada. Set ikon offline juga tersedia
@@ -154,12 +153,6 @@ di Setelan).
 
 ## Hal yang perlu hati-hati
 
-- `CATATAN-MERGER-GUDANG.md` di root membahas modul "Gudang Aset" —
-  itu dokumentasi proyek lain (**merdeka-main**) yang ikut ke-bundle di sini
-  secara tidak sengaja. Abaikan untuk konteks SinarKeu.
-- Ada dua file `style.css`: root (`/style.css`, isinya bukan CSS — tampaknya
-  file config lain) dan `css/style.css` (yang benar-benar dipakai, di-link
-  dari `index.html`). Selalu edit `css/style.css`.
 - Perubahan skema Supabase harus disertai file migrasi baru di `sql/`,
   mengikuti gaya komentar panjang yang menjelaskan masalah + fix (lihat
   file yang sudah ada sebagai contoh format).
