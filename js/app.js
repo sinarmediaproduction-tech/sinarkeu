@@ -188,8 +188,10 @@ window.continueAppInit = async function() {
     // pembatasan UI-nya seketika. Jadi tidak perlu login Buku Bersama lagi
     // secara terpisah tiap kali buka app; role admin/editor/viewer langsung
     // aktif begitu lockscreen terbuka. Kalau belum pernah login sama sekali
-    // (window._skAuthUser masih null), ini no-op aman -- treat seperti buku
-    // pribadi biasa, tidak ada pembatasan.
+    // (window._skAuthUser masih null), ini no-op aman untuk fetch-nya --
+    // tapi skApplyRoleUI() di bawah tetap jalan dan akan mengunci
+    // Setelan/Backup/Kelola Device (default role global 'editor' kalau
+    // belum login, lihat skComputeGlobalRole di js/auth.js).
     if (typeof window.skRefreshSharedAccess === 'function' && window.getCloudUrl && window.getCloudUrl()) {
         try { await window.skRefreshSharedAccess(); } catch (e) { console.warn('[App] Gagal refresh akses Buku Bersama saat unlock:', e); }
     }

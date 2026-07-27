@@ -101,17 +101,42 @@ window.SK_MENU_DEFAULTS = {
     tambahTransaksi: { editor: true,  viewer: false }
 };
 
+// [MULTIROLE GLOBAL] Peran sekarang dihitung SEKALI per device/sesi login,
+// bukan per-buku lagi -- berlaku ke SEMUA buku termasuk buku pribadi.
+// Aturan (sudah disepakati, lihat riwayat percakapan):
+//   1. Admin di buku manapun -> global admin (menang di atas segalanya).
+//   2. Kalau tidak admin di manapun tapi punya role editor/viewer di suatu
+//      buku (yang mana saja) -> pakai role tertinggi itu (editor > viewer).
+//   3. Belum login Buku Bersama sama sekali di device ini -> dianggap
+//      'editor' (CRUD transaksi biasa boleh, tapi Setelan/Backup/Kelola
+//      Device tetap terkunci) -- ini SENGAJA, bukan bug, supaya password
+//      Buku Bersama benar-benar jadi gerbang untuk fitur sensitif walau
+//      buku yang dibuka buku pribadi.
+// Modal "Kelola Buku" (login/signup Buku Bersama) & "Jadikan Bersama" itu
+// sendiri TIDAK ikut dibatasi oleh role ini -- supaya tidak ada masalah
+// ayam-telur (harus bisa login/bootstrap dulu sebelum punya role apapun).
+window.skComputeGlobalRole = function() {
+    if (!window._skAuthUser) return 'editor';
+    const roles = Object.keys(window._skSharedRoles).map(function(id) { return window._skSharedRoles[id]; });
+    if (roles.indexOf('admin') !== -1) return 'admin';
+    if (roles.indexOf('editor') !== -1) return 'editor';
+    if (roles.indexOf('viewer') !== -1) return 'viewer';
+    // Sudah login tapi belum jadi anggota buku bersama manapun (baru bikin
+    // akun, belum diundang ke buku manapun) -- tetap default paling ketat
+    // yang masih bisa transaksi, sama seperti belum login.
+    return 'editor';
+};
+
 // Dipakai skApplyRoleUI & patch openModal (addModal) -- SATU sumber
-// kebenaran untuk "menu X boleh dilihat/dipakai role Y di buku Z". Admin
+// kebenaran untuk "menu X boleh dilihat/dipakai role global Y". Admin
 // selalu true (tidak disimpan di kolom menu_visibility sama sekali) supaya
 // admin tidak bisa mengunci dirinya sendiri sampai tidak bisa buka Setelan
-// lagi. Buku pribadi (bukan shared) juga selalu true -- fitur ini memang
-// cuma berlaku untuk buku bersama.
+// lagi. bookId dipakai HANYA untuk menu_visibility kustom kalau buku aktif
+// itu buku bersama yang sudah diatur admin-nya -- kalau tidak ada
+// pengaturan khusus, jatuh ke SK_MENU_DEFAULTS berdasarkan role global.
 window.skGetMenuVisible = function(bookId, menuKey) {
-    if (!window.skIsSharedBookId(bookId)) return true;
-    const role = window.skGetRoleForBook(bookId);
+    const role = window.skComputeGlobalRole();
     if (role === 'admin') return true;
-    if (role !== 'editor' && role !== 'viewer') return false;
     const cfg = window._skBookMenuVisibility[bookId];
     const roleCfg = cfg && cfg[role];
     if (roleCfg && Object.prototype.hasOwnProperty.call(roleCfg, menuKey)) return !!roleCfg[menuKey];
@@ -119,6 +144,13 @@ window.skGetMenuVisible = function(bookId, menuKey) {
     return def ? !!def[role] : false;
 };
 
+// [PER-BUKU -- TIDAK BERUBAH] Dua fungsi ini TETAP per-buku (bukan
+// global) -- dipakai db.js (pilih JWT vs anon key), crypto.js (skip
+// enkripsi field), book.js (rename/hapus buku bersama tertentu), dan
+// skInviteMember/skAdminCreateMemberAccount dkk (kelola anggota buku
+// tertentu, harus admin BUKU ITU karena RLS server juga per-buku). Jangan
+// dipakai lagi untuk menentukan visibilitas menu/Setelan -- pakai
+// skComputeGlobalRole untuk itu.
 window.skIsSharedBookId = function(bookId) {
     return !!bookId && Object.prototype.hasOwnProperty.call(window._skSharedRoles, bookId);
 };
@@ -393,16 +425,14 @@ window.callSupabaseAPI = async function(table, method, body, queryString, option
     return _originalCallSupabaseAPI(table, method, body, queryString, options);
 };
 
-// ── Patch openSetelanModal: kunci untuk role non-admin di buku shared ───
+// ── Patch openSetelanModal: kunci untuk role global non-admin ───────────
+// [DIUBAH] Sekarang berlaku untuk SEMUA buku (termasuk buku pribadi),
+// bukan cuma buku yang statusnya "Bersama" -- lihat skComputeGlobalRole.
 const _originalOpenSetelanModal = window.openSetelanModal;
 window.openSetelanModal = function(initialTab) {
-    const bookId = window.currentBookId;
-    if (window.skIsSharedBookId(bookId)) {
-        const role = window.skGetRoleForBook(bookId);
-        if (role !== 'admin') {
-            window.showToast && window.showToast('Setelan buku bersama ini hanya bisa diubah oleh admin.', 'error');
-            return;
-        }
+    if (window.skComputeGlobalRole() !== 'admin') {
+        window.showToast && window.showToast('Setelan hanya bisa dibuka oleh admin Buku Bersama. Login dulu di "Kelola Buku" kalau kamu admin.', 'error');
+        return;
     }
     return _originalOpenSetelanModal.apply(this, arguments);
 };
@@ -902,20 +932,20 @@ window.skRenderUserManagerPage = function(selectedBookId) {
 };
 
 // ── Batasi UI sesuai peran (bukan cuma diblokir pas diklik) ─────────────
-// Sebelumnya openSetelanModal & callSupabaseAPI sudah menolak aksi non-admin/
-// viewer, tapi tombolnya sendiri masih kelihatan & bisa diklik dulu baru
-// ketahuan ditolak. Ini menyembunyikan/menonaktifkan tombolnya duluan untuk
-// buku bersama yang perannya tidak berhak, supaya tidak menyesatkan.
-// Buku pribadi (bukan shared) TIDAK terpengaruh sama sekali.
+// [DIUBAH] Sebelumnya cuma berlaku untuk buku yang statusnya "Bersama";
+// sekarang role GLOBAL (skComputeGlobalRole) berlaku ke SEMUA buku,
+// termasuk buku pribadi -- lihat komentar di skComputeGlobalRole untuk
+// alasannya. Sebelumnya openSetelanModal & callSupabaseAPI sudah menolak
+// aksi non-admin/viewer, tapi tombolnya sendiri masih kelihatan & bisa
+// diklik dulu baru ketahuan ditolak. Ini menyembunyikan/menonaktifkan
+// tombolnya duluan supaya tidak menyesatkan.
 window.skIsViewerOnCurrentBook = function() {
-    const bookId = window.currentBookId;
-    return window.skIsSharedBookId(bookId) && window.skGetRoleForBook(bookId) === 'viewer';
+    return window.skComputeGlobalRole() === 'viewer';
 };
 
 window.skApplyRoleUI = function() {
     const bookId = window.currentBookId;
-    const isShared = window.skIsSharedBookId(bookId);
-    const role = isShared ? window.skGetRoleForBook(bookId) : null;
+    const role = window.skComputeGlobalRole();
 
     // Helper kecil: set display sebuah elemen kalau elemennya ada. Aman
     // dipanggil untuk id yang mungkin tidak ada di semua versi markup.
@@ -924,43 +954,41 @@ window.skApplyRoleUI = function() {
         if (el) el.style.display = visible ? '' : 'none';
     }
 
-    // [DIUBAH] Visibilitas 5 menu ini sekarang mengikuti
-    // window.skGetMenuVisible -- bisa diatur admin lewat panel "Atur
-    // Tampilan Menu per Peran" di halaman Manajemen User (lihat
-    // window.skBuildMenuVisibilityHtml), bukan fix di kode lagi. Untuk buku
-    // pribadi (bukan shared) atau role admin, skGetMenuVisible selalu true
-    // -- perilaku lama tidak berubah untuk kasus itu. openSetelanModal
-    // tetap ditolak juga (defense-in-depth) kalau ada yang memicunya lewat
-    // jalur lain (mis. deep-link "Setelan -> Analisis AI").
+    // [DIUBAH] Visibilitas 5 menu ini sekarang mengikuti role GLOBAL lewat
+    // window.skGetMenuVisible (bisa diatur admin lewat panel "Atur
+    // Tampilan Menu per Peran" di halaman Manajemen User, kalau buku aktif
+    // itu buku bersama yang sudah diatur) -- berlaku untuk buku pribadi
+    // juga sekarang, bukan cuma buku bersama. openSetelanModal tetap
+    // ditolak juga (defense-in-depth) kalau ada yang memicunya lewat jalur
+    // lain (mis. deep-link "Setelan -> Analisis AI").
     setVisible('navSetelanBtn', window.skGetMenuVisible(bookId, 'setelan'));
     setVisible('navBackupBtn', window.skGetMenuVisible(bookId, 'backup'));
     setVisible('navDeviceManagerBtn', window.skGetMenuVisible(bookId, 'device'));
     setVisible('navBudgetBtn', window.skGetMenuVisible(bookId, 'budget'));
     setVisible('tambahTransaksiBtn', window.skGetMenuVisible(bookId, 'tambahTransaksi'));
 
-    // [MENU MANAJEMEN USER] Beda dengan 5 menu di atas (yang tergantung
-    // role & konfigurasi di buku yang SEDANG AKTIF): menu ini relevan
-    // selama user adalah admin di buku bersama MANA PUN, terlepas dari buku
-    // apa yang sedang dibuka -- supaya admin tetap bisa mengelola anggota
-    // buku bersama lain tanpa perlu pindah ke buku itu dulu. Menu ini
-    // SENGAJA TIDAK ikut masuk daftar yang bisa diatur admin (di luar
-    // cakupan fitur ini) -- selalu admin-only.
-    const isAnyBookAdmin = !!window._skAuthUser && Object.keys(window._skSharedRoles).some(function(id) {
-        return window._skSharedRoles[id] === 'admin';
-    });
-    setVisible('navUserManagerBtn', isAnyBookAdmin);
+    // [MENU MANAJEMEN USER] Relevan selama role global admin (admin di
+    // buku bersama MANA PUN), terlepas dari buku apa yang sedang dibuka --
+    // supaya admin tetap bisa mengelola anggota buku bersama lain tanpa
+    // perlu pindah ke buku itu dulu. Menu ini SENGAJA TIDAK ikut masuk
+    // daftar yang bisa diatur admin (di luar cakupan fitur ini) -- selalu
+    // admin-only.
+    setVisible('navUserManagerBtn', role === 'admin' && !!window._skAuthUser);
 
     // Badge kecil di header supaya jelas sedang login sebagai siapa & peran
-    // apa -- terutama penting sekarang karena UI langsung menyesuaikan
-    // otomatis begitu lockscreen terbuka, jadi user perlu indikator visual.
+    // apa -- sekarang tampil terus (bukan cuma di buku bersama) karena
+    // role global berlaku ke semua buku, termasuk saat belum login sama
+    // sekali (default 'editor' dengan label netral supaya tidak
+    // menyiratkan sudah login padahal belum).
     const badge = document.getElementById('skRoleBadge');
     if (badge) {
-        if (isShared) {
-            badge.style.display = '';
+        badge.style.display = '';
+        if (!window._skAuthUser) {
+            badge.textContent = 'Belum login Buku Bersama';
+            badge.className = 'sk-role-badge sk-role-editor';
+        } else {
             badge.textContent = role === 'admin' ? 'Admin' : (role === 'editor' ? 'Editor' : 'Viewer (lihat saja)');
             badge.className = 'sk-role-badge sk-role-' + role;
-        } else {
-            badge.style.display = 'none';
         }
     }
 };
