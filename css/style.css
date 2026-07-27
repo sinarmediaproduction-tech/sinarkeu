@@ -368,18 +368,6 @@ h1, h2, h3, h4,
   color: var(--ink-faint, #666);
   border-left: 1px solid var(--rule);
 }
-/* [MULTIROLE] Badge peran Buku Bersama -- lihat window.skApplyRoleUI di js/auth.js */
-.sk-role-badge {
-  font-size: .62rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  border: 1.5px solid var(--rule);
-}
-.sk-role-badge.sk-role-admin { background: var(--success-lt); color: var(--success); }
-.sk-role-badge.sk-role-editor { background: var(--info-lt); color: var(--brand); }
-.sk-role-badge.sk-role-viewer { background: var(--danger-lt); color: var(--danger); }
-
 /* ── Offline Warning ── */
 .offline-warning-bar {
   background: var(--warning-lt);
@@ -1265,21 +1253,6 @@ tr:hover td { background: var(--accent-lt); }
   letter-spacing: .01em;
   color: var(--topbar-text);
   padding: 4px 10px 18px;
-}
-/* [MULTIROLE] Menggantikan .app-sidebar-brand ("SinarKeu") di puncak
-   sidebar -- lihat window.skApplyRoleUI di js/auth.js untuk isi & logika
-   tampil/sembunyinya #skRoleBadge (elemen yang sama dipindah ke sini dari
-   header, id-nya tidak berubah). */
-.app-sidebar-brand-wrap {
-  padding: 8px 10px 18px;
-  display: flex;
-  justify-content: center;
-}
-.sk-role-badge-sidebar {
-  width: 100%;
-  text-align: center;
-  font-size: .68rem;
-  padding: 7px 10px;
 }
 .app-nav-group {
   display: flex;

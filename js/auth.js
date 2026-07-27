@@ -964,23 +964,6 @@ window.skApplyRoleUI = function() {
     // (dipindah dari panel "Kelola Buku") -- tampil kapan pun sedang login,
     // terlepas dari role & buku aktif.
     setVisible('navSkLogoutBtn', !!window._skAuthUser);
-
-    // Badge peran -- sekarang di puncak sidebar (menggantikan brand
-    // "SinarKeu"), bukan di header lagi. Tampil terus (bukan cuma di buku
-    // bersama) karena role global berlaku ke semua buku, termasuk saat
-    // belum login sama sekali (default 'editor' dengan label netral supaya
-    // tidak menyiratkan sudah login padahal belum).
-    const badge = document.getElementById('skRoleBadge');
-    if (badge) {
-        badge.style.display = 'block';
-        if (!window._skAuthUser) {
-            badge.textContent = 'Belum login Buku Bersama';
-            badge.className = 'sk-role-badge sk-role-badge-sidebar sk-role-editor';
-        } else {
-            badge.textContent = role === 'admin' ? 'Admin' : (role === 'editor' ? 'Editor' : 'Viewer (lihat saja)');
-            badge.className = 'sk-role-badge sk-role-badge-sidebar sk-role-' + role;
-        }
-    }
 };
 
 // ── Patch openModal: viewer tidak boleh buka form tambah/ubah transaksi ─
