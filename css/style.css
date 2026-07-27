@@ -1266,6 +1266,21 @@ tr:hover td { background: var(--accent-lt); }
   color: var(--topbar-text);
   padding: 4px 10px 18px;
 }
+/* [MULTIROLE] Menggantikan .app-sidebar-brand ("SinarKeu") di puncak
+   sidebar -- lihat window.skApplyRoleUI di js/auth.js untuk isi & logika
+   tampil/sembunyinya #skRoleBadge (elemen yang sama dipindah ke sini dari
+   header, id-nya tidak berubah). */
+.app-sidebar-brand-wrap {
+  padding: 8px 10px 18px;
+  display: flex;
+  justify-content: center;
+}
+.sk-role-badge-sidebar {
+  width: 100%;
+  text-align: center;
+  font-size: .68rem;
+  padding: 7px 10px;
+}
 .app-nav-group {
   display: flex;
   flex-direction: column;
