@@ -168,6 +168,54 @@ window.skGetSession = async function() {
     }
 };
 
+// [FIX BUG #3] Buang dari window.books buku-buku yang DULU ditandai shared
+// (_isShared=true) tapi sekarang tidak lagi ada di daftar akses terkini
+// (mis. admin mengeluarkan kita lewat skRemoveMember, atau buku itu sendiri
+// sudah dihapus admin). Sebelumnya skRefreshSharedAccess() cuma
+// menambah/mengupdate buku yang ADA di hasil query book_members saat ini --
+// tidak pernah membersihkan yang HILANG, jadi buku begini nangkring
+// selamanya di daftar/dropdown buku dengan _isShared/_role basi, padahal
+// user sudah tidak bisa mengakses apa pun di buku itu (RLS akan menolak
+// semua request cloud-nya).
+function _skRevokeStaleSharedBooks(stillAccessibleIds) {
+    if (!window.books) return;
+    const revoked = window.books.filter(function(b) { return b._isShared && !stillAccessibleIds.has(b.id); });
+    if (revoked.length === 0) return;
+
+    const revokedIds = new Set(revoked.map(function(b) { return b.id; }));
+    window.books = window.books.filter(function(b) { return !revokedIds.has(b.id); });
+    localStorage.setItem('sk_books', JSON.stringify(window.books));
+    revoked.forEach(function(b) {
+        localStorage.removeItem('sk_txs_' + b.id);
+        localStorage.removeItem('sk_budgets_' + b.id);
+        localStorage.removeItem('sk_logs_' + b.id);
+        localStorage.removeItem('sk_balance_offset_' + b.id);
+        localStorage.removeItem('sk_payment_reminders_' + b.id);
+    });
+
+    window.showToast && window.showToast(
+        (revoked.length === 1
+            ? 'Akses ke buku bersama "' + revoked[0].name + '" sudah dicabut.'
+            : 'Akses ke ' + revoked.length + ' buku bersama sudah dicabut.') +
+        ' Dihapus dari daftar buku di device ini.',
+        'warning'
+    );
+
+    // Kalau buku yang sedang aktif termasuk yang dicabut, pindah ke buku
+    // pertama yang tersisa supaya app tidak nyangkut di buku yang sudah
+    // tidak bisa diakses lagi.
+    if (revokedIds.has(window.currentBookId) && window.books.length > 0 && typeof window.switchBook === 'function') {
+        window.switchBook(window.books[0].id);
+    }
+    if (typeof window.renderBookList === 'function' && document.getElementById('bookManagerModal') && document.getElementById('bookManagerModal').classList.contains('show')) {
+        window.renderBookList();
+    }
+    // Propagasikan penghapusan ini juga ke daftar buku pribadi (setting
+    // 'books') supaya device lain milik akun yang sama tidak terus
+    // menyimpan buku yang sudah tidak bisa diakses ini di cache-nya.
+    if (typeof window.pushSettingBooks === 'function') window.pushSettingBooks();
+}
+
 // Tarik sk_books + role milik user yang sedang login, gabungkan ke
 // window.books. Idempotent -- aman dipanggil ulang kapan saja (mis. tiap
 // buka app kalau sesi Supabase Auth masih tersimpan dari kunjungan lalu).
@@ -192,6 +240,15 @@ window.skRefreshSharedAccess = async function() {
     (memberRows || []).forEach(function(r) { window._skSharedRoles[r.book_id] = r.role; });
 
     const bookIds = Object.keys(window._skSharedRoles);
+
+    // [FIX BUG #3] Query book_members di atas berhasil & OTORITATIF (bukan
+    // gagal/timeout) -- artinya ini benar-benar daftar akses terkini user
+    // ini, aman dipakai untuk membersihkan buku yang sudah tidak ada lagi
+    // di situ. Dilakukan SEBELUM early-return di bawah supaya kasus
+    // "kehilangan akses ke semua buku bersama" (bookIds kosong) juga ikut
+    // dibersihkan, bukan cuma kasus "masih ada beberapa buku bersama lain".
+    _skRevokeStaleSharedBooks(new Set(bookIds));
+
     if (bookIds.length === 0) {
         if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
         return;

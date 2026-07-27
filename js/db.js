@@ -265,7 +265,25 @@ window.pushSettingBooks = async function() {
     // marker "pending delete" (lihat window.markBookPendingDelete/
     // clearBookPendingDelete di bawah & pullAllSettings untuk union-merge
     // yang memakainya).
-    const result = await window.pushSetting('books', window.books, 'global');
+    //
+    // [FIX BUG #4] window.books bisa memuat field runtime `_isShared`/
+    // `_role` yang ditempel js/auth.js (skRefreshSharedAccess) berdasarkan
+    // SESI LOGIN saat ini -- bukan data buku yang sebenarnya. Kalau field
+    // ini ikut ter-push ke setting 'books' (dibagikan ke SEMUA device akun
+    // ini lewat pullAllSettings), device lain/sesi lain bisa menerima label
+    // "buku bersama · peran: admin" yang basi/tidak sesuai keanggotaan
+    // book_members yang sebenarnya di device itu -- sampai (kalau sempat)
+    // skRefreshSharedAccess() membetulkannya sendiri. Buang dulu field ini
+    // sebelum di-push; window._skSharedRoles + skRefreshSharedAccess() satu
+    // -satunya sumber kebenaran untuk status shared/role, bukan cloud sync
+    // biasa ini.
+    const sanitizedBooks = (Array.isArray(window.books) ? window.books : []).map(function(b) {
+        const clean = Object.assign({}, b);
+        delete clean._isShared;
+        delete clean._role;
+        return clean;
+    });
+    const result = await window.pushSetting('books', sanitizedBooks, 'global');
     console.log('[Sync] Books saved to cloud:', window.books.length);
     return !!result;
 };
@@ -458,6 +476,26 @@ window.pullAllSettings = async function() {
                 parsed.forEach(cb => {
                     seenIds.add(cb.id);
                     const lb = localById[cb.id];
+                    // [FIX BUG #4] `cb` (baris dari cloud) bisa membawa
+                    // `_isShared`/`_role` basi kalau blob 'books' lama
+                    // sempat ter-push sebelum fix di pushSettingBooks (yang
+                    // sekarang membuang field ini). Field-field itu
+                    // menggambarkan SESI LOGIN Buku Bersama di device yang
+                    // mem-push-nya dulu, bukan status di device ini --
+                    // jangan pernah dipakai dari cloud. Satu-satunya sumber
+                    // kebenaran untuk status shared/role adalah
+                    // window._skSharedRoles (diisi skRefreshSharedAccess di
+                    // js/auth.js). Di sini kita buang field itu dari `cb`,
+                    // lalu (kalau ada) pertahankan nilai yang SUDAH ada di
+                    // window.books lokal saat ini (`lb`) -- karena itu hasil
+                    // skRefreshSharedAccess yang sudah jalan di sesi ini,
+                    // lebih baru & lebih valid daripada apa pun dari cloud.
+                    delete cb._isShared;
+                    delete cb._role;
+                    if (lb && lb._isShared) {
+                        cb._isShared = lb._isShared;
+                        cb._role = lb._role;
+                    }
                     if (!lb) {
                         if (pendingDeletes.has(cb.id)) {
                             // Kita sendiri baru saja menghapus buku ini
