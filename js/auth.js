@@ -235,6 +235,23 @@ window.skSignOut = async function() {
     }
     window.showToast && window.showToast('Berhasil logout dari buku bersama.');
     if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
+
+    // [FIX] Sebelumnya setelah logout, user cuma "nyangkut" pakai app dalam
+    // status belum login -- padahal desain aslinya (lihat needsLoginGate di
+    // js/app.js continueAppInit) mewajibkan login dulu SETIAP KALI syarat
+    // ini terpenuhi (cloud sudah di-setup + online). Tampilkan lagi
+    // gerbang login supaya konsisten -- gerbang ini position:fixed,
+    // z-index tertinggi di app (sama seperti layar kunci device), jadi
+    // otomatis menutup modal apa pun yang mungkin masih terbuka di
+    // belakangnya tanpa perlu ditutup manual dulu.
+    const needsLoginGateAfterSignOut = window.getCloudUrl && window.getCloudUrl() &&
+        window.isOnline && window.isOnline() && typeof window.skShowLoginGate === 'function';
+    if (needsLoginGateAfterSignOut) {
+        await window.skShowLoginGate();
+        if (typeof window.skHideLoginGate === 'function') window.skHideLoginGate();
+        if (typeof window.skApplyRoleUI === 'function') window.skApplyRoleUI();
+        if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
+    }
 };
 
 window.skGetSession = async function() {
