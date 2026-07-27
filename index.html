@@ -1667,6 +1667,26 @@ function _getSupabase() {
   const key = window.globalSupabaseKey || window._supabaseKey || null;
   if (!url || !key) return null;
 
+  // [FIX] Sebelumnya patch ini bikin instance supabase-js SENDIRI lewat
+  // window.supabase.createClient(url, key) di bawah -- karena js/auth.js
+  // (fitur Buku Bersama) JUGA bikin client-nya sendiri untuk url+key yang
+  // SAMA PERSIS (sama-sama project Supabase yang sama), keduanya jadi dua
+  // GoTrueClient terpisah yang berbagi storage key sesi yang sama persis
+  // (`sb-<project-ref>-auth-token`) -- itu sumber warning "Multiple
+  // GoTrueClient instances detected" di console. Fix-nya: pakai ULANG
+  // client yang sudah dikelola js/auth.js (window.getSupabaseAuthClient(),
+  // yang sendiri sudah punya guard __skAuthJsInitialized + cache
+  // window.__skSupabaseAuthClient supaya tidak dobel) selama url-nya
+  // cocok, alih-alih bikin GoTrueClient kedua untuk project yang sama.
+  if (typeof window.getSupabaseAuthClient === 'function') {
+    const shared = window.getSupabaseAuthClient();
+    if (shared) {
+      window._syncPatchSupabaseClient = shared;
+      window._syncPatchClientUrl = url;
+      return shared;
+    }
+  }
+
   // Gunakan cache HANYA jika URL-nya masih sama dengan akun aktif.
   // Saat _doSwitch() dipanggil, window._syncPatchSupabaseClient di-null-kan
   // sehingga client lama tidak bocor ke akun berikutnya.
@@ -1678,7 +1698,9 @@ function _getSupabase() {
   if (window._supabaseClient && window._syncPatchClientUrl === url) return window._supabaseClient;
   if (window.supabaseClient && window._syncPatchClientUrl === url) return window.supabaseClient;
 
-  // Buat client baru untuk URL/akun aktif
+  // Fallback terakhir kalau js/auth.js belum ter-load sama sekali (mis.
+  // urutan script berubah suatu saat nanti) -- baru di sini bikin client
+  // baru sendiri, supaya fitur sinkronisasi tetap jalan meski tidak ideal.
   try {
     window._syncPatchSupabaseClient = window.supabase.createClient(url, key);
     window._syncPatchClientUrl = url;
