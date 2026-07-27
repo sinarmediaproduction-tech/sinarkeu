@@ -90,7 +90,11 @@ window.SK_MENU_ITEMS = [
     { key: 'backup', label: 'Cadangan Data' },
     { key: 'device', label: 'Kelola Device' },
     { key: 'budget', label: 'Anggaran (Budget)' },
-    { key: 'tambahTransaksi', label: 'Tambah Transaksi' }
+    { key: 'tambahTransaksi', label: 'Tambah Transaksi' },
+    { key: 'bukuKas', label: 'Buku Kas' },
+    { key: 'akun', label: 'Akun' },
+    { key: 'telegram', label: 'Notifikasi Telegram' },
+    { key: 'snapshot', label: 'Snapshot Keamanan' }
 ];
 
 window.SK_MENU_DEFAULTS = {
@@ -98,7 +102,14 @@ window.SK_MENU_DEFAULTS = {
     backup:          { editor: false, viewer: false },
     device:          { editor: false, viewer: false },
     budget:          { editor: true,  viewer: false },
-    tambahTransaksi: { editor: true,  viewer: false }
+    tambahTransaksi: { editor: true,  viewer: false },
+    // [PERMINTAAN] Default disembunyikan dari editor & viewer -- hanya
+    // admin yang lihat. Admin tetap bisa menyalakannya per-role lewat
+    // panel "Atur Tampilan Menu per Peran" kalau suatu saat perlu.
+    bukuKas:         { editor: false, viewer: false },
+    akun:            { editor: false, viewer: false },
+    telegram:        { editor: false, viewer: false },
+    snapshot:        { editor: false, viewer: false }
 };
 
 // [MULTIROLE GLOBAL] Peran sekarang dihitung SEKALI per device/sesi login,
@@ -966,6 +977,13 @@ window.skApplyRoleUI = function() {
     setVisible('navDeviceManagerBtn', window.skGetMenuVisible(bookId, 'device'));
     setVisible('navBudgetBtn', window.skGetMenuVisible(bookId, 'budget'));
     setVisible('tambahTransaksiBtn', window.skGetMenuVisible(bookId, 'tambahTransaksi'));
+    // [PERMINTAAN] Sembunyikan dari user selain admin -- ikut skema
+    // menu_visibility yang sama supaya admin tetap bisa menyalakannya lagi
+    // per-role kalau perlu (lihat SK_MENU_DEFAULTS).
+    setVisible('navBookBtn', window.skGetMenuVisible(bookId, 'bukuKas'));
+    setVisible('navAccountBtn', window.skGetMenuVisible(bookId, 'akun'));
+    setVisible('navTelegramBtn', window.skGetMenuVisible(bookId, 'telegram'));
+    setVisible('navSafetySnapshotBtn', window.skGetMenuVisible(bookId, 'snapshot'));
 
     // [MENU MANAJEMEN USER] Relevan selama role global admin (admin di
     // buku bersama MANA PUN), terlepas dari buku apa yang sedang dibuka --
