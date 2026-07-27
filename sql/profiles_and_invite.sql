@@ -1,0 +1,84 @@
+-- ============================================================
+-- FONDASI: Tabel `profiles` untuk fitur undang anggota Buku Bersama
+-- Jalankan SEKALI di Supabase SQL Editor -- SEBELUM
+-- sql/shared_books_roles.sql (file itu mengasumsikan `profiles` sudah ada,
+-- karena RLS-nya menaruh admin_email lookup lewat tabel ini).
+-- ============================================================
+--
+-- KENAPA PERLU TABEL INI:
+-- Supabase Auth menyimpan user di `auth.users`, tapi tabel itu TIDAK BISA
+-- diakses langsung dari client (bahkan lewat RLS) -- ini schema privat milik
+-- GoTrue. Supaya admin bisa "mengundang anggota lewat email" (lihat
+-- window.skFindUserByEmail & window.skInviteMember di js/auth.js), perlu
+-- tabel publik `profiles` yang cuma menyalin id+email dari auth.users, dan
+-- disinkron otomatis lewat trigger setiap ada user baru daftar.
+--
+-- Ini JUGA dipakai window.skListBookMembers untuk menampilkan email di
+-- panel "Kelola Anggota" (karena tabel book_members sendiri cuma menyimpan
+-- user_id/UUID, bukan email).
+-- ============================================================
+
+-- ── Tabel ────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id         UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    email      TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles (lower(email));
+
+-- ── Trigger: salin user baru dari auth.users ke public.profiles ─────────
+-- SECURITY DEFINER supaya trigger ini punya hak tulis ke public.profiles
+-- terlepas dari RLS (trigger jalan atas nama sistem, bukan atas nama user
+-- yang baru daftar -- user itu belum tentu punya hak INSERT ke profiles).
+CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    INSERT INTO public.profiles (id, email)
+    VALUES (NEW.id, NEW.email)
+    ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_handle_new_auth_user ON auth.users;
+CREATE TRIGGER trg_handle_new_auth_user
+    AFTER INSERT OR UPDATE OF email ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
+
+-- ── Backfill: kalau ada user yang sudah daftar SEBELUM migrasi ini ──────
+-- Aman dijalankan berkali-kali (ON CONFLICT DO NOTHING).
+INSERT INTO public.profiles (id, email)
+SELECT id, email FROM auth.users
+ON CONFLICT (id) DO NOTHING;
+
+-- ── RLS ──────────────────────────────────────────────────────
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+-- SELECT dibuka untuk semua user yang sudah login (authenticated) --
+-- HANYA kolom id+email, tidak ada data sensitif lain di tabel ini. Ini
+-- WAJIB longgar begini karena admin perlu mencari calon anggota lewat email
+-- siapa pun (skFindUserByEmail), bukan cuma dirinya sendiri.
+DROP POLICY IF EXISTS profiles_select_authenticated ON public.profiles;
+CREATE POLICY profiles_select_authenticated
+    ON public.profiles FOR SELECT
+    TO authenticated
+    USING (true);
+
+-- Tidak ada policy INSERT/UPDATE/DELETE untuk role `authenticated` secara
+-- sengaja -- satu-satunya jalur tulis ke tabel ini adalah trigger di atas
+-- (jalan sebagai SECURITY DEFINER, jadi tidak butuh policy client). Ini
+-- mencegah user mengubah/memalsukan email profil orang lain lewat REST API
+-- langsung.
+
+-- ============================================================
+-- Setelah SQL ini dijalankan:
+--   - Setiap user baru yang skSignUp / skAdminCreateMemberAccount daftar
+--     otomatis punya baris di public.profiles.
+--   - window.skFindUserByEmail (js/auth.js) bisa mencari user lain by email.
+--   - Lanjutkan ke sql/shared_books_roles.sql.
+-- ============================================================

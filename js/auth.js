@@ -472,6 +472,95 @@ window.skInviteMember = async function(bookId, email, role) {
     }
 };
 
+// ── Admin membuatkan akun baru langsung untuk anggota (bukan self-signup) ─
+// Beda dengan skInviteMember (yang mensyaratkan calon anggota SUDAH pernah
+// daftar akun sendiri): fungsi ini membuat akun Supabase Auth BARU atas nama
+// admin, langsung dengan role tertentu -- jadi admin tinggal kasih tahu
+// email+password itu ke staf/anggota, dan mereka tinggal login pakai
+// kredensial itu (lihat js/app.js continueAppInit -- begitu mereka login
+// sekali di device mereka, unlock berikutnya otomatis masuk ke tampilan
+// sesuai role, tanpa perlu login manual lagi).
+//
+// [PENTING] client.auth.signUp() di Supabase, kalau konfirmasi email di
+// project itu DIMATIKAN, otomatis MENGGANTI sesi client yang sedang aktif
+// jadi sesi akun baru itu -- artinya admin yang tadinya login, tiba-tiba
+// "ganti jadi" akun barunya sendiri di device admin. Supaya admin tidak
+// ter-logout diam-diam, sesi admin disimpan dulu sebelum signUp, lalu
+// dipulihkan lagi (client.auth.setSession) segera setelah akun baru dibuat,
+// SEBELUM baris book_members di-insert (insert butuh JWT admin, bukan JWT
+// akun baru, supaya RLS admin-only-nya lolos).
+window.skAdminCreateMemberAccount = async function(bookId, email, password, role) {
+    const client = getSupabaseAuthClient();
+    if (!client) {
+        window.showToast && window.showToast('Supabase belum di-setup (cek Setelan → Supabase).', 'error');
+        return false;
+    }
+    if (window.skGetRoleForBook(bookId) !== 'admin') {
+        window.showToast && window.showToast('Hanya admin yang bisa membuatkan akun anggota.', 'error');
+        return false;
+    }
+    if (!email || !password || password.length < 6) {
+        window.showToast && window.showToast('Email wajib diisi & password minimal 6 karakter.', 'error');
+        return false;
+    }
+
+    // Simpan sesi admin saat ini (kalau ada) supaya bisa dipulihkan setelah
+    // signUp -- lihat catatan [PENTING] di atas kenapa ini perlu.
+    let adminSession = null;
+    try {
+        const cur = await client.auth.getSession();
+        adminSession = (cur && cur.data) ? cur.data.session : null;
+    } catch (e) { /* lanjut saja, anggap tidak ada sesi tersimpan */ }
+
+    let newUserId = null;
+    try {
+        const { data, error } = await client.auth.signUp({ email: email, password: password });
+        if (error) throw error;
+        newUserId = data && data.user ? data.user.id : null;
+        if (!newUserId) throw new Error('Akun dibuat tapi user id tidak didapat dari respons Supabase.');
+    } catch (e) {
+        console.error('[auth.js] Gagal membuat akun anggota baru:', e);
+        window.showToast && window.showToast('Gagal membuat akun: ' + e.message, 'error');
+        return false;
+    }
+
+    // Pulihkan sesi admin (kalau signUp tadi diam-diam menggantinya).
+    if (adminSession && adminSession.access_token && adminSession.refresh_token) {
+        try {
+            await client.auth.setSession({
+                access_token: adminSession.access_token,
+                refresh_token: adminSession.refresh_token
+            });
+        } catch (e) {
+            console.warn('[auth.js] Gagal memulihkan sesi admin setelah buat akun anggota:', e);
+        }
+    }
+
+    try {
+        const res = await client.from('book_members').upsert(
+            { book_id: bookId, user_id: newUserId, role: role },
+            { onConflict: 'book_id,user_id' }
+        );
+        if (res.error) throw res.error;
+        window.showToast && window.showToast(
+            'Akun "' + email + '" berhasil dibuat sebagai ' + role + '. Kasih tahu email & password ini ke orangnya untuk login di device mereka.',
+            'success'
+        );
+        // Pastikan panel & role UI di device admin sendiri konsisten lagi
+        // (jaga-jaga kalau sesi sempat "goyang" selama proses di atas).
+        await window.skRefreshSharedAccess();
+        if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
+        return true;
+    } catch (e) {
+        console.error('[auth.js] Akun dibuat tapi gagal ditautkan ke buku:', e);
+        window.showToast && window.showToast(
+            'Akun "' + email + '" sudah dibuat, tapi GAGAL ditautkan ke buku ini: ' + e.message + '. Coba undang manual lewat form "Undang Anggota" di atas.',
+            'error'
+        );
+        return false;
+    }
+};
+
 window.skRemoveMember = async function(bookId, userId) {
     const client = getSupabaseAuthClient();
     if (!client) return false;
@@ -525,6 +614,21 @@ window._skHandleInviteSubmit = function(ev) {
     const role = roleInput.value;
     window.skInviteMember(window.currentBookId, email, role).then(function(ok) {
         if (ok) emailInput.value = '';
+    });
+};
+
+// Handler form "Buatkan Akun Baru untuk Anggota" -- lihat
+// window.skAdminCreateMemberAccount di atas untuk detail alur & alasannya.
+window._skHandleCreateMemberSubmit = function(ev) {
+    ev.preventDefault();
+    const emailInput = document.getElementById('skNewMemberEmail');
+    const pwdInput = document.getElementById('skNewMemberPassword');
+    const roleInput = document.getElementById('skNewMemberRole');
+    const email = emailInput.value.trim();
+    const password = pwdInput.value;
+    const role = roleInput.value;
+    window.skAdminCreateMemberAccount(window.currentBookId, email, password, role).then(function(ok) {
+        if (ok) { emailInput.value = ''; pwdInput.value = ''; }
     });
 };
 
@@ -652,8 +756,20 @@ window.skRenderAuthPanel = function() {
                         '<option value="editor">Editor (CRUD transaksi)</option>' +
                         '<option value="admin">Admin (akses penuh)</option>' +
                     '</select>' +
-                    '<button type="submit" class="btn btn-primary" style="width:100%;">Undang Anggota</button>' +
+                    '<button type="submit" class="btn btn-primary" style="width:100%;">Undang Anggota (yang sudah punya akun)</button>' +
                 '</form>' +
+                '<div style="font-size:.68rem; color:var(--ink-faint); text-align:center; margin:10px 0;">— atau —</div>' +
+                '<form onsubmit="window._skHandleCreateMemberSubmit(event)">' +
+                    '<input type="email" id="skNewMemberEmail" class="form-control" placeholder="Email untuk akun baru anggota" required autocomplete="off" style="margin-bottom:6px;">' +
+                    '<input type="password" id="skNewMemberPassword" class="form-control" placeholder="Password untuk anggota (min. 6 karakter)" required minlength="6" autocomplete="new-password" style="margin-bottom:6px;">' +
+                    '<select id="skNewMemberRole" class="form-control" style="margin-bottom:8px;">' +
+                        '<option value="viewer">Viewer (lihat saja)</option>' +
+                        '<option value="editor">Editor (CRUD transaksi)</option>' +
+                        '<option value="admin">Admin (akses penuh)</option>' +
+                    '</select>' +
+                    '<button type="submit" class="btn btn-primary" style="width:100%;">Buatkan Akun Baru untuk Anggota</button>' +
+                '</form>' +
+                '<div style="font-size:.68rem; color:var(--ink-faint); margin-top:6px; line-height:1.6;">Anggota belum punya akun? Buatkan langsung di sini, lalu kasih tahu email &amp; password ini ke orangnya untuk login di device mereka.</div>' +
             '</div>' : '';
         el.innerHTML =
             '<div style="font-size:.75rem;">Login sebagai <b>' + window._skAuthUser.email + '</b>' + roleLine + '</div>' +
