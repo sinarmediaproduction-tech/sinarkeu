@@ -33,6 +33,14 @@
 (function() {
 'use strict';
 
+// [FIX] Kalau js/auth.js somehow ke-eksekusi lebih dari sekali di halaman
+// yang sama (mis. race service worker pas PWA update, atau reload ganda),
+// closure di bawah ini akan reset -- itu sebabnya "Multiple GoTrueClient
+// instances detected" bisa muncul walau kodenya sudah menjaga satu client.
+// Guard ini bikin eksekusi kedua langsung berhenti tanpa bikin apa-apa lagi.
+if (window.__skAuthJsInitialized) return;
+window.__skAuthJsInitialized = true;
+
 let _authClient = null;
 let _authClientUrl = null;
 
@@ -41,11 +49,13 @@ function getSupabaseAuthClient() {
     const key = (typeof window.getSupabaseKey === 'function') ? window.getSupabaseKey() : null;
     if (!url || !key) return null;
     if (_authClient && _authClientUrl === url) return _authClient;
-    // Pakai ulang client yang sudah dibuat modul sync-patch kalau URL cocok,
-    // supaya tidak ada dua instance GoTrueClient nyala bersamaan untuk
-    // storageKey yang sama (Supabase akan warning kalau begitu).
-    if (window._syncPatchSupabaseClient && window._syncPatchClientUrl === url) {
-        _authClient = window._syncPatchSupabaseClient;
+    // [FIX] Simpan instance-nya juga di window (bukan cuma closure lokal di
+    // atas) supaya kalau ADA jalur lain yang somehow bikin auth.js jalan dua
+    // kali (guard __skAuthJsInitialized di atas seharusnya sudah mencegah
+    // ini, tapi ini lapis kedua), instance lama tetap dipakai ulang --
+    // tidak bikin GoTrueClient kedua untuk storageKey Supabase yang sama.
+    if (window.__skSupabaseAuthClient && window.__skSupabaseAuthClientUrl === url) {
+        _authClient = window.__skSupabaseAuthClient;
         _authClientUrl = url;
         return _authClient;
     }
@@ -53,6 +63,8 @@ function getSupabaseAuthClient() {
     try {
         _authClient = window.supabase.createClient(url, key);
         _authClientUrl = url;
+        window.__skSupabaseAuthClient = _authClient;
+        window.__skSupabaseAuthClientUrl = url;
         return _authClient;
     } catch (e) {
         console.error('[auth.js] Gagal membuat Supabase client:', e);
