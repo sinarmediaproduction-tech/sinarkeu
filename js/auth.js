@@ -22,11 +22,13 @@
 //      Ini defense-in-depth di client saja -- garis pertahanan utama tetap
 //      RLS di server.
 //
-// BELUM ada di file ini (tahap terpisah, menyusul kalau tahap ini oke):
-//   - Skip enkripsi field transaksi untuk buku shared (transaction.js/db.js
-//     masih enkripsi semua buku termasuk yang shared -- artinya buku
-//     shared BELUM aman dipakai penuh sampai bagian ini selesai).
-//   - UI undang anggota (insert baris book_members + atur role).
+// Skip enkripsi field transaksi untuk buku shared: sudah dikerjakan di
+// js/crypto.js (lihat encodeCloudTxPayload/encodeCloudReminderPayload).
+//
+// UI undang anggota (bagian ini): cari calon anggota lewat tabel
+// public.profiles (id+email saja, disinkron via trigger dari auth.users --
+// lihat sql/profiles_and_invite.sql), lalu admin insert/update/delete baris
+// book_members. RLS admin untuk book_members ada di file SQL yang sama.
 
 (function() {
 'use strict';
@@ -243,6 +245,137 @@ window.openSetelanModal = function(initialTab) {
     return _originalOpenSetelanModal.apply(this, arguments);
 };
 
+// ── Kelola Anggota (undang / hapus / lihat daftar) ──────────────────────
+// Cari calon anggota berdasarkan email lewat public.profiles (lihat
+// sql/profiles_and_invite.sql). Cocok case-insensitive (ilike exact, tanpa
+// wildcard tambahan dari kita -- kalau user isi email polos ya match persis).
+window.skFindUserByEmail = async function(email) {
+    const client = getSupabaseAuthClient();
+    if (!client || !email) return null;
+    try {
+        const res = await client.from('profiles').select('id, email').ilike('email', email.trim()).maybeSingle();
+        if (res.error) throw res.error;
+        return res.data || null;
+    } catch (e) {
+        console.error('[auth.js] Gagal cari user by email:', e);
+        return null;
+    }
+};
+
+// Daftar anggota sebuah buku shared, digabung dengan email dari profiles
+// (book_members sendiri cuma simpan user_id, bukan email).
+window.skListBookMembers = async function(bookId) {
+    const client = getSupabaseAuthClient();
+    if (!client) return [];
+    try {
+        const res = await client.from('book_members').select('user_id, role').eq('book_id', bookId);
+        if (res.error) throw res.error;
+        const rows = res.data || [];
+        if (rows.length === 0) return [];
+        const ids = rows.map(function(r) { return r.user_id; });
+        const profRes = await client.from('profiles').select('id, email').in('id', ids);
+        const emailById = {};
+        (profRes.data || []).forEach(function(p) { emailById[p.id] = p.email; });
+        return rows.map(function(r) {
+            return { user_id: r.user_id, role: r.role, email: emailById[r.user_id] || '(email tidak diketahui)' };
+        });
+    } catch (e) {
+        console.error('[auth.js] Gagal ambil daftar anggota:', e);
+        return [];
+    }
+};
+
+// Undang anggota: hanya boleh oleh admin buku itu. Calon anggota HARUS
+// sudah pernah daftar akun (Supabase Auth) duluan -- fitur ini tidak
+// mengirim undangan email, cuma menautkan akun yang sudah ada ke buku.
+window.skInviteMember = async function(bookId, email, role) {
+    const client = getSupabaseAuthClient();
+    if (!client) return false;
+    if (window.skGetRoleForBook(bookId) !== 'admin') {
+        window.showToast && window.showToast('Hanya admin yang bisa mengundang anggota.', 'error');
+        return false;
+    }
+    const profile = await window.skFindUserByEmail(email);
+    if (!profile) {
+        window.showToast && window.showToast('Email itu belum pernah daftar akun. Minta orangnya daftar dulu, baru bisa diundang.', 'error');
+        return false;
+    }
+    if (window._skAuthUser && profile.id === window._skAuthUser.id) {
+        window.showToast && window.showToast('Itu email kamu sendiri.', 'error');
+        return false;
+    }
+    try {
+        const res = await client.from('book_members').upsert(
+            { book_id: bookId, user_id: profile.id, role: role },
+            { onConflict: 'book_id,user_id' }
+        );
+        if (res.error) throw res.error;
+        window.showToast && window.showToast('Berhasil menambahkan ' + profile.email + ' sebagai ' + role + '.');
+        if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
+        return true;
+    } catch (e) {
+        console.error('[auth.js] Gagal undang anggota:', e);
+        window.showToast && window.showToast('Gagal menambahkan anggota: ' + e.message, 'error');
+        return false;
+    }
+};
+
+window.skRemoveMember = async function(bookId, userId) {
+    const client = getSupabaseAuthClient();
+    if (!client) return false;
+    if (window.skGetRoleForBook(bookId) !== 'admin') {
+        window.showToast && window.showToast('Hanya admin yang bisa menghapus anggota.', 'error');
+        return false;
+    }
+    if (window._skAuthUser && userId === window._skAuthUser.id) {
+        window.showToast && window.showToast('Tidak bisa menghapus diri sendiri dari sini.', 'error');
+        return false;
+    }
+    if (!confirm('Hapus anggota ini dari buku bersama?')) return false;
+    try {
+        const res = await client.from('book_members').delete().eq('book_id', bookId).eq('user_id', userId);
+        if (res.error) throw res.error;
+        window.showToast && window.showToast('Anggota dihapus.');
+        if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
+        return true;
+    } catch (e) {
+        console.error('[auth.js] Gagal hapus anggota:', e);
+        window.showToast && window.showToast('Gagal menghapus anggota: ' + e.message, 'error');
+        return false;
+    }
+};
+
+// Render daftar anggota ke dalam #skMemberListContent (dipanggil setelah
+// skRenderAuthPanel menaruh kerangka HTML-nya, karena ini perlu fetch async).
+window.skRenderMemberList = async function(bookId) {
+    const wrap = document.getElementById('skMemberListContent');
+    if (!wrap) return;
+    const members = await window.skListBookMembers(bookId);
+    if (members.length === 0) {
+        wrap.innerHTML = '<div style="color:var(--ink-faint);">Belum ada anggota lain di buku ini.</div>';
+        return;
+    }
+    wrap.innerHTML = members.map(function(m) {
+        const isMe = window._skAuthUser && m.user_id === window._skAuthUser.id;
+        const removeBtn = isMe ? '' : '<button type="button" class="btn-mini btn-mini-danger" onclick="window.skRemoveMember(\'' + bookId + '\',\'' + m.user_id + '\')">Hapus</button>';
+        return '<div style="display:flex; align-items:center; justify-content:space-between; padding:4px 0; gap:8px;">' +
+            '<span>' + window.escapeHtml(m.email) + ' <b>(' + window.escapeHtml(m.role) + ')</b>' + (isMe ? ' — kamu' : '') + '</span>' +
+            removeBtn +
+        '</div>';
+    }).join('');
+};
+
+window._skHandleInviteSubmit = function(ev) {
+    ev.preventDefault();
+    const emailInput = document.getElementById('skInviteEmail');
+    const roleInput = document.getElementById('skInviteRole');
+    const email = emailInput.value.trim();
+    const role = roleInput.value;
+    window.skInviteMember(window.currentBookId, email, role).then(function(ok) {
+        if (ok) emailInput.value = '';
+    });
+};
+
 // ── Panel login sederhana di modal Kelola Buku ──────────────────────────
 window.skRenderAuthPanel = function() {
     const el = document.getElementById('skAuthPanelContent');
@@ -251,9 +384,25 @@ window.skRenderAuthPanel = function() {
         const bookId = window.currentBookId;
         const role = window.skGetRoleForBook(bookId);
         const roleLine = role ? `<div style="margin-top:4px;">Peran kamu di buku aktif: <b>${role}</b></div>` : '<div style="margin-top:4px; color:var(--ink-faint);">Buku aktif bukan buku bersama.</div>';
+        const memberPanel = (role === 'admin') ?
+            '<div id="skMemberPanelWrap" style="margin-top:12px; border-top:1px dashed #D7DBE3; padding-top:12px;">' +
+                '<div style="font-size:.7rem; font-weight:700; color:var(--ink-muted); margin-bottom:6px;">Kelola Anggota Buku Ini</div>' +
+                '<div id="skMemberListContent" style="font-size:.7rem; margin-bottom:8px;">Memuat anggota...</div>' +
+                '<form onsubmit="window._skHandleInviteSubmit(event)">' +
+                    '<input type="email" id="skInviteEmail" class="form-control" placeholder="Email anggota (harus sudah punya akun)" required autocomplete="off" style="margin-bottom:6px;">' +
+                    '<select id="skInviteRole" class="form-control" style="margin-bottom:8px;">' +
+                        '<option value="viewer">Viewer (lihat saja)</option>' +
+                        '<option value="editor">Editor (CRUD transaksi)</option>' +
+                        '<option value="admin">Admin (akses penuh)</option>' +
+                    '</select>' +
+                    '<button type="submit" class="btn btn-primary" style="width:100%;">Undang Anggota</button>' +
+                '</form>' +
+            '</div>' : '';
         el.innerHTML =
             '<div style="font-size:.75rem;">Login sebagai <b>' + window._skAuthUser.email + '</b>' + roleLine + '</div>' +
-            '<button type="button" class="btn btn-secondary" style="margin-top:8px; width:100%;" onclick="window.skSignOut()">Logout Buku Bersama</button>';
+            '<button type="button" class="btn btn-secondary" style="margin-top:8px; width:100%;" onclick="window.skSignOut()">Logout Buku Bersama</button>' +
+            memberPanel;
+        if (role === 'admin') window.skRenderMemberList(bookId);
     } else {
         el.innerHTML =
             '<form onsubmit="window._skHandleLoginSubmit(event)">' +
