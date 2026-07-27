@@ -14,7 +14,7 @@
      kepakai duluan, dengan fallback ke cache saat offline.
    ============================================================ */
 
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_NAME = `sinarkeu-shell-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -54,6 +54,7 @@ const APP_SHELL = [
   './js/forex.js',
   './js/ai.js',
   './js/settings.js',
+  './js/auth.js',
   './js/autolock.js',
   './js/app.js',
   './js/custom-select.js',
