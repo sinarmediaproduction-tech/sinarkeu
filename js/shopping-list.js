@@ -1,9 +1,10 @@
-// ==================== DAFTAR BELANJA BULANAN ====================
-// Checklist belanja per buku kas. SAAT INI HANYA TERSIMPAN LOKAL
-// (localStorage, per perangkat) -- TIDAK disinkronkan ke Supabase seperti
-// anggaran/pengingat pembayaran. Kalau nanti mau ditambah sinkronisasi
-// cloud, ikuti pola window.saveDefaultBudgetToCloud / loadDefaultBudgetFromCloud
-// di js/budget.js sebagai referensi.
+// ==================== BELANJA BULANAN ====================
+// Checklist belanja per buku kas. Tersimpan lokal (localStorage) untuk
+// akses instan/offline, DAN disinkronkan ke Supabase (tabel `settings`,
+// key 'shopping_list', per book_id) mengikuti pola window.saveHiddenCardsToLocal
+// + window.pushSetting di js/render.js. Nilai dienkripsi otomatis oleh
+// pushSetting() sebelum dikirim ke cloud (kecuali buku bersama). Pull-nya
+// ditangani terpusat di window.pullAllSettings (js/db.js).
 window.getShoppingList = function(bookId) {
     const raw = localStorage.getItem('sk_shopping_list_' + (bookId || window.currentBookId));
     if (raw) {
@@ -14,8 +15,20 @@ window.getShoppingList = function(bookId) {
     }
     return [];
 };
-window.saveShoppingList = function(bookId, items) {
+window.saveShoppingListToLocal = function(bookId, items) {
     localStorage.setItem('sk_shopping_list_' + (bookId || window.currentBookId), JSON.stringify(items));
+};
+window.saveShoppingList = function(bookId, items) {
+    const targetId = bookId || window.currentBookId;
+    window.saveShoppingListToLocal(targetId, items);
+    // Sync ke cloud tidak di-await (fire-and-forget) supaya interaksi
+    // checklist tetap terasa instan; kegagalan sync tidak menghalangi
+    // perubahan lokal, dan akan tersinkron lagi di push/pull berikutnya.
+    if (window.isOnline && window.isOnline() && window.pushSetting) {
+        window.pushSetting('shopping_list', items, targetId).catch(function(e) {
+            console.warn('[ShoppingList] Gagal sync ke cloud:', e);
+        });
+    }
 };
 
 window.openShoppingListModal = function() {

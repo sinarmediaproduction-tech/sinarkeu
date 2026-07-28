@@ -349,6 +349,8 @@ window.reEncryptAllCloudSettings = async function() {
             await window.pushSetting('annual_budget', annBud, b.id);
             const hiddenCards = window.getHiddenCards ? window.getHiddenCards(b.id) : [];
             await window.pushSetting('hidden_cards', hiddenCards, b.id);
+            const shoppingList = window.getShoppingList ? window.getShoppingList(b.id) : [];
+            await window.pushSetting('shopping_list', shoppingList, b.id);
         }
         await window.pushSettingTelegram();
         console.log('[Sync] Re-enkripsi & push ulang semua setting ke cloud selesai (kunci baru).');
@@ -609,6 +611,19 @@ window.pullAllSettings = async function() {
                     localStorage.setItem('sk_hidden_cards_' + row.book_id, JSON.stringify(parsed));
                     if (row.book_id === window.currentBookId) {
                         budgetUpdated = true;
+                    }
+                }
+            }
+            if (row.key === 'shopping_list') {
+                if (Array.isArray(parsed)) {
+                    localStorage.setItem('sk_shopping_list_' + row.book_id, JSON.stringify(parsed));
+                    // Render ulang hanya kalau modalnya sedang terbuka untuk buku aktif
+                    // (sama seperti guard di window.switchBook, js/book.js).
+                    if (row.book_id === window.currentBookId) {
+                        const modalEl = document.getElementById('shoppingListModal');
+                        if (modalEl && modalEl.classList.contains('show') && typeof window.renderShoppingList === 'function') {
+                            window.renderShoppingList();
+                        }
                     }
                 }
             }
