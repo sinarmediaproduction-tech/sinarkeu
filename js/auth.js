@@ -487,11 +487,22 @@ window.callSupabaseAPI = async function(table, method, body, queryString, option
             } catch (e) {
                 const isTimeout = e && e.name === 'TimeoutError';
                 console.error(`Supabase API Error (buku bersama, ${table}):`, e);
+                // [FIX SPAM TOAST] Jalur non-shared di db.js sudah di-throttle 15
+                // detik (window._lastSyncErrorToastAt) supaya gagal beruntun (mis.
+                // pullAllBooksFromCloud yang loop banyak buku sekaligus saat app
+                // init dengan koneksi lagi bermasalah) tidak membanjiri user dengan
+                // toast error berkali-kali. Jalur buku bersama ini sebelumnya TIDAK
+                // ikut throttle itu -- pakai variabel throttle yang sama (global)
+                // supaya konsisten dengan jalur non-shared.
                 if (window.isOnline && window.isOnline() && window.showToast) {
-                    const msg = isTimeout
-                        ? `Waktu koneksi ke server habis (timeout) saat sinkron '${table}' (buku bersama). Coba lagi.`
-                        : `Gagal sinkron '${table}' (buku bersama, perlu login): ${e && e.status ? e.status : 'network'}`;
-                    window.showToast(msg, 'error');
+                    const now = Date.now();
+                    if (!window._lastSyncErrorToastAt || now - window._lastSyncErrorToastAt > 15000) {
+                        window._lastSyncErrorToastAt = now;
+                        const msg = isTimeout
+                            ? `Waktu koneksi ke server habis (timeout) saat sinkron '${table}' (buku bersama). Coba lagi.`
+                            : `Gagal sinkron '${table}' (buku bersama, perlu login): ${e && e.status ? e.status : 'network'}`;
+                        window.showToast(msg, 'error');
+                    }
                 }
                 return null;
             }
