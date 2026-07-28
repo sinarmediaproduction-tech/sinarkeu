@@ -1,9 +1,13 @@
 // ==================== FOREX & GOLD ====================
 // Free tier emas.maulanar.my.id = 20 hit/bulan.
-// EMAS_CACHE_HOURS=48 -> maksimal ~15 panggilan otomatis/bulan (30 hari / 2 hari),
-// menyisakan ~5 hit buffer untuk tombol "Tes" & refresh manual.
-// Harga Antam sendiri biasanya cuma update 1x/hari, jadi cache 2 hari masih relevan.
-const EMAS_CACHE_HOURS = 48;
+// EMAS_CACHE_HOURS=44 -> maksimal 17 panggilan/bulan (floor(31*24/44)+1=17
+// di bulan 31 hari, kasus terburuk -- bulan lebih pendek otomatis lebih
+// sedikit lagi). Sengaja pas di 17, bukan cuma "sekitar", karena refresh
+// manual sudah dihapus (lihat goldRefreshBtn di bawah) jadi ini sekarang
+// SATU-SATUNYA sumber hit ke API, tidak ada lagi buffer kuota yang perlu
+// disisakan untuk tombol refresh.
+// Harga Antam sendiri biasanya cuma update 1x/hari, jadi cache ~44 jam masih relevan.
+const EMAS_CACHE_HOURS = 44;
 const EMAS_CACHE_KEY   = 'sk_emas_price_cache';
 const EMAS_QUOTA_KEY   = 'sk_emas_quota';
 const EMAS_QUOTA_LIMIT = 20;
@@ -146,7 +150,6 @@ window.saveEmasApiKey = function() {
     const gram = parseFloat(document.getElementById('emasGramInput')?.value) || 0;
     const st   = document.getElementById('emasApiTestStatus');
     if (!key) { st.style.color = '#A13A3A'; st.innerText = 'API key tidak boleh kosong!'; return; }
-    const keyChanged = (localStorage.getItem('sk_emas_api_key') || '') !== key;
     localStorage.setItem('sk_emas_api_key', key);
     if (gram > 0) localStorage.setItem('sk_emas_gram', gram);
     else localStorage.removeItem('sk_emas_gram');
@@ -155,9 +158,10 @@ window.saveEmasApiKey = function() {
     window.updateEmasApiBadge();
     window.updateEmasQuotaDisplay();
     window.showToast('Setelan emas disimpan!', 'success');
-    // Kalau key berubah, cache lama (punya key lain) otomatis diabaikan oleh fetchGoldPrice,
-    // jadi tidak perlu force refresh manual (hemat kuota).
-    window.fetchGoldPrice(keyChanged);
+    // Kalau key berubah, cache lama (punya key lain) otomatis diabaikan oleh
+    // fetchGoldPrice (lihat cek cache.apiKey di dalamnya) -- tidak perlu
+    // parameter apa pun di sini untuk memaksa itu terjadi.
+    window.fetchGoldPrice();
 };
 window.clearEmasApiKey = function() {
     if (!confirm('Hapus API key emas? Widget harga Antam akan menggunakan estimasi spot.')) return;
@@ -172,22 +176,22 @@ window.clearEmasApiKey = function() {
     window.showToast('API key emas dihapus.', 'info');
     window.fetchGoldPrice();
 };
-window.fetchGoldPrice = async function(forceRefresh) {
+window.fetchGoldPrice = async function() {
     const priceEl = document.getElementById('goldPrice');
     const srcEl   = document.getElementById('goldSource');
-    const refreshBtn = document.getElementById('goldRefreshBtn');
     if (!priceEl) return;
     const emasApiKey = (localStorage.getItem('sk_emas_api_key') || '').trim();
 
     if (emasApiKey) {
-        if (refreshBtn) refreshBtn.style.display = 'inline';
-
-        // Pakai cache dulu kalau masih berlaku & key sama, biar kuota 20 hit/bulan cukup
+        // Pakai cache dulu kalau masih berlaku & key sama, biar kuota bulanan cukup.
+        // Tidak ada lagi jalur "refresh manual" (tombol ⟳ sudah dihapus) --
+        // satu-satunya cara cache di-bypass adalah otomatis, lewat cek
+        // cache.apiKey !== emasApiKey di bawah (key baru = cache lama diabaikan).
         const cache = _emasCacheRead();
         const cacheValid = cache && cache.apiKey === emasApiKey &&
             (Date.now() - cache.timestamp) < EMAS_CACHE_HOURS * 3600 * 1000;
 
-        if (cacheValid && !forceRefresh) {
+        if (cacheValid) {
             priceEl.textContent = 'Rp ' + Math.round(cache.pricePerGram).toLocaleString('id-ID');
             const jamLalu = Math.floor((Date.now() - cache.timestamp) / 3600000);
             srcEl.textContent = `Cache · diperbarui ${jamLalu < 1 ? 'baru saja' : jamLalu + ' jam lalu'}`;
