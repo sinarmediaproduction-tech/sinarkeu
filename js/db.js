@@ -427,7 +427,43 @@ window.pullAllSettings = async function() {
     // fitur account_tag). Setelah migrasi selesai, semua baris sudah punya tag dan
     // baris NULL tidak akan muncul lagi — filter ini aman dipakai permanen.
     const tagFilter = window.tagOrFilter(tag);
-    const allRows = await window.callSupabaseAPI('settings', 'GET', null, `?order=updated_at.desc${tagFilter}`);
+    let allRows = await window.callSupabaseAPI('settings', 'GET', null, `?order=updated_at.desc${tagFilter}`);
+
+    // [FIX SYNC SHARED BOOK PULL]
+    // Pull global/tag rows above cannot see settings rows belonging to shared
+    // books because auth.js only upgrades requests to the authenticated JWT
+    // path when book_id is present. Fetch shared-book settings explicitly so
+    // RLS settings_shared_select can apply, then merge them into the normal
+    // pull result. Without this, push succeeds but other devices silently pull
+    // an empty result from Supabase.
+    const _sharedBookIds = [];
+    try {
+        const _localBooks = Array.isArray(window.books) ? window.books : [];
+        for (const _b of _localBooks) {
+            const _id = _b.id || _b.book_id;
+            if (_id && window.skIsSharedBookId && window.skIsSharedBookId(_id)) {
+                _sharedBookIds.push(_id);
+            }
+        }
+    } catch (e) {}
+    if (_sharedBookIds.length) {
+        const _sharedRows = [];
+        for (const _bookId of _sharedBookIds) {
+            try {
+                const _rows = await window.callSupabaseAPI(
+                    'settings',
+                    'GET',
+                    null,
+                    `?book_id=eq.${encodeURIComponent(_bookId)}&order=updated_at.desc`
+                );
+                if (Array.isArray(_rows)) _sharedRows.push(..._rows);
+            } catch (e) {
+                console.warn('[Sync] shared book pull failed', _bookId, e);
+            }
+        }
+        if (Array.isArray(allRows)) allRows = allRows.concat(_sharedRows);
+        else allRows = _sharedRows;
+    }
     if (allRows && Array.isArray(allRows)) {
         let booksUpdated = false;
         let telegramUpdated = false;
