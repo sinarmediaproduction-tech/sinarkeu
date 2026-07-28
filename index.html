@@ -723,9 +723,24 @@ alter table public.settings
         </table>
     </div>
 
-    <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; justify-content:flex-end;">
-        <button class="btn" id="backupBtn" onclick="openBackupManager()" data-i18n="manage_backup">Kelola Backup</button>
-        <button class="btn" onclick="toggleAuditLogInline()"><span data-i18n="audit_log">Log Audit</span> <span id="auditLogInlineArrow">▼</span></button>
+    <div class="list-footer-bar" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; border-top:1px solid var(--rule); padding-top:12px; margin-top:16px;">
+        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:12px;">
+            <!-- [UI] paginationInfo sudah mengandung total ("... dari N transaksi"),
+                 jadi transactionCount cukup jadi fallback saat pagination
+                 disembunyikan (hanya 1 halaman) -- lihat renderPagination()
+                 di render.js yang toggle #paginationWrap vs #transactionCount.
+                 Sebelumnya keduanya tampil sekaligus di baris terpisah
+                 (dengan border+margin sendiri), duplikat & boros ruang. -->
+            <div id="paginationWrap" style="display:none; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div class="pagination-info" id="paginationInfo"></div>
+                <div class="pagination-controls" id="paginationControls"></div>
+            </div>
+            <div id="transactionCount" class="pagination-info">0 transaksi</div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn" id="backupBtn" onclick="openBackupManager()" data-i18n="manage_backup">Kelola Backup</button>
+            <button class="btn" onclick="toggleAuditLogInline()"><span data-i18n="audit_log">Log Audit</span> <span id="auditLogInlineArrow">▼</span></button>
+        </div>
     </div>
     <div id="auditLogInlineBody" style="display:none; padding:10px 14px; border:1.5px solid var(--ink); border-radius: var(--radius-sm); margin-bottom:12px; background:#fff;">
         <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
@@ -734,14 +749,6 @@ alter table public.settings
         <div id="logSummaryArea" class="log-container-box">Memuat log...</div>
     </div>
 
-    <div class="pagination-bar" id="paginationBar">
-        <div class="pagination-info" id="paginationInfo"></div>
-        <div class="pagination-controls" id="paginationControls"></div>
-    </div>
-
-    <div class="footer" style="border-top:1px solid var(--rule); padding-top:12px; margin-top:16px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-        <div id="transactionCount">0 transaksi</div>
-    </div>
     <div id="auditLogSection" style="display:none;"></div>
     </div><!-- /dashboardView -->
 </div>

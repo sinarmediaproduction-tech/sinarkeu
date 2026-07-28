@@ -53,7 +53,9 @@ window.render = function() {
     });
     if (filtered.length === 0) {
         body.innerHTML = '<tr><td colspan="9" class="text-center" style="color:var(--ink-faint); padding:30px;">'+window.t('no_transactions')+'</td></tr>';
-        document.getElementById('paginationBar').style.display = 'none';
+        document.getElementById('paginationWrap').style.display = 'none';
+        const countEl = document.getElementById('transactionCount');
+        if (countEl) countEl.style.display = '';
         window.renderBudget();
         return;
     }
@@ -271,11 +273,22 @@ window.updateFinancialCards = function() {
 };
 
 window.renderPagination = function(totalCount, totalPages) {
-    const bar = document.getElementById('paginationBar');
+    // [UI] paginationWrap (info + controls) dan transactionCount saling
+    // eksklusif: paginationInfo sudah mengandung total transaksi, jadi kalau
+    // dia tampil, transactionCount disembunyikan supaya tidak dobel. Kalau
+    // cuma 1 halaman (tidak butuh pagination), transactionCount jadi
+    // fallback satu-satunya penunjuk jumlah transaksi.
+    const wrap = document.getElementById('paginationWrap');
     const info = document.getElementById('paginationInfo');
     const controls = document.getElementById('paginationControls');
-    if (totalPages <= 1) { bar.style.display = 'none'; return; }
-    bar.style.display = 'flex';
+    const countEl = document.getElementById('transactionCount');
+    if (totalPages <= 1) {
+        wrap.style.display = 'none';
+        if (countEl) countEl.style.display = '';
+        return;
+    }
+    wrap.style.display = 'flex';
+    if (countEl) countEl.style.display = 'none';
     const pageSize = window.PAGE_SIZE || 21;
     const startItem = (window.currentPage - 1) * pageSize + 1;
     const endItem = Math.min(window.currentPage * pageSize, totalCount);
