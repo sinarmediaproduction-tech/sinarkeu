@@ -1440,19 +1440,29 @@ tr:hover td { background: var(--accent-lt); }
 }
 
 @media (min-width: 1024px) {
+  /* [SIDEBAR-COLLAPSE] Lebar sidebar desktop dipusatkan lewat 1 variabel
+     supaya semua tempat yang bergantung padanya (sidebar sendiri, margin
+     .container, margin halaman Setelan & fullview-modal di bawah) ikut
+     berubah otomatis saat diciutkan lewat class body.sidebar-collapsed
+     (lihat window.toggleSidebarCollapse di js/app.js). */
+  :root { --sidebar-w: 220px; }
+  body.sidebar-collapsed { --sidebar-w: 68px; }
+
   #appSidebar {
-    width: 220px;
+    width: var(--sidebar-w);
     transform: translateX(0);
     box-shadow: none;
+    transition: width .18s ease;
   }
 
   /* Konten mengisi penuh sisa layar di sebelah kanan sidebar, tidak lagi
      terpotong oleh max-width:1440px bawaan .container yang menyisakan
      ruang kosong di layar lebar. */
   .container {
-    margin-left: 220px;
+    margin-left: var(--sidebar-w);
     margin-right: 0;
     max-width: none;
+    transition: margin-left .18s ease;
   }
 
   /* Setelan disembunyikan sampai menu "Setelan" di sidebar dipilih --
@@ -1466,7 +1476,8 @@ tr:hover td { background: var(--accent-lt); }
     width: auto;
     max-width: none;
     height: auto;
-    margin: 0 0 0 220px;
+    margin: 0 0 0 var(--sidebar-w);
+    transition: margin-left .18s ease;
     background: none;
     border: none;
     z-index: auto;
@@ -1538,7 +1549,8 @@ tr:hover td { background: var(--accent-lt); }
     width: auto;
     max-width: none;
     height: auto;
-    margin: 0 0 0 220px;
+    margin: 0 0 0 var(--sidebar-w);
+    transition: margin-left .18s ease;
     background: none;
     border: none;
     z-index: auto;
@@ -1555,6 +1567,78 @@ tr:hover td { background: var(--accent-lt); }
     display: block;
   }
   body.view-fullpage .fullview-modal.show .modal-close { display: none; }
+}
+
+/* ── Sidebar Desktop: Minimize/collapse (icon-only) ──
+   Tombol toggle (#sidebarCollapseToggle) cuma tampil di desktop; state
+   diterapkan lewat class body.sidebar-collapsed (toggle di js/app.js,
+   window.toggleSidebarCollapse) + variabel --sidebar-w di atas. Label
+   teks, label grup, dan footer text disembunyikan; ikon dipusatkan;
+   tooltip native (atribut title di tiap button, lihat index.html)
+   menggantikan label saat diciutkan. */
+.sidebar-collapse-toggle {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .sidebar-collapse-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 22px;
+    right: -12px;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--topbar-bg);
+    border: 1px solid var(--topbar-border);
+    color: var(--topbar-text-muted);
+    cursor: pointer;
+    z-index: 3002;
+  }
+  .sidebar-collapse-toggle:hover {
+    background: var(--topbar-item-hover-bg);
+    color: var(--topbar-text);
+  }
+  .sidebar-collapse-toggle svg {
+    transition: transform .18s ease;
+  }
+  body.sidebar-collapsed .sidebar-collapse-toggle svg {
+    transform: rotate(180deg);
+  }
+
+  body.sidebar-collapsed #appSidebar {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  body.sidebar-collapsed .app-nav-group-label {
+    display: none;
+  }
+  body.sidebar-collapsed .app-nav-item {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+    position: relative;
+  }
+  body.sidebar-collapsed .app-nav-item span:not(.app-nav-badge) {
+    display: none;
+  }
+  /* Badge notifikasi (mis. pengingat pembayaran) jadi titik kecil di
+     pojok ikon saat diciutkan, bukan pil berisi angka -- angkanya
+     disembunyikan (font-size:0) tapi textContent tetap ada untuk
+     screen reader. */
+  body.sidebar-collapsed .app-nav-badge {
+    position: absolute;
+    top: 2px;
+    right: 10px;
+    min-width: 8px;
+    height: 8px;
+    padding: 0;
+    font-size: 0;
+    line-height: 0;
+    border-radius: 50%;
+  }
 }
 
 .modal-header {

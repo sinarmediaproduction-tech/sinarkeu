@@ -413,6 +413,20 @@ window.closeMobileDrawer = function() {
     document.getElementById("mobileDrawerOverlay").style.pointerEvents = "none";
     document.getElementById("appSidebar").classList.remove("open");
 };
+
+// [SIDEBAR-COLLAPSE] Ciutkan/perluas sidebar desktop jadi icon-only.
+// Cuma berefek di desktop (>=1024px, lihat body.sidebar-collapsed di
+// css/style.css) -- di mobile sidebar tetap drawer overlay seperti biasa.
+window.toggleSidebarCollapse = function() {
+    var collapsed = document.body.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('sk_sidebar_collapsed', collapsed ? '1' : '0');
+    var toggleBtn = document.getElementById('sidebarCollapseToggle');
+    if (toggleBtn) {
+        var label = collapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar';
+        toggleBtn.title = label;
+        toggleBtn.setAttribute('aria-label', label);
+    }
+};
 window.toggleAuditLogInline = function() {
     const body = document.getElementById('auditLogInlineBody');
     const arrow = document.getElementById('auditLogInlineArrow');
@@ -490,5 +504,19 @@ window.toggleDarkMode = function() {
     var saved = localStorage.getItem('sk_dark_mode');
     if (saved === '1') {
         document.documentElement.setAttribute('data-theme', 'dark');
+    }
+})();
+
+// [SIDEBAR-COLLAPSE] Terapkan state ciutkan sidebar sebelum render, sama
+// polanya dengan dark mode di atas (hindari flash sidebar lebar penuh
+// lalu tiba-tiba menciut). Hanya berpengaruh di desktop lewat CSS.
+(function() {
+    if (localStorage.getItem('sk_sidebar_collapsed') === '1') {
+        document.body.classList.add('sidebar-collapsed');
+        var toggleBtn = document.getElementById('sidebarCollapseToggle');
+        if (toggleBtn) {
+            toggleBtn.title = 'Perluas Sidebar';
+            toggleBtn.setAttribute('aria-label', 'Perluas Sidebar');
+        }
     }
 })();
