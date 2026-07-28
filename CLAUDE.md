@@ -347,3 +347,33 @@ relevan sesuai jenis perubahan sebelum mengirim hasil ke user:
   zip tetap `sinarkeu-main/`, dan `js/db.js.bak` tidak perlu diutak-atik
   (aman diabaikan, bukan bagian aktif aplikasi).
 
+
+
+## Catatan Fix Sinkronisasi Buku Bersama (Shopping List)
+
+**Status:** Fix diterapkan pada Juli 2026.
+
+Masalah yang ditemukan:
+- Push data shared book sudah berhasil karena request membawa `book_id` dan melalui jalur Supabase Auth.
+- Pull data shared book sebelumnya bisa gagal mengambil data yang benar karena jalur pull masih terpengaruh filter data akun lokal (`account_tag`), padahal shared book harus berbasis `book_id` + RLS Supabase.
+- Shared book memakai identifier buku dari `window.books[].id` / `window.currentBookId`, bukan `book_id` property terpisah.
+
+Implementasi yang harus dipertahankan:
+- Untuk buku shared:
+  - Pull settings menggunakan `book_id=eq.<book.id>`.
+  - Jangan menambahkan `account_tag` filter pada query shared book.
+  - Akses dan pembatasan data diserahkan ke RLS berbasis shared book role.
+- Untuk buku non-shared:
+  - Tetap gunakan isolasi `account_tag` seperti mekanisme lama.
+- Saat melakukan dedup settings:
+  - Gunakan kombinasi `(book_id + key)`.
+  - Ambil row terbaru berdasarkan `updated_at.desc`.
+
+Testing manual:
+1. Device A login sebagai anggota shared book.
+2. Tambah/ubah item Daftar Belanja.
+3. Pastikan push ke Supabase berhasil.
+4. Device B membuka ulang modal Daftar Belanja atau reload aplikasi.
+5. Pastikan item terbaru muncul dari cloud.
+
+Jangan mengembalikan filter `account_tag` ke jalur shared book karena dapat membuat data shared terlihat "berhasil tersimpan" tetapi tidak muncul di perangkat anggota lain.
