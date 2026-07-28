@@ -642,6 +642,20 @@ h1, h2, h3, h4,
   .fc-row { grid-template-columns: 1fr; gap: 10px; }
   .fc-metric-value { font-size: .95rem; }
 }
+@media (min-width: 1024px) {
+  /* [UI] Di desktop, ruang horizontal cukup untuk menampilkan ke-4 metrik
+     (Pemasukan, Pengeluaran, Surplus/Defisit, Proyeksi Saldo) sejajar dalam
+     satu baris, bukan 2 baris x 2 kolom seperti mobile -- lebih efisien
+     ruang vertikal. .fc-body dijadikan grid 2 kolom; karena tiap .fc-row
+     sudah berisi 2 metrik (grid 1fr 1fr), hasilnya 2x2=4 kolom total.
+     .fc-cats (tag pengeluaran terbesar) tetap span penuh di bawahnya. */
+  .fc-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 24px;
+  }
+  .fc-cats { grid-column: 1 / -1; }
+}
 
 .expense-chart-section {
   background: var(--paper);
