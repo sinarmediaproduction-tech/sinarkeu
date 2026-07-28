@@ -175,6 +175,35 @@ window.renderAccModalList = function(highlightId) {
     }).join('');
 };
 window.handleAccModalItemClick = function(accId) { if (accId === window.getActiveAccountId()) return; window.switchAccount(accId); };
+// ==================== TOGGLE FORM TAMBAH/EDIT AKUN ====================
+// Form ditutup secara default (biar panel Akun tidak penuh input begitu
+// dibuka) dan baru mengembang saat tombol "+ Tambah Akun" diklik, atau
+// otomatis saat user klik "Edit" pada salah satu akun di daftar.
+window.showAddAccountForm = function() {
+    const body = document.getElementById('newAccFormBody');
+    const label = document.getElementById('newAccToggleBtnLabel');
+    if (!body) return;
+    body.style.display = '';
+    if (label) label.textContent = '－ Tutup Form';
+};
+window.hideAddAccountForm = function() {
+    const body = document.getElementById('newAccFormBody');
+    const label = document.getElementById('newAccToggleBtnLabel');
+    if (!body) return;
+    body.style.display = 'none';
+    if (label) label.textContent = '＋ Tambah Akun';
+};
+window.toggleAddAccountForm = function() {
+    const body = document.getElementById('newAccFormBody');
+    if (!body) return;
+    if (body.style.display === 'none') {
+        window.showAddAccountForm();
+    } else {
+        // Tombol dipakai juga untuk menutup form -- pastikan state edit
+        // ikut direset supaya tidak ada sisa data akun yang sedang diedit.
+        window.cancelEditAccount();
+    }
+};
 window.editAccount = function(accId) {
     const acc = window.getAllAccounts().find(a => a.id === accId);
     if (!acc) return;
@@ -187,6 +216,9 @@ window.editAccount = function(accId) {
     document.getElementById('newAccPwdConfirm').value = '';
     document.getElementById('newAccPwdConfirmGroup').style.display = 'none';
     document.getElementById('newAccStatus').innerText = 'Isi URL, Key, dan Password baru untuk memperbarui koneksi.';
+    window.showAddAccountForm();
+    const body = document.getElementById('newAccFormBody');
+    if (body && body.scrollIntoView) body.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 };
 window.cancelEditAccount = function() {
     document.getElementById('editingAccId').value = '';
@@ -198,6 +230,7 @@ window.cancelEditAccount = function() {
     document.getElementById('newAccPwdConfirm').value = '';
     document.getElementById('newAccPwdConfirmGroup').style.display = '';
     document.getElementById('newAccStatus').innerText = '';
+    window.hideAddAccountForm();
 };
 // ==================== DUPLICATE SUPABASE PROJECT DETECTION ====================
 // Tujuan: MENOLAK penambahan/pengubahan akun ke URL Supabase project yang

@@ -894,7 +894,8 @@ alter table public.settings
             </div>
             <div id="accModalList" class="acc-modal-list"></div>
             <div style="border-top:1.5px dashed var(--ink); padding-top:16px; margin-top:12px;">
-                <div style="font-size:.75rem; font-weight:700; margin-bottom:12px;">＋ Tambah / Edit Akun</div>
+                <button type="button" class="btn btn-secondary" id="newAccToggleBtn" style="width:100%; display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700;" onclick="window.toggleAddAccountForm()"><span id="newAccToggleBtnLabel">＋ Tambah Akun</span></button>
+                <div id="newAccFormBody" style="display:none; margin-top:14px;">
                 <div class="form-group"><label>Nama Akun</label><input type="text" id="newAccName" class="form-control" placeholder="Contoh: Pribadi, Bisnis, Keluarga..." onkeydown="if(event.key==='Enter') saveNewAccount()"></div>
                 <div class="form-group"><label>Supabase Project URL</label><input type="text" id="newAccUrl" class="form-control" placeholder="https://xxxxxxxx.supabase.co" onkeydown="if(event.key==='Enter') saveNewAccount()"></div>
                 <div class="form-group"><label data-i18n="supabase_key_label">Supabase Anon Key</label><input type="password" id="newAccKey" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." onkeydown="if(event.key==='Enter') saveNewAccount()"><div style="display:flex; align-items:center; gap:6px; margin-top:5px;"><input type="checkbox" id="newAccShowKey" onchange="document.getElementById('newAccKey').type = this.checked ? 'text' : 'password'"><label for="newAccShowKey" style="font-size:.68rem; color:var(--ink-faint); cursor:pointer; text-transform:none; letter-spacing:0;">Tampilkan key</label></div></div>
@@ -903,6 +904,7 @@ alter table public.settings
                 <input type="hidden" id="editingAccId" value="">
                 <div id="newAccStatus" style="font-size:.72rem; margin-bottom:10px; min-height:16px;"></div>
                 <div style="display:flex; gap:8px;"><button class="btn btn-secondary" id="cancelAccBtn" style="flex:1;" onclick="cancelEditAccount()">Batal</button><button class="btn btn-primary" id="saveAccBtn" style="flex:2;" onclick="saveNewAccount()">Simpan Akun</button></div>
+                </div>
             </div>
             <div id="setelanBackToLockWrap" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--rule);">
                 <button type="button" class="btn btn-secondary" style="width:100%;" onclick="window.backToLockScreenFromAkun()">← Kembali ke Layar Kunci</button>
