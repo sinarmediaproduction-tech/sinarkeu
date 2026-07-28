@@ -60,7 +60,7 @@
             ai_placeholder: 'Tanya AI keuangan...',
 
             // === DASHBOARD STATS ===
-            final_balance: 'Saldo Akhir',
+            final_balance: 'Proyeksi Saldo',
             total_income: 'Total Pemasukan',
             total_expense: 'Total Pengeluaran',
             usd_rate: 'Kurs USD/IDR',
