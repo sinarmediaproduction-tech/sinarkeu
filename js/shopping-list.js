@@ -31,6 +31,18 @@ window.saveShoppingList = function(bookId, items) {
     }
 };
 
+// Subtotal per baris = harga satuan x qty. Fallback qty=1 kalau qty kosong
+// atau bukan angka valid (mis. data lama sebelum qty jadi field angka,
+// yang formatnya dulu teks bebas seperti "2 pak") -- supaya data lama
+// tetap dihitung seperti sebelumnya (harga = total baris), tidak tiba-tiba
+// berubah nilainya.
+window._shoppingListItemSubtotal = function(item) {
+    const price = Number(item.price) || 0;
+    const qtyNum = Number(item.qty);
+    const qty = (qtyNum > 0) ? qtyNum : 1;
+    return price * qty;
+};
+
 window.openShoppingListModal = function() {
     window._populateShoppingListCategorySelect();
     window.renderShoppingList();
@@ -64,11 +76,11 @@ window.renderShoppingList = function() {
             <input type="checkbox" class="slist-checkbox" ${item.done ? 'checked' : ''} onchange="window.toggleShoppingListItem('${window.escapeHtml(item.id)}')">
             <div class="slist-body">
                 <span class="slist-name">${window.escapeHtml(item.name)}</span>
-                ${item.qty ? `<span class="slist-qty">${window.escapeHtml(item.qty)}</span>` : ''}
+                ${item.qty && Number(item.qty) > 1 ? `<span class="slist-qty">x${window.escapeHtml(String(item.qty))}</span>` : ''}
                 ${item.category ? `<span class="slist-cat-badge">${window.escapeHtml(item.category)}</span>` : ''}
             </div>
             <div class="slist-trail">
-                <span class="slist-price">${item.price ? window.rp(item.price) : ''}</span>
+                <span class="slist-price">${item.price ? window.rp(window._shoppingListItemSubtotal(item)) : ''}</span>
                 <button type="button" class="slist-del-btn" title="Hapus" onclick="window.deleteShoppingListItem('${window.escapeHtml(item.id)}')">×</button>
             </div>
         </div>
@@ -101,10 +113,10 @@ window._renderShoppingListBudgetWarnings = function(items) {
     const catTotals = {};
     let grandTotal = 0;
     items.forEach(i => {
-        const price = Number(i.price) || 0;
-        grandTotal += price;
+        const subtotal = window._shoppingListItemSubtotal(i);
+        grandTotal += subtotal;
         if (i.category && window.EXPENSE_CATEGORIES.includes(i.category)) {
-            catTotals[i.category] = (catTotals[i.category] || 0) + price;
+            catTotals[i.category] = (catTotals[i.category] || 0) + subtotal;
         }
     });
 
@@ -151,7 +163,7 @@ window._renderShoppingListBudgetWarnings = function(items) {
 window._updateShoppingListSummary = function(items) {
     const total = items.length;
     const done = items.filter(i => i.done).length;
-    const remaining = items.filter(i => !i.done).reduce((sum, i) => sum + (Number(i.price) || 0), 0);
+    const remaining = items.filter(i => !i.done).reduce((sum, i) => sum + window._shoppingListItemSubtotal(i), 0);
     const valEl = document.getElementById('slistRemainingValue');
     if (valEl) valEl.innerText = window.rp(remaining);
     const metaEl = document.getElementById('slistProgressCount');
@@ -167,10 +179,12 @@ window.addShoppingListItem = function(e) {
     const name = nameInput.value.trim();
     if (!name) return;
     const items = window.getShoppingList(window.currentBookId);
+    const qtyParsed = parseFloat(qtyInput.value);
+    const qty = (qtyParsed > 0) ? qtyParsed : 1;
     items.push({
         id: 'sl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
         name: name,
-        qty: qtyInput.value.trim(),
+        qty: qty,
         price: window.unRp(priceInput.value),
         category: categorySelect ? categorySelect.value : '',
         done: false

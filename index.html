@@ -1257,8 +1257,8 @@ alter table public.settings
         <div id="slistBudgetWarnings" class="slist-budget-warnings"></div>
         <form class="slist-add-row" onsubmit="window.addShoppingListItem(event)">
             <input type="text" id="slistNewName" class="form-control" placeholder="Nama barang… (mis. Beras 5kg)" required>
-            <input type="text" id="slistNewQty" class="form-control slist-qty-field" placeholder="Qty (mis. 2 pak)">
-            <input type="text" id="slistNewPrice" class="form-control slist-price-field" placeholder="Rp 0" oninput="window.formatRupiah(this)">
+            <input type="number" id="slistNewQty" class="form-control slist-qty-field" placeholder="Qty" min="1" step="1" inputmode="numeric">
+            <input type="text" id="slistNewPrice" class="form-control slist-price-field" placeholder="Harga satuan" oninput="window.formatRupiah(this)">
             <select id="slistNewCategory" class="form-control slist-cat-field"></select>
             <button type="submit" class="btn btn-primary slist-add-btn" title="Tambah barang"><span class="slist-add-icon">+</span><span class="slist-add-label">Tambah Barang</span></button>
         </form>
