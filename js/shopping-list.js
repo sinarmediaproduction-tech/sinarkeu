@@ -67,8 +67,10 @@ window.renderShoppingList = function() {
                 ${item.qty ? `<span class="slist-qty">${window.escapeHtml(item.qty)}</span>` : ''}
                 ${item.category ? `<span class="slist-cat-badge">${window.escapeHtml(item.category)}</span>` : ''}
             </div>
-            <span class="slist-price">${item.price ? window.rp(item.price) : ''}</span>
-            <button type="button" class="slist-del-btn" title="Hapus" onclick="window.deleteShoppingListItem('${window.escapeHtml(item.id)}')">×</button>
+            <div class="slist-trail">
+                <span class="slist-price">${item.price ? window.rp(item.price) : ''}</span>
+                <button type="button" class="slist-del-btn" title="Hapus" onclick="window.deleteShoppingListItem('${window.escapeHtml(item.id)}')">×</button>
+            </div>
         </div>
     `).join('');
 

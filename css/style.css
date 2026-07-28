@@ -2254,7 +2254,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 .dbudget-clear-btn:hover { background: var(--danger-lt); color: var(--danger); }
 .dbudget-empty-hint { font-size: .74rem; color: var(--ink-faint); text-align: center; padding: 22px 0; }
 
-/* ── Daftar Belanja Bulanan ── */
+/* ── Belanja Bulanan ── */
 .slist-summary-card {
   display: flex;
   align-items: center;
@@ -2308,14 +2308,12 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   font-size: 1.1rem;
   font-weight: 600;
   padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
-@media (max-width: 640px) {
-  .slist-add-row { flex-wrap: wrap; }
-  .slist-add-row .form-control:first-child { flex: 1 1 100%; }
-  .slist-add-row .slist-qty-field,
-  .slist-add-row .slist-price-field,
-  .slist-add-row .slist-cat-field { flex: 1 1 auto; }
-}
+.slist-add-label { display: none; }
 
 .slist-cat-badge {
   font-size: .64rem;
@@ -2364,7 +2362,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 }
 .slist-checkbox { flex: 0 0 auto; width: 17px; height: 17px; accent-color: var(--success); cursor: pointer; }
 .slist-body { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.slist-name { font-size: .8rem; color: var(--ink); }
+.slist-name { font-size: .8rem; color: var(--ink); overflow-wrap: anywhere; }
 .slist-item.done .slist-name { text-decoration: line-through; color: var(--ink-faint); }
 .slist-qty {
   font-size: .64rem;
@@ -2374,7 +2372,8 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   padding: 1px 7px;
   border-radius: var(--radius-pill);
 }
-.slist-price { flex: 0 0 auto; font-family: var(--font-mono); font-size: .76rem; color: var(--ink-muted); }
+.slist-trail { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
+.slist-price { font-family: var(--font-mono); font-size: .76rem; color: var(--ink-muted); white-space: nowrap; }
 .slist-del-btn {
   flex: 0 0 auto;
   width: 22px; height: 22px;
@@ -2388,6 +2387,54 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 .slist-empty { font-size: .74rem; color: var(--ink-faint); text-align: center; padding: 26px 0; }
 .slist-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .slist-actions .btn { flex: 1; min-width: 140px; }
+
+/* ── Belanja Bulanan: optimasi layar hp ── */
+@media (max-width: 640px) {
+  /* Form tambah barang jadi grid 2 kolom, lebih gampang diketuk & tidak
+     "penyet" seperti flex-wrap biasa -- tiap field jelas baris/kolomnya. */
+  .slist-add-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .slist-add-row #slistNewName,
+  .slist-add-row .slist-cat-field,
+  .slist-add-row .slist-add-btn {
+    grid-column: 1 / -1;
+  }
+  .slist-add-row .form-control,
+  .slist-add-row .slist-qty-field,
+  .slist-add-row .slist-price-field,
+  .slist-add-row .slist-cat-field { flex: initial; }
+  /* Tombol tambah jadi selebar penuh dengan label teks -- target ketuk
+     lebih besar & maksud tombolnya jelas dibanding cuma ikon "+". */
+  .slist-add-btn {
+    width: 100%;
+    height: 42px;
+    font-size: .82rem;
+  }
+  .slist-add-label { display: inline; }
+
+  .slist-summary-card { padding: 13px 16px; }
+  .slist-summary-value { font-size: 1.28rem; }
+
+  /* Item: baris kedua (harga + hapus) pindah ke bawah nama/qty/kategori
+     kalau ruangnya sempit, alih-alih berdesakan di satu baris. */
+  .slist-item { flex-wrap: wrap; padding: 10px; }
+  .slist-body { flex-basis: calc(100% - 27px); }
+  .slist-trail {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+    padding-left: 27px;
+    margin-top: 2px;
+  }
+  .slist-budget-warning { font-size: .7rem; padding: 8px 11px; }
+}
+@media (max-width: 400px) {
+  .slist-add-row { grid-template-columns: 1fr; }
+  .slist-add-row .slist-qty-field,
+  .slist-add-row .slist-price-field { grid-column: 1 / -1; }
+}
 
 /* ── Report ── */
 .report-stats {
