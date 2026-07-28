@@ -104,14 +104,28 @@ window.loadPaymentReminders = async function(bookId) {
     // Coba dari Supabase dulu
     if (window.isOnline()) {
         try {
-            const tag = window.getAccountTag ? window.getAccountTag() : null;
-            const tagFilter = window.tagOrFilter(tag);
-            const result = await window.callSupabaseAPI(
-                'payment_reminders',
-                'GET',
-                null,
-                `?book_id=eq.${bookId}&order=created_at.desc${tagFilter}`
-            );
+            let result;
+            // [UNIVERSAL] Buku Bersama pakai RPC khusus supaya ikut ambil
+            // pengingat "universal" dari buku lain dengan anggota persis
+            // sama (lihat sql/universal_payment_reminders.sql) -- query REST
+            // biasa (?book_id=eq...) tidak bisa menyatakan pencocokan itu.
+            // Buku pribadi (bukan shared) tetap lewat jalur lama.
+            if (window.skIsSharedBookId && window.skIsSharedBookId(bookId) && window.getSupabaseAuthClient) {
+                const client = window.getSupabaseAuthClient();
+                if (!client) throw new Error('Sesi Buku Bersama tidak ditemukan');
+                const { data, error } = await client.rpc('sk_list_payment_reminders', { p_book_id: bookId });
+                if (error) throw error;
+                result = data;
+            } else {
+                const tag = window.getAccountTag ? window.getAccountTag() : null;
+                const tagFilter = window.tagOrFilter(tag);
+                result = await window.callSupabaseAPI(
+                    'payment_reminders',
+                    'GET',
+                    null,
+                    `?book_id=eq.${bookId}&order=created_at.desc${tagFilter}`
+                );
+            }
             
             if (result && Array.isArray(result)) {
                 // [FIX] MERGE, jangan timpa total: item yang masih pending-push
@@ -182,9 +196,16 @@ window.savePaymentReminder = async function(bookId, reminderData, skipLocalUpser
             // [SECURITY] name/note/day/recurrence/month dienkripsi jadi satu
             // kolom enc_payload -- lihat window.encodeCloudReminderPayload.
             const encPayload = await window.encodeCloudReminderPayload(reminderData, bookId);
+            // [UNIVERSAL] Default is_universal=true untuk Buku Bersama (bisa
+            // dioverride kalau reminderData.is_universal sudah eksplisit
+            // diisi, mis. saat re-save item lama yang masih false). Buku
+            // pribadi: kolom ini tetap dikirim tapi tidak berpengaruh (tidak
+            // ada "tim" untuk dicocokkan -- lihat sk_book_member_signature).
+            const isShared = window.skIsSharedBookId && window.skIsSharedBookId(bookId);
+            const universalFlag = reminderData.is_universal !== undefined ? reminderData.is_universal : (isShared ? true : false);
             const payload = encPayload
-                ? { id: reminderData.id, book_id: bookId, enc_payload: encPayload, name: null, day: null, recurrence: null, month: null, note: null, created_at: reminderData.created_at, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) }
-                : { ...reminderData, book_id: bookId, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) };
+                ? { id: reminderData.id, book_id: bookId, enc_payload: encPayload, name: null, day: null, recurrence: null, month: null, note: null, created_at: reminderData.created_at, updated_at: new Date().toISOString(), is_universal: universalFlag, ...(tag ? { account_tag: tag } : {}) }
+                : { ...reminderData, book_id: bookId, updated_at: new Date().toISOString(), is_universal: universalFlag, ...(tag ? { account_tag: tag } : {}) };
 
             const result = await window.callSupabaseAPI('payment_reminders', 'POST', [payload]);
             if (result) {
@@ -235,14 +256,32 @@ window.deletePaymentReminder = async function(reminderId, bookId, skipLocalRemov
     // Hapus dari Supabase
     if (window.isOnline()) {
         try {
-            const tag = window.getAccountTag ? window.getAccountTag() : null;
-            const tagFilter = tag ? `&account_tag=eq.${tag}` : '';
-            const result = await window.callSupabaseAPI(
-                'payment_reminders',
-                'DELETE',
-                null,
-                `?id=eq.${reminderId}&book_id=eq.${bookId}${tagFilter}`
-            );
+            // [UNIVERSAL] id reminder ('pr_<timestamp>_<random>') sudah unik
+            // global. Untuk Buku Bersama, panggil client auth langsung
+            // (bukan callSupabaseAPI) dan filter HANYA by id -- BUKAN
+            // id+book_id=eq.<buku yang sedang dibuka>, karena pengingat
+            // universal titipan dari buku lain book_id aslinya BEDA dari
+            // buku yang sedang dibuka. RLS (admin/editor buku ASAL
+            // pengingat) tetap yang menentukan boleh/tidaknya, bukan filter
+            // client ini.
+            const isShared = window.skIsSharedBookId && window.skIsSharedBookId(bookId);
+            let result;
+            if (isShared && window.getSupabaseAuthClient) {
+                const client = window.getSupabaseAuthClient();
+                if (!client) throw new Error('Sesi Buku Bersama tidak ditemukan');
+                const { error } = await client.from('payment_reminders').delete().eq('id', reminderId);
+                if (error) throw error;
+                result = true;
+            } else {
+                const tag = window.getAccountTag ? window.getAccountTag() : null;
+                const tagFilter = tag ? `&account_tag=eq.${tag}` : '';
+                result = await window.callSupabaseAPI(
+                    'payment_reminders',
+                    'DELETE',
+                    null,
+                    `?id=eq.${reminderId}&book_id=eq.${bookId}${tagFilter}`
+                );
+            }
             if (result) {
                 console.log('[PaymentReminder] Berhasil hapus dari cloud');
                 _prClearPendingDelete(bookId, reminderId);
@@ -413,7 +452,19 @@ window.renderPaymentReminders = async function() {
             ? `Bulanan — tgl ${item.day}`
             : `Tahunan — ${['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][item.month-1]} tgl ${item.day}`;
         const dayLabel = days === 0 ? 'Hari ini!' : `${days} hari lagi`;
-        
+        // [UNIVERSAL] Pengingat "titipan" dari buku lain (anggota tim yang
+        // sama) -- book_id-nya beda dari buku yang sedang dibuka. Edit/Hapus
+        // disembunyikan di sini supaya tidak tidak-sengaja "pindah
+        // kepemilikan" -- kelola dari buku asalnya (lihat sql/universal_
+        // payment_reminders.sql, CATATAN DESAIN).
+        const isFromOtherBook = item.book_id && item.book_id !== bookId;
+        const actionsHtml = isFromOtherBook
+            ? `<span style="font-size:.63rem; color:var(--ink-faint); font-style:italic; white-space:nowrap;" title="Ikut tim, dikelola dari buku asalnya">dari buku lain</span>`
+            : `<div style="display:flex; gap:4px;">
+                   <button onclick="window.editPaymentReminder('${item.id}')" style="background:none; border:1px solid var(--rule); border-radius: var(--radius-sm); padding:3px 7px; cursor:pointer; font-size:.7rem; color:var(--ink-muted);" title="Edit">Edit</button>
+                   <button onclick="window.deletePaymentReminderHandler('${item.id}')" style="background:none; border:1px solid var(--danger-lt); border-radius: var(--radius-sm); padding:3px 7px; cursor:pointer; font-size:.7rem; color:var(--danger);" title="Hapus">Hapus</button>
+               </div>`;
+
         const el = document.createElement('div');
         el.style.cssText = `display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px; background:${isUrgent ? 'var(--warning-lt)' : 'var(--paper-warm)'}; border:1.5px solid ${isUrgent ? 'var(--warning)' : 'var(--rule)'}; border-radius: var(--radius-sm); padding:10px 12px;`;
         el.innerHTML = `
@@ -424,10 +475,7 @@ window.renderPaymentReminders = async function() {
             </div>
             <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
                 <div style="font-size:.68rem; font-weight:700; white-space:nowrap; color:${isUrgent ? 'var(--warning)' : 'var(--ink-muted)'};">${dayLabel}</div>
-                <div style="display:flex; gap:4px;">
-                    <button onclick="window.editPaymentReminder('${item.id}')" style="background:none; border:1px solid var(--rule); border-radius: var(--radius-sm); padding:3px 7px; cursor:pointer; font-size:.7rem; color:var(--ink-muted);" title="Edit">Edit</button>
-                    <button onclick="window.deletePaymentReminderHandler('${item.id}')" style="background:none; border:1px solid var(--danger-lt); border-radius: var(--radius-sm); padding:3px 7px; cursor:pointer; font-size:.7rem; color:var(--danger);" title="Hapus">Hapus</button>
-                </div>
+                ${actionsHtml}
             </div>
         `;
         container.appendChild(el);
