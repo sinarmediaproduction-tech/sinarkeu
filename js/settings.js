@@ -538,27 +538,43 @@ window.loadConnectedDevices = async function() {
             deviceMap[did].actions[act] = (deviceMap[did].actions[act] || 0) + 1;
         });
 
-        var devices = Object.values(deviceMap).sort(function(a, b) {
+        var now = new Date();
+        var allDevices = Object.values(deviceMap).sort(function(a, b) {
             return b.last_seen.localeCompare(a.last_seen);
         });
 
+        // [FIX] Perangkat yang tidak aktif lebih dari 30 hari terakhir tidak
+        // ditampilkan lagi di daftar -- daftar ini untuk memantau perangkat
+        // yang masih dipakai, bukan arsip semua perangkat yang pernah pernah
+        // terhubung sejak awal.
+        var devices = allDevices.filter(function(d) {
+            var diffDays = Math.floor((now - new Date(d.last_seen)) / 86400000);
+            return diffDays <= 30;
+        });
+        var hiddenCount = allDevices.length - devices.length;
+
         var myId = window.deviceId || localStorage.getItem('sk_device_id') || '';
 
-        if (statusEl) statusEl.innerText = devices.length + ' perangkat ditemukan dari ' + logs.length + ' log.';
+        if (statusEl) {
+            statusEl.innerText = devices.length + ' perangkat aktif dari ' + logs.length + ' log' +
+                (hiddenCount > 0 ? ' (' + hiddenCount + ' perangkat tidak aktif >30 hari disembunyikan).' : '.');
+        }
+
+        if (!devices.length) {
+            listEl.innerHTML = '<div style="font-size:.72rem; color:#9AA2AC; text-align:center; padding:20px 0;">Tidak ada perangkat yang aktif dalam 30 hari terakhir.</div>';
+            return;
+        }
 
         var html = '';
         devices.forEach(function(d) {
             var isMe = d.device_id === myId;
             var lastDate = new Date(d.last_seen);
-            var now = new Date();
             var diffDays = Math.floor((now - lastDate) / 86400000);
             var lastLabel = diffDays === 0 ? 'Hari ini'
                 : diffDays === 1 ? 'Kemarin'
-                : diffDays < 30 ? diffDays + ' hari lalu'
-                : diffDays < 365 ? Math.floor(diffDays / 30) + ' bulan lalu'
-                : Math.floor(diffDays / 365) + ' tahun lalu';
+                : diffDays + ' hari lalu';
 
-            var dotColor = diffDays <= 7 ? '#2E6B4F' : diffDays <= 30 ? '#9C7A2E' : '#9AA2AC';
+            var dotColor = diffDays <= 7 ? '#2E6B4F' : '#9C7A2E';
             var topActions = Object.entries(d.actions)
                 .sort(function(a, b) { return b[1] - a[1]; })
                 .slice(0, 3).map(function(a) { return a[0]; }).join(', ');
