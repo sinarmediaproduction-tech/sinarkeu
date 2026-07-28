@@ -18,6 +18,25 @@ Tidak ada build step — buka `index.html` langsung di browser, atau serve
 statis (mis. `npx serve .`). Tidak ada test runner otomatis di repo ini;
 verifikasi manual lewat browser setelah perubahan.
 
+## Alur kerja lewat chat Claude (upload/download zip)
+
+User kerja di repo ini lewat upload/download `.zip`, bukan lewat git
+langsung di chat. Pola yang dipakai:
+1. User upload `sinarkeu-main*.zip` → extract ke folder kerja (mis.
+   `/home/claude/sinarkeu*/`), baru mulai edit.
+2. Setelah selesai, **zip ulang seluruh folder project** (bukan cuma
+   file yang diubah) dengan nama folder root tetap `sinarkeu-main/` di
+   dalam zip, supaya kalau di-extract user tinggal timpa folder lama.
+3. Kirim lewat `present_files` ke `/mnt/user-data/outputs/`.
+4. Sesi berikutnya user kemungkinan besar **upload ulang zip terbaru**
+   (bukan lanjut dari state chat sebelumnya) — jangan asumsikan file di
+   `/home/claude/` dari sesi lama masih relevan/terbaru, selalu extract
+   & baca ulang yang baru di-upload sebelum mengedit.
+5. Untuk perubahan besar (banyak file/scope luas), pertimbangkan dipecah
+   jadi beberapa tahap eksplisit (seperti rombak styling kemarin: Tahap 1
+   token dasar, Tahap 2 bersihkan sisa hardcode) — user cenderung suka
+   pola ini untuk task besar, bukan sekali jalan tanpa checkpoint.
+
 ## Deploy
 
 Static site murni, tidak ada proses compile/bundle apa pun — file yang ada
@@ -100,6 +119,76 @@ di repo ini SAMA PERSIS dengan yang disajikan ke browser.
 
 `api/emas.js` — endpoint/helper harga emas Antam (dipakai fitur "Harga Emas"
 di Setelan).
+
+## Glosarium istilah domain (Indonesia)
+
+Biar tidak salah interpretasi nama fungsi/variabel/fitur:
+
+| Istilah | Artinya |
+|---|---|
+| Buku Kas / Buku | Satu unit pencatatan keuangan terpisah (mirip "workspace"), user bisa punya banyak buku |
+| Buku Induk / Buku Anak | Relasi parent-child antar buku — buku anak bisa "ditutup" dan saldonya mengalir otomatis sebagai entri terkunci ke Kas Organisasi/buku induk |
+| Buku Bersama (Shared Book) | Buku yang dibagikan ke user Supabase Auth lain dengan role admin/editor/viewer, beda jalur otentikasi dari akun lokal biasa |
+| Akun (account) | Profil lokal terenkripsi password (bukan Supabase Auth) — beda konsep dari "Buku Bersama" di atas, jangan tertukar |
+| Fase Kehidupan | Konteks finansial user (mis. lajang/menikah/anak) dipakai buat analisis AI & proyeksi |
+| Anggaran (Budget) | Batas pengeluaran per kategori per bulan/tahun |
+| Dana Darurat | Target tabungan darurat, biasanya kelipatan pengeluaran bulanan |
+| Pengingat Pembayaran | Jadwal tagihan berulang, terpisah dari transaksi biasa |
+| Cadangan Data | Menu backup/restore/migrasi (lokal & cloud), sekarang halaman sidebar sendiri, bukan tab Setelan |
+| Snapshot Keamanan | Restore point otomatis (safety net), beda dari backup manual biasa |
+| account_tag | Tag string yang mengikat baris data cloud ke akun lokal tertentu, dipakai buat filter multi-akun di query Supabase |
+
+## State global penting (`js/config.js`)
+
+Karena tidak ada module system, hampir semua state lintas-modul lewat
+`window.*` yang didaftarkan awal di `config.js`. Yang paling sering
+relevan saat debugging/nambah fitur:
+
+- `window.txs` — array transaksi buku aktif (in-memory, sumber utama
+  render & sync; diisi dari `loadTransactions()`, disimpan lewat
+  `saveTransactions()`).
+- `window.books` / `window.currentBookId` — daftar buku & buku yang
+  sedang aktif.
+- `window.budgets` — anggaran per kategori buku aktif.
+- `window.globalSupabaseUrl` / `window.globalSupabaseKey` — kredensial
+  Supabase (didekripsi saat unlock akun, lihat `crypto.js`/`account.js`).
+- `window.deviceId` — ID perangkat ini, dipakai di log & payment log.
+- `window._dirtyTxIds` — set id transaksi yang belum ke-push ke cloud
+  (dirty-tracking, lihat catatan sync di bawah).
+- `window._lastSyncTime` / `window._pushDebounceTimer` — status &
+  timer debounce untuk `debouncedPushToCloud()`.
+- Kalau nambah state global baru: daftarkan inisialnya di `config.js`
+  juga (bukan langsung dipakai tanpa deklarasi), ikuti pola yang sudah
+  ada supaya gampang ditemukan.
+
+## Migrasi SQL (`sql/`) — urutan & tujuan
+
+File-file ini dijalankan MANUAL satu-satu di Supabase SQL Editor oleh
+user (bukan migration tool otomatis), umumnya harus urut karena saling
+mengasumsikan tabel sebelumnya sudah ada:
+
+1. `harden_transactions_encryption.sql` — enkripsi kolom sensitif
+   transaksi & backup jadi `enc_payload` (dijalankan sebelum deploy
+   kode `crypto.js`/`transaction.js`/`backup.js` versi terenkripsi).
+2. `profiles_and_invite.sql` — fondasi tabel `profiles` untuk fitur
+   undang anggota (harus sebelum #3).
+3. `shared_books_roles.sql` — fondasi Buku Bersama + role admin/
+   editor/viewer (setelah #2, lanjut ke #4).
+4. `bootstrap_shared_book.sql` — izinkan admin pertama buku bersama
+   insert dirinya sendiri ke `book_members` (sekali, setelah #3).
+5. `harden_shared_book_data_rls.sql` — opsional, RLS role-based di
+   tabel data (`transactions`/`settings`/`payment_reminders`), setelah #3.
+6. `menu_visibility.sql` — fitur atur visibilitas menu per role di
+   Buku Bersama.
+7. `fix_server_side_updated_at.sql` — pastikan `updated_at` selalu
+   dari jam server (bukan jam device) untuk deteksi konflik sync.
+8. `cleanup_legacy_open_policies.sql` — housekeeping, hapus policy RLS
+   legacy/duplikat yang longgar (`qual = true` tanpa syarat) yang
+   sempat dibuat manual lewat dashboard.
+
+Kalau menambah migrasi baru: ikuti gaya komentar header panjang (nama
+FITUR/FIX/HARDENING + kapan/urutan dijalankan) yang sudah konsisten di
+semua file di atas.
 
 ## Konvensi kode
 
@@ -214,3 +303,30 @@ di Setelan).
   dicoba ulang). Jangan ubah struktur `logPayload` yang sudah ada
   (`book_id`, `device_id`, `action`, `details`, `timestamp`, `account_tag`
   opsional) — skema tabel `audit_logs` di Supabase mengikuti bentuk ini.
+
+## Checklist cepat sebelum anggap selesai
+
+Tidak ada test runner, jadi verifikasi ini gantinya — jalankan yang
+relevan sesuai jenis perubahan sebelum mengirim hasil ke user:
+
+- **Ubah styling/warna** → grep hex hardcode baru yang lolos dari sistem
+  token (lihat perintah di `docs/STYLE_GUIDE.md` bagian 4.7), cek juga
+  `js/report.js` (objek `C`/`CPDF`) dan `manifest.json` kalau token
+  brand/warna dasar ikut berubah.
+- **Ubah apa pun yang menyentuh `txs`/sync** → pikirkan efek ke
+  multi-device & multi-tab: apakah perubahan bikin data ke-overwrite
+  device lain (cek pola dirty-tracking `window._dirtyTxIds` /
+  `debouncedPushToCloud`), apakah aman dipanggil offline lalu online lagi.
+- **Ubah/tambah tabel atau policy Supabase** → tambahkan file migrasi
+  baru di `sql/` (jangan modifikasi file lama yang sudah "selesai
+  dijalankan"), dan ingatkan user query `pg_policies` manual untuk
+  verifikasi, jangan asumsikan migrasi di repo = state DB aktual.
+- **Tambah teks UI baru** → pakai `data-i18n="key"` + daftarkan di
+  `js/i18n.js`, jangan hardcode string kalau elemen sejenis di
+  sekitarnya sudah pakai `data-i18n`.
+- **Tambah menu/halaman baru** → ikuti pola `FULLVIEW_MODALS` (lihat
+  bagian "View vs modal" di atas), bukan bikin mekanisme show/hide baru.
+- **Sebelum kirim zip final** → pastikan struktur folder root di dalam
+  zip tetap `sinarkeu-main/`, dan `js/db.js.bak` tidak perlu diutak-atik
+  (aman diabaikan, bukan bagian aktif aplikasi).
+
