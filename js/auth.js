@@ -1405,6 +1405,14 @@ const _originalSwitchBook = window.switchBook;
 window.switchBook = async function(id) {
     const result = await _originalSwitchBook.apply(this, arguments);
     if (typeof window.skApplyRoleUI === 'function') window.skApplyRoleUI();
+    // [FIX] Daftar Belanja bisa saja sedang terbuka waktu user pindah buku
+    // (mis. lewat dropdown di sidebar) -- render ulang supaya kunci/notice
+    // viewer langsung mengikuti peran di buku yang baru, bukan peran buku
+    // sebelumnya.
+    const slistModal = document.getElementById('shoppingListModal');
+    if (slistModal && slistModal.classList.contains('show') && typeof window.renderShoppingList === 'function') {
+        window.renderShoppingList();
+    }
     return result;
 };
 

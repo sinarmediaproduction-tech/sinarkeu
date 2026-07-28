@@ -27,8 +27,52 @@ window.saveShoppingList = function(bookId, items) {
     if (window.isOnline && window.isOnline() && window.pushSetting) {
         window.pushSetting('shopping_list', items, targetId).catch(function(e) {
             console.warn('[ShoppingList] Gagal sync ke cloud:', e);
+            // [FIX] Sebelumnya kegagalan sync cuma dilempar ke console.warn --
+            // perubahan terlihat berhasil di layar (sudah tersimpan lokal)
+            // padahal cuma nyangkut di device ini (mis. ditolak RLS Supabase
+            // kalau akun ini viewer di buku bersama). Tampilkan toast supaya
+            // kegagalan tidak lagi tersembunyi.
+            window.showToast && window.showToast('Perubahan tersimpan di perangkat ini, tapi gagal sinkron ke cloud. Barang tidak akan muncul di perangkat lain sampai sinkron berhasil.', 'error');
         });
     }
+};
+
+// ── Pembatasan role viewer (mengikuti pola yang sama seperti transaksi di
+// js/auth.js -- lihat window.skIsViewerOnCurrentBook & patch openModal di
+// sana). Daftar Belanja sebelumnya TIDAK masuk daftar menu yang dibatasi
+// per-role (js/auth.js, SK_MENU_DEFAULTS baris ~106-117), jadi viewer
+// tetap bisa tambah/ubah/centang/hapus barang di UI meskipun push ke
+// Supabase pasti ditolak RLS (lihat policy settings_shared_write /
+// settings_shared_update di sql/harden_shared_book_data_rls.sql yang
+// hanya mengizinkan admin/editor). Dicek lewat typeof guard karena
+// js/shopping-list.js dimuat SEBELUM js/auth.js di index.html -- aman,
+// karena fungsi-fungsi di bawah baru benar-benar dipanggil belakangan
+// (lewat interaksi user), saat js/auth.js sudah selesai load.
+window._slistIsViewer = function() {
+    return typeof window.skIsViewerOnCurrentBook === 'function' && window.skIsViewerOnCurrentBook();
+};
+
+window._slistBlockIfViewer = function() {
+    if (window._slistIsViewer()) {
+        window.showToast && window.showToast('Peran viewer di buku bersama ini hanya bisa melihat daftar belanja, tidak bisa mengubahnya.', 'error');
+        return true;
+    }
+    return false;
+};
+
+// Sembunyikan/kunci bagian-bagian yang bisa mengubah daftar (form tambah,
+// tombol Reset Centang/Hapus yang Dibeli) untuk viewer, dan tampilkan
+// notice-nya -- dipanggil dari renderShoppingList() supaya selalu
+// mengikuti peran user di buku yang sedang aktif tiap kali modal dibuka
+// atau daftar dirender ulang.
+window._slistApplyViewerUI = function() {
+    const isViewer = window._slistIsViewer();
+    const notice = document.getElementById('slistViewerNotice');
+    const addRow = document.getElementById('slistAddRow');
+    const actions = document.getElementById('slistActions');
+    if (notice) notice.style.display = isViewer ? '' : 'none';
+    if (addRow) addRow.style.display = isViewer ? 'none' : '';
+    if (actions) actions.style.display = isViewer ? 'none' : '';
 };
 
 // Subtotal per baris = harga satuan x qty. Fallback qty=1 kalau qty kosong
@@ -64,6 +108,8 @@ window._populateShoppingListCategorySelect = function() {
 window.renderShoppingList = function() {
     const container = document.getElementById('shoppingListContainer');
     const items = window.getShoppingList(window.currentBookId);
+    const isViewer = window._slistIsViewer();
+    window._slistApplyViewerUI();
 
     if (!items.length) {
         container.innerHTML = '<div class="slist-empty">Daftar belanja masih kosong. Tambahkan barang lewat form di atas.</div>';
@@ -73,7 +119,7 @@ window.renderShoppingList = function() {
 
     container.innerHTML = items.map(item => `
         <div class="slist-item${item.done ? ' done' : ''}" data-id="${window.escapeHtml(item.id)}">
-            <input type="checkbox" class="slist-checkbox" ${item.done ? 'checked' : ''} onchange="window.toggleShoppingListItem('${window.escapeHtml(item.id)}')">
+            <input type="checkbox" class="slist-checkbox" ${item.done ? 'checked' : ''} ${isViewer ? 'disabled' : ''} onchange="window.toggleShoppingListItem('${window.escapeHtml(item.id)}')">
             <div class="slist-body">
                 <span class="slist-name">${window.escapeHtml(item.name)}</span>
                 ${item.qty && Number(item.qty) > 1 ? `<span class="slist-qty">x${window.escapeHtml(String(item.qty))}</span>` : ''}
@@ -81,8 +127,8 @@ window.renderShoppingList = function() {
             </div>
             <div class="slist-trail">
                 <span class="slist-price">${item.price ? window.rp(window._shoppingListItemSubtotal(item)) : ''}</span>
-                <button type="button" class="slist-edit-btn" title="Ubah" onclick="window.openEditShoppingListItemModal('${window.escapeHtml(item.id)}')">✎</button>
-                <button type="button" class="slist-del-btn" title="Hapus" onclick="window.deleteShoppingListItem('${window.escapeHtml(item.id)}')">×</button>
+                ${isViewer ? '' : `<button type="button" class="slist-edit-btn" title="Ubah" onclick="window.openEditShoppingListItemModal('${window.escapeHtml(item.id)}')">✎</button>
+                <button type="button" class="slist-del-btn" title="Hapus" onclick="window.deleteShoppingListItem('${window.escapeHtml(item.id)}')">×</button>`}
             </div>
         </div>
     `).join('');
@@ -173,6 +219,7 @@ window._updateShoppingListSummary = function(items) {
 
 window.addShoppingListItem = function(e) {
     e.preventDefault();
+    if (window._slistBlockIfViewer()) return;
     const nameInput = document.getElementById('slistNewName');
     const qtyInput = document.getElementById('slistNewQty');
     const priceInput = document.getElementById('slistNewPrice');
@@ -214,6 +261,7 @@ window.addShoppingListItem = function(e) {
 };
 
 window.toggleShoppingListItem = function(id) {
+    if (window._slistBlockIfViewer()) { window.renderShoppingList(); return; }
     const items = window.getShoppingList(window.currentBookId);
     const item = items.find(i => i.id === id);
     if (!item) return;
@@ -223,6 +271,7 @@ window.toggleShoppingListItem = function(id) {
 };
 
 window.deleteShoppingListItem = function(id) {
+    if (window._slistBlockIfViewer()) return;
     const items = window.getShoppingList(window.currentBookId).filter(i => i.id !== id);
     window.saveShoppingList(window.currentBookId, items);
     window.renderShoppingList();
@@ -232,6 +281,7 @@ window.deleteShoppingListItem = function(id) {
 // kategori diisi ulang tiap kali dibuka (bukan cuma sekali seperti dropdown
 // tambah barang) supaya selalu sinkron kalau kategori berubah di anggaran.
 window.openEditShoppingListItemModal = function(id) {
+    if (window._slistBlockIfViewer()) return;
     const items = window.getShoppingList(window.currentBookId);
     const item = items.find(i => i.id === id);
     if (!item) return;
@@ -253,6 +303,7 @@ window.openEditShoppingListItemModal = function(id) {
 
 window.handleEditShoppingListItemSubmit = function(e) {
     e.preventDefault();
+    if (window._slistBlockIfViewer()) return;
     const id = document.getElementById('slistEditId').value;
     const name = document.getElementById('slistEditName').value.trim();
     if (!name) return;
@@ -276,6 +327,7 @@ window.handleEditShoppingListItemSubmit = function(e) {
 };
 
 window.resetShoppingListChecks = function() {
+    if (window._slistBlockIfViewer()) return;
     const items = window.getShoppingList(window.currentBookId);
     if (!items.length) return;
     items.forEach(i => { i.done = false; });
@@ -285,6 +337,7 @@ window.resetShoppingListChecks = function() {
 };
 
 window.clearBoughtShoppingListItems = function() {
+    if (window._slistBlockIfViewer()) return;
     const items = window.getShoppingList(window.currentBookId);
     const remaining = items.filter(i => !i.done);
     if (remaining.length === items.length) {

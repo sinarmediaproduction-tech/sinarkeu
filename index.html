@@ -1255,7 +1255,8 @@ alter table public.settings
             <span class="slist-summary-meta" id="slistProgressCount">0 dari 0 dibeli</span>
         </div>
         <div id="slistBudgetWarnings" class="slist-budget-warnings"></div>
-        <form class="slist-add-row" onsubmit="window.addShoppingListItem(event)">
+        <div id="slistViewerNotice" class="slist-viewer-notice" style="display:none;">Peran Anda di buku bersama ini adalah <b>Viewer</b> — hanya bisa melihat daftar belanja, tidak bisa menambah/mengubah/menghapus barang.</div>
+        <form id="slistAddRow" class="slist-add-row" onsubmit="window.addShoppingListItem(event)">
             <input type="text" id="slistNewName" class="form-control" placeholder="Nama barang… (mis. Beras 5kg)" required>
             <input type="number" id="slistNewQty" class="form-control slist-qty-field" placeholder="Qty" min="1" step="1" inputmode="numeric">
             <input type="text" id="slistNewPrice" class="form-control slist-price-field" placeholder="Harga satuan" oninput="window.formatRupiah(this)">
@@ -1263,7 +1264,7 @@ alter table public.settings
             <button type="submit" class="btn btn-primary slist-add-btn" title="Tambah barang"><span class="slist-add-icon">+</span><span class="slist-add-label">Tambah Barang</span></button>
         </form>
         <div id="shoppingListContainer" class="slist-list"></div>
-        <div class="slist-actions">
+        <div id="slistActions" class="slist-actions">
             <button type="button" class="btn btn-secondary" onclick="window.resetShoppingListChecks()">Reset Centang</button>
             <button type="button" class="btn btn-secondary" onclick="window.clearBoughtShoppingListItems()">Hapus yang Dibeli</button>
         </div>

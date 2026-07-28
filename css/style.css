@@ -2352,6 +2352,17 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 }
 .slist-budget-warning b { font-weight: 700; }
 
+.slist-viewer-notice {
+  font-size: .72rem;
+  border-radius: var(--radius-sm);
+  padding: 9px 13px;
+  margin-bottom: 14px;
+  border: 1px solid color-mix(in srgb, var(--info) 35%, var(--info-lt));
+  background: var(--info-lt);
+  color: var(--info);
+}
+.slist-viewer-notice b { font-weight: 700; }
+
 .slist-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
 .slist-item {
   display: flex;
