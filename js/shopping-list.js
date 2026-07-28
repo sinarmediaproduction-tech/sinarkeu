@@ -91,6 +91,30 @@ window.openShoppingListModal = function() {
     window._populateShoppingListCategorySelect();
     window.renderShoppingList();
     window.openModal('shoppingListModal');
+
+    // [FIX SYNC ANTAR PERANGKAT] Sebelumnya modal ini HANYA merender dari
+    // localStorage -- pull dari cloud cuma terjadi di titik lain (buka
+    // app/login, ganti buku, setelah transaksi tertentu). Kalau device B
+    // idle di buku yang sama dan tidak memicu salah satu titik itu, dia
+    // tidak akan pernah lihat barang baru yang diinput di device A sampai
+    // salah satu trigger itu terjadi -- inilah penyebab utama laporan
+    // "tersimpan di A tapi tidak muncul di B". Sekarang: tampilkan dulu
+    // data lokal (instan, termasuk saat offline), lalu diam-diam tarik
+    // versi terbaru dari cloud tiap kali modal dibuka, dan render ulang
+    // kalau modal masih terbuka & masih di buku yang sama saat pull selesai
+    // (guard supaya tidak menimpa layar kalau user keburu tutup modal atau
+    // pindah buku sebelum pull kelar).
+    if (window.isOnline && window.isOnline() && typeof window.pullAllSettings === 'function') {
+        const bookAtOpen = window.currentBookId;
+        window.pullAllSettings().then(function() {
+            const modalEl = document.getElementById('shoppingListModal');
+            if (modalEl && modalEl.classList.contains('show') && window.currentBookId === bookAtOpen) {
+                window.renderShoppingList();
+            }
+        }).catch(function(e) {
+            console.warn('[ShoppingList] Gagal tarik data terbaru dari cloud saat buka modal:', e);
+        });
+    }
 };
 
 // Isi dropdown kategori barang dari daftar kategori pengeluaran yang sama
