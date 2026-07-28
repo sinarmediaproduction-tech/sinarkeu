@@ -720,6 +720,14 @@ h1, h2, h3, h4,
 .expense-chart-legend {
   flex: 1;
   min-width: 180px;
+  /* [UI] Sebelumnya flex:1 tanpa batas atas bikin legend melar mengisi
+     SELURUH sisa lebar kartu di layar lebar -- karena .legend-label di
+     dalamnya juga flex:1, nominal & persentase jadi kedorong jauh ke
+     ujung kanan, jauh dari label & donutnya, menyisakan celah kosong
+     besar di tengah. max-width membuat label+nominal tetap mengelompok
+     rapat di sisi donut; sisa ruang kartu jadi whitespace biasa di
+     pinggir, bukan gap aneh di tengah konten. */
+  max-width: 460px;
   display: flex;
   flex-direction: column;
   gap: 7px;
