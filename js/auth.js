@@ -720,6 +720,22 @@ window._umToggleManualInvite = function(btnEl, prefix) {
         '– Sembunyikan form email manual';
 };
 
+// Dropdown peran di kartu anggota (skRenderMemberList) -- ganti pilihan
+// langsung memanggil skUpdateMemberRole, tidak perlu tombol "Simpan"
+// terpisah. Dikunci sementara (disabled) selama proses supaya tidak
+// terkirim dobel kalau user klak-klik cepat.
+window._umHandleRoleSelectChange = function(selectEl, bookId, userId) {
+    const newRole = selectEl.value;
+    selectEl.disabled = true;
+    window.skUpdateMemberRole(bookId, userId, newRole).then(function(ok) {
+        // Kalau berhasil, _skRefreshAllMemberPanels di dalam
+        // skUpdateMemberRole sudah membangun ulang seluruh panel ini
+        // (termasuk <select> ini sendiri) -- tidak perlu apa-apa lagi.
+        // Kalau gagal, aktifkan lagi supaya bisa dicoba ulang.
+        if (!ok) selectEl.disabled = false;
+    });
+};
+
 // [MENU MANAJEMEN USER] Refresh terpusat untuk SEMUA tempat yang menampilkan
 // panel kelola anggota -- sekarang ada dua: panel kecil di dalam modal
 // "Kelola Buku Kas" (skAuthPanelContent, khusus buku yang lagi aktif) DAN
@@ -882,6 +898,38 @@ window.skAdminCreateMemberAccount = async function(bookId, email, password, role
     }
 };
 
+// Ubah peran anggota yang SUDAH ada di buku (mis. editor -> viewer) --
+// beda dengan skInviteMember/skInviteMemberByUserId (yang MENAMBAHKAN
+// anggota baru). RLS book_members_update_by_admin (lihat
+// sql/shared_books_roles.sql) sudah menolak ini di database kalau bukan
+// admin -- cek role di sini cuma supaya pesan errornya jelas.
+window.skUpdateMemberRole = async function(bookId, userId, newRole) {
+    const client = getSupabaseAuthClient();
+    if (!client) return false;
+    if (window.skGetRoleForBook(bookId) !== 'admin') {
+        window.showToast && window.showToast('Hanya admin yang bisa mengubah peran anggota.', 'error');
+        return false;
+    }
+    // Sengaja tidak boleh ubah peran sendiri lewat sini -- sama seperti
+    // skRemoveMember, supaya admin tidak tidak-sengaja menurunkan/mengunci
+    // dirinya sendiri dari buku yang sedang dikelolanya.
+    if (window._skAuthUser && userId === window._skAuthUser.id) {
+        window.showToast && window.showToast('Tidak bisa mengubah peran sendiri dari sini.', 'error');
+        return false;
+    }
+    try {
+        const res = await client.from('book_members').update({ role: newRole }).eq('book_id', bookId).eq('user_id', userId);
+        if (res.error) throw res.error;
+        window.showToast && window.showToast('Peran anggota diubah jadi ' + newRole + '.');
+        window._skRefreshAllMemberPanels();
+        return true;
+    } catch (e) {
+        console.error('[auth.js] Gagal ubah peran anggota:', e);
+        window.showToast && window.showToast('Gagal mengubah peran: ' + e.message, 'error');
+        return false;
+    }
+};
+
 window.skRemoveMember = async function(bookId, userId) {
     const client = getSupabaseAuthClient();
     if (!client) return false;
@@ -936,6 +984,19 @@ window.skRenderMemberList = async function(bookId, containerId) {
         const isMe = window._skAuthUser && m.user_id === window._skAuthUser.id;
         const roleClass = knownRoles[m.role] ? m.role : 'viewer';
         const initial = (m.email || '?').charAt(0).toUpperCase();
+        // [UBAH PERAN] Anggota lain (bukan diri sendiri) bisa langsung diubah
+        // perannya lewat dropdown kecil -- ganti pilihan langsung tersimpan
+        // (lihat window._umHandleRoleSelectChange), tidak perlu tombol
+        // "Simpan" terpisah. Diri sendiri tetap badge statis (tidak bisa
+        // diubah dari sini), sama seperti tombol Hapus yang juga disembunyikan
+        // untuk diri sendiri -- lihat skUpdateMemberRole untuk alasannya.
+        const roleControl = isMe ?
+            '<span class="um-role-badge um-role-badge--' + roleClass + '">' + esc(m.role) + '</span>' :
+            '<select class="form-control um-role-select" onchange="window._umHandleRoleSelectChange(this,\'' + bookId + '\',\'' + m.user_id + '\')">' +
+                '<option value="viewer"' + (m.role === 'viewer' ? ' selected' : '') + '>Viewer</option>' +
+                '<option value="editor"' + (m.role === 'editor' ? ' selected' : '') + '>Editor</option>' +
+                '<option value="admin"' + (m.role === 'admin' ? ' selected' : '') + '>Admin</option>' +
+            '</select>';
         const removeBtn = isMe ? '' :
             '<button type="button" class="btn-mini btn-mini-danger" onclick="window.skRemoveMember(\'' + bookId + '\',\'' + m.user_id + '\')">Hapus</button>';
         return (
@@ -944,7 +1005,7 @@ window.skRenderMemberList = async function(bookId, containerId) {
                 '<div class="um-member-info">' +
                     '<div class="um-member-email">' + esc(m.email) + '</div>' +
                     '<div class="um-member-meta">' +
-                        '<span class="um-role-badge um-role-badge--' + roleClass + '">' + esc(m.role) + '</span>' +
+                        roleControl +
                         (isMe ? '<span class="um-member-you">kamu</span>' : '') +
                     '</div>' +
                 '</div>' +

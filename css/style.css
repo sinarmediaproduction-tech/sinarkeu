@@ -3456,6 +3456,22 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 .um-role-badge--editor { background: var(--info-lt);   color: var(--info); }
 .um-role-badge--viewer { background: var(--rule);       color: var(--ink-muted); }
 
+/* Dropdown ubah peran langsung di kartu anggota (pengganti badge statis
+   untuk anggota selain diri sendiri) -- ukurannya sengaja dibuat kompak
+   supaya tetap terasa seperti badge, bukan input form biasa. */
+.um-role-select {
+  width: auto;
+  font-size: .62rem;
+  font-weight: 600;
+  padding: 2px 20px 2px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--rule);
+  background-color: var(--paper);
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+.um-role-select:disabled { opacity: .5; cursor: wait; }
+
 /* Picker "Undang Anggota" -- daftar semua pengguna terdaftar yang bisa
    langsung ditambahkan tanpa ketik email (lihat skRenderInviteMemberPicker
    di js/auth.js) */
