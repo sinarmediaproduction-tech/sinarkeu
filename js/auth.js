@@ -498,9 +498,18 @@ window.callSupabaseAPI = async function(table, method, body, queryString, option
                     const now = Date.now();
                     if (!window._lastSyncErrorToastAt || now - window._lastSyncErrorToastAt > 15000) {
                         window._lastSyncErrorToastAt = now;
+                        // [FIX WORDING] Dulu pesannya "...(buku bersama, perlu login): network"
+                        // -- kesannya user belum login, padahal titik kode ini CUMA tercapai
+                        // kalau sesi login sudah valid (lihat pengecekan `session &&
+                        // session.access_token` di atas). Kalau e.status kosong berarti
+                        // fetch()-nya sendiri yang gagal (jaringan putus/DNS/dsb), bukan
+                        // ditolak server -- sekarang dipisah jadi dua pesan yang beda, dan
+                        // label "buku bersama" cuma penanda konteks, bukan bagian diagnosis.
                         const msg = isTimeout
                             ? `Waktu koneksi ke server habis (timeout) saat sinkron '${table}' (buku bersama). Coba lagi.`
-                            : `Gagal sinkron '${table}' (buku bersama, perlu login): ${e && e.status ? e.status : 'network'}`;
+                            : (e && e.status)
+                                ? `Gagal sinkron '${table}' (buku bersama): server menolak (${e.status}). Coba login ulang kalau berulang.`
+                                : `Gagal sinkron '${table}' (buku bersama): koneksi jaringan bermasalah. Coba lagi.`;
                         window.showToast(msg, 'error');
                     }
                 }
