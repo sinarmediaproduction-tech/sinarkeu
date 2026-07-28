@@ -36,7 +36,8 @@
   --brand:      #1B2A4A; /* dipakai tombol utama & badge peran */
   --brand-dark: #101A2E;
   /* Sidebar & title bar — navy formal konsisten di light & dark mode.
-     Aksen aktif memakai gold tipis, satu-satunya sentuhan warna hangat. */
+     Aksen aktif memakai putih solid dengan teks navy, kontras tegas di
+     atas sidebar gelap. */
   --topbar-bg:          linear-gradient(160deg, #16233F 0%, #0A1220 100%);
   --topbar-text:        #F2F4F7;
   --topbar-text-muted:  rgba(242,244,247,0.66);
@@ -45,8 +46,8 @@
   --topbar-btn-hover-bg: rgba(242,244,247,0.16);
   --topbar-item-color:  rgba(242,244,247,.78);
   --topbar-item-hover-bg: rgba(242,244,247,.12);
-  --topbar-item-active-bg: #A9832E;
-  --topbar-item-active-color: #1C1608;
+  --topbar-item-active-bg: #FFFFFF;
+  --topbar-item-active-color: #16233F;
   --topbar-footer-border: rgba(242,244,247,.12);
   --topbar-active-shadow: 0 4px 14px rgba(6,10,20,0.30);
   /* Balance Hero (kartu "Saldo Akhir") — gradasi navy formal, senada
@@ -2822,8 +2823,8 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   --topbar-btn-hover-bg: rgba(242,244,247,0.16);
   --topbar-item-color:  rgba(242,244,247,.78);
   --topbar-item-hover-bg: rgba(242,244,247,.12);
-  --topbar-item-active-bg: #C9A159;
-  --topbar-item-active-color: #1A1608;
+  --topbar-item-active-bg: #FFFFFF;
+  --topbar-item-active-color: #16233F;
   --topbar-footer-border: rgba(242,244,247,.12);
   --topbar-active-shadow: 0 4px 14px rgba(0,0,0,0.40);
   /* Balance Hero — versi gelap dari gradasi navy formal di atas */

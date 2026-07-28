@@ -450,7 +450,7 @@ window.applyTheme = function(dark) {
     // Samakan warna title bar (browser/PWA) dengan tema aktif
     var themeColorMeta = document.querySelector('meta[name="theme-color"]');
     if (themeColorMeta) {
-        themeColorMeta.setAttribute('content', '#0A1220');
+        themeColorMeta.setAttribute('content', '#16233F');
     }
     var icon = document.getElementById('darkModeIcon');
     var iconMobile = document.getElementById('darkModeIconMobile');
