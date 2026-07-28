@@ -775,20 +775,44 @@ window.skRemoveMember = async function(bookId, userId) {
 // dua tempat ini bisa aktif berbarengan di DOM tanpa bentrok id). Dipanggil
 // setelah kerangka HTML panelnya ditaruh, karena ini perlu fetch async.
 window.skRenderMemberList = async function(bookId, containerId) {
-    const wrap = document.getElementById(containerId || 'skMemberListContent');
+    containerId = containerId || 'skMemberListContent';
+    const wrap = document.getElementById(containerId);
     if (!wrap) return;
+    wrap.className = 'um-member-list';
+    // Turunkan prefix ('sk'/'um') dari containerId untuk update badge jumlah
+    // anggota di header panel (id-nya <prefix>MemberCount, lihat
+    // skBuildMemberManagementHtml) -- tidak fatal kalau elemennya tidak ada.
+    const countEl = document.getElementById(containerId.replace('MemberListContent', 'MemberCount'));
     const members = await window.skListBookMembers(bookId);
+    if (countEl) countEl.textContent = members.length + ' anggota';
     if (members.length === 0) {
-        wrap.innerHTML = '<div style="color:var(--ink-faint);">Belum ada anggota lain di buku ini.</div>';
+        wrap.innerHTML = '<div class="um-member-empty">Belum ada anggota lain di buku ini.</div>';
         return;
     }
+    const esc = window.escapeHtml;
+    // Peran yang dikenal punya warna badge sendiri (lihat .um-role-badge--*
+    // di css/style.css); peran lain (harusnya tidak pernah terjadi, tapi
+    // dijaga) jatuh ke gaya viewer/netral supaya tidak pecah tampilan.
+    const knownRoles = { admin: 1, editor: 1, viewer: 1 };
     wrap.innerHTML = members.map(function(m) {
         const isMe = window._skAuthUser && m.user_id === window._skAuthUser.id;
-        const removeBtn = isMe ? '' : '<button type="button" class="btn-mini btn-mini-danger" onclick="window.skRemoveMember(\'' + bookId + '\',\'' + m.user_id + '\')">Hapus</button>';
-        return '<div style="display:flex; align-items:center; justify-content:space-between; padding:4px 0; gap:8px;">' +
-            '<span>' + window.escapeHtml(m.email) + ' <b>(' + window.escapeHtml(m.role) + ')</b>' + (isMe ? ' — kamu' : '') + '</span>' +
-            removeBtn +
-        '</div>';
+        const roleClass = knownRoles[m.role] ? m.role : 'viewer';
+        const initial = (m.email || '?').charAt(0).toUpperCase();
+        const removeBtn = isMe ? '' :
+            '<button type="button" class="btn-mini btn-mini-danger" onclick="window.skRemoveMember(\'' + bookId + '\',\'' + m.user_id + '\')">Hapus</button>';
+        return (
+            '<div class="um-member-card">' +
+                '<div class="um-member-avatar role-' + roleClass + '">' + esc(initial) + '</div>' +
+                '<div class="um-member-info">' +
+                    '<div class="um-member-email">' + esc(m.email) + '</div>' +
+                    '<div class="um-member-meta">' +
+                        '<span class="um-role-badge um-role-badge--' + roleClass + '">' + esc(m.role) + '</span>' +
+                        (isMe ? '<span class="um-member-you">kamu</span>' : '') +
+                    '</div>' +
+                '</div>' +
+                removeBtn +
+            '</div>'
+        );
     }).join('');
 };
 
@@ -803,33 +827,58 @@ window.skRenderMemberList = async function(bookId, containerId) {
 window.skBuildMemberManagementHtml = function(bookId, prefix) {
     prefix = prefix || 'sk';
     const esc = window.escapeHtml;
+    const roleOptions =
+        '<option value="viewer">Viewer (lihat saja)</option>' +
+        '<option value="editor">Editor (CRUD transaksi)</option>' +
+        '<option value="admin">Admin (akses penuh)</option>';
     return (
-        '<div id="' + prefix + 'MemberPanelWrap" style="margin-top:12px; border-top:1px dashed var(--rule); padding-top:12px;">' +
-            '<div style="font-size:.7rem; font-weight:700; color:var(--ink-muted); margin-bottom:6px;">Kelola Anggota Buku Ini</div>' +
-            '<div id="' + prefix + 'MemberListContent" style="font-size:.7rem; margin-bottom:8px;">Memuat anggota...</div>' +
-            '<form onsubmit="window._skHandleInviteSubmit(event,\'' + esc(bookId) + '\',\'' + prefix + '\')">' +
-                '<input type="email" id="' + prefix + 'InviteEmail" class="form-control" placeholder="Email anggota (harus sudah punya akun)" required autocomplete="off" style="margin-bottom:6px;">' +
-                '<select id="' + prefix + 'InviteRole" class="form-control" style="margin-bottom:8px;">' +
-                    '<option value="viewer">Viewer (lihat saja)</option>' +
-                    '<option value="editor">Editor (CRUD transaksi)</option>' +
-                    '<option value="admin">Admin (akses penuh)</option>' +
-                '</select>' +
-                '<button type="submit" class="btn btn-primary" style="width:100%;">Undang Anggota (yang sudah punya akun)</button>' +
-            '</form>' +
-            '<div style="font-size:.68rem; color:var(--ink-faint); text-align:center; margin:10px 0;">— atau —</div>' +
-            '<form onsubmit="window._skHandleCreateMemberSubmit(event,\'' + esc(bookId) + '\',\'' + prefix + '\')">' +
-                '<input type="email" id="' + prefix + 'NewMemberEmail" class="form-control" placeholder="Email untuk akun baru anggota" required autocomplete="off" style="margin-bottom:6px;">' +
-                '<input type="password" id="' + prefix + 'NewMemberPassword" class="form-control" placeholder="Password untuk anggota (min. 6 karakter)" required minlength="6" autocomplete="new-password" style="margin-bottom:6px;">' +
-                '<select id="' + prefix + 'NewMemberRole" class="form-control" style="margin-bottom:8px;">' +
-                    '<option value="viewer">Viewer (lihat saja)</option>' +
-                    '<option value="editor">Editor (CRUD transaksi)</option>' +
-                    '<option value="admin">Admin (akses penuh)</option>' +
-                '</select>' +
-                '<button type="submit" class="btn btn-primary" style="width:100%;">Buatkan Akun Baru untuk Anggota</button>' +
-            '</form>' +
-            '<div style="font-size:.68rem; color:var(--ink-faint); margin-top:6px; line-height:1.6;">Anggota belum punya akun? Buatkan langsung di sini, lalu kasih tahu email &amp; password ini ke orangnya untuk login di device mereka.</div>' +
+        '<div id="' + prefix + 'MemberPanelWrap" class="um-panel">' +
+            '<div class="um-panel-header">' +
+                '<span class="um-panel-title">KELOLA ANGGOTA BUKU INI</span>' +
+                '<span class="um-member-count" id="' + prefix + 'MemberCount">…</span>' +
+            '</div>' +
+            '<div id="' + prefix + 'MemberListContent" class="um-member-list">Memuat anggota...</div>' +
+
+            '<div class="um-invite-tabs" role="tablist">' +
+                '<button type="button" class="um-invite-tab active" data-um-panel="invite" onclick="window._umSwitchInviteTab(this,\'' + prefix + '\')">Undang (sudah punya akun)</button>' +
+                '<button type="button" class="um-invite-tab" data-um-panel="create" onclick="window._umSwitchInviteTab(this,\'' + prefix + '\')">Buat Akun Baru</button>' +
+            '</div>' +
+
+            '<div id="' + prefix + 'InviteTabPanel" data-um-tab-panel="invite">' +
+                '<form onsubmit="window._skHandleInviteSubmit(event,\'' + esc(bookId) + '\',\'' + prefix + '\')">' +
+                    '<input type="email" id="' + prefix + 'InviteEmail" class="form-control" placeholder="Email anggota (harus sudah punya akun)" required autocomplete="off" style="margin-bottom:6px;">' +
+                    '<select id="' + prefix + 'InviteRole" class="form-control" style="margin-bottom:8px;">' + roleOptions + '</select>' +
+                    '<button type="submit" class="btn btn-primary" style="width:100%;">Undang Anggota</button>' +
+                '</form>' +
+            '</div>' +
+
+            '<div id="' + prefix + 'CreateTabPanel" data-um-tab-panel="create" style="display:none;">' +
+                '<form onsubmit="window._skHandleCreateMemberSubmit(event,\'' + esc(bookId) + '\',\'' + prefix + '\')">' +
+                    '<input type="email" id="' + prefix + 'NewMemberEmail" class="form-control" placeholder="Email untuk akun baru anggota" required autocomplete="off" style="margin-bottom:6px;">' +
+                    '<input type="password" id="' + prefix + 'NewMemberPassword" class="form-control" placeholder="Password untuk anggota (min. 6 karakter)" required minlength="6" autocomplete="new-password" style="margin-bottom:6px;">' +
+                    '<select id="' + prefix + 'NewMemberRole" class="form-control" style="margin-bottom:8px;">' + roleOptions + '</select>' +
+                    '<button type="submit" class="btn btn-primary" style="width:100%;">Buatkan Akun Baru untuk Anggota</button>' +
+                '</form>' +
+                '<div class="um-invite-tab-panel-note">Anggota belum punya akun? Buatkan langsung di sini, lalu kasih tahu email &amp; password ini ke orangnya untuk login di device mereka.</div>' +
+            '</div>' +
         '</div>'
     );
+};
+
+// Toggle sederhana antara panel "Undang" & "Buat Akun Baru" di dalam satu
+// wrapper .um-panel -- discope pakai `prefix` supaya aman kalau panel 'sk'
+// (modal Kelola Buku) dan 'um' (halaman Manajemen User) sama-sama ada di
+// DOM bersamaan.
+window._umSwitchInviteTab = function(btnEl, prefix) {
+    const wrap = btnEl.closest('.um-panel');
+    if (!wrap) return;
+    wrap.querySelectorAll('.um-invite-tab').forEach(function(b) { b.classList.remove('active'); });
+    btnEl.classList.add('active');
+    const target = btnEl.getAttribute('data-um-panel');
+    const invitePanel = document.getElementById(prefix + 'InviteTabPanel');
+    const createPanel = document.getElementById(prefix + 'CreateTabPanel');
+    if (invitePanel) invitePanel.style.display = (target === 'invite') ? '' : 'none';
+    if (createPanel) createPanel.style.display = (target === 'create') ? '' : 'none';
 };
 
 // [MENU PER PERAN] Panel "Atur Tampilan Menu per Peran" -- checkbox
@@ -849,26 +898,28 @@ window.skBuildMenuVisibilityHtml = function(bookId) {
     }
     const rows = window.SK_MENU_ITEMS.map(function(item) {
         return '<tr>' +
-            '<td style="padding:5px 6px; font-size:.72rem;">' + esc(item.label) + '</td>' +
-            '<td style="text-align:center;"><input type="checkbox" data-mv-book="' + esc(bookId) + '" data-mv-role="editor" data-mv-key="' + item.key + '"' + isChecked('editor', item.key) + '></td>' +
-            '<td style="text-align:center;"><input type="checkbox" data-mv-book="' + esc(bookId) + '" data-mv-role="viewer" data-mv-key="' + item.key + '"' + isChecked('viewer', item.key) + '></td>' +
+            '<td>' + esc(item.label) + '</td>' +
+            '<td class="um-menu-role-col"><input type="checkbox" data-mv-book="' + esc(bookId) + '" data-mv-role="editor" data-mv-key="' + item.key + '"' + isChecked('editor', item.key) + '></td>' +
+            '<td class="um-menu-role-col"><input type="checkbox" data-mv-book="' + esc(bookId) + '" data-mv-role="viewer" data-mv-key="' + item.key + '"' + isChecked('viewer', item.key) + '></td>' +
         '</tr>';
     }).join('');
 
     return (
-        '<div id="mvPanelWrap" style="margin-top:12px; border-top:1px dashed var(--rule); padding-top:12px;">' +
-            '<div style="font-size:.7rem; font-weight:700; color:var(--ink-muted); margin-bottom:6px;">Atur Tampilan Menu per Peran</div>' +
-            '<div style="font-size:.66rem; color:var(--ink-faint); margin-bottom:8px; line-height:1.5;">Admin selalu bisa lihat semua menu (tidak bisa dikunci sendiri lewat sini). Centang menu yang boleh dilihat Editor / Viewer khusus di buku ini.</div>' +
-            '<table style="width:100%; border-collapse:collapse;">' +
-                '<thead><tr>' +
-                    '<th style="text-align:left; font-size:.68rem; color:var(--ink-faint); padding:2px 6px;">Menu</th>' +
-                    '<th style="font-size:.68rem; color:var(--ink-faint);">Editor</th>' +
-                    '<th style="font-size:.68rem; color:var(--ink-faint);">Viewer</th>' +
-                '</tr></thead>' +
-                '<tbody>' + rows + '</tbody>' +
-            '</table>' +
+        '<div id="mvPanelWrap" class="um-panel">' +
+            '<div class="um-panel-header"><span class="um-panel-title">ATUR TAMPILAN MENU PER PERAN</span></div>' +
+            '<div style="font-size:.66rem; color:var(--ink-faint); margin-bottom:10px; line-height:1.5;">Admin selalu bisa lihat semua menu (tidak bisa dikunci sendiri lewat sini). Centang menu yang boleh dilihat Editor / Viewer khusus di buku ini.</div>' +
+            '<div class="um-menu-table-wrap">' +
+                '<table class="um-menu-table">' +
+                    '<thead><tr>' +
+                        '<th>Menu</th>' +
+                        '<th class="um-menu-role-col">Editor</th>' +
+                        '<th class="um-menu-role-col">Viewer</th>' +
+                    '</tr></thead>' +
+                    '<tbody>' + rows + '</tbody>' +
+                '</table>' +
+            '</div>' +
             '<div style="font-size:.64rem; color:var(--ink-faint); margin-top:8px; line-height:1.5;">Catatan: kalau proteksi database tambahan (sql/harden_shared_book_data_rls.sql) sudah dijalankan, Viewer tetap ditolak database saat menyimpan perubahan walau menu "Tambah Transaksi"/"Setelan" dinyalakan di sini. Kalau proteksi itu <b>belum</b> dijalankan, menyalakannya beneran memberi Viewer akses tulis -- pertimbangkan baik-baik sebelum mengaktifkan untuk Viewer.</div>' +
-            '<button type="button" class="btn btn-primary" style="width:100%; margin-top:8px;" onclick="window.skSaveMenuVisibility(\'' + esc(bookId) + '\')">Simpan Pengaturan Menu</button>' +
+            '<button type="button" class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="window.skSaveMenuVisibility(\'' + esc(bookId) + '\')">Simpan Pengaturan Menu</button>' +
         '</div>'
     );
 };
@@ -967,8 +1018,9 @@ window.skRenderUserManagerPage = function(selectedBookId) {
 
     if (!window._skAuthUser) {
         wrap.innerHTML =
-            '<div style="font-size:.75rem; color:var(--ink-faint); line-height:1.7;">' +
-            'Belum login ke Buku Bersama. Login dulu lewat menu <b>Buku Kas</b> → panel "Buku Bersama" di atas daftar buku.' +
+            '<div class="um-empty-state">' +
+                '<div class="um-empty-state-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg></div>' +
+                '<div class="um-empty-state-text">Belum login ke Buku Bersama. Login dulu lewat menu <b>Buku Kas</b> → panel "Buku Bersama" di atas daftar buku.</div>' +
             '</div>';
         return;
     }
@@ -979,10 +1031,11 @@ window.skRenderUserManagerPage = function(selectedBookId) {
 
     if (adminBookIds.length === 0) {
         wrap.innerHTML =
-            '<div style="font-size:.75rem; color:var(--ink-faint); line-height:1.7;">' +
-            'Kamu belum jadi admin di buku bersama mana pun, jadi belum ada yang bisa dikelola di sini. ' +
-            'Jadikan salah satu buku milikmu sebagai buku bersama lewat menu <b>Buku Kas</b> (tombol "Jadikan Bersama"), ' +
-            'kamu otomatis jadi admin pertamanya.' +
+            '<div class="um-empty-state">' +
+                '<div class="um-empty-state-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>' +
+                '<div class="um-empty-state-text">Kamu belum jadi admin di buku bersama mana pun, jadi belum ada yang bisa dikelola di sini. ' +
+                'Jadikan salah satu buku milikmu sebagai buku bersama lewat menu <b>Buku Kas</b> (tombol "Jadikan Bersama"), ' +
+                'kamu otomatis jadi admin pertamanya.</div>' +
             '</div>';
         return;
     }
@@ -999,11 +1052,13 @@ window.skRenderUserManagerPage = function(selectedBookId) {
     }).join('');
 
     const selectorHtml =
+        '<div class="um-select-wrap">' +
         (adminBookIds.length > 1
-            ? '<div class="form-group"><label style="font-size:.7rem; font-weight:700; color:var(--ink-muted);">Buku Bersama</label>' +
+            ? '<div class="form-group" style="margin-bottom:0;"><label style="font-size:.7rem; font-weight:700; color:var(--ink-muted);">Buku Bersama</label>' +
               '<select id="umBookSelect" class="form-control" onchange="window.skRenderUserManagerPage(this.value)">' + options + '</select></div>'
-            : '<div style="font-size:.72rem; color:var(--ink-muted); margin-bottom:4px;">Buku: <b>' + window.escapeHtml((window.books || []).find(function(b) { return b.id === selectedBookId; }) ? window.books.find(function(b) { return b.id === selectedBookId; }).name : selectedBookId) + '</b></div>'
-        );
+            : '<div style="font-size:.72rem; color:var(--ink-muted);">Buku: <b>' + window.escapeHtml((window.books || []).find(function(b) { return b.id === selectedBookId; }) ? window.books.find(function(b) { return b.id === selectedBookId; }).name : selectedBookId) + '</b></div>'
+        ) +
+        '</div>';
 
     wrap.innerHTML = selectorHtml + window.skBuildMemberManagementHtml(selectedBookId, 'um') + window.skBuildMenuVisibilityHtml(selectedBookId);
     window.skRenderMemberList(selectedBookId, 'umMemberListContent');
