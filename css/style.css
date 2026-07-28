@@ -3259,6 +3259,17 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   max-width: none;
 }
 
+/* [UI] Dropdown pilih buku (.book-selector) dilebarkan 50% khusus di
+   desktop (≥1024px) -- 220px -> 330px -- supaya nama buku yang panjang
+   di daftar dropdown tidak tertutup/berdempetan dengan angka saldo di
+   sebelahnya. Trigger-nya sendiri (kotak yang selalu terlihat di top
+   bar) TIDAK ikut melebar, cuma panel dropdown-nya saat dibuka. */
+@media (min-width: 1024px) {
+  .book-selector .cs-wrapper.compact .cs-dropdown {
+    min-width: 330px;
+  }
+}
+
 /* Versi form (kategori dalam modal) */
 .cs-wrapper.form-style .cs-trigger {
   font-size: .78rem;
