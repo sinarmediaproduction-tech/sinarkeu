@@ -78,6 +78,7 @@ window.switchBook = async function(id) {
     window.render();
     window.updateBookSelectDropdown();
     if (document.getElementById('bookManagerModal').classList.contains('show')) window.renderBookList();
+    if (document.getElementById('shoppingListModal').classList.contains('show') && typeof window.renderShoppingList === 'function') window.renderShoppingList();
     window.showToast("Berhasil beralih ke: " + (window.books.find(b => b.id === id)?.name || id));
 
     if (!window.isOnline()) return;
@@ -356,6 +357,7 @@ window.deleteBook = async function(id) {
     localStorage.removeItem('sk_last_auto_backup_' + id);
     localStorage.removeItem('sk_last_cloud_backup_' + id);
     localStorage.removeItem('sk_default_budget_' + id);
+    localStorage.removeItem('sk_shopping_list_' + id);
     // [FIX BOOKS LOST-UPDATE] Tandai id ini sebagai "sengaja dihapus lokal"
     // SEBELUM difilter dari window.books, supaya union-merge di
     // pullAllSettings (js/db.js) tidak salah menghidupkannya lagi kalau

@@ -457,6 +457,10 @@ alter table public.settings
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
             <span>Anggaran Dasar</span>
         </button>
+        <button type="button" class="app-nav-item" id="navShoppingListBtn" onclick="window.closeMobileDrawer(); window.openShoppingListModal()" title="Daftar Belanja Bulanan">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M8 7h8"></path><path d="M8 12l2 2 4-4"></path><path d="M8 17h5"></path></svg>
+            <span>Daftar Belanja Bulanan</span>
+        </button>
         <button type="button" class="app-nav-item" id="navReminderBtn" onclick="window.closeMobileDrawer(); openPaymentReminderModal()" style="position:relative;" title="Pengingat Pembayaran">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
             <span data-i18n="payment_reminder">Pengingat Pembayaran</span>
@@ -1239,6 +1243,34 @@ alter table public.settings
     </div>
 </div>
 
+<!-- Modal Daftar Belanja Bulanan -->
+<div id="shoppingListModal" class="modal fullview-modal">
+    <div class="modal-content wide">
+        <div class="modal-header"><h3>Daftar Belanja Bulanan</h3><button class="modal-close" onclick="window.openMobileDrawer()" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button></div>
+        <div style="background:var(--info-lt); border:1px solid color-mix(in srgb, var(--info) 35%, var(--info-lt)); border-radius: var(--radius-sm); padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:var(--info);">
+            Catat kebutuhan belanja bulanan Anda di sini, centang setiap kali sudah dibeli. Daftar ini tersimpan <b>khusus di perangkat ini</b> per buku kas — pakai <b>Reset Centang</b> di awal bulan untuk memakai ulang daftar yang sama.
+        </div>
+        <div class="slist-summary-card">
+            <div>
+                <span class="slist-summary-label">Sisa Perkiraan Belanja</span>
+                <span class="slist-summary-value" id="slistRemainingValue">Rp 0</span>
+            </div>
+            <span class="slist-summary-meta" id="slistProgressCount">0 dari 0 dibeli</span>
+        </div>
+        <form class="slist-add-row" onsubmit="window.addShoppingListItem(event)">
+            <input type="text" id="slistNewName" class="form-control" placeholder="Nama barang… (mis. Beras 5kg)" required>
+            <input type="text" id="slistNewQty" class="form-control slist-qty-field" placeholder="Qty (mis. 2 pak)">
+            <input type="text" id="slistNewPrice" class="form-control slist-price-field" placeholder="Rp 0" oninput="window.formatRupiah(this)">
+            <button type="submit" class="btn btn-primary slist-add-btn" title="Tambah barang">+</button>
+        </form>
+        <div id="shoppingListContainer" class="slist-list"></div>
+        <div class="slist-actions">
+            <button type="button" class="btn btn-secondary" onclick="window.resetShoppingListChecks()">Reset Centang</button>
+            <button type="button" class="btn btn-secondary" onclick="window.clearBoughtShoppingListItems()">Hapus yang Dibeli</button>
+        </div>
+    </div>
+</div>
+
 <div id="emergencyFundModal" class="modal" style="z-index:2000;">
     <div class="modal-content" style="max-width:420px;">
         <div class="modal-header">
@@ -1632,6 +1664,7 @@ alter table public.settings
 <script src="js/transaction.js" defer></script>
 <script src="js/sync-conflict.js" defer></script>
 <script src="js/budget.js" defer></script>
+<script src="js/shopping-list.js" defer></script>
 <script src="js/payment-reminder.js" defer></script>
 <script src="js/expense-chart.js" defer></script>
 <script src="js/render.js" defer></script>

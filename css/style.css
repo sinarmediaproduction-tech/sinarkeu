@@ -2254,6 +2254,110 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 .dbudget-clear-btn:hover { background: var(--danger-lt); color: var(--danger); }
 .dbudget-empty-hint { font-size: .74rem; color: var(--ink-faint); text-align: center; padding: 22px 0; }
 
+/* ── Daftar Belanja Bulanan ── */
+.slist-summary-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, #22335A 0%, #0C1424 100%);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+}
+.slist-summary-label {
+  display: block;
+  font-size: .62rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: rgba(242,244,247,.68);
+  margin-bottom: 5px;
+}
+.slist-summary-value {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #F2F4F7;
+}
+.slist-summary-meta {
+  font-size: .68rem;
+  font-weight: 500;
+  color: #E7C874;
+  background: rgba(169,131,46,.18);
+  border: 1px solid rgba(169,131,46,.42);
+  padding: 5px 11px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.slist-add-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.slist-add-row .form-control { flex: 2; }
+.slist-add-row .slist-qty-field { flex: 1; }
+.slist-add-row .slist-price-field { flex: 1; }
+.slist-add-btn {
+  flex: 0 0 auto;
+  width: 42px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 0;
+}
+@media (max-width: 640px) {
+  .slist-add-row { flex-wrap: wrap; }
+  .slist-add-row .form-control:first-child { flex: 1 1 100%; }
+  .slist-add-row .slist-qty-field,
+  .slist-add-row .slist-price-field { flex: 1 1 auto; }
+}
+
+.slist-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.slist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  transition: border-color .15s ease, background .15s ease, opacity .15s ease;
+}
+.slist-item.done {
+  border-color: var(--rule);
+  background: var(--paper-warm);
+  opacity: .65;
+}
+.slist-checkbox { flex: 0 0 auto; width: 17px; height: 17px; accent-color: var(--success); cursor: pointer; }
+.slist-body { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.slist-name { font-size: .8rem; color: var(--ink); }
+.slist-item.done .slist-name { text-decoration: line-through; color: var(--ink-faint); }
+.slist-qty {
+  font-size: .64rem;
+  color: var(--ink-muted);
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+}
+.slist-price { flex: 0 0 auto; font-family: var(--font-mono); font-size: .76rem; color: var(--ink-muted); }
+.slist-del-btn {
+  flex: 0 0 auto;
+  width: 22px; height: 22px;
+  border: none; background: var(--paper-warm); color: var(--ink-faint);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: .85rem; line-height: 1;
+}
+.slist-del-btn:hover { background: var(--danger-lt); color: var(--danger); }
+.slist-empty { font-size: .74rem; color: var(--ink-faint); text-align: center; padding: 26px 0; }
+.slist-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.slist-actions .btn { flex: 1; min-width: 140px; }
+
 /* ── Report ── */
 .report-stats {
   display: grid;

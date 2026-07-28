@@ -247,6 +247,7 @@ window.requireOnline = function(operationName) {
 window.FULLVIEW_MODALS = {
     monthlyReportModal:    'laporan',
     defaultBudgetModal:    'anggaran',
+    shoppingListModal:     'belanja',
     paymentReminderModal:  'reminder',
     bookManagerModal:      'buku',
     userManagerModal:      'userManager',
