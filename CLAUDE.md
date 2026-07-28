@@ -36,6 +36,23 @@ langsung di chat. Pola yang dipakai:
    jadi beberapa tahap eksplisit (seperti rombak styling kemarin: Tahap 1
    token dasar, Tahap 2 bersihkan sisa hardcode) — user cenderung suka
    pola ini untuk task besar, bukan sekali jalan tanpa checkpoint.
+6. **Cek `toast-error-log.json` di root project SETIAP kali user upload
+   zip**, walau tidak diminta eksplisit. File ini (kalau ada) adalah hasil
+   ekspor dari panel Setelan → "Log Error" — berisi semua toast merah
+   (error) yang tercatat otomatis dari `window.showToast(msg, 'error')`
+   (lihat `window._recordToastError` di `js/utils.js`), lengkap dengan
+   timestamp, pesan, dan best-effort stack trace. Kalau file ini ada dan
+   berisi entri:
+   - Telusuri baris kode yang memicu tiap pesan error (grep pesannya di
+     `js/*.js`), diagnosis akar masalahnya, dan perbaiki sebisa mungkin
+     TANPA user harus jelaskan ulang errornya satu-satu.
+   - Sebutkan di respons: error apa saja yang ditemukan di file itu dan
+     apa yang sudah/belum bisa diperbaiki (kalau ada yang perlu info
+     tambahan dari user, mis. error jaringan yang tergantung environment
+     mereka).
+   - Jangan hapus/modifikasi `toast-error-log.json` itu sendiri kecuali
+     diminta — itu murni artefak diagnosis dari sisi user, bukan bagian
+     dari source code app.
 
 ## Deploy
 

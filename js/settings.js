@@ -75,6 +75,7 @@ window.openSetelanModal = function(initialTab) {
     if (typeof window.renderAccModalList === 'function') window.renderAccModalList();
     if (typeof window.loadTgConfigToForm === 'function') window.loadTgConfigToForm();
     if (typeof window.loadConnectedDevices === 'function') window.loadConnectedDevices();
+    if (typeof window._refreshToastErrorLogPanel === 'function') window._refreshToastErrorLogPanel();
     // [UI] Dipindah dari modal "Kelola Buku Kas" ke sini (tab Koneksi
     // Supabase) -- lebih pas secara konteks, dan berlaku untuk semua buku
     // seperti setelan lain di tab ini, bukan cuma saat mengelola buku.
@@ -601,4 +602,43 @@ window.loadConnectedDevices = async function() {
         if (statusEl) statusEl.innerText = 'Gagal memuat: ' + e.message;
         console.error('[Devices]', e);
     }
+};
+
+// ── LOG ERROR (toast merah) ──
+// Render ulang badge jumlah + preview terbaru di panel "Log Error" Setelan.
+// Dipanggil saat Setelan dibuka (openSetelanModal) dan setiap kali ada
+// error baru direkam (lihat window._recordToastError di js/utils.js).
+window._refreshToastErrorLogPanel = function() {
+    var badge = document.getElementById('errorLogCountBadge');
+    var preview = document.getElementById('errorLogPreview');
+    if (!badge && !preview) return; // panel belum ada di DOM (mis. saat init awal)
+
+    var log = window.getToastErrorLog ? window.getToastErrorLog() : [];
+    if (badge) {
+        badge.textContent = log.length + ' tercatat';
+        badge.className = 'setelan-badge ' + (log.length > 0 ? 'setelan-badge--warning' : 'setelan-badge--neutral');
+    }
+    if (!preview) return;
+
+    if (!log.length) {
+        preview.innerHTML = '<div style="font-size:.72rem; color:#9AA2AC; text-align:center; padding:16px 0;">Belum ada error tercatat.</div>';
+        return;
+    }
+
+    // Tampilkan yang terbaru dulu, maksimal 10 di preview (semua tetap ikut
+    // saat diekspor -- lihat window.exportToastErrorLog).
+    var recent = log.slice(-10).reverse();
+    var html = '';
+    recent.forEach(function(entry) {
+        var d = new Date(entry.timestamp);
+        var dateLabel = d.toLocaleDateString('id-ID', {day:'2-digit', month:'short'}) + ' ' + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+        html += '<div style="border-left:2px solid var(--danger); padding:6px 10px; margin-bottom:6px; background:var(--paper);">';
+        html += '<div style="font-size:.65rem; color:#9AA2AC; margin-bottom:2px;">' + dateLabel + '</div>';
+        html += '<div style="font-size:.72rem; color:var(--ink);">' + window.escapeHtml(entry.message) + '</div>';
+        html += '</div>';
+    });
+    if (log.length > 10) {
+        html += '<div style="font-size:.65rem; color:#9AA2AC; text-align:center; padding-top:4px;">+ ' + (log.length - 10) + ' lainnya (ikut ke ekspor)</div>';
+    }
+    preview.innerHTML = html;
 };

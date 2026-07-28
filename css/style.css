@@ -1771,6 +1771,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 .setelan-badge { font-size: .6rem; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-sm); }
 .setelan-badge--neutral { background: var(--rule); color: var(--ink-muted); }
 .setelan-badge--success { background: var(--success-lt); color: var(--success); }
+.setelan-badge--warning { background: var(--warning-lt); color: var(--warning); }
 
 /* Teks preview/hasil hitung kecil di bawah input */
 .setelan-preview { font-size: .7rem; margin-top: 5px; min-height: 16px; }

@@ -957,6 +957,23 @@ alter table public.settings
             </div>
         </div>
 
+        <!-- Log Error (toast merah) -- direkam otomatis dari window.showToast(msg,'error') di js/utils.js -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="errorlog">
+            <div class="panel-title" style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                <span>Log Error</span>
+                <span id="errorLogCountBadge" class="setelan-badge setelan-badge--neutral">0 tercatat</span>
+            </div>
+            <div class="setelan-desc" style="margin-bottom:12px;">
+                Setiap pesan toast merah (error) otomatis tersimpan di sini, lengkap dengan waktu kejadian, supaya tidak hilang begitu saja setelah 3 detik. Ekspor file-nya lalu upload ke Claude bareng project ini untuk dibantu telusur & perbaiki.
+            </div>
+            <div id="errorLogPreview" style="max-height:220px; overflow-y:auto; margin-bottom:12px;"></div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary" style="flex:1;" onclick="window.clearToastErrorLog()">Bersihkan</button>
+                <button class="btn btn-primary" style="flex:2;" onclick="window.exportToastErrorLog()">Ekspor Log Error</button>
+            </div>
+        </div>
+
+
         <div class="data-management-panel setelan-tab-panel active" data-tab-panel="ai">
             <div class="panel-title setelan-title--purple">
                 <span data-i18n="ai_analysis_section">Analisis AI</span>

@@ -59,6 +59,76 @@ window.showToast = function(msg, type = 'success') {
     text.innerText = msg;
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 3000);
+    // [FIX] Toast merah (error) hilang begitu saja setelah 3 detik tanpa
+    // jejak apa pun -- kalau errornya sekilas (mis. gagal koneksi pas app
+    // baru dibuka) tidak ada cara telusur ulang apa penyebabnya. Rekam
+    // otomatis ke localStorage supaya bisa diekspor & dibaca belakangan
+    // (lihat window._recordToastError / window.exportToastErrorLog di
+    // bawah, dan panel "Log Error" di Setelan).
+    if (type === 'error') window._recordToastError(msg);
+};
+
+// ==================== LOG ERROR TOAST (untuk diagnosis) ====================
+window.TOAST_ERROR_LOG_KEY = 'sk_toast_error_log';
+window.TOAST_ERROR_LOG_MAX = 200;
+
+window._recordToastError = function(msg) {
+    try {
+        const log = JSON.parse(localStorage.getItem(window.TOAST_ERROR_LOG_KEY) || '[]');
+        // Stack di titik ini nunjuk ke showToast()/_recordToastError() sendiri,
+        // tapi baris ketiga-dst biasanya sudah pemanggil aslinya -- best-effort
+        // saja untuk bantu telusur, bukan jaminan akurat di semua browser.
+        let stack = '';
+        try { stack = (new Error()).stack || ''; } catch (_) {}
+        log.push({
+            timestamp: new Date().toISOString(),
+            message: String(msg),
+            book_id: window.currentBookId || null,
+            device_id: window.deviceId || null,
+            url: (typeof location !== 'undefined' ? location.href : ''),
+            stack: stack,
+        });
+        // Buang yang paling lama kalau kelebihan kapasitas.
+        while (log.length > window.TOAST_ERROR_LOG_MAX) log.shift();
+        localStorage.setItem(window.TOAST_ERROR_LOG_KEY, JSON.stringify(log));
+        if (typeof window._refreshToastErrorLogPanel === 'function') window._refreshToastErrorLogPanel();
+    } catch (e) {
+        // Kalau localStorage penuh/diblokir, jangan sampai malah bikin toast asli gagal tampil.
+        console.warn('[ToastErrorLog] Gagal merekam:', e);
+    }
+};
+
+window.getToastErrorLog = function() {
+    try { return JSON.parse(localStorage.getItem(window.TOAST_ERROR_LOG_KEY) || '[]'); }
+    catch (_) { return []; }
+};
+
+window.exportToastErrorLog = function() {
+    const log = window.getToastErrorLog();
+    if (!log.length) { window.showToast('Belum ada error tercatat.', 'info'); return; }
+    const payload = {
+        exported_at: new Date().toISOString(),
+        app: 'sinarkeu',
+        count: log.length,
+        entries: log,
+    };
+    if (typeof window._downloadJSON === 'function') {
+        window._downloadJSON(payload, 'toast-error-log.json');
+    } else {
+        // Fallback kalau backup.js (sumber _downloadJSON) belum sempat termuat.
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'toast-error-log.json'; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+    window.showToast('Log error diekspor (' + log.length + ' entri).', 'success');
+};
+
+window.clearToastErrorLog = function() {
+    localStorage.removeItem(window.TOAST_ERROR_LOG_KEY);
+    if (typeof window._refreshToastErrorLogPanel === 'function') window._refreshToastErrorLogPanel();
+    window.showToast('Log error dibersihkan.', 'success');
 };
 
 // ==================== MODAL KONFIRMASI/PROMPT/ALERT KUSTOM ====================
