@@ -1396,7 +1396,6 @@ window.skRenderAuthPanel = function() {
     if (window._skAuthUser) {
         const bookId = window.currentBookId;
         const role = window.skGetRoleForBook(bookId);
-        const roleLine = role ? `<div style="margin-top:4px;">Peran kamu di buku aktif: <b>${role}</b></div>` : '<div style="margin-top:4px; color:var(--ink-faint);">Buku aktif bukan buku bersama.</div>';
         // [MENU MANAJEMEN USER] HTML blok ini sekarang juga dipakai halaman
         // sidebar "Manajemen User" (window.skRenderUserManagerPage) --
         // diekstrak ke window.skBuildMemberManagementHtml supaya tidak
@@ -1404,9 +1403,18 @@ window.skRenderAuthPanel = function() {
         // berguna sebagai jalan pintas cepat untuk buku yang sedang aktif,
         // tanpa perlu pindah halaman.
         const memberPanel = (role === 'admin') ? window.skBuildMemberManagementHtml(bookId, 'sk') : '';
+        // [UI] Restyle: pakai class setelan-info-row/setelan-badge yang
+        // sudah dipakai konsisten di panel Setelan lain (bukan lagi teks
+        // polos tumpuk manual). Catatan "Tombol logout ada di footer
+        // sidebar" dihapus -- sudah tidak perlu dijelaskan di sini.
+        const roleBadge = role
+            ? '<span class="setelan-badge setelan-badge--success">Peran: ' + role + '</span>'
+            : '<span class="setelan-badge setelan-badge--neutral">Bukan buku bersama</span>';
         el.innerHTML =
-            '<div style="font-size:.75rem;">Login sebagai <b>' + window._skAuthUser.email + '</b>' + roleLine +
-            '<div style="margin-top:4px; color:var(--ink-faint);">Tombol logout ada di footer sidebar.</div></div>' +
+            '<div style="margin-bottom:10px;">' +
+                '<div class="setelan-info-row" style="margin-bottom:6px;">Login sebagai <b>' + window._skAuthUser.email + '</b></div>' +
+                roleBadge +
+            '</div>' +
             memberPanel;
         if (role === 'admin') { window.skRenderMemberList(bookId); window.skRenderInviteMemberPicker(bookId, 'sk'); }
     } else {
