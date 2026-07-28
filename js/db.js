@@ -17,7 +17,7 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
     // benar-benar ter-update, supaya panjang array itu bisa dipakai sebagai
     // sinyal konflik yang pasti (bukan asumsi).
     if (options && options.returnRepresentation) headers['Prefer'] = 'return=representation';
-    const config = { method: method, headers: headers };
+    const config = { method: method, headers: headers, signal: AbortSignal.timeout(15000) };
     if (body) config.body = JSON.stringify(body);
     try {
         const res = await fetch(url, config);
@@ -30,6 +30,18 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
         const text = await res.text();
         return text ? JSON.parse(text) : true;
     } catch (e) {
+        // [FIX] Sebelumnya fetch() di sini tidak punya timeout sama sekali --
+        // kalau jaringan "hang" (bukan langsung gagal/offline, tapi macet:
+        // captive portal, DNS nyangkut, server tidak balas tapi koneksi
+        // tetap terbuka), fetch bisa menunggu tanpa batas. Karena fungsi ini
+        // dipakai di jalur kritis (test koneksi setup awal, bootstrap
+        // crypto, tambah akun baru, verifikasi unlock, dst.), itu bikin UI
+        // macet permanen -- bukan error, bukan selesai, cuma spinner
+        // selamanya. AbortSignal.timeout(15000) memastikan selalu ada batas
+        // waktu, konsisten dengan pola yang sudah dipakai di forex.js/ai.js.
+        if (e && e.name === 'TimeoutError') {
+            e.message = 'Waktu koneksi ke server habis (timeout). Coba lagi.';
+        }
         console.error(`Supabase API Error (${table}):`, e);
         // [FIX] Sebelumnya kegagalan (selain offline) selalu diam-diam --
         // cuma masuk console, tidak pernah kelihatan oleh user. Ini yang

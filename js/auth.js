@@ -468,7 +468,11 @@ window.callSupabaseAPI = async function(table, method, body, queryString, option
             };
             if (method === 'POST') headers['Prefer'] = 'resolution=merge-duplicates,return=representation';
             if (options && options.returnRepresentation) headers['Prefer'] = 'return=representation';
-            const config = { method: method, headers: headers };
+            // [FIX] Sama seperti di js/db.js -- tanpa timeout, fetch bisa
+            // menggantung tanpa batas kalau jaringan "hang" (bukan langsung
+            // offline), bikin UI macet permanen. Batas 15s konsisten dengan
+            // callSupabaseAPI di db.js dan pola forex.js/ai.js.
+            const config = { method: method, headers: headers, signal: AbortSignal.timeout(15000) };
             if (body) config.body = JSON.stringify(body);
             try {
                 const res = await fetch(url, config);
@@ -481,9 +485,13 @@ window.callSupabaseAPI = async function(table, method, body, queryString, option
                 const text = await res.text();
                 return text ? JSON.parse(text) : true;
             } catch (e) {
+                const isTimeout = e && e.name === 'TimeoutError';
                 console.error(`Supabase API Error (buku bersama, ${table}):`, e);
                 if (window.isOnline && window.isOnline() && window.showToast) {
-                    window.showToast(`Gagal sinkron '${table}' (buku bersama, perlu login): ${e && e.status ? e.status : 'network'}`, 'error');
+                    const msg = isTimeout
+                        ? `Waktu koneksi ke server habis (timeout) saat sinkron '${table}' (buku bersama). Coba lagi.`
+                        : `Gagal sinkron '${table}' (buku bersama, perlu login): ${e && e.status ? e.status : 'network'}`;
+                    window.showToast(msg, 'error');
                 }
                 return null;
             }
