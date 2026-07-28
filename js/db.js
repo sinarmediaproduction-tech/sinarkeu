@@ -220,8 +220,9 @@ window.pushSetting = async function(key, value, bookId) {
     if (!window.isOnline()) return false;
     const resolvedBookId = bookId || window.currentBookId;
     const plainJson = JSON.stringify(value);
+    const isSharedBook = window.skIsSharedBookId && window.skIsSharedBookId(resolvedBookId);
     let encryptedValue;
-    if (window.skIsSharedBookId && window.skIsSharedBookId(resolvedBookId)) {
+    if (isSharedBook) {
         // Buku bersama: SKIP enkripsi (sengaja) -- kunci sesi bersifat lokal
         // per device/password, anggota lain di buku shared tidak akan
         // pernah punya kunci yang sama untuk mendekripsinya. Buku shared
@@ -238,7 +239,22 @@ window.pushSetting = async function(key, value, bookId) {
         }
         encryptedValue = await window.encryptStr(window._sessionCryptoKey, plainJson);
     }
-    const tag = window.getAccountTag();
+    // [FIX] Buku bersama: JANGAN sertakan account_tag. account_tag dipakai
+    // pullAllSettings()/window.tagOrFilter() untuk memfilter baris settings
+    // supaya cuma baris ber-tag SAMA (atau tanpa tag) yang terbaca -- itu
+    // benar untuk buku pribadi (mencegah tabrakan antar akun berbeda yang
+    // pakai backend sama), tapi salah untuk buku shared: anggota lain hampir
+    // pasti account_tag-nya BEDA (password/salt lokal beda -- sama seperti
+    // alasan enkripsi di-skip di atas). Kalau tetap disertakan, baris yang
+    // di-push device A (tag A) tidak akan pernah match filter OR device B
+    // (account_tag.eq.tagB OR account_tag.is.null) -- hasilnya baris itu
+    // TERSARING HABIS di level query Supabase sebelum sempat sampai ke sini,
+    // padahal bukan bug enkripsi/render. Ini yang menyebabkan mis. Daftar
+    // Belanja di buku shared "hilang" total di device lain. Solusi: untuk
+    // buku shared, kirim account_tag = null (konsisten dengan baris lama
+    // sebelum fitur ini ada) supaya cocok dengan filter OR-null di SEMUA
+    // device, siapa pun akun yang pull.
+    const tag = isSharedBook ? null : window.getAccountTag();
     const payload = [{
         book_id: resolvedBookId,
         key: key,
