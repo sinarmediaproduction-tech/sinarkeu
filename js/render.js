@@ -221,47 +221,36 @@ window.updateFinancialCards = function() {
     if (efNote) efNote.innerText = `${efMonths}× anggaran bulanan (target ideal)`;
     set('fcDanaSalingJaga', danaSalingJaga);
 
-    // Warna peringatan card Dana Saling Jaga
+    // [UI] Sebelumnya card Dana Saling Jaga & Cadangan Wajib punya aksen
+    // warna dinamis (border-top merah/hijau/emas + tint background) sesuai
+    // status surplus/defisit -- beda sendiri dari card lain di grid yang
+    // semuanya netral (border abu-abu polos, tanpa tint). Sekarang teks
+    // status/gap info-nya tetap tampil (tetap informatif), tapi warnanya
+    // dinetralkan supaya konsisten visual dengan card lainnya.
     const cardDSJ = document.getElementById('cardDanaSalingJaga');
     const note = document.getElementById('fcDSJNote');
     if (cardDSJ && note) {
         if (sisaSetelahDarurat <= 0) {
-            cardDSJ.style.borderTopColor = 'var(--danger)';
-            cardDSJ.style.background = 'var(--danger-lt)';
             note.innerText = window.t('emergency_insufficient');
-            note.style.color = 'var(--danger)';
         } else {
-            cardDSJ.style.borderTopColor = 'var(--success)';
-            cardDSJ.style.background = '';
             note.innerText = window.t('emergency_50pct');
-            note.style.color = 'var(--ink-faint)';
         }
     }
 
-    // Warna & gap info card Kebutuhan Setahun — update setelah animasi selesai
-    const cardKS = document.getElementById('cardKebutuhanSetahun');
+    // Gap info card Kebutuhan Setahun — update setelah animasi selesai
     const ksGapInfo = document.getElementById('fcKSGapInfo');
     const gap = saldoAkhir - kebutuhanSetahun;
-    // Set border/bg dulu berdasarkan nilai final (tidak ikut animasi)
-    if (cardKS) {
-        cardKS.style.borderTopColor = gap < 0 ? 'var(--danger)' : 'var(--warning)';
-        cardKS.style.background = gap < 0 ? 'var(--danger-lt)' : '';
-    }
     // Sembunyikan gap info selama animasi berjalan, tampilkan setelah selesai
     if (ksGapInfo) ksGapInfo.style.display = 'none';
     window.animateValue('fcKebutuhanSetahun', kebutuhanSetahun, 500, function() {
         if (!ksGapInfo) return;
         ksGapInfo.style.display = 'block';
         if (gap < 0) {
-            ksGapInfo.style.background = 'var(--danger-lt)';
-            ksGapInfo.style.color = 'var(--danger)';
-            ksGapInfo.innerHTML = `\u26A0 Kurang <b>${window.rp ? window.rp(Math.abs(gap)) : Math.abs(gap)}</b> untuk kategori <b>Aman</b>`;
+            ksGapInfo.innerHTML = `Kurang <b>${window.rp ? window.rp(Math.abs(gap)) : Math.abs(gap)}</b> untuk kategori <b>Aman</b>`;
         } else {
-            ksGapInfo.style.background = 'var(--success-lt)';
-            ksGapInfo.style.color = 'var(--success)';
             ksGapInfo.innerHTML = gap === 0
-                ? `\u2713 Saldo pas menutupi kebutuhan`
-                : `\u2713 Surplus <b>${window.rp ? window.rp(gap) : gap}</b> \u2014 Keuangan Aman`;
+                ? `Saldo pas menutupi kebutuhan`
+                : `Surplus <b>${window.rp ? window.rp(gap) : gap}</b> \u2014 Keuangan Aman`;
         }
     });
 
