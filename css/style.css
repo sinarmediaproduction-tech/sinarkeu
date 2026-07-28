@@ -2367,35 +2367,84 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 .slist-viewer-notice b { font-weight: 700; }
 
 .slist-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+
+/* Kolom grid dipakai bareng oleh header (.slist-list-header) dan tiap baris
+   (.slist-item) supaya keduanya SELALU sejajar persis -- checkbox, nama,
+   qty, kategori, harga, aksi. Didefinisikan sekali lewat variabel supaya
+   tidak dobel-tulis & gampang disesuaikan. */
+.slist-list-header,
 .slist-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 58px 128px 100px 60px;
+  column-gap: 12px;
   align-items: center;
-  gap: 10px;
+}
+
+.slist-list-header {
+  padding: 0 4px 7px;
+  margin-bottom: 2px;
+  border-bottom: 1.5px solid var(--rule);
+  font-size: .64rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--ink-faint);
+}
+.slist-list-header span:nth-child(3) { text-align: right; }
+.slist-list-header span:nth-child(5) { text-align: right; }
+
+.slist-item {
   padding: 9px 10px;
   border: 1.5px solid var(--rule);
   border-radius: var(--radius-sm);
   background: var(--paper);
   transition: border-color .15s ease, background .15s ease, opacity .15s ease;
 }
+.slist-item:hover { border-color: color-mix(in srgb, var(--accent) 25%, var(--rule)); }
 .slist-item.done {
   border-color: var(--rule);
   background: var(--paper-warm);
   opacity: .65;
 }
 .slist-checkbox { flex: 0 0 auto; width: 17px; height: 17px; accent-color: var(--success); cursor: pointer; }
-.slist-body { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.slist-name { font-size: .8rem; color: var(--ink); overflow-wrap: anywhere; }
+.slist-name { font-size: .8rem; color: var(--ink); overflow-wrap: anywhere; min-width: 0; }
 .slist-item.done .slist-name { text-decoration: line-through; color: var(--ink-faint); }
 .slist-qty {
+  justify-self: end;
   font-size: .64rem;
   color: var(--ink-muted);
   background: var(--paper-warm);
   border: 1px solid var(--rule);
-  padding: 1px 7px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+/* Kalau kosong (barang tanpa qty/kategori), sembunyikan "pil"-nya tapi slot
+   grid-nya tetap dipertahankan -- inilah kunci kolom selalu sejajar rapi,
+   beda dari sebelumnya yang menghilangkan elemen sepenuhnya (bikin kolom
+   harga/aksi geser tiap baris tergantung barang mana yang punya qty). */
+.slist-qty:empty, .slist-cat-badge:empty { border: none; background: none; padding: 0; }
+.slist-cat-badge {
+  justify-self: start;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .64rem;
+  color: var(--info);
+  background: var(--info-lt);
+  border: 1px solid color-mix(in srgb, var(--info) 35%, var(--info-lt));
+  padding: 2px 8px;
   border-radius: var(--radius-pill);
 }
-.slist-trail { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
-.slist-price { font-family: var(--font-mono); font-size: .76rem; color: var(--ink-muted); white-space: nowrap; }
+.slist-price {
+  justify-self: end;
+  font-family: var(--font-mono);
+  font-size: .76rem;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+.slist-trail { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .slist-del-btn {
   flex: 0 0 auto;
   width: 22px; height: 22px;
@@ -2419,6 +2468,14 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 .slist-empty { font-size: .74rem; color: var(--ink-faint); text-align: center; padding: 26px 0; }
 .slist-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .slist-actions .btn { flex: 1; min-width: 140px; }
+
+/* ── Belanja Bulanan: sedikit lebih lega di layar lebar (desktop/tablet)
+   supaya 6 kolom (checkbox, nama, qty, kategori, harga, aksi) tidak
+   berdesakan -- .slist-modal khusus dipakai di modal ini saja, jadi tidak
+   memengaruhi modal ".wide" lain yang berbagi class yang sama. */
+@media (min-width: 641px) {
+  .modal-content.wide.slist-modal { max-width: 860px; }
+}
 
 /* ── Belanja Bulanan: optimasi layar hp ── */
 @media (max-width: 640px) {
@@ -2493,15 +2550,47 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   .slist-budget-warnings { margin-bottom: 10px; }
   .slist-viewer-notice { margin-bottom: 10px; }
 
-  /* Item: baris kedua (harga + aksi) pindah ke bawah nama/qty/kategori
-     kalau ruangnya sempit, alih-alih berdesakan di satu baris. */
-  .slist-item { flex-wrap: wrap; padding: 10px; }
-  .slist-body { flex-basis: calc(100% - 27px); }
+  /* Header kolom cuma relevan buat layout grid desktop -- disembunyikan
+     total di hp, digantikan kartu ringkas di bawah. */
+  .slist-list-header { display: none; }
+
+  /* Kartu barang di hp: dari grid 6-kolom (desktop) balik jadi flexbox yang
+     disusun ulang pakai `order`, TANPA mengubah urutan elemen di HTML (semua
+     elemen sudah flat/sejajar, lihat js/shopping-list.js). Hasilnya kartu
+     1-3 baris tergantung isinya:
+       Baris 1: checkbox + nama + qty (selalu ada)
+       Baris 2: badge kategori (baris sendiri, cuma muncul kalau ada kategori
+                -- flex-basis 100% jadi maksa baris baru sebelum & sesudahnya)
+       Baris 3: harga di kiri, tombol ubah/hapus di kanan (baris sendiri lewat
+                margin-left:auto pada .slist-trail, cuma muncul kalau ada
+                harga dan/atau tombol aksi)
+     Kalau barang cuma punya nama (tanpa qty/kategori/harga), otomatis jadi
+     1 baris pendek saja -- tidak ada ruang kosong yang dipaksakan. */
+  .slist-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 6px;
+    padding: 10px;
+  }
+  .slist-checkbox { order: 1; }
+  .slist-name { order: 2; flex: 1 1 auto; min-width: 0; }
+  .slist-qty { order: 3; }
+  .slist-cat-badge {
+    order: 4;
+    flex-basis: 100%;
+    max-width: 100%;
+    margin-left: 28px;
+    width: fit-content;
+  }
+  .slist-cat-badge:empty { flex-basis: 0; margin: 0; }
+  .slist-price {
+    order: 5;
+    margin-left: 28px;
+  }
   .slist-trail {
-    flex: 1 1 100%;
-    justify-content: flex-end;
-    padding-left: 27px;
-    margin-top: 4px;
+    order: 6;
+    margin-left: auto;
     gap: 10px;
   }
   .slist-budget-warning { font-size: .7rem; padding: 8px 11px; }

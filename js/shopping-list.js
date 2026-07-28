@@ -176,21 +176,41 @@ window.renderShoppingList = function() {
         return;
     }
 
-    container.innerHTML = items.map(item => `
+    // Header kolom -- cuma tampak di layar lebar (lihat CSS .slist-list-header,
+    // disembunyikan lewat media query max-width:640px). Diikutkan di dalam
+    // innerHTML container (bukan markup statis di index.html) supaya otomatis
+    // ikut hilang bareng daftar saat kosong, tanpa perlu toggle terpisah.
+    const headerHtml = `
+        <div class="slist-list-header" aria-hidden="true">
+            <span></span><span>Nama Barang</span><span>Qty</span><span>Kategori</span><span>Harga</span><span></span>
+        </div>
+    `;
+
+    // Markup tiap barang sengaja dibuat FLAT (checkbox, nama, qty, kategori,
+    // harga, aksi semua jadi anak langsung .slist-item) alih-alih dibungkus
+    // .slist-body/.slist-trail seperti sebelumnya -- supaya di desktop bisa
+    // dijadikan grid kolom yang benar-benar sejajar antar baris (lihat CSS),
+    // termasuk saat qty/kategori kosong (span dibiarkan kosong, bukan
+    // dihilangkan, biar kolom tidak geser). Di hp, kolom yang sama disusun
+    // ulang jadi kartu 1-3 baris lewat flex + `order` (lihat media query).
+    container.innerHTML = headerHtml + items.map(item => {
+        const qtyText = (item.qty && Number(item.qty) > 1) ? `x${window.escapeHtml(String(item.qty))}` : '';
+        const catText = item.category ? window.escapeHtml(item.category) : '';
+        const priceText = item.price ? window.rp(window._shoppingListItemSubtotal(item)) : '';
+        const actionsHtml = isViewer ? '' : `
+                <button type="button" class="slist-edit-btn" title="Ubah" onclick="window.openEditShoppingListItemModal('${window.escapeHtml(item.id)}')">✎</button>
+                <button type="button" class="slist-del-btn" title="Hapus" onclick="window.deleteShoppingListItem('${window.escapeHtml(item.id)}')">×</button>`;
+        return `
         <div class="slist-item${item.done ? ' done' : ''}" data-id="${window.escapeHtml(item.id)}">
             <input type="checkbox" class="slist-checkbox" ${item.done ? 'checked' : ''} ${isViewer ? 'disabled' : ''} onchange="window.toggleShoppingListItem('${window.escapeHtml(item.id)}')">
-            <div class="slist-body">
-                <span class="slist-name">${window.escapeHtml(item.name)}</span>
-                ${item.qty && Number(item.qty) > 1 ? `<span class="slist-qty">x${window.escapeHtml(String(item.qty))}</span>` : ''}
-                ${item.category ? `<span class="slist-cat-badge">${window.escapeHtml(item.category)}</span>` : ''}
-            </div>
-            <div class="slist-trail">
-                <span class="slist-price">${item.price ? window.rp(window._shoppingListItemSubtotal(item)) : ''}</span>
-                ${isViewer ? '' : `<button type="button" class="slist-edit-btn" title="Ubah" onclick="window.openEditShoppingListItemModal('${window.escapeHtml(item.id)}')">✎</button>
-                <button type="button" class="slist-del-btn" title="Hapus" onclick="window.deleteShoppingListItem('${window.escapeHtml(item.id)}')">×</button>`}
-            </div>
+            <span class="slist-name">${window.escapeHtml(item.name)}</span>
+            <span class="slist-qty">${qtyText}</span>
+            <span class="slist-cat-badge">${catText}</span>
+            <span class="slist-price">${priceText}</span>
+            <div class="slist-trail">${actionsHtml}</div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 
     window._updateShoppingListSummary(items);
     window._renderShoppingListBudgetWarnings(items);
