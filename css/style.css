@@ -2145,6 +2145,115 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 .budget-source-tag.custom  { background: var(--accent-lt); color: var(--accent); }
 .budget-source-tag.none    { background: var(--paper-warm); color: var(--ink-faint); }
 
+/* ── Anggaran Dasar (kartu ringkasan + grid kategori) ──
+   Khusus modal #defaultBudgetModal — sengaja pakai prefix .dbudget-
+   supaya tidak menyentuh tampilan modal Anggaran Bulanan (.budget-cat-row dst.)
+   yang masih dipakai di #budgetModal. */
+.dbudget-summary-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, #22335A 0%, #0C1424 100%);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+}
+.dbudget-summary-label {
+  display: block;
+  font-size: .62rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: rgba(242,244,247,.68);
+  margin-bottom: 5px;
+}
+.dbudget-summary-value {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #F2F4F7;
+}
+.dbudget-summary-meta {
+  font-size: .68rem;
+  font-weight: 500;
+  color: #E7C874;
+  background: rgba(169,131,46,.18);
+  border: 1px solid rgba(169,131,46,.42);
+  padding: 5px 11px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.dbudget-search-wrap { position: relative; margin-bottom: 12px; }
+.dbudget-search-wrap svg {
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  color: var(--ink-faint); pointer-events: none;
+}
+.dbudget-search-wrap input.form-control { padding-left: 34px; }
+
+.dbudget-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+@media (max-width: 640px) {
+  .dbudget-grid { grid-template-columns: 1fr; }
+}
+
+.dbudget-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  transition: border-color .15s ease, background .15s ease;
+}
+.dbudget-item.filled { border-color: var(--success); background: var(--success-lt); }
+.dbudget-item:focus-within { border-color: var(--accent); }
+.dbudget-item.dbudget-hidden { display: none; }
+
+.dbudget-badge {
+  flex: 0 0 30px;
+  width: 30px; height: 30px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: .78rem;
+}
+.dbudget-badge.c0 { background: var(--accent-lt); color: var(--accent); }
+.dbudget-badge.c1 { background: var(--success-lt); color: var(--success); }
+.dbudget-badge.c2 { background: var(--warning-lt); color: var(--warning); }
+.dbudget-badge.c3 { background: var(--info-lt); color: var(--info); }
+.dbudget-badge.c4 { background: var(--purple-lt); color: var(--purple); }
+
+.dbudget-body { flex: 1; min-width: 0; }
+.dbudget-name {
+  display: block;
+  font-size: .7rem;
+  color: var(--ink-muted);
+  margin-bottom: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dbudget-input-row { display: flex; align-items: center; gap: 6px; }
+.dbudget-input-row .form-control { flex: 1; padding: 6px 8px; font-size: .78rem; }
+.dbudget-clear-btn {
+  flex: 0 0 auto;
+  width: 22px; height: 22px;
+  border: none; background: var(--paper-warm); color: var(--ink-faint);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: .8rem; line-height: 1;
+}
+.dbudget-clear-btn:hover { background: var(--danger-lt); color: var(--danger); }
+.dbudget-empty-hint { font-size: .74rem; color: var(--ink-faint); text-align: center; padding: 22px 0; }
+
 /* ── Report ── */
 .report-stats {
   display: grid;

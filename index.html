@@ -1220,8 +1220,18 @@ alter table public.settings
             <b>Anggaran Dasar</b> adalah template per kategori yang berlaku <b>secara otomatis</b> di setiap bulan
             yang belum memiliki anggaran khusus. Untuk mengatur anggaran bulan tertentu saja, gunakan tombol <b>Anggarkan</b>.
         </div>
-        <div id="defaultBudgetCategoriesContainer"></div>
-        <div id="defaultBudgetSummary" class="budget-summary-row"></div>
+        <div class="dbudget-summary-card">
+            <div>
+                <span class="dbudget-summary-label">Total Anggaran Dasar / Bulan</span>
+                <span class="dbudget-summary-value" id="defaultBudgetSummary">Rp 0</span>
+            </div>
+            <span class="dbudget-summary-meta" id="defaultBudgetFilledCount">0 dari 0 kategori diisi</span>
+        </div>
+        <div class="dbudget-search-wrap">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="defaultBudgetSearch" class="form-control" placeholder="Cari kategori…" oninput="window.filterDefaultBudgetCategories(this.value)" autocomplete="off">
+        </div>
+        <div id="defaultBudgetCategoriesContainer" class="dbudget-grid"></div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="closeModal('defaultBudgetModal')">Tutup</button>
             <button class="btn btn-primary" onclick="saveDefaultBudget()">Simpan</button>

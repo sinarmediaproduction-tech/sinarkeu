@@ -293,6 +293,8 @@ window.saveBudget = async function() {
 // Default Budget Modal
 window.openDefaultBudgetModal = function() {
     if (!window.requireOnline('mengatur anggaran bulanan')) return;
+    const search = document.getElementById('defaultBudgetSearch');
+    if (search) search.value = '';
     window.renderDefaultBudgetForm();
     window.openModal('defaultBudgetModal');
 };
@@ -300,26 +302,61 @@ window.renderDefaultBudgetForm = function() {
     const container = document.getElementById('defaultBudgetCategoriesContainer');
     container.innerHTML = '';
     const defaultBudget = window.getDefaultBudget(window.currentBookId);
-    window.EXPENSE_CATEGORIES.forEach(cat => {
+    if (!window.EXPENSE_CATEGORIES.length) {
+        container.innerHTML = '<div class="dbudget-empty-hint">Belum ada kategori pengeluaran.</div>';
+        window.updateDefaultBudgetSummary();
+        return;
+    }
+    window.EXPENSE_CATEGORIES.forEach((cat, idx) => {
         const val = defaultBudget[cat] || 0;
+        const initial = window.escapeHtml(cat).trim().charAt(0).toUpperCase() || '?';
+        const colorClass = 'c' + (idx % 5);
         const div = document.createElement('div');
-        div.className = 'budget-cat-row';
+        div.className = 'dbudget-item' + (val ? ' filled' : '');
+        div.dataset.catName = cat.toLowerCase();
         div.innerHTML = `
-            <span class="budget-cat-label">${window.escapeHtml(cat)}</span>
-            <input type="text" class="form-control default-budget-input" data-cat="${window.escapeHtml(cat)}" value="${val ? Number(val).toLocaleString('id-ID') : ''}" oninput="window.formatRupiah(this); window.updateDefaultBudgetSummary();" placeholder="Rp 0">
+            <span class="dbudget-badge ${colorClass}">${initial}</span>
+            <div class="dbudget-body">
+                <span class="dbudget-name">${window.escapeHtml(cat)}</span>
+                <div class="dbudget-input-row">
+                    <input type="text" class="form-control default-budget-input" data-cat="${window.escapeHtml(cat)}" value="${val ? Number(val).toLocaleString('id-ID') : ''}" oninput="window.formatRupiah(this); window.updateDefaultBudgetSummary();" placeholder="Rp 0">
+                    <button type="button" class="dbudget-clear-btn" title="Kosongkan" onclick="window.clearDefaultBudgetInput(this)">×</button>
+                </div>
+            </div>
         `;
         container.appendChild(div);
     });
     window.updateDefaultBudgetSummary();
 };
+window.clearDefaultBudgetInput = function(btn) {
+    const row = btn.closest('.dbudget-item');
+    const input = row && row.querySelector('.default-budget-input');
+    if (!input) return;
+    input.value = '';
+    window.updateDefaultBudgetSummary();
+};
+window.filterDefaultBudgetCategories = function(query) {
+    const q = (query || '').trim().toLowerCase();
+    const items = document.querySelectorAll('#defaultBudgetCategoriesContainer .dbudget-item');
+    items.forEach(item => {
+        const match = !q || (item.dataset.catName || '').includes(q);
+        item.classList.toggle('dbudget-hidden', !match);
+    });
+};
 window.updateDefaultBudgetSummary = function() {
     const inputs = document.querySelectorAll('.default-budget-input');
-    let total = 0;
-    inputs.forEach(input => { total += window.unRp(input.value); });
+    let total = 0, filled = 0;
+    inputs.forEach(input => {
+        const v = window.unRp(input.value);
+        total += v;
+        const row = input.closest('.dbudget-item');
+        if (row) row.classList.toggle('filled', v > 0);
+        if (v > 0) filled++;
+    });
     const el = document.getElementById('defaultBudgetSummary');
-    if (el) {
-        el.innerText = window.t('monthly_total') + window.rp(total);
-    }
+    if (el) el.innerText = window.rp(total);
+    const metaEl = document.getElementById('defaultBudgetFilledCount');
+    if (metaEl) metaEl.innerText = `${filled} dari ${inputs.length} kategori diisi`;
 };
 window.saveDefaultBudget = async function() {
     if (!window.requireOnline('menyimpan anggaran bulanan')) return;
