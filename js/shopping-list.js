@@ -164,9 +164,31 @@ window._populateShoppingListCategorySelect = function() {
     sel.dataset.filled = '1';
 };
 
+// Urutan tampil = urutan kategori di window.EXPENSE_CATEGORIES (js/config.js),
+// supaya konsisten dengan urutan anggaran. Barang "Tanpa kategori" atau
+// dengan nama kategori yang sudah tidak ada di daftar anggaran (mis. sisa
+// data lama sebelum rename) ditaruh paling akhir. Di dalam kategori yang
+// sama, urutan asli (urutan input) dipertahankan (stable sort) -- hanya
+// urutan TAMPILAN yang diubah, array tersimpan di localStorage/cloud tidak
+// diubah urutannya, jadi id-based lookup (edit/hapus/toggle) tetap aman.
+window._sortShoppingListForDisplay = function(items) {
+    const cats = window.EXPENSE_CATEGORIES || [];
+    const rank = function(item) {
+        const idx = item.category ? cats.indexOf(item.category) : -1;
+        return idx === -1 ? cats.length : idx;
+    };
+    return items
+        .map((item, i) => ({ item, i }))
+        .sort((a, b) => {
+            const diff = rank(a.item) - rank(b.item);
+            return diff !== 0 ? diff : a.i - b.i;
+        })
+        .map(x => x.item);
+};
+
 window.renderShoppingList = function() {
     const container = document.getElementById('shoppingListContainer');
-    const items = window.getShoppingList(window.currentBookId);
+    const items = window._sortShoppingListForDisplay(window.getShoppingList(window.currentBookId));
     const isViewer = window._slistIsViewer();
     window._slistApplyViewerUI();
 
