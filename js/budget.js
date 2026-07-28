@@ -365,6 +365,19 @@ window.updateDefaultBudgetSummary = function() {
     const metaEl = document.getElementById('defaultBudgetFilledCount');
     if (metaEl) metaEl.innerText = `${filled} dari ${inputs.length} kategori diisi`;
 };
+// Bandingkan dua objek budget kategori: true kalau semua kategori (union dari
+// keduanya) punya nilai yang sama persis. Dipakai untuk mendeteksi apakah
+// salinan bulan berjalan di window.budgets[key] masih "murni" hasil auto-copy
+// dari Anggaran Dasar lama (belum pernah diubah manual khusus bulan itu).
+window._isBudgetIdenticalToDefault = function(monthlyBudget, oldDefaultBudget) {
+    const cats = new Set([...Object.keys(monthlyBudget || {}), ...Object.keys(oldDefaultBudget || {})]);
+    for (const cat of cats) {
+        const a = Number((monthlyBudget || {})[cat]) || 0;
+        const b = Number((oldDefaultBudget || {})[cat]) || 0;
+        if (a !== b) return false;
+    }
+    return true;
+};
 window.saveDefaultBudget = async function() {
     if (!window.requireOnline('menyimpan anggaran bulanan')) return;
     const inputs = document.querySelectorAll('.default-budget-input');
@@ -375,12 +388,39 @@ window.saveDefaultBudget = async function() {
             newBudget[cat] = window.unRp(input.value);
         }
     });
+    // [FIX - ANGGARAN BULANAN TIDAK SINKRON] Ambil Anggaran Dasar LAMA sebelum
+    // ditimpa. Untuk tiap bulan yang sudah punya salinan di window.budgets
+    // (dibuat otomatis oleh ensureMonthlyBudgetExists/checkNewMonthAutoApply),
+    // cek apakah salinan itu masih identik dengan Anggaran Dasar lama. Kalau
+    // ya, itu cuma auto-copy yang belum pernah diubah manual khusus bulan
+    // tersebut -- jadi ikut diperbarui ke nilai baru supaya peringatan di
+    // daftar belanja (window._renderShoppingListBudgetWarnings) tidak lagi
+    // memakai batas anggaran versi lama. Kalau nilainya berbeda dari Anggaran
+    // Dasar lama, berarti user pernah set override khusus bulan itu -- tetap
+    // dijaga, tidak ditimpa.
+    const oldDefaultBudget = window.getDefaultBudget(window.currentBookId);
+    let anyMonthlyUpdated = false;
+    if (window.budgets && typeof window.budgets === 'object') {
+        Object.keys(window.budgets).forEach(key => {
+            const monthlyBudget = window.budgets[key];
+            if (monthlyBudget && window._isBudgetIdenticalToDefault(monthlyBudget, oldDefaultBudget)) {
+                window.budgets[key] = { ...newBudget };
+                anyMonthlyUpdated = true;
+            }
+        });
+        if (anyMonthlyUpdated) {
+            localStorage.setItem('sk_budgets_' + window.currentBookId, JSON.stringify(window.budgets));
+        }
+    }
     window.saveDefaultBudgetToLocal(window.currentBookId, newBudget);
     window.closeModal('defaultBudgetModal');
     window.renderBudget();
     // Ditunggu (await) supaya status sukses/gagal sync ke cloud diketahui
     // pasti sebelum toast ditampilkan, bukan diasumsikan berhasil begitu saja.
     const ok = await window.saveDefaultBudgetToCloud(window.currentBookId, newBudget);
+    if (anyMonthlyUpdated) {
+        await window.saveMonthlyBudgetToCloud(window.currentBookId, window.budgets);
+    }
     window.showToast(
         ok ? 'Anggaran Bulanan berhasil disimpan & disinkron ke cloud!'
            : 'Tersimpan lokal, tapi GAGAL sync ke cloud. Coba simpan lagi saat online.',
