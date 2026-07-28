@@ -1580,12 +1580,19 @@ tr:hover td { background: var(--accent-lt); }
   display: none;
 }
 @media (min-width: 1024px) {
+  /* [FIX] Sebelumnya tombol ciutkan/perluas (.sidebar-collapse-toggle,
+     top:22px) dan konten nav pertama (.app-nav-group berisi Dashboard)
+     sama-sama mulai persis di padding-top #appSidebar (22px) -- karena
+     tombolnya position:absolute (tidak makan ruang flex), keduanya
+     menumpuk di baris yang sama. Tambah padding-top khusus desktop di
+     sini supaya konten nav mulai DI BAWAH tombol, bukan sejajar dengannya. */
+  #appSidebar { padding-top: 54px; }
   .sidebar-collapse-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
     position: absolute;
-    top: 22px;
+    top: 16px;
     right: -12px;
     width: 24px;
     height: 24px;
