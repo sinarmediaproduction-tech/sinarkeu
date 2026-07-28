@@ -157,9 +157,9 @@ window.renderBookList = function() {
         // role (viewer/editor termasuk) tanpa pengecekan apa pun.
         const canManageThisBook = !b._isShared || (typeof window.skGetRoleForBook === 'function' && window.skGetRoleForBook(b.id) === 'admin');
         let delBtn = (window.books.length > 1 && canManageThisBook) ? `<button class="btn-mini btn-mini-danger" onclick="window.deleteBook('${b.id}')">Hapus</button>` : '';
-        if (isCurrent) delBtn = '<span style="font-size:.65rem; color:#3E7A5D; font-weight:bold;">SEDANG AKTIF</span>';
+        if (isCurrent) delBtn = '<span style="font-size:.65rem; color:#2E6B4F; font-weight:bold;">SEDANG AKTIF</span>';
         const parentBook = b.parentId ? window.books.find(x => x.id === b.parentId) : null;
-        const parentLabel = parentBook ? `<div style="font-size:.6rem; color:#6E4A6E; margin-top:2px;">↳ Anak dari: <b>${window.escapeHtml(parentBook.name)}</b></div>` : '';
+        const parentLabel = parentBook ? `<div style="font-size:.6rem; color:#5C4E72; margin-top:2px;">↳ Anak dari: <b>${window.escapeHtml(parentBook.name)}</b></div>` : '';
         const sharedLabel = b._isShared ? `<div style="font-size:.6rem; color:var(--success); margin-top:2px;">🔗 Buku bersama · peran kamu: <b>${window.escapeHtml(b._role || '?')}</b></div>` : '';
         const makeSharedBtn = (!b._isShared && typeof window.skMakeBookShared === 'function') ?
             `<button class="btn-mini" style="background:var(--success-lt); color:var(--success); border:1px solid var(--rule);" onclick="window.skMakeBookShared('${b.id}')" title="Undang orang lain untuk ikut mengelola buku ini">Jadikan Bersama</button>` : '';
@@ -171,10 +171,10 @@ window.renderBookList = function() {
             </span>
             <div class="book-list-actions">
                 ${!isCurrent ? `<button class="btn-mini" onclick="window.switchBook('${b.id}')">Buka</button>` : ''}
-                <button class="btn-mini" style="background:#E4EDF2; color:#4A7A9E; border:1px solid #C7D8E0;" onclick="window.renameBook('${b.id}')" ${canManageThisBook ? '' : 'disabled title="Hanya admin yang bisa mengganti nama buku bersama ini"'}>Nama</button>
-                <button class="btn-mini" style="background:#F3EAD6; color:#B4863A; border:1px solid #E8C878;" onclick="window.openCardVisibilityModal('${b.id}')" title="Pilih card yang ditampilkan untuk buku ini">Card</button>
+                <button class="btn-mini" style="background:#E3ECF3; color:#2E5C82; border:1px solid #7FA6C4;" onclick="window.renameBook('${b.id}')" ${canManageThisBook ? '' : 'disabled title="Hanya admin yang bisa mengganti nama buku bersama ini"'}>Nama</button>
+                <button class="btn-mini" style="background:#F1EBDA; color:#9C7A2E; border:1px solid #B99A4E;" onclick="window.openCardVisibilityModal('${b.id}')" title="Pilih card yang ditampilkan untuk buku ini">Card</button>
                 ${makeSharedBtn}
-                ${b.parentId && isCurrent ? `<button class="btn-mini" style="background:#6E4A6E; color:#fff;" onclick="window.closeModal('bookManagerModal'); window.openTutupAnakBuku()">Tutup & Kirim</button>` : ''}
+                ${b.parentId && isCurrent ? `<button class="btn-mini" style="background:#5C4E72; color:#fff;" onclick="window.closeModal('bookManagerModal'); window.openTutupAnakBuku()">Tutup & Kirim</button>` : ''}
                 ${delBtn}
             </div>
         `;
@@ -628,24 +628,24 @@ window.openTutupAnakBuku = async function() {
     if (el) {
         if (txCount === 0) {
             el.innerHTML = `
-                <div style="background:#F3EAD6; border:1px solid #E8C878; border-radius: var(--radius-sm); padding:12px 14px; font-size:.78rem; line-height:1.8; color:#7A5A1E;">
+                <div style="background:#F1EBDA; border:1px solid #B99A4E; border-radius: var(--radius-sm); padding:12px 14px; font-size:.78rem; line-height:1.8; color:#6B5320;">
                     Tidak ada transaksi baru ${window.escapeHtml(sinceLabel)}. Tidak ada yang perlu dikirim ke buku induk.
                 </div>
             `;
         } else {
             el.innerHTML = `
-                <div style="background:#F3E5EA; border:1px solid #E0C2CB; border-radius: var(--radius-sm); padding:12px 14px; font-size:.78rem; line-height:1.8;">
+                <div style="background:#E9EBF2; border:1px solid #A6AFC9; border-radius: var(--radius-sm); padding:12px 14px; font-size:.78rem; line-height:1.8;">
                     <div><b>Anak Buku:</b> ${window.escapeHtml(book.name)}</div>
                     <div><b>Kirim ke Induk:</b> ${window.escapeHtml(parentBook.name)}</div>
-                    <div style="font-size:.68rem; color:#6E4A6E; margin-top:2px;">Dihitung ${window.escapeHtml(sinceLabel)}</div>
-                    <hr style="margin:8px 0; border-color:#EFE3F0;">
+                    <div style="font-size:.68rem; color:#5C4E72; margin-top:2px;">Dihitung ${window.escapeHtml(sinceLabel)}</div>
+                    <hr style="margin:8px 0; border-color:#DCE0E6;">
                     <div>Jumlah transaksi: <b>${txCount}</b></div>
-                    <div>Total pemasukan: <b style="color:#3E7A5D">${window.rp(totalInc)}</b></div>
-                    <div>Total pengeluaran: <b style="color:#B23B34">${window.rp(totalExp)}</b></div>
-                    <div><b>Net yang dikirim: <span style="color:${netTotal >= 0 ? '#3E7A5D' : '#B23B34'}">${window.rp(Math.abs(netTotal))}</span></b>
+                    <div>Total pemasukan: <b style="color:#2E6B4F">${window.rp(totalInc)}</b></div>
+                    <div>Total pengeluaran: <b style="color:#A13A3A">${window.rp(totalExp)}</b></div>
+                    <div><b>Net yang dikirim: <span style="color:${netTotal >= 0 ? '#2E6B4F' : '#A13A3A'}">${window.rp(Math.abs(netTotal))}</span></b>
                         ${netTotal < 0 ? ' (pengeluaran)' : ' (pemasukan)'}</div>
                 </div>
-                <div style="margin-top:10px; font-size:.72rem; color:#746A5C;">
+                <div style="margin-top:10px; font-size:.72rem; color:#5B6472;">
                     Satu transaksi ringkasan akan ditambahkan ke buku <b>${window.escapeHtml(parentBook.name)}</b>.<br>
                     Anak buku ini <b>tidak dihapus</b> — tetap bisa dibuka sebagai arsip. Penutupan berikutnya hanya akan menghitung transaksi baru setelah ini.
                 </div>

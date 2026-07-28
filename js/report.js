@@ -47,7 +47,7 @@ async function generateMonthlyReport() {
   const reportContentEl = document.getElementById('reportContent');
   let allTx;
   if (window.isOnline() && typeof window.fetchMonthTransactionsFromCloud === 'function') {
-    if (reportContentEl) reportContentEl.innerHTML = '<div style="padding:24px;text-align:center;color:#A79C8B;">Memuat laporan...</div>';
+    if (reportContentEl) reportContentEl.innerHTML = '<div style="padding:24px;text-align:center;color:#9AA2AC;">Memuat laporan...</div>';
     const cloudTx = await window.fetchMonthTransactionsFromCloud(window.currentBookId, year, month);
     allTx = cloudTx !== null ? cloudTx : (window.txs || []).filter(t => {
       const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
@@ -90,26 +90,26 @@ async function generateMonthlyReport() {
   // ── Token warna sesuai tema ──
   const dk = document.documentElement.getAttribute('data-theme') === 'dark';
   const C = {
-    bg:         dk ? '#211A13' : '#FFFFFF',
-    ink:        dk ? '#EDE6DA' : '#2B241D',
-    inkMuted:   dk ? '#B3A99B' : '#746A5C',
-    inkFaint:   dk ? '#7D7364' : '#A79C8B',
-    rule:       dk ? '#3A2F23' : '#E8E0D2',
-    rowAlt:     dk ? '#1D1811' : '#F6F1E9',
-    thead:      dk ? '#17120D' : '#F6F1E9',
-    barBg:      dk ? '#3A2F23' : '#EFE7D8',
-    incBg:      dk ? '#1E2B23' : '#E2EEE6',
-    incBd:      dk ? '#3D6B52' : '#8FA97D',
-    incTxt:     dk ? '#5FA981' : '#2E5C46',
-    expBg:      dk ? '#33201C' : '#F7E5E3',
-    expBd:      dk ? '#6B392F' : '#C68868',
-    expTxt:     dk ? '#E0776A' : '#8A2E28',
-    balPosBg:   dk ? '#1E2B33' : '#E4EDF2',
-    balPosBd:   dk ? '#3F5C63' : '#6FA69C',
-    balPosTxt:  dk ? '#6FA0BE' : '#345A70',
-    budgetBg:   dk ? '#332913' : '#F3EAD6',
-    budgetBd:   dk ? '#6E5222' : '#D0AE72',
-    budgetTxt:  dk ? '#D9A857' : '#7A5A1E',
+    bg:         dk ? '#16213A' : '#FFFFFF',
+    ink:        dk ? '#E6E9EE' : '#1C2430',
+    inkMuted:   dk ? '#A3ABB8' : '#5B6472',
+    inkFaint:   dk ? '#6C7684' : '#9AA2AC',
+    rule:       dk ? '#29354E' : '#DCE0E6',
+    rowAlt:     dk ? '#111A2C' : '#F7F8FA',
+    thead:      dk ? '#0D1526' : '#F4F5F7',
+    barBg:      dk ? '#29354E' : '#E7E9ED',
+    incBg:      dk ? '#17332A' : '#E3F0E9',
+    incBd:      dk ? '#2E6B4F' : '#7DAF93',
+    incTxt:     dk ? '#4F9C79' : '#1F5138',
+    expBg:      dk ? '#3A2320' : '#F5E6E6',
+    expBd:      dk ? '#7E2E2E' : '#C77A73',
+    expTxt:     dk ? '#D2726B' : '#7E2E2E',
+    balPosBg:   dk ? '#1B2B36' : '#E3ECF3',
+    balPosBd:   dk ? '#2E5C82' : '#7FA6C4',
+    balPosTxt:  dk ? '#6FA0C9' : '#2E5C82',
+    budgetBg:   dk ? '#332A16' : '#F1EBDA',
+    budgetBd:   dk ? '#6B5320' : '#B99A4E',
+    budgetTxt:  dk ? '#C9A159' : '#6B5320',
   };
   const FM = "'JetBrains Mono', monospace"; // font angka
 
@@ -274,12 +274,12 @@ async function exportReportAsPDF() {
   // ── Token warna sesuai tema (PDF export) ──
   const dk2 = document.documentElement.getAttribute('data-theme') === 'dark';
   const CPDF = {
-    bg:     dk2 ? '#211A13' : '#FFFFFF',
-    rowAlt: dk2 ? '#1D1811' : '#FAF5EC',
-    barBg:  dk2 ? '#3A2F23' : '#F0E9DC',
-    incTxt: dk2 ? '#5FA981' : '#2E5C46',
-    expTxt: dk2 ? '#E0776A' : '#B23B34',
-    warnTxt:dk2 ? '#D9A857' : '#C4922D',
+    bg:     dk2 ? '#16213A' : '#FFFFFF',
+    rowAlt: dk2 ? '#111A2C' : '#F7F8FA',
+    barBg:  dk2 ? '#29354E' : '#E7E9ED',
+    incTxt: dk2 ? '#4F9C79' : '#1F5138',
+    expTxt: dk2 ? '#D2726B' : '#A13A3A',
+    warnTxt:dk2 ? '#C9A159' : '#9C7A2E',
   };
 
   // ── Sorted transactions ──────────────────────────────────
@@ -333,7 +333,7 @@ async function exportReportAsPDF() {
   body {
     font-family: 'Plus Jakarta Sans', Arial, sans-serif;
     font-size: 9pt;
-    color: #2B241D;
+    color: #1C2430;
     background: #fff;
     padding: 0;
   }
@@ -341,7 +341,7 @@ async function exportReportAsPDF() {
 
   /* ── Cover Header ── */
   .doc-header {
-    background: linear-gradient(135deg, #2B1620 0%, #241D14 60%, #17120D 100%);
+    background: linear-gradient(135deg, #16233F 0%, #101A2E 60%, #0A1220 100%);
     color: #fff;
     padding: 28px 32px 22px;
     position: relative;
@@ -393,8 +393,8 @@ async function exportReportAsPDF() {
     font-weight: 700;
     letter-spacing: 1.2px;
     text-transform: uppercase;
-    color: #746A5C;
-    border-bottom: 1.5px solid #E8E0D2;
+    color: #5B6472;
+    border-bottom: 1.5px solid #DCE0E6;
     padding-bottom: 5px;
     margin: 18px 0 10px;
   }
@@ -412,32 +412,32 @@ async function exportReportAsPDF() {
     padding: 12px 14px;
     border-left: 3px solid transparent;
   }
-  .kpi-income { background: #E2EEE6; border-color: #3E7A5D; }
-  .kpi-expense { background: #F7E5E3; border-color: #B23B34; }
-  .kpi-balance-pos { background: #E4EDF2; border-color: #345A70; }
-  .kpi-balance-neg { background: #F7E5E3; border-color: #B23B34; }
+  .kpi-income { background: #E3F0E9; border-color: #2E6B4F; }
+  .kpi-expense { background: #F5E6E6; border-color: #A13A3A; }
+  .kpi-balance-pos { background: #E3ECF3; border-color: #2E5C82; }
+  .kpi-balance-neg { background: #F5E6E6; border-color: #A13A3A; }
   .kpi .label {
     font-size: 6.5pt;
     font-weight: 700;
     letter-spacing: .8px;
     text-transform: uppercase;
     margin-bottom: 4px;
-    color: #746A5C;
+    color: #5B6472;
   }
   .kpi .value {
     font-family: 'JetBrains Mono', 'Courier New', monospace;
     font-size: 12pt;
     font-weight: 700;
   }
-  .kpi-income .value { color: #2E5C46; }
-  .kpi-expense .value { color: #8A2E28; }
-  .kpi-balance-pos .value { color: #2E4A5C; }
-  .kpi-balance-neg .value { color: #8A2E28; }
+  .kpi-income .value { color: #1F5138; }
+  .kpi-expense .value { color: #7E2E2E; }
+  .kpi-balance-pos .value { color: #2E5C82; }
+  .kpi-balance-neg .value { color: #7E2E2E; }
 
   /* ── Budget Alert ── */
   .budget-alert {
-    background: #F3EAD6;
-    border: 1px solid #D9BE86;
+    background: #F1EBDA;
+    border: 1px solid #B99A4E;
     border-radius: var(--radius-sm);
     padding: 10px 14px;
     margin: 10px 0;
@@ -446,8 +446,8 @@ async function exportReportAsPDF() {
     align-items: center;
     font-size: 8.5pt;
   }
-  .budget-alert .ba-label { color: #7A5A1E; font-weight: 600; }
-  .budget-alert .ba-value { font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10pt; font-weight: 700; color: #7A5A1E; }
+  .budget-alert .ba-label { color: #6B5320; font-weight: 600; }
+  .budget-alert .ba-value { font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 10pt; font-weight: 700; color: #6B5320; }
   .budget-alert .ba-sisa { text-align: right; }
 
   /* ── Tables ── */
@@ -457,12 +457,12 @@ async function exportReportAsPDF() {
     font-size: 7.5pt;
   }
   th {
-    background: #F6F1E9;
+    background: #F4F5F7;
     padding: 6px 6px;
     font-weight: 700;
     font-size: 7pt;
     text-align: left;
-    border-bottom: 2px solid #E8E0D2;
+    border-bottom: 2px solid #DCE0E6;
     word-break: break-word;
   }
   td {
@@ -474,23 +474,23 @@ async function exportReportAsPDF() {
   }
   tr:last-child td { border-bottom: none; }
   .money { text-align: right; font-family: 'JetBrains Mono', 'Courier New', monospace; }
-  .income { color: #2E5C46; font-weight: 600; }
-  .expense { color: #8A2E28; font-weight: 600; }
+  .income { color: #1F5138; font-weight: 600; }
+  .expense { color: #7E2E2E; font-weight: 600; }
   .center { text-align: center; }
-  .muted { color: #A79C8B; }
+  .muted { color: #9AA2AC; }
 
   /* ── Table wrapper ── */
   .tbl-wrap {
-    border: 1.5px solid #E8E0D2;
+    border: 1.5px solid #DCE0E6;
     border-radius: var(--radius-sm);
     overflow: hidden;
   }
 
   /* ── Summary row ── */
   .tbl-foot td {
-    background: #F6F1E9;
+    background: #F4F5F7;
     font-weight: 700;
-    border-top: 2px solid #E8E0D2;
+    border-top: 2px solid #DCE0E6;
     border-bottom: none;
     padding: 8px 9px;
   }
@@ -499,16 +499,16 @@ async function exportReportAsPDF() {
   .doc-footer {
     margin: 20px 32px 0;
     padding: 10px 0 14px;
-    border-top: 1px solid #E8E0D2;
+    border-top: 1px solid #DCE0E6;
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-size: 7pt;
-    color: #A79C8B;
+    color: #9AA2AC;
   }
   .doc-footer .watermark {
     font-weight: 700;
-    color: #D9CFBE;
+    color: #D6DAE1;
     letter-spacing: 1px;
     text-transform: uppercase;
     font-size: 7pt;
@@ -560,7 +560,7 @@ async function exportReportAsPDF() {
     </div>
     <div class="ba-sisa">
       <div class="ba-label">Sisa Anggaran</div>
-      <div class="ba-value" style="color:${totalBudget - expense >= 0 ? '#2E5C46' : '#8A2E28'};">${fmtRp(totalBudget - expense)}</div>
+      <div class="ba-value" style="color:${totalBudget - expense >= 0 ? '#1F5138' : '#7E2E2E'};">${fmtRp(totalBudget - expense)}</div>
     </div>
   </div>` : ''}
 
@@ -612,7 +612,7 @@ async function exportReportAsPDF() {
         </tr>
         <tr class="tbl-foot">
           <td colspan="4" style="text-align:right;"><b>SALDO BERSIH</b></td>
-          <td colspan="2" class="money" style="color:${balance >= 0 ? '#2E5C46' : '#8A2E28'};"><b>${fmtRp(balance)}</b></td>
+          <td colspan="2" class="money" style="color:${balance >= 0 ? '#1F5138' : '#7E2E2E'};"><b>${fmtRp(balance)}</b></td>
         </tr>
       </tfoot>
     </table>

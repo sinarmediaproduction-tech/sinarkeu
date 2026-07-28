@@ -100,11 +100,11 @@ window.renderForecastCard = function() {
     const rasio = avgInc > 0 ? avgExp / avgInc : 999;
     let status, statusColor, statusBg, statusIcon;
     if (rasio <= 0.7) {
-        status = 'Sehat'; statusColor = '#1F4A38'; statusBg = '#E2EEE6'; statusIcon = '●';
+        status = 'Sehat'; statusColor = '#1F4A38'; statusBg = '#E3F0E9'; statusIcon = '●';
     } else if (rasio <= 0.9) {
-        status = 'Waspada'; statusColor = '#7A5A1E'; statusBg = '#F3EAD6'; statusIcon = '●';
+        status = 'Waspada'; statusColor = '#6B5320'; statusBg = '#F1EBDA'; statusIcon = '●';
     } else {
-        status = 'Kritis'; statusColor = '#8A2E28'; statusBg = '#F7E5E3'; statusIcon = '●';
+        status = 'Kritis'; statusColor = '#7E2E2E'; statusBg = '#F5E6E6'; statusIcon = '●';
     }
 
     // ── Kategori pengeluaran terbesar bulan ini ──
@@ -122,7 +122,7 @@ window.renderForecastCard = function() {
 
     // ── Render ──
     const trenHTML = tren !== null
-        ? `<span style="font-size:.65rem; font-weight:600; color:${tren > 0 ? '#8A2E28' : '#1F4A38'};">
+        ? `<span style="font-size:.65rem; font-weight:600; color:${tren > 0 ? '#7E2E2E' : '#1F4A38'};">
             ${tren > 0 ? '▲' : '▼'} ${Math.abs(tren).toFixed(0)}% vs bln lalu
            </span>`
         : '';
@@ -131,9 +131,9 @@ window.renderForecastCard = function() {
         ? topCat.map(([cat, amt]) =>
             `<span class="fc-tag">${cat} <b>${window.rp ? window.rp(amt) : amt}</b></span>`
           ).join('')
-        : '<span class="fc-tag" style="color:#A79C8B;">—</span>';
+        : '<span class="fc-tag" style="color:#9AA2AC;">—</span>';
 
-    const proyeksiColor = proyeksiBulan >= 6 ? '#1F4A38' : proyeksiBulan >= 3 ? '#7A5A1E' : '#8A2E28';
+    const proyeksiColor = proyeksiBulan >= 6 ? '#1F4A38' : proyeksiBulan >= 3 ? '#6B5320' : '#7E2E2E';
     const basisSubLabel = basisIncludesCurrent
         ? `per bulan (bulan berjalan, belum lengkap)`
         : `per bulan (${basis.length} bln terakhir)`;
@@ -157,14 +157,14 @@ window.renderForecastCard = function() {
                 </div>
                 <div class="fc-metric">
                     <div class="fc-metric-label">Rata-rata Pengeluaran</div>
-                    <div class="fc-metric-value" style="color:#8A2E28;">${window.rp ? window.rp(avgExp) : avgExp} ${trenHTML}</div>
+                    <div class="fc-metric-value" style="color:#7E2E2E;">${window.rp ? window.rp(avgExp) : avgExp} ${trenHTML}</div>
                     <div class="fc-metric-sub">${basisSubLabel}</div>
                 </div>
             </div>
             <div class="fc-row">
                 <div class="fc-metric">
                     <div class="fc-metric-label">Surplus / Defisit</div>
-                    <div class="fc-metric-value" style="color:${avgSurplus >= 0 ? '#1F4A38' : '#8A2E28'};">
+                    <div class="fc-metric-value" style="color:${avgSurplus >= 0 ? '#1F4A38' : '#7E2E2E'};">
                         ${avgSurplus >= 0 ? '+' : ''}${window.rp ? window.rp(avgSurplus) : avgSurplus}
                     </div>
                     <div class="fc-metric-sub">estimasi per bulan</div>

@@ -2954,8 +2954,8 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 /* Fase dropdown */
 [data-theme="dark"] .fase-dropdown-trigger { background: var(--paper); border-color: var(--rule); }
 [data-theme="dark"] .fase-dropdown-menu { background: var(--paper); border-color: var(--fase); }
-[data-theme="dark"] .fase-option:hover { background: #332028; }
-[data-theme="dark"] .fase-option.selected { background: #332028; }
+[data-theme="dark"] .fase-option:hover { background: var(--fase-lt); }
+[data-theme="dark"] .fase-option.selected { background: var(--fase-lt); }
 
 /* Budget select */
 [data-theme="dark"] .budget-select {
@@ -2987,7 +2987,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 [data-theme="dark"] input[type="file"]::file-selector-button:hover { background: var(--rule); }
 
 /* Offline warning */
-[data-theme="dark"] .offline-warning-bar { background: var(--warning-lt); border-color: #5C4620; }
+[data-theme="dark"] .offline-warning-bar { background: var(--warning-lt); border-color: color-mix(in srgb, var(--warning) 55%, black); }
 
 /* Setelan panel overrides — undo inline light colors */
 
@@ -3020,26 +3020,10 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   background: var(--paper) !important;
 }
 
-/* Sub-label warna #888 yang hardcode */
-[data-theme="dark"] .stat-card [style*="color:#888"],
-[data-theme="dark"] .stat-card [style*="color: #888"],
+/* Sub-label ink-faint di stat-card (dark mode) */
 [data-theme="dark"] #goldSource,
 [data-theme="dark"] #zakatSource {
   color: var(--ink-faint) !important;
-}
-
-/* Badge inline di dalam stat-card */
-[data-theme="dark"] #cardAnggaranTahunan [style*="background:#F2E4EE"] {
-  background: var(--purple-lt) !important;
-  color: var(--purple) !important;
-}
-[data-theme="dark"] #cardDanaDarurat [style*="background:#F3EAD6"] {
-  background: var(--warning-lt) !important;
-  color: var(--warning) !important;
-}
-[data-theme="dark"] #cardFaseKehidupan [style*="background:#F8E9EF"] {
-  background: var(--fase-lt) !important;
-  color: var(--fase) !important;
 }
 
 /* goldValueRow border dan teks */

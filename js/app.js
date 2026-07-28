@@ -20,10 +20,10 @@ window.updateSyncTimeBadge = function() {
     if (window._lastSyncTime) {
         const timeStr = window._lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         el.innerText = `${timeStr}`;
-        el.style.color = '#3E7A5D';
+        el.style.color = '#2E6B4F';
     } else {
         el.innerText = `--:--:--`;
-        el.style.color = '#A79C8B';
+        el.style.color = '#9AA2AC';
     }
 };
 window.updateUIForOnlineStatus = function() {
@@ -450,7 +450,7 @@ window.applyTheme = function(dark) {
     // Samakan warna title bar (browser/PWA) dengan tema aktif
     var themeColorMeta = document.querySelector('meta[name="theme-color"]');
     if (themeColorMeta) {
-        themeColorMeta.setAttribute('content', '#1F1911');
+        themeColorMeta.setAttribute('content', '#0A1220');
     }
     var icon = document.getElementById('darkModeIcon');
     var iconMobile = document.getElementById('darkModeIconMobile');
