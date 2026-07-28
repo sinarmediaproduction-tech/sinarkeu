@@ -2,7 +2,7 @@
 window.getDefaultBudget = function(bookId) {
     const raw = localStorage.getItem('sk_default_budget_' + (bookId || window.currentBookId));
     if (raw) {
-        try { return JSON.parse(raw); } catch { return {}; }
+        try { return window.migrateBudgetCategoryKeys(JSON.parse(raw)); } catch { return {}; }
     }
     return {};
 };
@@ -16,7 +16,7 @@ window.getEffectiveBudget = function(year, month, bookId) {
     if (year === now.getFullYear() && month === now.getMonth() + 1) {
         window.ensureMonthlyBudgetExists(year, month, bId);
     }
-    const monthlyBudget = window.budgets[key] || {};
+    const monthlyBudget = window.migrateBudgetCategoryKeys(window.budgets[key] || {});
     const defaultBudget = window.getDefaultBudget(bId);
     const hasCustom = Object.values(monthlyBudget).some(v => v > 0);
     if (hasCustom) {

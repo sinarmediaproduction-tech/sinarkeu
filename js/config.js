@@ -11,11 +11,40 @@ window.ACC_ACTIVE_KEY = 'sk_active_account';
 window.ACC_GLOBAL_KEYS = new Set(['sk_accounts', 'sk_active_account', 'sk_device_id']);
 
 window.EXPENSE_CATEGORIES = [
-    'Makanan & Minuman', 'Tagihan', 'Belanja', 'Kesehatan', 
-    'Hiburan', 'Pendidikan', 'Transportasi', 'Investasi', 
-    'Skin & Body Care', 'Kitchen', 'Cleaning', 'Pajak & Iuran', 
+    'Makanan & Minuman', 'Tagihan Bulanan', 'Belanja Harian', 'Kesehatan',
+    'Hiburan', 'Pendidikan', 'Transport', 'Investasi',
+    'Perawatan Tubuh', 'Bumbu Dapur', 'Kebersihan Rumah', 'Iuran Warga',
     'Pertanian', 'Sedekah', 'Sumbangan', 'Pulsa', 'Pakan Peliharaan'
 ];
+// Peta nama kategori LAMA -> BARU (2026-07-28, rombak Anggaran Dasar).
+// Dipakai window.migrateBudgetCategoryKeys() supaya anggaran yang sudah
+// tersimpan dengan nama kategori lama tetap "ketemu" nilainya di bawah
+// nama baru, bukannya kelihatan kosong. Ini HANYA memigrasikan data
+// ANGGARAN (settings) — transaksi lama yang sudah tercatat dengan nama
+// kategori lama tetap memakai nama lama itu di riwayat & laporan.
+window.CATEGORY_RENAME_MAP = {
+    'Tagihan': 'Tagihan Bulanan',
+    'Belanja': 'Belanja Harian',
+    'Transportasi': 'Transport',
+    'Skin & Body Care': 'Perawatan Tubuh',
+    'Kitchen': 'Bumbu Dapur',
+    'Cleaning': 'Kebersihan Rumah',
+    'Pajak & Iuran': 'Iuran Warga'
+};
+window.migrateBudgetCategoryKeys = function(budgetObj) {
+    if (!budgetObj || typeof budgetObj !== 'object') return budgetObj;
+    const result = { ...budgetObj };
+    Object.keys(window.CATEGORY_RENAME_MAP).forEach(oldName => {
+        if (Object.prototype.hasOwnProperty.call(result, oldName)) {
+            const newName = window.CATEGORY_RENAME_MAP[oldName];
+            const oldVal = Number(result[oldName]) || 0;
+            const newVal = Number(result[newName]) || 0;
+            result[newName] = oldVal + newVal;
+            delete result[oldName];
+        }
+    });
+    return result;
+};
 window.INCOME_CATEGORIES = [
     'Gaji', 'Freelance', 'Bonus', 'THR',
     'Hasil Investasi', 'Jual Aset', 'Hadiah',
