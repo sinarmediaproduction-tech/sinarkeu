@@ -1248,7 +1248,7 @@ alter table public.settings
     <div class="modal-content wide">
         <div class="modal-header"><h3>Belanja Bulanan</h3><button class="modal-close" onclick="window.openMobileDrawer()" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button></div>
         <div style="background:var(--info-lt); border:1px solid color-mix(in srgb, var(--info) 35%, var(--info-lt)); border-radius: var(--radius-sm); padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:var(--info);">
-            Catat kebutuhan belanja bulanan Anda di sini, centang setiap kali sudah dibeli. Daftar ini otomatis <b>tersinkron ke cloud</b> per buku kas — pakai <b>Reset Centang</b> di awal bulan untuk memakai ulang daftar yang sama.
+            Catat kebutuhan belanja bulanan Anda di sini, centang setiap kali sudah dibeli. Daftar ini otomatis <b>tersinkron ke cloud</b> per buku kas — pakai <b>Reset Centang</b> di awal bulan untuk memakai ulang daftar yang sama. Pilih <b>kategori</b> per barang supaya sistem bisa memperingatkan Anda kalau total belanja sudah melebihi anggaran.
         </div>
         <div class="slist-summary-card">
             <div>
@@ -1257,10 +1257,12 @@ alter table public.settings
             </div>
             <span class="slist-summary-meta" id="slistProgressCount">0 dari 0 dibeli</span>
         </div>
+        <div id="slistBudgetWarnings" class="slist-budget-warnings"></div>
         <form class="slist-add-row" onsubmit="window.addShoppingListItem(event)">
             <input type="text" id="slistNewName" class="form-control" placeholder="Nama barang… (mis. Beras 5kg)" required>
             <input type="text" id="slistNewQty" class="form-control slist-qty-field" placeholder="Qty (mis. 2 pak)">
             <input type="text" id="slistNewPrice" class="form-control slist-price-field" placeholder="Rp 0" oninput="window.formatRupiah(this)">
+            <select id="slistNewCategory" class="form-control slist-cat-field"></select>
             <button type="submit" class="btn btn-primary slist-add-btn" title="Tambah barang">+</button>
         </form>
         <div id="shoppingListContainer" class="slist-list"></div>

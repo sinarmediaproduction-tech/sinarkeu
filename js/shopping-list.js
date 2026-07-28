@@ -32,8 +32,21 @@ window.saveShoppingList = function(bookId, items) {
 };
 
 window.openShoppingListModal = function() {
+    window._populateShoppingListCategorySelect();
     window.renderShoppingList();
     window.openModal('shoppingListModal');
+};
+
+// Isi dropdown kategori barang dari daftar kategori pengeluaran yang sama
+// dipakai anggaran (window.EXPENSE_CATEGORIES, js/config.js), supaya nama
+// kategori di daftar belanja selalu konsisten dengan kategori anggaran.
+window._populateShoppingListCategorySelect = function() {
+    const sel = document.getElementById('slistNewCategory');
+    if (!sel || sel.dataset.filled === '1') return;
+    const cats = window.EXPENSE_CATEGORIES || [];
+    sel.innerHTML = '<option value="">Tanpa kategori</option>' +
+        cats.map(c => `<option value="${window.escapeHtml(c)}">${window.escapeHtml(c)}</option>`).join('');
+    sel.dataset.filled = '1';
 };
 
 window.renderShoppingList = function() {
@@ -52,6 +65,7 @@ window.renderShoppingList = function() {
             <div class="slist-body">
                 <span class="slist-name">${window.escapeHtml(item.name)}</span>
                 ${item.qty ? `<span class="slist-qty">${window.escapeHtml(item.qty)}</span>` : ''}
+                ${item.category ? `<span class="slist-cat-badge">${window.escapeHtml(item.category)}</span>` : ''}
             </div>
             <span class="slist-price">${item.price ? window.rp(item.price) : ''}</span>
             <button type="button" class="slist-del-btn" title="Hapus" onclick="window.deleteShoppingListItem('${window.escapeHtml(item.id)}')">×</button>
@@ -59,6 +73,77 @@ window.renderShoppingList = function() {
     `).join('');
 
     window._updateShoppingListSummary(items);
+    window._renderShoppingListBudgetWarnings(items);
+};
+
+// ==================== PERINGATAN ANGGARAN ====================
+// Bandingkan total belanja per kategori di daftar ini dengan anggaran
+// bulan berjalan (window.getEffectiveBudget -- otomatis pakai Anggaran
+// Bulanan khusus kalau sudah disetel utk bulan ini, atau jatuh balik ke
+// Anggaran Dasar kalau belum). Dihitung dari SEMUA barang di daftar
+// (baik yang sudah maupun belum dicentang) karena daftar ini mewakili
+// rencana total belanja bulan ini, bukan cuma realisasi yang sudah dibeli.
+window._renderShoppingListBudgetWarnings = function(items) {
+    const box = document.getElementById('slistBudgetWarnings');
+    if (!box) return;
+    if (!window.EXPENSE_CATEGORIES || typeof window.getEffectiveBudget !== 'function') {
+        box.innerHTML = '';
+        window._lastShoppingListWarnings = [];
+        return;
+    }
+    const now = new Date();
+    const effective = window.getEffectiveBudget(now.getFullYear(), now.getMonth() + 1, window.currentBookId);
+    const currentBudget = effective.budget || {};
+
+    // Total per kategori dari daftar belanja
+    const catTotals = {};
+    let grandTotal = 0;
+    items.forEach(i => {
+        const price = Number(i.price) || 0;
+        grandTotal += price;
+        if (i.category && window.EXPENSE_CATEGORIES.includes(i.category)) {
+            catTotals[i.category] = (catTotals[i.category] || 0) + price;
+        }
+    });
+
+    const warnings = [];
+    window.EXPENSE_CATEGORIES.forEach(cat => {
+        const spent = catTotals[cat] || 0;
+        const target = currentBudget[cat] || 0;
+        if (spent > 0 && target > 0 && spent > target) {
+            warnings.push({
+                category: cat,
+                text: `<b>${window.escapeHtml(cat)}</b>: daftar belanja ${window.rp(spent)} melebihi anggaran ${window.rp(target)}`,
+                plainText: `Anggaran "${cat}" terlampaui: daftar belanja ${window.rp(spent)} vs anggaran ${window.rp(target)}`,
+                over: true
+            });
+        }
+    });
+
+    // Total keseluruhan anggaran bulan ini (jumlah semua kategori)
+    let totalBudget = 0;
+    window.EXPENSE_CATEGORIES.forEach(c => totalBudget += (currentBudget[c] || 0));
+    if (totalBudget > 0 && grandTotal > totalBudget) {
+        const sourceLabel = effective.source === 'custom' ? 'Anggaran Bulanan' : 'Anggaran Dasar';
+        warnings.unshift({
+            category: '__total__',
+            text: `<b>Total daftar belanja</b> ${window.rp(grandTotal)} melebihi ${sourceLabel} bulan ini (${window.rp(totalBudget)})`,
+            plainText: `Total daftar belanja ${window.rp(grandTotal)} melebihi ${sourceLabel} bulan ini (${window.rp(totalBudget)})`,
+            over: true
+        });
+    }
+
+    if (!warnings.length) {
+        box.innerHTML = '';
+        window._lastShoppingListWarnings = [];
+        return;
+    }
+    box.innerHTML = warnings.map(w => `
+        <div class="slist-budget-warning${w.over ? ' is-over' : ''}">
+            <span>⚠️ ${w.text}</span>
+        </div>
+    `).join('');
+    window._lastShoppingListWarnings = warnings;
 };
 
 window._updateShoppingListSummary = function(items) {
@@ -76,6 +161,7 @@ window.addShoppingListItem = function(e) {
     const nameInput = document.getElementById('slistNewName');
     const qtyInput = document.getElementById('slistNewQty');
     const priceInput = document.getElementById('slistNewPrice');
+    const categorySelect = document.getElementById('slistNewCategory');
     const name = nameInput.value.trim();
     if (!name) return;
     const items = window.getShoppingList(window.currentBookId);
@@ -84,14 +170,27 @@ window.addShoppingListItem = function(e) {
         name: name,
         qty: qtyInput.value.trim(),
         price: window.unRp(priceInput.value),
+        category: categorySelect ? categorySelect.value : '',
         done: false
     });
+    const addedCategory = categorySelect ? categorySelect.value : '';
     window.saveShoppingList(window.currentBookId, items);
     nameInput.value = '';
     qtyInput.value = '';
     priceInput.value = '';
+    if (categorySelect) categorySelect.value = '';
     nameInput.focus();
     window.renderShoppingList();
+
+    // Kalau barang yang baru saja ditambahkan membuat kategorinya (atau
+    // total daftar belanja) melebihi anggaran, beri tahu lewat toast juga
+    // -- banner di atas form sudah tampil, tapi toast lebih kelihatan
+    // langsung setelah aksi tambah barang.
+    const warns = window._lastShoppingListWarnings || [];
+    const relevant = warns.find(w => w.category === addedCategory || w.category === '__total__');
+    if (relevant) {
+        window.showToast(relevant.plainText, 'warning');
+    }
 };
 
 window.toggleShoppingListItem = function(id) {

@@ -288,6 +288,13 @@ window.saveBudget = async function() {
             ok ? 'success' : 'warning'
         );
     }
+    // Anggaran berubah bisa mengubah status peringatan di daftar belanja
+    // (window._renderShoppingListBudgetWarnings, js/shopping-list.js) --
+    // refresh kalau modalnya sedang terbuka.
+    const slModal = document.getElementById('shoppingListModal');
+    if (slModal && slModal.classList.contains('show') && typeof window.renderShoppingList === 'function') {
+        window.renderShoppingList();
+    }
 };
 
 // Default Budget Modal
@@ -382,6 +389,13 @@ window.saveDefaultBudget = async function() {
     window.updateFinancialCards && window.updateFinancialCards();
     if (document.getElementById('budgetModal').classList.contains('show')) {
         window.renderBudgetFormFields();
+    }
+    // Anggaran Dasar berubah bisa mengubah status peringatan di daftar
+    // belanja (window._renderShoppingListBudgetWarnings, js/shopping-list.js)
+    // -- refresh kalau modalnya sedang terbuka.
+    const slModal = document.getElementById('shoppingListModal');
+    if (slModal && slModal.classList.contains('show') && typeof window.renderShoppingList === 'function') {
+        window.renderShoppingList();
     }
 };
 
