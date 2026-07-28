@@ -1256,13 +1256,18 @@ alter table public.settings
         </div>
         <div id="slistBudgetWarnings" class="slist-budget-warnings"></div>
         <div id="slistViewerNotice" class="slist-viewer-notice" style="display:none;">Peran Anda di buku bersama ini adalah <b>Viewer</b> — hanya bisa melihat daftar belanja, tidak bisa menambah/mengubah/menghapus barang.</div>
-        <form id="slistAddRow" class="slist-add-row" onsubmit="window.addShoppingListItem(event)">
-            <input type="text" id="slistNewName" class="form-control" placeholder="Nama barang… (mis. Beras 5kg)" required>
-            <input type="number" id="slistNewQty" class="form-control slist-qty-field" placeholder="Qty" min="1" step="1" inputmode="numeric">
-            <input type="text" id="slistNewPrice" class="form-control slist-price-field" placeholder="Harga satuan" oninput="window.formatRupiah(this)">
-            <select id="slistNewCategory" class="form-control slist-cat-field"></select>
-            <button type="submit" class="btn btn-primary slist-add-btn" title="Tambah barang"><span class="slist-add-icon">+</span><span class="slist-add-label">Tambah Barang</span></button>
-        </form>
+        <button type="button" id="slistAddToggle" class="slist-add-toggle" aria-expanded="false" aria-controls="slistAddWrap" onclick="window.toggleShoppingListAddForm()">
+            <span class="slist-add-toggle-icon">+</span> Tambah Barang
+        </button>
+        <div id="slistAddWrap" class="slist-add-wrap collapsed">
+            <form id="slistAddRow" class="slist-add-row" onsubmit="window.addShoppingListItem(event)">
+                <input type="text" id="slistNewName" class="form-control" placeholder="Nama barang… (mis. Beras 5kg)" required>
+                <input type="number" id="slistNewQty" class="form-control slist-qty-field" placeholder="Qty" min="1" step="1" inputmode="numeric">
+                <input type="text" id="slistNewPrice" class="form-control slist-price-field" placeholder="Harga satuan" oninput="window.formatRupiah(this)">
+                <select id="slistNewCategory" class="form-control slist-cat-field"></select>
+                <button type="submit" class="btn btn-primary slist-add-btn" title="Tambah barang"><span class="slist-add-icon">+</span><span class="slist-add-label">Tambah Barang</span></button>
+            </form>
+        </div>
         <div id="shoppingListContainer" class="slist-list"></div>
         <div id="slistActions" class="slist-actions">
             <button type="button" class="btn btn-secondary" onclick="window.resetShoppingListChecks()">Reset Centang</button>

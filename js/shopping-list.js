@@ -69,10 +69,35 @@ window._slistApplyViewerUI = function() {
     const isViewer = window._slistIsViewer();
     const notice = document.getElementById('slistViewerNotice');
     const addRow = document.getElementById('slistAddRow');
+    const addToggle = document.getElementById('slistAddToggle');
     const actions = document.getElementById('slistActions');
     if (notice) notice.style.display = isViewer ? '' : 'none';
     if (addRow) addRow.style.display = isViewer ? 'none' : '';
+    // Tombol pill "+ Tambah Barang" (cuma tampak di hp, lihat CSS) juga
+    // disembunyikan untuk viewer -- tidak ada gunanya buka form yang
+    // toh tidak bisa disubmit.
+    if (addToggle) addToggle.style.display = isViewer ? 'none' : '';
     if (actions) actions.style.display = isViewer ? 'none' : '';
+};
+
+// Buka/tutup form tambah barang di layar hp (lihat .slist-add-wrap.collapsed
+// di css/style.css -- di layar lebar rule collapse-nya tidak berlaku sama
+// sekali, jadi tombol ini otomatis disembunyikan lewat CSS di sana).
+window.toggleShoppingListAddForm = function() {
+    const wrap = document.getElementById('slistAddWrap');
+    const toggle = document.getElementById('slistAddToggle');
+    if (!wrap || !toggle) return;
+    const willExpand = wrap.classList.contains('collapsed');
+    wrap.classList.toggle('collapsed', !willExpand);
+    toggle.setAttribute('aria-expanded', willExpand ? 'true' : 'false');
+    if (willExpand) {
+        const nameInput = document.getElementById('slistNewName');
+        // Fokus ke field nama begitu form terbuka supaya user bisa langsung
+        // ketik tanpa ketuk lagi -- tapi tunda dikit sampai transisi CSS
+        // (max-height 200ms) beres, supaya keyboard hp tidak memicu jump
+        // scroll di tengah animasi.
+        setTimeout(function() { nameInput && nameInput.focus(); }, 210);
+    }
 };
 
 // Subtotal per baris = harga satuan x qty. Fallback qty=1 kalau qty kosong
@@ -91,6 +116,16 @@ window.openShoppingListModal = function() {
     window._populateShoppingListCategorySelect();
     window.renderShoppingList();
     window.openModal('shoppingListModal');
+
+    // Daftar masih kosong -> langsung buka form tambah barang (di hp,
+    // form ini default collapsed lewat tombol pill) supaya user baru
+    // tidak perlu ketuk "+ Tambah Barang" dulu untuk lihat form-nya.
+    const wrap = document.getElementById('slistAddWrap');
+    const toggle = document.getElementById('slistAddToggle');
+    if (wrap && toggle && !window._slistIsViewer() && window.getShoppingList(window.currentBookId).length === 0) {
+        wrap.classList.remove('collapsed');
+        toggle.setAttribute('aria-expanded', 'true');
+    }
 
     // [FIX SYNC ANTAR PERANGKAT] Sebelumnya modal ini HANYA merender dari
     // localStorage -- pull dari cloud cuma terjadi di titik lain (buka

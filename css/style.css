@@ -2300,6 +2300,9 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   white-space: nowrap;
 }
 
+.slist-add-toggle { display: none; }
+.slist-add-wrap { }
+
 .slist-add-row {
   display: flex;
   gap: 8px;
@@ -2419,8 +2422,47 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 
 /* ── Belanja Bulanan: optimasi layar hp ── */
 @media (max-width: 640px) {
-  /* Form tambah barang jadi grid 2 kolom, lebih gampang diketuk & tidak
-     "penyet" seperti flex-wrap biasa -- tiap field jelas baris/kolomnya. */
+  /* Form tambah barang disembunyikan (collapsed) secara default di hp --
+     ini yang paling makan tempat (5 field) dan bikin daftar barang yang
+     sudah diisi terdorong jauh ke bawah / perlu discroll dulu. Diganti
+     jadi 1 tombol pill ringkas; form baru muncul kalau tombolnya diketuk
+     (lihat window.toggleShoppingListAddForm di js/shopping-list.js).
+     Di layar lebar (desktop/tablet) perilaku ini TIDAK berlaku -- form
+     tetap selalu terbuka seperti sebelumnya, karena rule ini di dalam
+     media query max-width:640px. */
+  .slist-add-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 40px;
+    margin-bottom: 12px;
+    border: 1.5px dashed var(--rule);
+    border-radius: var(--radius-sm);
+    background: var(--paper);
+    color: var(--accent);
+    font-size: .8rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .slist-add-toggle-icon { font-size: 1rem; line-height: 1; }
+  .slist-add-toggle[aria-expanded="true"] { color: var(--ink-muted); border-style: solid; }
+  .slist-add-toggle[aria-expanded="true"] .slist-add-toggle-icon { transform: rotate(45deg); }
+
+  .slist-add-wrap {
+    overflow: hidden;
+    max-height: 600px;
+    margin-bottom: 14px;
+    transition: max-height .2s ease, margin-bottom .2s ease;
+  }
+  .slist-add-wrap.collapsed { max-height: 0; margin-bottom: 0; }
+  .slist-add-row { margin-bottom: 0; }
+
+  /* Form tambah barang jadi grid 2 kolom -- Qty & Harga Satuan sengaja
+     dibiarkan berdampingan (tidak di-span penuh) di SEMUA lebar hp,
+     termasuk yang sempit (~360-400px), karena keduanya field pendek dan
+     menumpuknya jadi 2 baris terpisah cuma buang-buang tinggi layar. */
   .slist-add-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -2446,10 +2488,12 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   }
   .slist-add-label { display: inline; }
 
-  .slist-summary-card { padding: 13px 16px; }
+  .slist-summary-card { padding: 12px 15px; margin-bottom: 10px; }
   .slist-summary-value { font-size: 1.28rem; }
+  .slist-budget-warnings { margin-bottom: 10px; }
+  .slist-viewer-notice { margin-bottom: 10px; }
 
-  /* Item: baris kedua (harga + hapus) pindah ke bawah nama/qty/kategori
+  /* Item: baris kedua (harga + aksi) pindah ke bawah nama/qty/kategori
      kalau ruangnya sempit, alih-alih berdesakan di satu baris. */
   .slist-item { flex-wrap: wrap; padding: 10px; }
   .slist-body { flex-basis: calc(100% - 27px); }
@@ -2457,14 +2501,14 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
     flex: 1 1 100%;
     justify-content: flex-end;
     padding-left: 27px;
-    margin-top: 2px;
+    margin-top: 4px;
+    gap: 10px;
   }
   .slist-budget-warning { font-size: .7rem; padding: 8px 11px; }
-}
-@media (max-width: 400px) {
-  .slist-add-row { grid-template-columns: 1fr; }
-  .slist-add-row .slist-qty-field,
-  .slist-add-row .slist-price-field { grid-column: 1 / -1; }
+
+  /* Target ketuk edit/hapus diperbesar khusus hp (jempol > kursor mouse),
+     ukuran visual ikon tetap sama supaya tidak mendominasi baris. */
+  .slist-edit-btn, .slist-del-btn { width: 30px; height: 30px; }
 }
 
 /* ── Report ── */
