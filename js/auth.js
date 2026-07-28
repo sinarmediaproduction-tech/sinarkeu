@@ -582,6 +582,144 @@ window.skFindUserByEmail = async function(email) {
     }
 };
 
+// [PICKER ANGGOTA] Semua pengguna yang pernah daftar (public.profiles --
+// SELECT-nya sengaja terbuka untuk semua user login, lihat
+// sql/profiles_and_invite.sql). Dipakai supaya admin bisa langsung PILIH
+// calon anggota dari daftar (mis. yang sudah jadi anggota buku bersama lain
+// yang sama-sama diadminkan), tanpa perlu ingat & ketik ulang emailnya.
+window.skListAllProfiles = async function() {
+    const client = getSupabaseAuthClient();
+    if (!client) return [];
+    try {
+        const res = await client.from('profiles').select('id, email').order('email', { ascending: true });
+        if (res.error) throw res.error;
+        return res.data || [];
+    } catch (e) {
+        console.error('[auth.js] Gagal ambil daftar semua pengguna terdaftar:', e);
+        return [];
+    }
+};
+
+// Sama seperti window.skInviteMember, tapi menerima user_id langsung
+// (dari picker daftar pengguna) -- tidak perlu skFindUserByEmail lagi
+// karena profile-nya sudah di tangan si pemanggil.
+window.skInviteMemberByUserId = async function(bookId, userId, email, role) {
+    const client = getSupabaseAuthClient();
+    if (!client) return false;
+    if (window.skGetRoleForBook(bookId) !== 'admin') {
+        window.showToast && window.showToast('Hanya admin yang bisa mengundang anggota.', 'error');
+        return false;
+    }
+    if (window._skAuthUser && userId === window._skAuthUser.id) {
+        window.showToast && window.showToast('Itu akun kamu sendiri.', 'error');
+        return false;
+    }
+    try {
+        const res = await client.from('book_members').upsert(
+            { book_id: bookId, user_id: userId, role: role },
+            { onConflict: 'book_id,user_id' }
+        );
+        if (res.error) throw res.error;
+        window.showToast && window.showToast('Berhasil menambahkan ' + email + ' sebagai ' + role + '.');
+        window._skRefreshAllMemberPanels();
+        return true;
+    } catch (e) {
+        console.error('[auth.js] Gagal tambah anggota dari daftar:', e);
+        window.showToast && window.showToast('Gagal menambahkan anggota: ' + e.message, 'error');
+        return false;
+    }
+};
+
+// State picker per prefix ('sk'/'um') -- simpan bookId & daftar kandidat
+// (semua profil dikurangi yang sudah jadi anggota & diri sendiri) supaya
+// filter pencarian tidak perlu fetch ulang ke Supabase tiap ketik.
+window._umInviteState = window._umInviteState || {};
+
+window.skRenderInviteMemberPicker = async function(bookId, prefix) {
+    prefix = prefix || 'sk';
+    const listEl = document.getElementById(prefix + 'InvitePickerList');
+    if (!listEl) return;
+    listEl.innerHTML = '<div class="um-member-empty">Memuat daftar pengguna terdaftar...</div>';
+
+    const results = await Promise.all([
+        window.skListAllProfiles(),
+        window.skListBookMembers(bookId)
+    ]);
+    const allProfiles = results[0];
+    const members = results[1];
+    const memberIds = {};
+    members.forEach(function(m) { memberIds[m.user_id] = true; });
+    const myId = window._skAuthUser ? window._skAuthUser.id : null;
+    const candidates = allProfiles.filter(function(p) {
+        return !memberIds[p.id] && p.id !== myId;
+    });
+
+    window._umInviteState[prefix] = { bookId: bookId, candidates: candidates };
+    window._umRenderInviteCandidateRows(prefix, candidates);
+};
+
+window._umRenderInviteCandidateRows = function(prefix, candidates) {
+    const listEl = document.getElementById(prefix + 'InvitePickerList');
+    if (!listEl) return;
+    const state = window._umInviteState[prefix];
+    const bookId = state ? state.bookId : null;
+    const esc = window.escapeHtml;
+    if (candidates.length === 0) {
+        listEl.innerHTML = '<div class="um-member-empty">Tidak ada pengguna terdaftar lain yang cocok -- semua sudah jadi anggota buku ini, atau belum ada yang cocok dicari.</div>';
+        return;
+    }
+    listEl.innerHTML = candidates.map(function(p) {
+        const initial = (p.email || '?').charAt(0).toUpperCase();
+        return (
+            '<div class="um-invite-candidate">' +
+                '<div class="um-member-avatar">' + esc(initial) + '</div>' +
+                '<div class="um-member-info"><div class="um-member-email">' + esc(p.email) + '</div></div>' +
+                '<select class="form-control um-invite-candidate-role">' +
+                    '<option value="viewer">Viewer</option>' +
+                    '<option value="editor">Editor</option>' +
+                    '<option value="admin">Admin</option>' +
+                '</select>' +
+                '<button type="button" class="btn-mini" onclick="window._umAddInviteCandidate(this,\'' + esc(bookId) + '\',\'' + esc(p.id) + '\',\'' + esc(p.email) + '\',\'' + prefix + '\')">+ Tambah</button>' +
+            '</div>'
+        );
+    }).join('');
+};
+
+window._umFilterInviteCandidates = function(inputEl, prefix) {
+    const state = window._umInviteState[prefix];
+    if (!state) return;
+    const q = inputEl.value.trim().toLowerCase();
+    const filtered = q ?
+        state.candidates.filter(function(p) { return (p.email || '').toLowerCase().indexOf(q) !== -1; }) :
+        state.candidates;
+    window._umRenderInviteCandidateRows(prefix, filtered);
+};
+
+window._umAddInviteCandidate = function(btnEl, bookId, userId, email, prefix) {
+    const row = btnEl.closest('.um-invite-candidate');
+    const roleSel = row ? row.querySelector('.um-invite-candidate-role') : null;
+    const role = roleSel ? roleSel.value : 'viewer';
+    btnEl.disabled = true;
+    btnEl.textContent = '…';
+    window.skInviteMemberByUserId(bookId, userId, email, role).then(function(ok) {
+        if (!ok) { btnEl.disabled = false; btnEl.textContent = '+ Tambah'; }
+        // Kalau berhasil, window._skRefreshAllMemberPanels (dipanggil di
+        // dalam skInviteMemberByUserId) sudah membangun ulang seluruh panel
+        // ini dari nol -- termasuk picker-nya -- jadi tidak perlu apa-apa
+        // lagi di sini.
+    });
+};
+
+window._umToggleManualInvite = function(btnEl, prefix) {
+    const wrap = document.getElementById(prefix + 'ManualInviteWrap');
+    if (!wrap) return;
+    const showing = wrap.style.display !== 'none';
+    wrap.style.display = showing ? 'none' : '';
+    btnEl.textContent = showing ?
+        '+ Undang lewat email manual (kalau tidak muncul di daftar)' :
+        '– Sembunyikan form email manual';
+};
+
 // [MENU MANAJEMEN USER] Refresh terpusat untuk SEMUA tempat yang menampilkan
 // panel kelola anggota -- sekarang ada dua: panel kecil di dalam modal
 // "Kelola Buku Kas" (skAuthPanelContent, khusus buku yang lagi aktif) DAN
@@ -845,11 +983,16 @@ window.skBuildMemberManagementHtml = function(bookId, prefix) {
             '</div>' +
 
             '<div id="' + prefix + 'InviteTabPanel" data-um-tab-panel="invite">' +
-                '<form onsubmit="window._skHandleInviteSubmit(event,\'' + esc(bookId) + '\',\'' + prefix + '\')">' +
-                    '<input type="email" id="' + prefix + 'InviteEmail" class="form-control" placeholder="Email anggota (harus sudah punya akun)" required autocomplete="off" style="margin-bottom:6px;">' +
-                    '<select id="' + prefix + 'InviteRole" class="form-control" style="margin-bottom:8px;">' + roleOptions + '</select>' +
-                    '<button type="submit" class="btn btn-primary" style="width:100%;">Undang Anggota</button>' +
-                '</form>' +
+                '<input type="text" id="' + prefix + 'InviteFilter" class="form-control" placeholder="Cari pengguna terdaftar..." autocomplete="off" oninput="window._umFilterInviteCandidates(this,\'' + prefix + '\')" style="margin-bottom:8px;">' +
+                '<div id="' + prefix + 'InvitePickerList" class="um-invite-picker-list">Memuat daftar pengguna terdaftar...</div>' +
+                '<button type="button" class="um-invite-manual-toggle" onclick="window._umToggleManualInvite(this,\'' + prefix + '\')">+ Undang lewat email manual (kalau tidak muncul di daftar)</button>' +
+                '<div id="' + prefix + 'ManualInviteWrap" style="display:none; margin-top:8px;">' +
+                    '<form onsubmit="window._skHandleInviteSubmit(event,\'' + esc(bookId) + '\',\'' + prefix + '\')">' +
+                        '<input type="email" id="' + prefix + 'InviteEmail" class="form-control" placeholder="Email anggota (harus sudah punya akun)" required autocomplete="off" style="margin-bottom:6px;">' +
+                        '<select id="' + prefix + 'InviteRole" class="form-control" style="margin-bottom:8px;">' + roleOptions + '</select>' +
+                        '<button type="submit" class="btn btn-secondary" style="width:100%;">Undang lewat Email</button>' +
+                    '</form>' +
+                '</div>' +
             '</div>' +
 
             '<div id="' + prefix + 'CreateTabPanel" data-um-tab-panel="create" style="display:none;">' +
@@ -1062,6 +1205,7 @@ window.skRenderUserManagerPage = function(selectedBookId) {
 
     wrap.innerHTML = selectorHtml + window.skBuildMemberManagementHtml(selectedBookId, 'um') + window.skBuildMenuVisibilityHtml(selectedBookId);
     window.skRenderMemberList(selectedBookId, 'umMemberListContent');
+    window.skRenderInviteMemberPicker(selectedBookId, 'um');
 };
 
 // ── Batasi UI sesuai peran (bukan cuma diblokir pas diklik) ─────────────
@@ -1195,7 +1339,7 @@ window.skRenderAuthPanel = function() {
             '<div style="font-size:.75rem;">Login sebagai <b>' + window._skAuthUser.email + '</b>' + roleLine +
             '<div style="margin-top:4px; color:var(--ink-faint);">Tombol logout ada di footer sidebar.</div></div>' +
             memberPanel;
-        if (role === 'admin') window.skRenderMemberList(bookId);
+        if (role === 'admin') { window.skRenderMemberList(bookId); window.skRenderInviteMemberPicker(bookId, 'sk'); }
     } else {
         // [MENU DAFTAR MANUAL DIHAPUS] Tidak ada lagi opsi self-signup di
         // sini -- akun anggota baru sekarang HARUS dibuatkan admin lewat
