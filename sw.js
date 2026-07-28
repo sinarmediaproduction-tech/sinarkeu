@@ -14,7 +14,7 @@
      kepakai duluan, dengan fallback ke cache saat offline.
    ============================================================ */
 
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 const CACHE_NAME = `sinarkeu-shell-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -43,6 +43,7 @@ const APP_SHELL = [
   './js/transaction.js',
   './js/sync-conflict.js',
   './js/budget.js',
+  './js/shopping-list.js',
   './js/payment-reminder.js',
   './js/expense-chart.js',
   './js/render.js',
