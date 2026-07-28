@@ -2301,7 +2301,8 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 .slist-add-row .form-control { flex: 2; }
 .slist-add-row .slist-qty-field { flex: 1; }
 .slist-add-row .slist-price-field { flex: 1; }
-.slist-add-row .slist-cat-field { flex: 1.4; }
+.slist-add-row .slist-cat-field,
+.slist-add-row [data-cs-for="slistNewCategory"] { flex: 1.4; }
 .slist-add-btn {
   flex: 0 0 auto;
   width: 42px;
@@ -2399,13 +2400,15 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   }
   .slist-add-row #slistNewName,
   .slist-add-row .slist-cat-field,
+  .slist-add-row [data-cs-for="slistNewCategory"],
   .slist-add-row .slist-add-btn {
     grid-column: 1 / -1;
   }
   .slist-add-row .form-control,
   .slist-add-row .slist-qty-field,
   .slist-add-row .slist-price-field,
-  .slist-add-row .slist-cat-field { flex: initial; }
+  .slist-add-row .slist-cat-field,
+  .slist-add-row [data-cs-for="slistNewCategory"] { flex: initial; }
   /* Tombol tambah jadi selebar penuh dengan label teks -- target ketuk
      lebih besar & maksud tombolnya jelas dibanding cuma ikon "+". */
   .slist-add-btn {

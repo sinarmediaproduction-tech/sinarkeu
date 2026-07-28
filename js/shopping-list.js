@@ -180,7 +180,10 @@ window.addShoppingListItem = function(e) {
     nameInput.value = '';
     qtyInput.value = '';
     priceInput.value = '';
-    if (categorySelect) categorySelect.value = '';
+    if (categorySelect) {
+        categorySelect.value = '';
+        categorySelect.dispatchEvent(new Event('change', { bubbles: true }));
+    }
     nameInput.focus();
     window.renderShoppingList();
 

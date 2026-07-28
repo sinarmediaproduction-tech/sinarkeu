@@ -323,6 +323,15 @@ function initAllCustomSelects() {
   if (editIncCat && !editIncCat.closest('.cs-wrapper')) {
     window.initCustomSelect(editIncCat, { formStyle: true, colorMap: INCOME_COLORS });
   }
+
+  // 6. Kategori barang — Belanja Bulanan (opsi diisi belakangan saat modal
+  // dibuka pertama kali, lihat window._populateShoppingListCategorySelect
+  // di js/shopping-list.js -- MutationObserver di initCustomSelect otomatis
+  // membangun ulang daftar opsi begitu innerHTML select-nya berubah).
+  var slistCat = document.getElementById('slistNewCategory');
+  if (slistCat && !slistCat.closest('.cs-wrapper')) {
+    window.initCustomSelect(slistCat, { formStyle: true, colorMap: EXPENSE_COLORS });
+  }
 }
 
 if (document.readyState === 'loading') {
