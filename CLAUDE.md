@@ -145,10 +145,18 @@ di Setelan).
   `window.FULLVIEW_MODALS` dan `window.APP_NAV_BTN_MAP`, (3) pastikan
   fungsi pembukanya tetap lewat `window.openModal(id)` — tidak perlu CSS
   atau JS tambahan lain.
-- **Styling:** semua di `css/style.css`, di-link dari `index.html`. Palet
-  warna didefinisikan sebagai CSS variable di `:root` (`--brand`, `--accent`,
-  `--danger`, dll) — pakai variable ini, jangan hardcode hex baru kecuali
-  memang warna baru yang disengaja.
+- **Styling:** semua di `css/style.css`, di-link dari `index.html`. Sejak
+  rombak ke palet **"Institutional Formal"** (navy `#1B2A4A`, abu netral,
+  aksen emas tipis `#A9832E`, font IBM Plex Sans + Inter tanpa serif),
+  **baca `docs/STYLE_GUIDE.md` dulu** sebelum menyentuh styling apa pun —
+  berisi tabel lengkap semua token warna/radius/shadow/font (light &
+  dark), aturan kapan boleh hardcode warna (kategori transaksi & palet
+  chart) vs harus pakai `var(--token)`, cara pakai `color-mix()` untuk
+  border turunan, dan catatan khusus `js/report.js` (render PDF terpisah,
+  tidak baca CSS variable, jadi punya objek `C`/`CPDF` sendiri yang harus
+  disinkronkan manual ke token kalau token di `:root` berubah). Kalau
+  nemu hex warna hangat lama (`#7A2E42`, `#B4863A`, `#F6F1E9`, `#2B241D`,
+  dst.) di file manapun, itu sisa palet lama yang belum ke-migrate.
 - **Ikon:** inline SVG gaya stroke (viewBox 24, stroke-width 2,
   stroke-linecap/linejoin round), bukan file ikon eksternal, agar konsisten
   dengan `.app-nav-item svg` yang sudah ada. Set ikon offline juga tersedia
@@ -189,3 +197,20 @@ di Setelan).
   itu sendiri untuk daftar lengkap & alasannya. **Cek isi file ini benar-benar
   ada isinya**, bukan cuma placeholder kosong — sempat ketahuan pernah
   kosong padahal isinya harusnya persis yang didokumentasikan.
+- **Known gap — log aktivitas offline tidak di-retry:** `window.addCloudLog
+  (actionType, details)` di `js/transaction.js` selalu simpan ke
+  `localStorage` (`sk_logs_<bookId>`, maks 50 entri) dulu, lalu coba
+  `POST` ke tabel Supabase `audit_logs` HANYA kalau `window.isOnline()`
+  true saat itu juga (`if (!window.isOnline()) return;`). Kalau aksi
+  (tambah/ubah/**hapus** transaksi, backup, restore, dll — apa pun jenis
+  `actionType`-nya, warna tag di UI cuma indikator visual jenis aksi,
+  BUKAN penanda status sync) terjadi saat offline, log itu cuma nyangkut
+  lokal dan TIDAK PERNAH otomatis ke-push ke Supabase begitu online lagi
+  — beda dengan `txs` yang punya dirty-tracking + `debouncedPushToCloud()`
+  untuk re-sync. Kalau diminta perbaiki: jangan `return` langsung saat
+  offline, taruh ke antrean pending terpisah di localStorage (pola serupa
+  dirty-tracking transaksi), lalu flush ke `audit_logs` begitu koneksi
+  balik online (jangan hapus dari antrean kalau request-nya gagal, biar
+  dicoba ulang). Jangan ubah struktur `logPayload` yang sudah ada
+  (`book_id`, `device_id`, `action`, `details`, `timestamp`, `account_tag`
+  opsional) — skema tabel `audit_logs` di Supabase mengikuti bentuk ini.
