@@ -16,6 +16,25 @@ window.EXPENSE_CATEGORIES = [
     'Perawatan Tubuh', 'Bumbu Dapur', 'Kebersihan Rumah', 'Iuran Warga',
     'Pertanian', 'Sedekah', 'Sumbangan', 'Pulsa', 'Pakan Peliharaan'
 ];
+// Warna per kategori -- dipakai badge kategori di Daftar Belanja (js/shopping-list.js)
+// supaya tiap kategori punya warna sendiri yang konsisten dan gampang dibedakan
+// sekilas. Sengaja MEREUSE palet yang sama dengan grafik pengeluaran
+// (window._EXPENSE_CHART_COLORS, didefinisikan di js/expense-chart.js) via index
+// posisi nama kategori di EXPENSE_CATEGORIES -- bukan urutan label di grafik --
+// supaya satu kategori selalu dapat warna yang sama di mana pun ditampilkan,
+// tidak berubah-ubah tergantung urutan kemunculan di chart bulan itu.
+// Aman dipanggil walau expense-chart.js belum sempat load lebih dulu, karena
+// fungsi ini baru benar-benar butuh window._EXPENSE_CHART_COLORS saat DIPANGGIL
+// (saat render), bukan saat didefinisikan -- dan render selalu terjadi belakangan,
+// setelah semua script defer selesai jalan.
+window.getCategoryColor = function(categoryName) {
+    const palette = window._EXPENSE_CHART_COLORS;
+    if (!categoryName || !palette || !palette.length) return null;
+    const idx = window.EXPENSE_CATEGORIES.indexOf(categoryName);
+    if (idx === -1) return null;
+    return palette[idx % palette.length];
+};
+
 // Peta nama kategori LAMA -> BARU (2026-07-28, rombak Anggaran Dasar).
 // Dipakai window.migrateBudgetCategoryKeys() supaya anggaran yang sudah
 // tersimpan dengan nama kategori lama tetap "ketemu" nilainya di bawah

@@ -2328,9 +2328,9 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 
 .slist-cat-badge {
   font-size: .64rem;
-  color: var(--info);
-  background: var(--info-lt);
-  border: 1px solid color-mix(in srgb, var(--info) 35%, var(--info-lt));
+  color: color-mix(in srgb, var(--cat-color, var(--info)) 70%, var(--ink));
+  background: color-mix(in srgb, var(--cat-color, var(--info)) 16%, var(--paper));
+  border: 1px solid color-mix(in srgb, var(--cat-color, var(--info)) 40%, var(--rule));
   padding: 1px 7px;
   border-radius: var(--radius-pill);
 }
@@ -2431,9 +2431,9 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: .64rem;
-  color: var(--info);
-  background: var(--info-lt);
-  border: 1px solid color-mix(in srgb, var(--info) 35%, var(--info-lt));
+  color: color-mix(in srgb, var(--cat-color, var(--info)) 70%, var(--ink));
+  background: color-mix(in srgb, var(--cat-color, var(--info)) 16%, var(--paper));
+  border: 1px solid color-mix(in srgb, var(--cat-color, var(--info)) 40%, var(--rule));
   padding: 2px 8px;
   border-radius: var(--radius-pill);
 }

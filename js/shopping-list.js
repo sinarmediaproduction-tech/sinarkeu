@@ -218,6 +218,8 @@ window.renderShoppingList = function() {
     container.innerHTML = headerHtml + items.map(item => {
         const qtyText = (item.qty && Number(item.qty) > 1) ? `x${window.escapeHtml(String(item.qty))}` : '';
         const catText = item.category ? window.escapeHtml(item.category) : '';
+        const catColor = item.category ? window.getCategoryColor(item.category) : null;
+        const catStyleAttr = catColor ? ` style="--cat-color:${catColor}"` : '';
         const priceText = item.price ? window.rp(window._shoppingListItemSubtotal(item)) : '';
         const actionsHtml = isViewer ? '' : `
                 <button type="button" class="slist-edit-btn" title="Ubah" onclick="window.openEditShoppingListItemModal('${window.escapeHtml(item.id)}')">✎</button>
@@ -227,7 +229,7 @@ window.renderShoppingList = function() {
             <input type="checkbox" class="slist-checkbox" ${item.done ? 'checked' : ''} ${isViewer ? 'disabled' : ''} onchange="window.toggleShoppingListItem('${window.escapeHtml(item.id)}')">
             <span class="slist-name">${window.escapeHtml(item.name)}</span>
             <span class="slist-qty">${qtyText}</span>
-            <span class="slist-cat-badge">${catText}</span>
+            <span class="slist-cat-badge"${catStyleAttr}>${catText}</span>
             <span class="slist-price">${priceText}</span>
             <div class="slist-trail">${actionsHtml}</div>
         </div>
