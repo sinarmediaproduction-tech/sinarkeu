@@ -402,7 +402,11 @@ window.saveDefaultBudget = async function() {
     let anyMonthlyUpdated = false;
     if (window.budgets && typeof window.budgets === 'object') {
         Object.keys(window.budgets).forEach(key => {
-            const monthlyBudget = window.budgets[key];
+            // Migrasi nama kategori dulu sebelum dibandingkan -- kalau tidak,
+            // salinan lama yang masih pakai nama kategori LAMA (mis. "Tagihan")
+            // akan selalu kelihatan "beda" dari Anggaran Dasar yang sudah pakai
+            // nama BARU ("Tagihan Bulanan"), padahal nilainya sama persis.
+            const monthlyBudget = window.migrateBudgetCategoryKeys(window.budgets[key]);
             if (monthlyBudget && window._isBudgetIdenticalToDefault(monthlyBudget, oldDefaultBudget)) {
                 window.budgets[key] = { ...newBudget };
                 anyMonthlyUpdated = true;
