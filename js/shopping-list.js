@@ -81,6 +81,7 @@ window.renderShoppingList = function() {
             </div>
             <div class="slist-trail">
                 <span class="slist-price">${item.price ? window.rp(window._shoppingListItemSubtotal(item)) : ''}</span>
+                <button type="button" class="slist-edit-btn" title="Ubah" onclick="window.openEditShoppingListItemModal('${window.escapeHtml(item.id)}')">✎</button>
                 <button type="button" class="slist-del-btn" title="Hapus" onclick="window.deleteShoppingListItem('${window.escapeHtml(item.id)}')">×</button>
             </div>
         </div>
@@ -225,6 +226,53 @@ window.deleteShoppingListItem = function(id) {
     const items = window.getShoppingList(window.currentBookId).filter(i => i.id !== id);
     window.saveShoppingList(window.currentBookId, items);
     window.renderShoppingList();
+};
+
+// Buka modal edit, isi form dengan data barang yang sudah ada. Dropdown
+// kategori diisi ulang tiap kali dibuka (bukan cuma sekali seperti dropdown
+// tambah barang) supaya selalu sinkron kalau kategori berubah di anggaran.
+window.openEditShoppingListItemModal = function(id) {
+    const items = window.getShoppingList(window.currentBookId);
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+
+    const catSelect = document.getElementById('slistEditCategory');
+    const cats = window.EXPENSE_CATEGORIES || [];
+    catSelect.innerHTML = '<option value="">Tanpa kategori</option>' +
+        cats.map(c => `<option value="${window.escapeHtml(c)}">${window.escapeHtml(c)}</option>`).join('');
+    catSelect.value = item.category || '';
+
+    document.getElementById('slistEditId').value = item.id;
+    document.getElementById('slistEditName').value = item.name || '';
+    document.getElementById('slistEditQty').value = (Number(item.qty) > 0) ? item.qty : '';
+    const priceInput = document.getElementById('slistEditPrice');
+    priceInput.value = item.price ? window.rp(item.price).replace('Rp', '').trim() : '';
+
+    window.openModal('editShoppingListItemModal');
+};
+
+window.handleEditShoppingListItemSubmit = function(e) {
+    e.preventDefault();
+    const id = document.getElementById('slistEditId').value;
+    const name = document.getElementById('slistEditName').value.trim();
+    if (!name) return;
+    const qtyParsed = parseFloat(document.getElementById('slistEditQty').value);
+    const qty = (qtyParsed > 0) ? qtyParsed : 1;
+    const price = window.unRp(document.getElementById('slistEditPrice').value);
+    const category = document.getElementById('slistEditCategory').value;
+
+    const items = window.getShoppingList(window.currentBookId);
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    item.name = name;
+    item.qty = qty;
+    item.price = price;
+    item.category = category;
+
+    window.saveShoppingList(window.currentBookId, items);
+    window.closeModal('editShoppingListItemModal');
+    window.renderShoppingList();
+    window.showToast('Barang diperbarui.', 'success');
 };
 
 window.resetShoppingListChecks = function() {

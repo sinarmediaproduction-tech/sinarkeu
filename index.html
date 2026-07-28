@@ -1270,7 +1270,20 @@ alter table public.settings
     </div>
 </div>
 
-<div id="emergencyFundModal" class="modal" style="z-index:2000;">
+<!-- Modal Edit Item Belanja -->
+<div id="editShoppingListItemModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>Ubah Barang</h3><button class="modal-close" onclick="closeModal('editShoppingListItemModal')">×</button></div>
+        <form id="editShoppingListItemForm" onsubmit="window.handleEditShoppingListItemSubmit(event)">
+            <input type="hidden" id="slistEditId">
+            <div class="form-group"><label>Nama barang</label><input type="text" id="slistEditName" class="form-control" required></div>
+            <div class="form-group"><label>Qty</label><input type="number" id="slistEditQty" class="form-control" min="1" step="1" inputmode="numeric"></div>
+            <div class="form-group"><label>Harga satuan</label><input type="text" id="slistEditPrice" class="form-control" oninput="window.formatRupiah(this)"></div>
+            <div class="form-group"><label>Kategori</label><select id="slistEditCategory" class="form-control"></select></div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('editShoppingListItemModal')">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div>
+        </form>
+    </div>
+</div>
     <div class="modal-content" style="max-width:420px;">
         <div class="modal-header">
             <h3>Target Dana Darurat</h3>

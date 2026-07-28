@@ -2392,6 +2392,16 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   font-size: .85rem; line-height: 1;
 }
 .slist-del-btn:hover { background: var(--danger-lt); color: var(--danger); }
+.slist-edit-btn {
+  flex: 0 0 auto;
+  width: 22px; height: 22px;
+  border: none; background: var(--paper-warm); color: var(--ink-faint);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: .75rem; line-height: 1;
+}
+.slist-edit-btn:hover { background: var(--accent-lt, var(--paper-warm)); color: var(--accent, var(--ink)); }
 .slist-empty { font-size: .74rem; color: var(--ink-faint); text-align: center; padding: 26px 0; }
 .slist-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .slist-actions .btn { flex: 1; min-width: 140px; }
