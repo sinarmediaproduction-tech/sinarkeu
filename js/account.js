@@ -543,8 +543,27 @@ window.deleteAccount = async function(accId) {
     window.showToast('Akun dihapus.', 'success');
 };
 
+// [GREETING] Judul layar kunci berubah sesuai waktu app dibuka -- dipanggil
+// dari window.renderLockScreenPicker() di bawah supaya ikut ter-update tiap
+// kali layar kunci ditampilkan (bukan cuma sekali saat load pertama), tanpa
+// perlu diubah manual satu-satu di semua tempat yang men-set
+// passwordLockScreen jadi display:flex.
+window.getLockGreeting = function() {
+    const hour = new Date().getHours();
+    if (hour >= 4 && hour < 11) return 'Selamat Pagi, Kak!';
+    if (hour >= 11 && hour < 15) return 'Selamat Siang, Kak!';
+    if (hour >= 15 && hour < 19) return 'Selamat Sore, Kak!';
+    return 'Selamat Malam, Kak!';
+};
+window.updateLockGreeting = function() {
+    const el = document.getElementById('lockGreetingTitle');
+    if (el) el.textContent = window.getLockGreeting();
+};
+window.updateLockGreeting();
+
 window.renderAccountBar = function() { window.renderLockScreenPicker(); window.updateActiveAccountLabel(); };
 window.renderLockScreenPicker = function() {
+    window.updateLockGreeting();
     const accounts = window.getAllAccounts();
     const activeId = window.getActiveAccountId();
     const el = document.getElementById('lockAccountPicker');
