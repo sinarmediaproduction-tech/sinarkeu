@@ -127,7 +127,6 @@ window.openBookManager = function() {
     window.openModal('bookManagerModal');
     window.renderBookList();
     window.renderBookParentOptions();
-    window.refreshStorageEstimate();
     if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
 };
 

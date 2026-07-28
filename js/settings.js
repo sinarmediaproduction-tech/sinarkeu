@@ -75,6 +75,10 @@ window.openSetelanModal = function(initialTab) {
     if (typeof window.renderAccModalList === 'function') window.renderAccModalList();
     if (typeof window.loadTgConfigToForm === 'function') window.loadTgConfigToForm();
     if (typeof window.loadConnectedDevices === 'function') window.loadConnectedDevices();
+    // [UI] Dipindah dari modal "Kelola Buku Kas" ke sini (tab Koneksi
+    // Supabase) -- lebih pas secara konteks, dan berlaku untuk semua buku
+    // seperti setelan lain di tab ini, bukan cuma saat mengelola buku.
+    if (typeof window.refreshStorageEstimate === 'function') window.refreshStorageEstimate();
 
     // Kalau lagi ada menu full-page sidebar lain yang terbuka (Laporan,
     // Anggaran, dst), tutup dulu supaya tidak tumpang tindih dengan Setelan.
