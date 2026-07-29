@@ -16,7 +16,7 @@ window.getEffectiveBudget = function(year, month, bookId) {
     if (year === now.getFullYear() && month === now.getMonth() + 1) {
         window.ensureMonthlyBudgetExists(year, month, bId);
     }
-    const monthlyBudget = window.migrateBudgetCategoryKeys(window.budgets[key] || {});
+    const monthlyBudget = window.migrateBudgetCategoryKeys(_budgetsForBook(bId)[key] || {});
     const defaultBudget = window.getDefaultBudget(bId);
     const hasCustom = Object.values(monthlyBudget).some(v => v > 0);
     if (hasCustom) {
@@ -25,6 +25,30 @@ window.getEffectiveBudget = function(year, month, bookId) {
         return { budget: defaultBudget, source: 'default', key: 'default' };
     }
 };
+// [FIX BUG LATEN - getEffectiveBudget/ensureMonthlyBudgetExists ikut buku aktif]
+// bookId di kedua fungsi ini SEHARUSNYA menentukan buku mana yang diproses,
+// tapi sebelumnya keduanya selalu baca/tulis window.budgets langsung --
+// variabel GLOBAL yang cuma pernah berisi data buku yang SEDANG aktif (lihat
+// semua tempat yang nulis window.budgets di app.js/book.js/settings.js/
+// transaction.js, semuanya pakai window.currentBookId, bukan parameter
+// bookId yang dioper ke sini). Selama fungsi ini SELALU dipanggil dengan
+// bookId == currentBookId (satu-satunya cara dipakai saat ini), tidak ada
+// gejala -- tapi kalau nanti dipanggil dengan bookId buku LAIN,
+// ensureMonthlyBudgetExists bisa: (1) baca window.budgets[key] milik buku
+// yang SALAH untuk cek "sudah ada budget custom belum" -- bisa auto-apply
+// default padahal buku target sudah punya budget custom, atau sebaliknya;
+// (2) kalau menulis, ujung-ujungnya mengoper window.budgets (data buku
+// aktif) ke window.saveMonthlyBudgetToCloud(bId, ...) -- menimpa SELURUH
+// budget bulanan buku target dengan snapshot budget buku yang sedang aktif.
+// Perbaikan: baca budgets khusus untuk bId (dari localStorage kalau beda
+// dari buku aktif, dari window.budgets kalau sama -- window.budgets tetap
+// jadi sumber untuk buku aktif seperti sebelumnya, tidak ada perubahan
+// perilaku untuk pemanggilan yang sudah ada).
+function _budgetsForBook(bId) {
+    if (bId === window.currentBookId) return window.budgets || {};
+    try { return JSON.parse(localStorage.getItem('sk_budgets_' + bId) || '{}'); } catch { return {}; }
+}
+
 // Flag per-key untuk mencegah double write ke Supabase apabila
 // ensureMonthlyBudgetExists() dan checkNewMonthAutoApply() keduanya
 // terpanggil dalam satu sesi untuk bulan yang sama.
@@ -33,17 +57,17 @@ if (!window._budgetAutoAppliedKeys) window._budgetAutoAppliedKeys = new Set();
 window.ensureMonthlyBudgetExists = function(year, month, bookId) {
     const bId = bookId || window.currentBookId;
     const key = `${year}-${month}`;
-    if (window.budgets[key] && Object.values(window.budgets[key]).some(v => v > 0)) {
+    const budgetsForThisBook = _budgetsForBook(bId);
+    if (budgetsForThisBook[key] && Object.values(budgetsForThisBook[key]).some(v => v > 0)) {
         return;
     }
     // Sudah ditangani oleh checkNewMonthAutoApply di sesi ini, skip.
     if (window._budgetAutoAppliedKeys.has(key + '_' + bId)) return;
     const defaultBudget = window.getDefaultBudget(bId);
     if (Object.keys(defaultBudget).length > 0) {
-        window.budgets[key] = { ...defaultBudget };
-        localStorage.setItem('sk_budgets_' + bId, JSON.stringify(window.budgets));
+        budgetsForThisBook[key] = { ...defaultBudget };
         window._budgetAutoAppliedKeys.add(key + '_' + bId);
-        window.saveMonthlyBudgetToCloud(bId, window.budgets);
+        window.saveMonthlyBudgetToCloud(bId, budgetsForThisBook);
         console.log(`[Budget] Auto-apply default budget untuk ${key} di buku ${bId}`);
     }
 };
