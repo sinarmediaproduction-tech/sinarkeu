@@ -153,7 +153,7 @@ window.checkAndRunDailyAutoBackup = async function() {
         if (bookTxs.length === 0 && window.isOnline()) {
             const _abTag = window.getAccountTag ? window.getAccountTag() : null;
             // OR filter: sertakan baris lama tanpa tag agar backup tidak kehilangan data sebelum migrasi
-            const _abTagFilter = window.tagOrFilter(_abTag);
+            const _abTagFilter = window.tagOrFilter(_abTag, book.id);
             const cloudData = await window.callSupabaseAPI('transactions', 'GET', null, `?book_id=eq.${book.id}&is_deleted=eq.false&order=date.desc&limit=300${_abTagFilter}`);
             if (cloudData && Array.isArray(cloudData)) {
                 // [SECURITY] Dekripsi field sensitif -- lihat window.decodeCloudTxRow di crypto.js.
@@ -177,7 +177,7 @@ window.loadCloudBackupList = async function() {
     if (!window.isOnline()) { container.innerHTML = '<div style="color:var(--ink-faint); font-size:.7rem; text-align:center; padding:8px;">Online untuk melihat cadangan cloud</div>'; return; }
     try {
         const _blTag = window.getAccountTag ? window.getAccountTag() : null;
-        const _blTagFilter = window.tagOrFilter(_blTag);
+        const _blTagFilter = window.tagOrFilter(_blTag, window.currentBookId);
         const backups = await window.callSupabaseAPI('backups', 'GET', null, `?book_id=eq.${window.currentBookId}&order=created_at.desc&limit=10${_blTagFilter}`);
         window.renderCloudBackupList(backups || []);
     } catch (e) { container.innerHTML = '<div style="color:var(--danger); font-size:.7rem; text-align:center; padding:8px;">Gagal memuat cadangan cloud</div>'; }
@@ -200,7 +200,7 @@ window.restoreFromCloudBackup = async function(backupId) {
     if (!confirm('Pulihkan data dari cadangan cloud ini? Data saat ini akan diganti.')) return;
     try {
         const _brTag = window.getAccountTag ? window.getAccountTag() : null;
-        const _brTagFilter = window.tagOrFilter(_brTag);
+        const _brTagFilter = window.tagOrFilter(_brTag, window.currentBookId);
         const rows = await window.callSupabaseAPI('backups', 'GET', null, `?id=eq.${backupId}&book_id=eq.${window.currentBookId}${_brTagFilter}`);
         if (!rows || rows.length === 0) { window.showToast('Data backup tidak ditemukan', 'error'); return; }
         window.txs = await window._decodeBackupData(rows[0].data);

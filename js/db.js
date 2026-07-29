@@ -929,7 +929,7 @@ window.pullPaymentRemindersFromCloud = async function(bookId) {
             'payment_reminders',
             'GET',
             null,
-            `?book_id=eq.${bookId}&order=created_at.desc${window.tagOrFilter(window.getAccountTag ? window.getAccountTag() : null)}`
+            `?book_id=eq.${bookId}&order=created_at.desc${window.tagOrFilter(window.getAccountTag ? window.getAccountTag() : null, bookId)}`
         );
         
         if (result && Array.isArray(result)) {

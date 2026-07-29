@@ -99,7 +99,9 @@ window.trimAndSaveLocal = function(bookId, data) {
 window._fetchOlderTxsOffsets = async function(bookId) {
     if (!window.isOnline()) return null; // offline: tidak bisa dihitung, pemanggil harus fallback (biarkan offset lama)
     const _tag = window.getAccountTag ? window.getAccountTag() : null;
-    const _tagFilter = window.tagOrFilter(_tag);
+    // Untuk buku bersama, jangan membatasi transaksi anggota lain dengan
+    // account_tag; RLS sudah menentukan siapa yang boleh membaca buku ini.
+    const _tagFilter = window.tagOrFilter(_tag, bookId);
     const PAGE_SIZE = 1000;
     let balanceOffset = 0, incomeOffset = 0, expenseOffset = 0;
     let start = window.MAX_LOCAL_TXS;
@@ -427,13 +429,18 @@ window.clearTxPendingDelete = function(id) {
 window.pushDeleteToCloud = async function(id, bookId) {
     if (!window.isOnline()) return false;
     const tag = window.getAccountTag ? window.getAccountTag() : null;
-    const tagFilter = window.tagOrFilter(tag);
+    const targetBookId = bookId || window.currentBookId;
+    const tagFilter = window.tagOrFilter(tag, targetBookId);
     const result = await window.callSupabaseAPI(
         'transactions', 'PATCH',
         { is_deleted: true, updated_at: new Date().toISOString() },
-        `?id=eq.${id}&book_id=eq.${bookId || window.currentBookId}${tagFilter}`
+        `?id=eq.${id}&book_id=eq.${targetBookId}${tagFilter}`,
+        { returnRepresentation: true }
     );
-    return result !== null;
+    // PATCH tanpa return=representation membalas 204 bahkan ketika filter tidak
+    // mengenai baris mana pun. Pastikan tombstone benar-benar tersimpan sebelum
+    // pending-delete dihapus oleh pemanggil.
+    return Array.isArray(result) && result.length === 1;
 };
 
 // Dipanggil saat app start (setelah flushPendingDirtyOnStart, SEBELUM
@@ -736,7 +743,7 @@ window.refreshLogsFromCloud = async function() {
     area.innerText = "Memuat log dari cloud...";
     const _glTag = window.getAccountTag ? window.getAccountTag() : null;
     // OR filter: log ber-tag akun ini ATAU log lama tanpa tag.
-    const _glTagFilter = window.tagOrFilter(_glTag);
+    const _glTagFilter = window.tagOrFilter(_glTag, window.currentBookId);
     let cloudLogs = await window.callSupabaseAPI('audit_logs', 'GET', null, `?book_id=eq.${window.currentBookId}&order=timestamp.desc&limit=30${_glTagFilter}`);
     if (cloudLogs && Array.isArray(cloudLogs)) {
         window.renderLogs(cloudLogs);

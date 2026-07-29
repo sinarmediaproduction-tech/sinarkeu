@@ -481,7 +481,7 @@ window.duplicateBook = async function(id) {
         window.showToast('Menyalin transaksi, mohon tunggu...', 'info');
         try {
             const tag = window.getAccountTag ? window.getAccountTag() : null;
-            const tagFilter = window.tagOrFilter(tag);
+            const tagFilter = window.tagOrFilter(tag, book.id);
             // Tarik SEMUA transaksi buku sumber langsung dari cloud (paginated,
             // sama seperti pola di window._getUnclosedChildTxs) -- bukan cuma
             // window.txs, supaya buku sumber dengan >MAX_LOCAL_TXS transaksi
@@ -714,7 +714,7 @@ window._getUnclosedChildTxs = async function(book) {
 
     if (window.isOnline()) {
         const tag = window.getAccountTag ? window.getAccountTag() : null;
-        const tagFilter = window.tagOrFilter(tag);
+        const tagFilter = window.tagOrFilter(tag, bookId);
         const dateFilter = lastClosedAt ? `&date=gt.${encodeURIComponent(lastClosedAt)}` : '';
         const PAGE_SIZE = 1000;
         let allRows = [];

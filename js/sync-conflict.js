@@ -116,7 +116,7 @@ window._registerConflict = function(id, bookId, localTx, serverTx, serverDeleted
 //         ini duluan (sudah otomatis masuk antrean review lewat _registerConflict).
 window._pushSingleTxConditional = async function(bookId, tx, baseline) {
     const tag = window.getAccountTag ? window.getAccountTag() : null;
-    const tagFilter = window.tagOrFilter(tag);
+    const tagFilter = window.tagOrFilter(tag, bookId);
     const nowIso = new Date().toISOString();
     const body = {
         id: tx.id,
@@ -296,7 +296,7 @@ window.resolveConflictKeepMine = async function() {
         JSON.parse(localStorage.getItem('sk_txs_' + c.bookId) || '[]').find(t => t.id === c.id);
     if (tx && window.isOnline()) {
         const tag = window.getAccountTag ? window.getAccountTag() : null;
-        const tagFilter = window.tagOrFilter(tag);
+        const tagFilter = window.tagOrFilter(tag, c.bookId);
         const body = {
             id: tx.id, book_id: c.bookId, device_id: window.deviceId, date: tx.date,
             updated_at: new Date().toISOString(), is_deleted: false,

@@ -631,7 +631,7 @@ window.loadDefaultBudgetFromCloud = async function(bookId) {
                 'settings',
                 'GET',
                 null,
-                `?book_id=eq.${bookId}&key=eq.default_budget&order=updated_at.desc&limit=1${window.tagOrFilter(window.getAccountTag && window.getAccountTag())}`
+                `?book_id=eq.${bookId}&key=eq.default_budget&order=updated_at.desc&limit=1${window.tagOrFilter(window.getAccountTag && window.getAccountTag(), bookId)}`
             );
             
             if (result && Array.isArray(result) && result.length > 0) {
@@ -682,7 +682,7 @@ window.loadMonthlyBudgetFromCloud = async function(bookId) {
                 'settings',
                 'GET',
                 null,
-                `?book_id=eq.${bookId}&key=eq.budgets&order=updated_at.desc&limit=1${window.tagOrFilter(window.getAccountTag && window.getAccountTag())}`
+                `?book_id=eq.${bookId}&key=eq.budgets&order=updated_at.desc&limit=1${window.tagOrFilter(window.getAccountTag && window.getAccountTag(), bookId)}`
             );
             
             if (result && Array.isArray(result) && result.length > 0) {
@@ -746,7 +746,7 @@ window.loadAnnualBudgetFromCloud = async function(bookId) {
                 'settings',
                 'GET',
                 null,
-                `?book_id=eq.${bookId}&key=eq.annual_budget&order=updated_at.desc&limit=1${window.tagOrFilter(window.getAccountTag && window.getAccountTag())}`
+                `?book_id=eq.${bookId}&key=eq.annual_budget&order=updated_at.desc&limit=1${window.tagOrFilter(window.getAccountTag && window.getAccountTag(), bookId)}`
             );
             
             if (result && Array.isArray(result) && result.length > 0) {
@@ -820,7 +820,7 @@ window.migrateAllBudgets = async function(bookId) {
             'settings',
             'GET',
             null,
-            `?book_id=eq.${bookId}&key=eq.default_budget&order=updated_at.desc&limit=1${window.tagOrFilter(window.getAccountTag && window.getAccountTag())}`
+            `?book_id=eq.${bookId}&key=eq.default_budget&order=updated_at.desc&limit=1${window.tagOrFilter(window.getAccountTag && window.getAccountTag(), bookId)}`
         );
         
         if (existing && Array.isArray(existing) && existing.length > 0) {
