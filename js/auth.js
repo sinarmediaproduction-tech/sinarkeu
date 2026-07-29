@@ -935,6 +935,183 @@ window._skConvertBookSettingsToPlaintext = async function(bookId) {
     }
 };
 
+// ── Konversi data lama (plaintext) balik ke terenkripsi saat buku jadi ──
+// ── pribadi lagi (kebalikan dari window._skConvertTableToPlaintext) ─────
+// Dipanggil SELAGI buku masih tercatat shared di window._skSharedRoles
+// (supaya callSupabaseAPI, lihat patch di js/auth.js atas, masih memilih
+// JWT -- bukan anon key -- untuk request ke tabel data buku ini; policy
+// tulis shared_write/_update di sql/harden_shared_book_data_rls.sql
+// mensyaratkan role admin/editor).
+window._skConvertTableToEncrypted = async function(table, bookId, buildEncryptedRow) {
+    const skippedIds = [];
+    let convertedCount = 0;
+    const MAX_PAGES = 200; // guard: jangan sampai loop tak berhenti kalau ada baris yang terus gagal
+    for (let page = 0; page < MAX_PAGES; page++) {
+        const excludeFilter = skippedIds.length > 0 ? `&id=not.in.(${skippedIds.join(',')})` : '';
+        const query = `?book_id=eq.${bookId}&enc_payload=is.null&order=id&limit=200${excludeFilter}`;
+        let rows;
+        try { rows = await window.callSupabaseAPI(table, 'GET', null, query); }
+        catch (e) { console.error('[auth.js] Gagal ambil baris ' + table + ' untuk konversi enkripsi:', e); break; }
+        if (!rows || !Array.isArray(rows) || rows.length === 0) break;
+        for (const row of rows) {
+            try {
+                const patchRow = await buildEncryptedRow(row);
+                const res = await window.callSupabaseAPI(table, 'PATCH', patchRow, `?id=eq.${row.id}`);
+                if (res === null) throw new Error('PATCH ditolak');
+                convertedCount++;
+            } catch (e) {
+                console.error('[auth.js] Gagal konversi ' + table + ' id=' + row.id + ' ke terenkripsi:', e);
+                skippedIds.push(row.id);
+            }
+        }
+        if (rows.length < 200) break;
+    }
+    return { convertedCount, skippedCount: skippedIds.length };
+};
+
+window._skConvertBookDataToEncrypted = async function(bookId) {
+    if (!window._sessionCryptoKey) return; // tidak ada kunci lokal -- seharusnya sudah dicek pemanggil
+    const encryptPayload = async (plainObj) => await window.encryptStr(window._sessionCryptoKey, JSON.stringify(plainObj));
+    const txResult = await window._skConvertTableToEncrypted('transactions', bookId, async (row) => ({
+        enc_payload: await encryptPayload({
+            type: row.type, amount: row.amount,
+            category: row.category || (row.type === 'income' ? 'Pemasukan' : ''),
+            description: row.description || '', attachment: row.attachment || null
+        }),
+        type: null, amount: null, category: null, description: null, attachment: null
+    }));
+    const prResult = await window._skConvertTableToEncrypted('payment_reminders', bookId, async (row) => ({
+        enc_payload: await encryptPayload({
+            name: row.name || '', day: row.day, recurrence: row.recurrence,
+            month: row.month || 1, note: row.note || ''
+        }),
+        name: null, day: null, recurrence: null, month: null, note: null
+    }));
+    const totalSkipped = txResult.skippedCount + prResult.skippedCount;
+    if (totalSkipped > 0) {
+        window.showToast && window.showToast(
+            totalSkipped + ' baris data gagal dienkripsi ulang (cek console) -- tetap tersimpan plaintext di cloud untuk baris itu, bisa dicoba lagi lewat "Jadikan Pribadi Lagi" sekali lagi.',
+            'warning'
+        );
+    }
+};
+
+// ── Settings (Anggaran/Card/dll) balik ke terenkripsi ────────────────────
+// BEDA urutan dari window._skConvertBookDataToEncrypted di atas: fungsi ini
+// wajib dipanggil SETELAH buku tidak lagi tercatat shared secara lokal
+// (window._skSharedRoles sudah tidak punya bookId ini) -- window.pushSetting
+// (js/db.js) menentukan enkripsi/account_tag berdasarkan
+// window.skIsSharedBookId(bookId) saat itu juga. Baris plaintext lama tetap
+// ada di cloud (tabel settings insert-only, lihat catatan lengkap di
+// window._skConvertBookSettingsToPlaintext) tapi baris terenkripsi baru ini
+// otomatis "menang" lewat updated_at.desc di pullAllSettings().
+window._skConvertBookSettingsToEncrypted = async function(bookId) {
+    if (!Array.isArray(window.DUPLICATE_BOOK_SETTINGS_MAP)) {
+        console.warn('[auth.js] DUPLICATE_BOOK_SETTINGS_MAP belum tersedia, lewati konversi enkripsi settings buku pribadi.');
+        return;
+    }
+    for (const [prefix, settingKey] of window.DUPLICATE_BOOK_SETTINGS_MAP) {
+        const raw = localStorage.getItem(prefix + bookId);
+        if (raw === null) continue;
+        let value;
+        try { value = JSON.parse(raw); } catch { value = raw; }
+        try { await window.pushSetting(settingKey, value, bookId); }
+        catch (e) { console.warn(`[auth.js] Gagal push ulang terenkripsi setting '${settingKey}' saat menjadikan buku pribadi:`, e); }
+    }
+};
+
+// ── Jadikan buku bersama kembali jadi buku pribadi ───────────────────────
+// Kebalikan dari window.skMakeBookShared di atas. HANYA admin buku ini yang
+// boleh memanggilnya (ditegakkan di sini DAN oleh RLS sk_books_delete_admin
+// di sql/shared_books_roles.sql). Efeknya:
+//   1. Data lama yang sempat tersimpan plaintext (enc_payload NULL, lihat
+//      catatan window._skConvertBookDataToPlaintext) dienkripsi ULANG
+//      memakai kunci sesi lokal admin yang menjalankan ini.
+//   2. Baris sk_books buku ini DIHAPUS -- lewat ON DELETE CASCADE di
+//      book_members (sql/shared_books_roles.sql), SEMUA anggota (termasuk
+//      admin lain kalau ada) langsung kehilangan akses ke buku ini.
+//   3. sk_book_is_shared(book_id) otomatis jadi FALSE -> RLS *_legacy_anon
+//      (sql/harden_shared_book_data_rls.sql) aktif lagi utk buku ini, jadi
+//      anon key bisa dipakai baca/tulis seperti buku pribadi biasa --
+//      tidak perlu migrasi skema apa pun untuk langkah ini.
+// Tidak memindahkan book.id balik (beda dari skMakeBookShared yang migrasi
+// 'b_default' -> id baru) -- ID yang sudah dipakai selama jadi buku bersama
+// tetap dipakai sebagai buku pribadi, cukup aman karena skema tabel data
+// tidak berubah antara buku shared/pribadi (cuma kolom enc_payload).
+window.skMakeBookPrivate = async function(bookId) {
+    const client = getSupabaseAuthClient();
+    if (!client) {
+        window.showToast && window.showToast('Supabase belum di-setup (cek Setelan → Supabase).', 'error');
+        return;
+    }
+    const book = window.books.find(function(b) { return b.id === bookId; });
+    if (!book || !book._isShared) {
+        window.showToast && window.showToast('Buku ini bukan buku bersama.', 'error');
+        return;
+    }
+    if (window.skGetRoleForBook(bookId) !== 'admin') {
+        window.showToast && window.showToast('Hanya admin buku ini yang boleh menjadikannya pribadi lagi.', 'error');
+        return;
+    }
+    if (!window._sessionCryptoKey) {
+        window.showToast && window.showToast('Kunci enkripsi lokal belum siap -- buka & unlock app dulu di device ini.', 'error');
+        return;
+    }
+    if (!window.isOnline || !window.isOnline()) {
+        window.showToast && window.showToast('Perlu online untuk menjadikan buku ini pribadi lagi (data harus dienkripsi ulang & dihapus dari daftar buku bersama di cloud).', 'error');
+        return;
+    }
+    let memberCount = 0;
+    try {
+        const members = typeof window.skListBookMembers === 'function' ? await window.skListBookMembers(bookId) : null;
+        memberCount = Array.isArray(members) ? members.length : 0;
+    } catch (e) { /* best-effort, cuma dipakai buat pesan konfirmasi */ }
+    const extraWarn = memberCount > 1
+        ? '\n\nBuku ini punya ' + memberCount + ' anggota -- SEMUANYA (termasuk admin lain) akan langsung kehilangan akses begitu buku ini jadi pribadi lagi.'
+        : '';
+    const ok = confirm(
+        'Jadikan "' + book.name + '" kembali jadi buku pribadi?\n\n' +
+        'Data lama akan dienkripsi ulang dengan password lokal kamu, dan sesudah ini buku hanya bisa diakses dari device yang tahu password itu (bukan lewat login lagi).' +
+        extraWarn +
+        '\n\nAksi ini tidak bisa dibatalkan sendiri dari UI.'
+    );
+    if (!ok) return;
+
+    try {
+        // 1) Enkripsi ulang data lama yang masih plaintext -- SEBELUM sk_books
+        //    dihapus, supaya callSupabaseAPI masih pakai JWT admin (lihat
+        //    catatan di window._skConvertTableToEncrypted).
+        await window._skConvertBookDataToEncrypted(bookId);
+
+        // 2) Hapus baris sk_books -- cascade otomatis hapus semua baris
+        //    book_members (lihat ON DELETE CASCADE di sql/shared_books_roles.sql),
+        //    jadi semua anggota (termasuk admin lain) ikut kehilangan akses.
+        const res = await client.from('sk_books').delete().eq('id', bookId);
+        if (res.error) throw res.error;
+
+        // 3) Update state lokal SEBELUM langkah 4 -- window.pushSetting
+        //    (dipanggil dari _skConvertBookSettingsToEncrypted) menentukan
+        //    enkripsi/account_tag berdasarkan window.skIsSharedBookId(bookId)
+        //    saat itu juga.
+        book._isShared = false;
+        delete book._role;
+        delete window._skSharedRoles[bookId];
+        localStorage.setItem('sk_books', JSON.stringify(window.books));
+
+        // 4) Enkripsi ulang settings (Anggaran/Card/dst) buku ini.
+        try { await window._skConvertBookSettingsToEncrypted(bookId); }
+        catch (e) { console.error('[auth.js] Gagal konversi setting ke terenkripsi:', e); }
+
+        window.showToast && window.showToast('"' + book.name + '" sekarang jadi buku pribadi lagi.', 'success');
+        if (typeof window.renderBookList === 'function') window.renderBookList();
+        if (typeof window.updateBookSelectDropdown === 'function') window.updateBookSelectDropdown();
+        if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
+    } catch (e) {
+        console.error('[auth.js] Gagal menjadikan buku pribadi lagi:', e);
+        window.showToast && window.showToast('Gagal: ' + e.message, 'error');
+    }
+};
+
 
 // ── Bootstrap admin pertama SEKALIGUS saat setup awal ───────────────────
 // Dipanggil HANYA dari window.doFirstTimeSetup (js/settings.js), HANYA

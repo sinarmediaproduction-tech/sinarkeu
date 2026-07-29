@@ -163,6 +163,12 @@ window.renderBookList = function() {
         const sharedLabel = b._isShared ? `<div style="font-size:.6rem; color:var(--success); margin-top:2px;">🔗 Buku bersama · peran kamu: <b>${window.escapeHtml(b._role || '?')}</b></div>` : '';
         const makeSharedBtn = (!b._isShared && typeof window.skMakeBookShared === 'function') ?
             `<button class="btn-mini" style="background:var(--success-lt); color:var(--success); border:1px solid var(--rule);" onclick="window.skMakeBookShared('${b.id}')" title="Undang orang lain untuk ikut mengelola buku ini">Jadikan Bersama</button>` : '';
+        // Kebalikan dari makeSharedBtn -- cuma admin buku ini yang boleh
+        // (lihat window.skMakeBookPrivate untuk detail efeknya: semua
+        // anggota lain langsung kehilangan akses begitu buku ini jadi
+        // pribadi lagi).
+        const makePrivateBtn = (b._isShared && canManageThisBook && typeof window.skMakeBookPrivate === 'function') ?
+            `<button class="btn-mini" style="background:#F1EBDA; color:#9C7A2E; border:1px solid #B99A4E;" onclick="window.skMakeBookPrivate('${b.id}')" title="Hapus akses semua anggota &amp; kembalikan buku ini jadi pribadi (hanya di device ini)">Jadikan Pribadi Lagi</button>` : '';
         // [FITUR DUPLIKAT BUKU] Buku bersama SENGAJA tidak boleh diduplikat
         // lewat tombol ini (lihat window.duplicateBook untuk alasannya) --
         // jalur otentikasi & tabel book_members/sk_books-nya terpisah dari
@@ -181,6 +187,7 @@ window.renderBookList = function() {
                 <button class="btn-mini" style="background:#F1EBDA; color:#9C7A2E; border:1px solid #B99A4E;" onclick="window.openCardVisibilityModal('${b.id}')" title="Pilih card yang ditampilkan untuk buku ini">Card</button>
                 ${duplicateBtn}
                 ${makeSharedBtn}
+                ${makePrivateBtn}
                 ${b.parentId && isCurrent ? `<button class="btn-mini" style="background:#5C4E72; color:#fff;" onclick="window.closeModal('bookManagerModal'); window.openTutupAnakBuku()">Tutup & Kirim</button>` : ''}
                 ${delBtn}
             </div>
