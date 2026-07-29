@@ -367,6 +367,8 @@ window.reEncryptAllCloudSettings = async function() {
             await window.pushSetting('hidden_cards', hiddenCards, b.id);
             const shoppingList = window.getShoppingList ? window.getShoppingList(b.id) : [];
             await window.pushSetting('shopping_list', shoppingList, b.id);
+            const shoppingIncome = window.getShoppingListMonthlyIncome ? window.getShoppingListMonthlyIncome(b.id) : 0;
+            await window.pushSetting('shopping_list_income', shoppingIncome, b.id);
         }
         await window.pushSettingTelegram();
         console.log('[Sync] Re-enkripsi & push ulang semua setting ke cloud selesai (kunci baru).');
@@ -671,6 +673,23 @@ window.pullAllSettings = async function() {
                     localStorage.setItem('sk_shopping_list_' + row.book_id, JSON.stringify(parsed));
                     // Render ulang hanya kalau modalnya sedang terbuka untuk buku aktif
                     // (sama seperti guard di window.switchBook, js/book.js).
+                    if (row.book_id === window.currentBookId) {
+                        const modalEl = document.getElementById('shoppingListModal');
+                        if (modalEl && modalEl.classList.contains('show') && typeof window.renderShoppingList === 'function') {
+                            window.renderShoppingList();
+                        }
+                    }
+                }
+            }
+            if (row.key === 'shopping_list_income') {
+                // Pemasukan bulanan yang diinput di card "Proyeksi Keuangan"
+                // (Belanja Bulanan, js/shopping-list.js) -- pola sama seperti
+                // 'emergency_fund_months' di atas (angka tunggal per buku).
+                // Beda dengan months, income boleh 0 (artinya belum diisi/
+                // sengaja dikosongkan), bukan ditolak seperti months<=0.
+                const income = Number(parsed);
+                if (!isNaN(income) && income >= 0) {
+                    localStorage.setItem('sk_shopping_list_income_' + row.book_id, String(income));
                     if (row.book_id === window.currentBookId) {
                         const modalEl = document.getElementById('shoppingListModal');
                         if (modalEl && modalEl.classList.contains('show') && typeof window.renderShoppingList === 'function') {

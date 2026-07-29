@@ -2377,6 +2377,103 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 }
 .slist-budget-warning b { font-weight: 700; }
 
+/* Card "Proyeksi Keuangan" -- Belanja Bulanan. Pakai --paper-warm + border
+   --rule (bukan gradient navy seperti .slist-summary-card) supaya jelas
+   ini kartu input/kalkulasi terpisah dari ringkasan sisa belanja di atas. */
+.slist-forecast-card {
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+.slist-forecast-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.slist-forecast-title {
+  font-family: var(--font-display);
+  font-size: .86rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.slist-forecast-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--ink-faint);
+  color: var(--ink-faint);
+  font-size: .62rem;
+  font-weight: 600;
+  cursor: help;
+}
+.slist-forecast-input-group { margin-bottom: 12px; }
+.slist-forecast-input-group label {
+  font-size: .72rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+.slist-forecast-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--rule);
+  margin-bottom: 12px;
+}
+.slist-forecast-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: .78rem;
+  color: var(--ink-muted);
+}
+.slist-forecast-row span:last-child {
+  font-family: var(--font-mono);
+  color: var(--ink);
+  font-weight: 500;
+}
+.slist-forecast-row-total {
+  padding-top: 6px;
+  border-top: 1px solid var(--rule);
+  font-weight: 600;
+}
+.slist-forecast-row-total span:last-child { font-weight: 700; }
+.slist-forecast-row-total #slistForecastMonthlySurplus.is-negative { color: var(--danger); }
+.slist-forecast-yearly {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--accent-lt);
+  border-radius: var(--radius-sm);
+  padding: 10px 13px;
+}
+.slist-forecast-yearly-label {
+  font-size: .68rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+.slist-forecast-yearly-value {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--brand);
+}
+.slist-forecast-yearly-value.is-negative { color: var(--danger); }
+.slist-forecast-note {
+  font-size: .68rem;
+  color: var(--ink-faint);
+  margin: 8px 0 0;
+  line-height: 1.4;
+}
+
 .slist-viewer-notice {
   font-size: .72rem;
   border-radius: var(--radius-sm);
@@ -2583,6 +2680,8 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   .slist-summary-card { padding: 12px 15px; margin-bottom: 10px; }
   .slist-summary-value { font-size: 1.28rem; }
   .slist-budget-warnings { margin-bottom: 10px; }
+  .slist-forecast-card { padding: 12px 14px; margin-bottom: 10px; }
+  .slist-forecast-yearly-value { font-size: 1rem; }
   .slist-viewer-notice { margin-bottom: 10px; }
 
   /* Header kolom cuma relevan buat layout grid desktop -- disembunyikan

@@ -241,6 +241,7 @@ window.renderShoppingList = function() {
     if (!items.length) {
         container.innerHTML = '<div class="slist-empty">Daftar belanja masih kosong. Tambahkan barang lewat form di atas.</div>';
         window._updateShoppingListSummary(items);
+        window._renderShoppingListForecast(items);
         return;
     }
 
@@ -295,6 +296,103 @@ window.renderShoppingList = function() {
 
     window._updateShoppingListSummary(items);
     window._renderShoppingListBudgetWarnings(items);
+    window._renderShoppingListForecast(items);
+};
+
+// ==================== PROYEKSI KEUANGAN ====================
+// Card "Proyeksi Keuangan" di Belanja Bulanan: user isi pemasukan bulanan
+// sendiri (angka bebas, bukan dari transaksi), dikurangi total daftar
+// belanja saat ini (semua barang, sama seperti grandTotal di
+// _renderShoppingListBudgetWarnings), hasilnya dikali 12 untuk perkiraan
+// dana terkumpul dalam setahun kalau pola pemasukan & belanja ini konsisten
+// tiap bulan -- dipakai user sebagai acuan kasar untuk menutup kebutuhan
+// tahunan (THR, pajak tahunan, dst).
+//
+// Pemasukan disimpan per buku, localStorage + sync cloud lewat
+// window.pushSetting (key 'shopping_list_income'), mengikuti pola yang
+// sama dengan window.saveShoppingList di atas. Pull-nya ditangani terpusat
+// di window.pullAllSettings (js/db.js, blok row.key === 'shopping_list_income').
+window.getShoppingListMonthlyIncome = function(bookId) {
+    const raw = localStorage.getItem('sk_shopping_list_income_' + (bookId || window.currentBookId));
+    const num = Number(raw);
+    return (num > 0) ? num : 0;
+};
+
+window.saveShoppingListMonthlyIncome = function(bookId, income) {
+    const targetId = bookId || window.currentBookId;
+    localStorage.setItem('sk_shopping_list_income_' + targetId, String(income));
+    if (window.isOnline && window.isOnline() && window.pushSetting) {
+        window.pushSetting('shopping_list_income', income, targetId).catch(function(e) {
+            console.warn('[ShoppingList] Gagal sync pemasukan bulanan ke cloud:', e);
+            window.showToast && window.showToast('Pemasukan bulanan tersimpan di perangkat ini, tapi gagal sinkron ke cloud.', 'error');
+        });
+    }
+};
+
+// Dipanggil dari onchange input pemasukan (bukan oninput -- supaya tidak
+// nge-push ke cloud & re-render di setiap ketukan angka, cukup sekali saat
+// user selesai mengisi/pindah fokus, sama seperti pola field harga di form
+// tambah barang yang commit-nya di submit, bukan tiap ketik).
+window.handleShoppingListIncomeChange = function(input) {
+    if (window._slistBlockIfViewer()) {
+        window.renderShoppingList();
+        return;
+    }
+    const income = window.unRp(input.value);
+    window.saveShoppingListMonthlyIncome(window.currentBookId, income);
+    window._renderShoppingListForecast(window.getShoppingList(window.currentBookId));
+};
+
+window._renderShoppingListForecast = function(items) {
+    const card = document.getElementById('slistForecastCard');
+    if (!card) return;
+
+    const isViewer = window._slistIsViewer();
+    const income = window.getShoppingListMonthlyIncome(window.currentBookId);
+
+    const incomeInput = document.getElementById('slistMonthlyIncome');
+    if (incomeInput) {
+        // Jangan timpa nilai input kalau lagi difokus/diketik user --
+        // render ulang bisa dipicu di tengah user mengisi (mis. pull cloud
+        // setelah barang berubah dari device lain).
+        if (document.activeElement !== incomeInput) {
+            incomeInput.value = income ? window.rp(income).replace('Rp', '').trim() : '';
+        }
+        incomeInput.disabled = isViewer;
+    }
+
+    const totalBelanja = (items || []).reduce((sum, i) => sum + window._shoppingListItemSubtotal(i), 0);
+    const sisaBulanan = income - totalBelanja;
+    const proyeksiTahunan = sisaBulanan * 12;
+    const isNegative = sisaBulanan < 0;
+
+    const fmtSigned = function(n) { return (n < 0 ? '-' : '') + window.rp(Math.abs(n)); };
+
+    const incomeEl = document.getElementById('slistForecastIncome');
+    const expenseEl = document.getElementById('slistForecastExpense');
+    const surplusEl = document.getElementById('slistForecastMonthlySurplus');
+    const yearlyEl = document.getElementById('slistForecastYearly');
+    const noteEl = document.getElementById('slistForecastNote');
+
+    if (incomeEl) incomeEl.innerText = window.rp(income);
+    if (expenseEl) expenseEl.innerText = window.rp(totalBelanja);
+    if (surplusEl) {
+        surplusEl.innerText = fmtSigned(sisaBulanan);
+        surplusEl.classList.toggle('is-negative', isNegative);
+    }
+    if (yearlyEl) {
+        yearlyEl.innerText = fmtSigned(proyeksiTahunan);
+        yearlyEl.classList.toggle('is-negative', isNegative);
+    }
+    if (noteEl) {
+        if (!income) {
+            noteEl.innerText = 'Isi pemasukan bulanan di atas untuk melihat proyeksi setahun.';
+        } else if (isNegative) {
+            noteEl.innerText = 'Total daftar belanja melebihi pemasukan bulanan -- proyeksi tahunan jadi minus.';
+        } else {
+            noteEl.innerText = 'Perkiraan dana terkumpul dalam 12 bulan ke depan kalau pemasukan & belanja bulanan ini konsisten, sebagai acuan kasar untuk menutup kebutuhan tahunan.';
+        }
+    }
 };
 
 // ==================== PERINGATAN ANGGARAN ====================

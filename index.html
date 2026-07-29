@@ -1259,6 +1259,35 @@ alter table public.settings
             <span class="slist-summary-meta" id="slistProgressCount">0 dari 0 dibeli</span>
         </div>
         <div id="slistBudgetWarnings" class="slist-budget-warnings"></div>
+        <div id="slistForecastCard" class="slist-forecast-card">
+            <div class="slist-forecast-header">
+                <span class="slist-forecast-title">Proyeksi Keuangan Tahunan</span>
+                <span class="slist-forecast-hint" tabindex="0" title="Pemasukan bulanan dikurangi total daftar belanja saat ini, hasilnya dikalikan 12 untuk perkiraan dana terkumpul dalam setahun -- acuan kasar untuk menutup kebutuhan tahunan.">?</span>
+            </div>
+            <div class="form-group slist-forecast-input-group">
+                <label for="slistMonthlyIncome">Pemasukan Bulanan</label>
+                <input type="text" id="slistMonthlyIncome" class="form-control" inputmode="numeric" placeholder="Rp 0" oninput="window.formatRupiah(this)" onchange="window.handleShoppingListIncomeChange(this)">
+            </div>
+            <div class="slist-forecast-breakdown">
+                <div class="slist-forecast-row">
+                    <span>Pemasukan Bulanan</span>
+                    <span id="slistForecastIncome">Rp 0</span>
+                </div>
+                <div class="slist-forecast-row">
+                    <span>Total Belanja Bulanan</span>
+                    <span id="slistForecastExpense">Rp 0</span>
+                </div>
+                <div class="slist-forecast-row slist-forecast-row-total">
+                    <span>Sisa per Bulan</span>
+                    <span id="slistForecastMonthlySurplus">Rp 0</span>
+                </div>
+            </div>
+            <div class="slist-forecast-yearly">
+                <span class="slist-forecast-yearly-label">Proyeksi Terkumpul dalam Setahun</span>
+                <span class="slist-forecast-yearly-value" id="slistForecastYearly">Rp 0</span>
+            </div>
+            <p class="slist-forecast-note" id="slistForecastNote">Isi pemasukan bulanan di atas untuk melihat proyeksi setahun.</p>
+        </div>
         <div id="slistViewerNotice" class="slist-viewer-notice" style="display:none;">Peran Anda di buku bersama ini adalah <b>Viewer</b> — hanya bisa melihat daftar belanja, tidak bisa menambah/mengubah/menghapus barang.</div>
         <button type="button" id="slistAddToggle" class="slist-add-toggle" aria-expanded="false" aria-controls="slistAddWrap" onclick="window.toggleShoppingListAddForm()">
             <span class="slist-add-toggle-icon">+</span> Tambah Barang
