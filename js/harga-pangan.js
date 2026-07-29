@@ -1,6 +1,9 @@
 // ==================== HARGA PANGAN REFERENSI ====================
 // Auto-isi kolom harga di Daftar Belanja (js/shopping-list.js) pakai harga
-// pasar acuan nasional dari Bank Indonesia PIHPS, lewat proxy
+// pasar acuan dari Bank Indonesia PIHPS untuk Kabupaten Magetan, Jawa
+// Timur (fallback berjenjang ke rata-rata Provinsi Jawa Timur lalu
+// Nasional kalau data level kabupaten belum tersedia -- lihat
+// fetchLatestRegionalPrice di api/harga-pangan.js), lewat proxy
 // api/harga-pangan.js (menghindari CORS -- lihat file itu untuk alasannya,
 // sama seperti pola api/emas.js untuk harga emas).
 //
@@ -190,7 +193,13 @@ window.prefetchHargaPanganReferensi = async function() {
                     if (!hit) return;
                     const meta = window.HARGA_PANGAN_COMMODITIES.find(function(c) { return c.slug === slug; });
                     if (!meta) return;
-                    cache.set(slug, { slug: slug, name: meta.name, unit: meta.unit, price: hit.price, date: hit.date });
+                    // [WILAYAH] hit.region diisi proxy (api/harga-pangan.js) sesuai level
+                    // data yang berhasil didapat: 'Kabupaten Magetan' -> fallback
+                    // 'Provinsi Jawa Timur' -> fallback 'Nasional'. Cuma disimpan di
+                    // cache lokal untuk ditampilkan di UI, TIDAK ditulis ke kolom
+                    // Supabase (tabel itu dipakai bersama, skemanya sengaja tidak
+                    // diubah supaya tidak perlu migrasi SQL manual di semua akun).
+                    cache.set(slug, { slug: slug, name: meta.name, unit: meta.unit, price: hit.price, date: hit.date, region: hit.region || null });
                     rowsToUpsert.push({
                         commodity_slug: slug,
                         commodity_name: meta.name,
@@ -262,6 +271,10 @@ window.renderHargaKomoditasModal = function() {
         const price = hit ? window.rp(hit.price) : '<span style="color:var(--text-secondary)">Belum ada data</span>';
         const date = hit ? window.escapeHtml(hit.date) : '-';
         let row = '<tr><td>' + window.escapeHtml(c.name) + '</td><td>' + window.escapeHtml(c.unit) + '</td><td>' + price + '</td><td>' + date + '</td>';
+        if (!withAction) {
+            const region = hit && hit.region ? window.escapeHtml(hit.region) : '-';
+            row += '<td>' + region + '</td>';
+        }
         if (withAction) {
             row += '<td class="col-action"><button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:.8rem;" onclick="window.openEditHargaKomoditasManual(\'' + c.slug + '\')">Ubah</button></td>';
         }
@@ -269,7 +282,7 @@ window.renderHargaKomoditasModal = function() {
     };
 
     const autoRows = window.HARGA_PANGAN_COMMODITIES.filter(function(c) { return !c.manual; });
-    autoBody.innerHTML = autoRows.map(function(c) { return renderRow(c, false); }).join('') || '<tr><td colspan="4">Tidak ada data.</td></tr>';
+    autoBody.innerHTML = autoRows.map(function(c) { return renderRow(c, false); }).join('') || '<tr><td colspan="5">Tidak ada data.</td></tr>';
 
     const manualRows = window.HARGA_PANGAN_COMMODITIES.filter(function(c) { return c.manual; });
     manualBody.innerHTML = manualRows.map(function(c) { return renderRow(c, true); }).join('') || '<tr><td colspan="5">Tidak ada data.</td></tr>';

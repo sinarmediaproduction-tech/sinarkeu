@@ -30,6 +30,16 @@ const SLUG_TO_BI_ID = {
   'gula-pasir': 'com_21',
 };
 
+// [WILAYAH] Kode wilayah Kemendagri/BPS -- konvensi standar yang dipakai
+// hampir semua sistem data pemerintah RI (province_id 2 digit, regency_id
+// 4 digit). BI PIHPS TIDAK menyediakan cara resmi untuk memverifikasi kode
+// internalnya dari luar (endpoint dropdown provinsi/kabupaten butuh sesi
+// browser penuh), jadi ini best-effort berdasarkan konvensi tsb -- kalau
+// ternyata meleset, fallback berjenjang di bawah tetap membuat fitur ini
+// tidak pernah gagal total, cuma "turun" ke cakupan yang lebih luas.
+const JATIM_PROVINCE_ID = '35';
+const MAGETAN_REGENCY_ID = '3520';
+
 function parsePrice(value) {
   if (value === null || value === undefined) return null;
   const str = String(value).trim();
@@ -49,50 +59,12 @@ function fmtDate(d) {
   return d.toISOString().split('T')[0];
 }
 
-// Ambil harga rata-rata NASIONAL terbaru (baris level 0 / "Semua Provinsi")
-// untuk 1 komoditas. Ambil rentang 7 hari terakhir supaya tetap dapat data
-// walau hari ini belum sempat di-update BI (biasanya update jam 09:00 &
-// 17:00 WIB, tapi kadang telat).
-async function fetchLatestNationalPrice(biId) {
-  const end = new Date();
-  const start = new Date(end);
-  start.setDate(start.getDate() - 7);
-
-  const params = new URLSearchParams({
-    price_type_id: '1', // pasar tradisional
-    comcat_id: biId,
-    province_id: '',
-    regency_id: '',
-    showKota: 'false',
-    showPasar: 'false',
-    tipe_laporan: '1',
-    start_date: fmtDate(start),
-    end_date: fmtDate(end),
-  });
-
-  const res = await fetch(
-    `${PIHPS_BASE_URL}/WebSite/TabelHarga/GetGridDataKomoditas?${params.toString()}`,
-    {
-      headers: {
-        Accept: 'application/json, text/javascript, */*; q=0.01',
-        'X-Requested-With': 'XMLHttpRequest',
-        Referer: `${PIHPS_BASE_URL}/TabelHarga/PasarTradisionalKomoditas`,
-        'User-Agent': 'Mozilla/5.0 (compatible; SinarKeu/1.0)',
-      },
-      signal: AbortSignal.timeout(10000),
-    }
-  );
-
-  if (!res.ok) throw new Error(`PIHPS request gagal: ${res.status}`);
-
-  const payload = await res.json();
-  const rows = payload.data || [];
-  const national = rows.find((r) => r.level === 0 || r.name === 'Semua Provinsi');
-  if (!national) return null;
-
+// Cari harga terbaru dari 1 baris hasil GetGridDataKomoditas (format sama
+// untuk baris nasional/provinsi/kabupaten -- bedanya cuma isi tanggalnya).
+function _latestFromRow(row) {
   let latestDate = null;
   let latestPrice = null;
-  for (const [key, rawValue] of Object.entries(national)) {
+  for (const [key, rawValue] of Object.entries(row)) {
     const isoDate = parseDateKey(key);
     if (!isoDate) continue;
     const price = parsePrice(rawValue);
@@ -102,9 +74,88 @@ async function fetchLatestNationalPrice(biId) {
       latestPrice = price;
     }
   }
+  return latestDate ? { price: latestPrice, date: latestDate } : null;
+}
 
-  if (!latestDate) return null;
-  return { price: latestPrice, date: latestDate };
+// Ambil harga terbaru untuk 1 komoditas, dengan fallback berjenjang:
+// Kabupaten Magetan -> rata-rata Provinsi Jawa Timur -> rata-rata Nasional.
+// Fallback dicek berurutan (bukan sekali request semua level) supaya kalau
+// Magetan sudah ketemu, tidak perlu apa-apa lagi -- hemat request ke BI.
+async function fetchLatestRegionalPrice(biId) {
+  const end = new Date();
+  const start = new Date(end);
+  start.setDate(start.getDate() - 7);
+
+  const baseParams = {
+    price_type_id: '1', // pasar tradisional
+    comcat_id: biId,
+    showKota: 'true', // sertakan baris per-kabupaten/kota, bukan cuma rata-rata provinsi
+    showPasar: 'false',
+    tipe_laporan: '1',
+    start_date: fmtDate(start),
+    end_date: fmtDate(end),
+  };
+
+  async function fetchRows(provinceId, regencyId) {
+    const params = new URLSearchParams({
+      ...baseParams,
+      province_id: provinceId,
+      regency_id: regencyId,
+    });
+    const res = await fetch(
+      `${PIHPS_BASE_URL}/WebSite/TabelHarga/GetGridDataKomoditas?${params.toString()}`,
+      {
+        headers: {
+          Accept: 'application/json, text/javascript, */*; q=0.01',
+          'X-Requested-With': 'XMLHttpRequest',
+          Referer: `${PIHPS_BASE_URL}/TabelHarga/PasarTradisionalKomoditas`,
+          'User-Agent': 'Mozilla/5.0 (compatible; SinarKeu/1.0)',
+        },
+        signal: AbortSignal.timeout(10000),
+      }
+    );
+    if (!res.ok) throw new Error(`PIHPS request gagal: ${res.status}`);
+    const payload = await res.json();
+    return payload.data || [];
+  }
+
+  // 1) Coba tingkat Kabupaten Magetan (province_id + regency_id spesifik).
+  try {
+    const rows = await fetchRows(JATIM_PROVINCE_ID, MAGETAN_REGENCY_ID);
+    const magetanRow = rows.find((r) => r.name && String(r.name).toLowerCase().includes('magetan'));
+    if (magetanRow) {
+      const hit = _latestFromRow(magetanRow);
+      if (hit) return { ...hit, region: 'Kabupaten Magetan' };
+    }
+  } catch (e) {
+    console.warn('[harga-pangan] Gagal ambil level Magetan:', e.message);
+  }
+
+  // 2) Fallback: rata-rata Provinsi Jawa Timur (regency_id kosong).
+  try {
+    const rows = await fetchRows(JATIM_PROVINCE_ID, '');
+    const jatimRow = rows.find((r) => r.name && String(r.name).toLowerCase().includes('jawa timur'));
+    if (jatimRow) {
+      const hit = _latestFromRow(jatimRow);
+      if (hit) return { ...hit, region: 'Provinsi Jawa Timur' };
+    }
+  } catch (e) {
+    console.warn('[harga-pangan] Gagal ambil level Jawa Timur:', e.message);
+  }
+
+  // 3) Fallback terakhir: rata-rata Nasional (province_id & regency_id kosong).
+  try {
+    const rows = await fetchRows('', '');
+    const nationalRow = rows.find((r) => r.level === 0 || r.name === 'Semua Provinsi');
+    if (nationalRow) {
+      const hit = _latestFromRow(nationalRow);
+      if (hit) return { ...hit, region: 'Nasional' };
+    }
+  } catch (e) {
+    console.warn('[harga-pangan] Gagal ambil level Nasional:', e.message);
+  }
+
+  return null;
 }
 
 export default async function handler(req, res) {
@@ -142,7 +193,7 @@ export default async function handler(req, res) {
   await Promise.all(
     slugs.map(async (slug) => {
       try {
-        const result = await fetchLatestNationalPrice(SLUG_TO_BI_ID[slug]);
+        const result = await fetchLatestRegionalPrice(SLUG_TO_BI_ID[slug]);
         if (result) prices[slug] = result;
       } catch (err) {
         console.error(`[harga-pangan] Gagal ambil harga ${slug}:`, err.message);
