@@ -584,6 +584,65 @@ window.openDataBackupView = function(initialTab) {
 // ke ID baru itu, baru lanjut proses share pakai ID baru -- supaya
 // 'b_default' tetap "bersih"/tidak pernah masuk sk_books, aman dipakai
 // sebagai ID buku pribadi biasa oleh siapa pun.
+
+// [FIX DATA HILANG SETELAH JADI BUKU BERSAMA] _skMigrateBookIdLocal (di
+// bawah) HANYA memindahkan cache localStorage -- baris transaksi/settings/
+// pengingat yang SUDAH ADA di cloud (tabel transactions/settings/
+// payment_reminders) tetap tertulis book_id='b_default' lama, TIDAK ikut
+// dipindah. Ini tidak kelihatan masalah di sesi yang sama (cache lokal di
+// device ini sudah benar), TAPI begitu ada pull/sync penuh berikutnya
+// (forceFullSync/pullAllBooksFromCloud -- dipanggil app.js tiap ~beberapa
+// menit & saat online lagi, lihat js/transaction.js), klien query cloud
+// pakai ID BARU, dapat 0 baris (karena baris aslinya masih ber-book_id
+// LAMA), lalu trimAndSaveLocal() MENIMPA cache lokal jadi kosong --
+// persis "buku bersama berhasil dibuat tapi datanya hilang" yang
+// dilaporkan user. Fungsi ini menutup celah itu: UPDATE book_id di cloud
+// (transactions/settings/payment_reminders -- tabel inti yang datanya
+// benar-benar hilang kalau tidak ikut pindah) SEBELUM buku ditandai shared,
+// selagi masih bisa ditulis anon key (RLS sk_book_is_shared() masih FALSE
+// untuk book_id lama). backups/audit_logs ikut dicoba juga tapi
+// best-effort saja (riwayat cadangan lama tetap bisa diakses lewat ID lama
+// walau tidak dipindah -- bukan data transaksi yang terlihat user).
+//
+// Discoped dengan account_tag (AND, bukan OR-null seperti query baca biasa
+// -- lihat catatan window.tagOrFilter di js/db.js: operasi tulis massal
+// SENGAJA tidak pakai OR-null, supaya tidak menyentuh baris akun lain di
+// backend yang sama). Kalau akun ini belum punya account_tag sama sekali,
+// filter ke baris yang account_tag-nya NULL saja (bukan menyapu semua
+// baris 'b_default' tanpa filter, yang bisa kena data akun lain).
+window._skMigrateBookIdCloud = async function(oldId, newId) {
+    const tag = window.getAccountTag ? window.getAccountTag() : null;
+    const tagFilter = tag ? `&account_tag=eq.${tag}` : `&account_tag=is.null`;
+    const query = `?book_id=eq.${oldId}${tagFilter}`;
+    const CRITICAL_TABLES = ['transactions', 'settings', 'payment_reminders'];
+    const BEST_EFFORT_TABLES = ['backups', 'audit_logs'];
+    const migrated = [];
+    for (const table of CRITICAL_TABLES) {
+        try {
+            await window.callSupabaseAPI(table, 'PATCH', { book_id: newId }, query);
+            migrated.push(table);
+        } catch (e) {
+            console.error('[auth.js] Gagal migrasi book_id cloud tabel ' + table + ':', e);
+            // Rollback tabel yang sudah sempat berhasil dipindah, supaya
+            // tidak ada kondisi setengah-jadi (sebagian data sudah di
+            // bawah newId padahal buku belum jadi resmi shared/belum
+            // ditandai apa pun) -- best-effort juga, kalau ini pun gagal
+            // minimal sudah dicoba & dicatat di console untuk investigasi
+            // manual admin.
+            for (const doneTable of migrated) {
+                try { await window.callSupabaseAPI(doneTable, 'PATCH', { book_id: oldId }, `?book_id=eq.${newId}${tagFilter}`); }
+                catch (e2) { console.error('[auth.js] Gagal rollback book_id tabel ' + doneTable + ':', e2); }
+            }
+            return false;
+        }
+    }
+    for (const table of BEST_EFFORT_TABLES) {
+        try { await window.callSupabaseAPI(table, 'PATCH', { book_id: newId }, query); }
+        catch (e) { console.warn('[auth.js] Gagal migrasi book_id cloud tabel (best-effort) ' + table + ':', e); }
+    }
+    return true;
+};
+
 window._skMigrateBookIdLocal = function(oldId, newId) {
     // Semua prefix localStorage yang menyimpan data PER BUKU (hasil audit
     // `grep -noE "'sk_[a-z_]+_'\s*\+" js/*.js` -- kalau nanti nambah fitur
@@ -654,7 +713,22 @@ window.skMakeBookShared = async function(bookId, skipConfirm) {
     // window._skMigrateBookIdLocal di atas. Migrasi DULU sebelum insert ke
     // sk_books, supaya baris shared yang ter-insert sudah pakai ID unik.
     if (book.id === 'b_default') {
+        if (!window.isOnline || !window.isOnline()) {
+            window.showToast && window.showToast('Perlu online untuk menjadikan "Buku Utama" sebagai buku bersama (data lama harus dipindah ID dulu di cloud).', 'error');
+            return;
+        }
         const newId = 'b_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+        // [FIX DATA HILANG] Migrasi cloud DULU, sebelum cache lokal & sebelum
+        // buku resmi ditandai shared -- lihat catatan lengkap di
+        // window._skMigrateBookIdCloud. Kalau ini gagal, batalkan seluruhnya
+        // (jangan lanjut ke migrasi lokal/insert sk_books) supaya tidak ada
+        // kondisi ganjil: local sudah pindah ID tapi data cloud masih di ID
+        // lama (atau sebaliknya).
+        const cloudMigrationOk = await window._skMigrateBookIdCloud('b_default', newId);
+        if (!cloudMigrationOk) {
+            window.showToast && window.showToast('Gagal memindahkan data lama ke ID baru di cloud. Buku belum dijadikan bersama -- coba lagi.', 'error');
+            return;
+        }
         window._skMigrateBookIdLocal('b_default', newId);
         // [FIX BUKU HANTU b_default #2] Push best-effort di bawah TIDAK
         // dijamin sukses (bisa gagal/offline sesaat) -- kalau gagal, snapshot
