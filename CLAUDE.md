@@ -317,7 +317,35 @@ semua file di atas.
   itu sendiri untuk daftar lengkap & alasannya. **Cek isi file ini benar-benar
   ada isinya**, bukan cuma placeholder kosong — sempat ketahuan pernah
   kosong padahal isinya harusnya persis yang didokumentasikan.
-- **[FIXED] Log aktivitas offline sekarang di-retry:** `window.addCloudLog
+- **[FIXED] Tabel `settings` sekarang benar-benar upsert, bukan insert-only
+  selamanya:** `window.pushSetting`/`window.pushCryptoSaltCheck` (`js/db.js`)
+  sudah lama mengirim `?on_conflict=book_id,key,account_tag`, tapi migrasi
+  yang membuat unique constraint `settings_unique_row` untuk itu — sudah
+  disebut di komentar kode sebagai `fix_settings_upsert.sql` — ternyata
+  tidak pernah ada di `sql/`. Akibatnya push settings (untuk baris
+  ber-`account_tag`, yaitu hampir semua device setelah setup) selalu jatuh
+  ke INSERT biasa, tabel `settings` menumpuk snapshot historis selamanya,
+  dan `pullAllSettings()` (dipanggil TIAP `switchBook()`) makin lama makin
+  lambat karena menarik+memproses seluruh riwayat itu tiap kali. File
+  migrasi itu sekarang sudah dibuat (`sql/fix_settings_upsert.sql`): dedup
+  duplikat lama, buat constraint-nya, plus cron harian untuk baris
+  `account_tag IS NULL` (buku Bersama/legacy — tidak tercakup unique
+  constraint biasa karena Postgres tidak menganggap NULL=NULL). **PENTING:
+  file ini baru dibuat, BELUM TENTU sudah dijalankan di Supabase SQL
+  Editor** — cek dulu dengan `SELECT conname FROM pg_constraint WHERE
+  conname = 'settings_unique_row';` sebelum asumsikan sudah aktif (lihat
+  juga peringatan umum soal ini di bagian bawah file ini: jangan asumsikan
+  migrasi di repo = state DB aktual). Tidak ada perubahan JS yang
+  dibutuhkan setelah constraint ini ada — kode pemanggilnya sudah siap.
+
+- **[FIXED] Dekripsi settings di `pullAllSettings()` sekarang paralel:**
+  sebelumnya satu `for` loop dekripsi baris satu-satu (`await` berurutan),
+  sekarang dedup dulu (sinkron), baru baris yang lolos didekripsi paralel
+  lewat `Promise.all` sebelum diproses berurutan seperti semula. Ini
+  quick-win terpisah dari fix constraint di atas — keduanya saling
+  melengkapi (constraint mencegah tabel terus membengkak, paralelisasi
+  mempercepat pemrosesan baris yang tersisa).
+
   (actionType, details)` di `js/transaction.js` tetap simpan ke
   `localStorage` (`sk_logs_<bookId>`, maks 50 entri) untuk tampilan lokal,
   tapi sekarang kalau `window.isOnline()` false ATAU `POST` ke
