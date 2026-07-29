@@ -55,9 +55,10 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
             if (!window._lastSyncErrorToastAt || now - window._lastSyncErrorToastAt > 15000) {
                 window._lastSyncErrorToastAt = now;
                 const isConflictErr = e && e.status === 400 && /on conflict|constraint/i.test(e.message || '');
+                const detail = window._supabaseErrDetail(e && e.message);
                 const msg = isConflictErr
                     ? `Gagal sinkron tabel '${table}': constraint database belum di-setup. Jalankan fix_settings_upsert.sql di Supabase SQL Editor.`
-                    : `Gagal sinkron tabel '${table}' (${e && e.status ? e.status : 'network'}). Cek koneksi/URL/API key.`;
+                    : `Gagal sinkron tabel '${table}' (${e && e.status ? e.status : 'network'})${detail ? ': ' + detail : '. Cek koneksi/URL/API key.'}`;
                 window.showToast(msg, 'error');
             }
         }
@@ -65,7 +66,26 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
     }
 };
 
-// ==================== ACCOUNT ISOLATION TAG ====================
+// Ekstrak pesan yang bisa dibaca dari body error Supabase/PostgREST (biasanya
+// JSON: {message, hint, code, details}), dengan fallback ke teks mentah kalau
+// bukan JSON. Dipotong supaya toast tidak kepanjangan. Dipakai di sini dan di
+// patch callSupabaseAPI buku bersama (js/auth.js) supaya pesan error yang
+// ditampilkan ke user (dan ikut kerekam di log toast) langsung menunjukkan
+// akar masalah sebenarnya (mis. "Invalid API key" vs "permission denied for
+// table settings" vs "JWT expired") -- bukan cuma kode status generik.
+window._supabaseErrDetail = function(rawText) {
+    if (!rawText) return '';
+    try {
+        const j = JSON.parse(rawText);
+        const parts = [j.message, j.hint, j.code].filter(Boolean);
+        const s = parts.join(' | ');
+        return s ? (s.length > 160 ? s.slice(0, 160) + '…' : s) : '';
+    } catch {
+        return rawText.length > 160 ? rawText.slice(0, 160) + '…' : rawText;
+    }
+};
+
+
 // Menghasilkan tag 8-karakter dari crypto_salt akun yang sedang aktif.
 // Tag ini di-embed ke setiap baris settings di Supabase, sehingga dua akun
 // berbeda yang menggunakan Supabase yang sama (URL + API key sama) tidak

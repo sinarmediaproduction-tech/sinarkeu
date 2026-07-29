@@ -530,10 +530,11 @@ window.callSupabaseAPI = async function(table, method, body, queryString, option
                         // fetch()-nya sendiri yang gagal (jaringan putus/DNS/dsb), bukan
                         // ditolak server -- sekarang dipisah jadi dua pesan yang beda, dan
                         // label "buku bersama" cuma penanda konteks, bukan bagian diagnosis.
+                        const detail = window._supabaseErrDetail(e && e.message);
                         const msg = isTimeout
                             ? `Waktu koneksi ke server habis (timeout) saat sinkron '${table}' (buku bersama). Coba lagi.`
                             : (e && e.status)
-                                ? `Gagal sinkron '${table}' (buku bersama): server menolak (${e.status}). Coba login ulang kalau berulang.`
+                                ? `Gagal sinkron '${table}' (buku bersama, ${e.status})${detail ? ': ' + detail : ''}. Coba login ulang kalau berulang.`
                                 : `Gagal sinkron '${table}' (buku bersama): koneksi jaringan bermasalah. Coba lagi.`;
                         window.showToast(msg, 'error');
                     }
