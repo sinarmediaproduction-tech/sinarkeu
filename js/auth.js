@@ -588,7 +588,7 @@ window.openDataBackupView = function(initialTab) {
 
 // ── Migrasi ID buku default yang bentrok lintas akun ────────────────────
 // [FIX ID COLLISION b_default] 'b_default' adalah ID LITERAL yang dipakai
-// SEMUA akun untuk buku pertama mereka ("Buku Utama" -- lihat js/account.js,
+// SEMUA akun untuk buku pertama mereka ("Buku Umum" -- lihat js/account.js,
 // js/app.js, js/config.js: semuanya hardcode string 'b_default', beda dari
 // buku lain yang ID-nya di-random pakai timestamp+random). `sk_books.id`
 // (fondasi Buku Bersama, sql/shared_books_roles.sql) adalah TEXT PRIMARY KEY
@@ -596,7 +596,7 @@ window.openDataBackupView = function(initialTab) {
 // isolasi data personal SELAMA INI cuma lewat account_tag, bukan lewat baris
 // sk_books.id yang terpisah per akun.
 //
-// Akibatnya: begitu SATU akun menjadikan "Buku Utama"-nya (id='b_default')
+// Akibatnya: begitu SATU akun menjadikan "Buku Umum"-nya (id='b_default')
 // sebagai Buku Bersama, sk_book_is_shared('b_default') di server jadi TRUE
 // untuk SEMUA akun lain yang buku utamanya masih ID default sama -- padahal
 // buku mereka tidak terkait sama sekali. Policy settings_legacy_anon/
@@ -740,7 +740,7 @@ window.skMakeBookShared = async function(bookId, skipConfirm) {
     // sk_books, supaya baris shared yang ter-insert sudah pakai ID unik.
     if (book.id === 'b_default') {
         if (!window.isOnline || !window.isOnline()) {
-            window.showToast && window.showToast('Perlu online untuk menjadikan "Buku Utama" sebagai buku bersama (data lama harus dipindah ID dulu di cloud).', 'error');
+            window.showToast && window.showToast('Perlu online untuk menjadikan "Buku Umum" sebagai buku bersama (data lama harus dipindah ID dulu di cloud).', 'error');
             return;
         }
         const newId = 'b_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
@@ -788,7 +788,7 @@ window.skMakeBookShared = async function(bookId, skipConfirm) {
         // Bersama) akan melihat 'b_default' "cuma ada di cloud" lalu
         // MENGHIDUPKANNYA LAGI sebagai entri BARU yang KOSONG (cache
         // transaksinya sendiri sudah pindah ke ID baru) -- muncul sebagai
-        // dua "Buku Utama" duplikat: satu kosong, satu isi datanya. Push
+        // dua "Buku Umum" duplikat: satu kosong, satu isi datanya. Push
         // di sini (best-effort, sebelum ada kesempatan pull membangkitkan
         // ID lama itu lagi) supaya cloud langsung ikut lupa 'b_default'.
         if (window.isOnline && window.isOnline() && typeof window.pushSettingBooks === 'function') {

@@ -347,7 +347,7 @@ window.initApp = async function() {
     document.getElementById('deviceIdDisplay').innerText = window.deviceId;
     let storedBooks = localStorage.getItem('sk_books');
     if (storedBooks) window.books = JSON.parse(storedBooks);
-    else { window.books = [{ id: 'b_default', name: 'Buku Utama' }]; localStorage.setItem('sk_books', JSON.stringify(window.books)); }
+    else { window.books = [{ id: 'b_default', name: 'Buku Umum' }]; localStorage.setItem('sk_books', JSON.stringify(window.books)); }
     window.currentBookId = localStorage.getItem('sk_current_book_id') || 'b_default';
     if (!window.books.find(b => b.id === window.currentBookId)) window.currentBookId = window.books[0].id;
     window.loadGoogleSheetsUrl();

@@ -81,7 +81,7 @@ window._doSwitch = function(fromId, toId) {
     window._supabaseClient = null;
     const nsHasBooks = localStorage.getItem('sk_a' + toId + '_books');
     if (!nsHasBooks && !localStorage.getItem('sk_books')) {
-        const defaultBook = [{ id: 'b_default', name: 'Buku Utama' }];
+        const defaultBook = [{ id: 'b_default', name: 'Buku Umum' }];
         localStorage.setItem('sk_books', JSON.stringify(defaultBook));
         localStorage.setItem('sk_current_book_id', 'b_default');
     }
