@@ -150,6 +150,52 @@ window.openShoppingListModal = function() {
             console.warn('[ShoppingList] Gagal tarik data terbaru dari cloud saat buka modal:', e);
         });
     }
+
+    // [AUTO HARGA PANGAN] Tarik harga referensi BI (js/harga-pangan.js) tiap
+    // kali modal dibuka, lalu isi otomatis barang yang belum ada harganya
+    // (atau sebelumnya juga terisi otomatis). Viewer tetap lihat referensinya
+    // (badge "≈" di render), tapi tidak memicu penyimpanan -- write-nya pasti
+    // ditolak RLS untuk viewer, tidak perlu memaksa & memunculkan toast error
+    // cuma gara-gara buka modal.
+    if (window.isOnline && window.isOnline() && typeof window.prefetchHargaPanganReferensi === 'function') {
+        const bookAtOpen = window.currentBookId;
+        window.prefetchHargaPanganReferensi().then(function() {
+            const modalEl = document.getElementById('shoppingListModal');
+            if (!modalEl || !modalEl.classList.contains('show') || window.currentBookId !== bookAtOpen) return;
+            if (window._slistIsViewer()) {
+                window.renderShoppingList();
+            } else {
+                window._applyHargaPanganReferensiToShoppingList();
+            }
+        }).catch(function(e) {
+            console.warn('[ShoppingList] Gagal ambil harga referensi pangan:', e.message);
+        });
+    }
+};
+
+// Isi otomatis kolom harga barang yang BELUM punya harga (atau sebelumnya
+// juga terisi otomatis lewat fitur ini -- ditandai item.priceSource==='ref')
+// dengan harga referensi PIHPS BI terbaru, kalau nama barangnya cocok
+// salah satu komoditas yang ditrack (lihat window.HARGA_PANGAN_COMMODITIES
+// di js/harga-pangan.js). Barang yang harganya sudah diisi MANUAL oleh user
+// tidak pernah ditimpa -- ini cuma bantu isi yang masih kosong, bukan
+// menimpa input user.
+window._applyHargaPanganReferensiToShoppingList = function() {
+    const items = window.getShoppingList(window.currentBookId);
+    let changed = false;
+    items.forEach(function(item) {
+        const isEmptyOrRef = !item.price || item.priceSource === 'ref';
+        if (!isEmptyOrRef) return;
+        const ref = window.getHargaPanganUntukItem(item.name);
+        if (!ref) return;
+        if (item.price === ref.price && item.priceSource === 'ref' && item.priceRefDate === ref.date) return;
+        item.price = ref.price;
+        item.priceSource = 'ref';
+        item.priceRefDate = ref.date;
+        changed = true;
+    });
+    if (changed) window.saveShoppingList(window.currentBookId, items);
+    window.renderShoppingList();
 };
 
 // Isi dropdown kategori barang dari daftar kategori pengeluaran yang sama
@@ -220,7 +266,16 @@ window.renderShoppingList = function() {
         const catText = item.category ? window.escapeHtml(item.category) : '';
         const catColor = item.category ? window.getCategoryColor(item.category) : null;
         const catStyleAttr = catColor ? ` style="--cat-color:${catColor}"` : '';
-        const unitPriceText = item.price ? window.rp(item.price) : '';
+        // [AUTO HARGA PANGAN] item.priceSource==='ref' -> harga ini diisi
+        // otomatis dari referensi BI (js/harga-pangan.js), bukan diketik
+        // manual oleh user. Ditandai "≈" + title penjelasan supaya jelas ini
+        // perkiraan, bukan harga yang benar-benar sudah dicek user sendiri.
+        const isRefPrice = item.priceSource === 'ref' && item.price;
+        const unitPriceText = item.price ? (isRefPrice ? '≈ ' : '') + window.rp(item.price) : '';
+        const unitPriceClass = isRefPrice ? 'slist-unit-price is-ref-price' : 'slist-unit-price';
+        const unitPriceTitle = isRefPrice
+            ? ` title="Harga referensi otomatis dari PIHPS Bank Indonesia (${window.escapeHtml(item.priceRefDate || '')}). Ubah manual lewat ✎ kalau harga sebenarnya beda."`
+            : '';
         const priceText = item.price ? window.rp(window._shoppingListItemSubtotal(item)) : '';
         const actionsHtml = isViewer ? '' : `
                 <button type="button" class="slist-edit-btn" title="Ubah" onclick="window.openEditShoppingListItemModal('${window.escapeHtml(item.id)}')">✎</button>
@@ -231,7 +286,7 @@ window.renderShoppingList = function() {
             <span class="slist-name">${window.escapeHtml(item.name)}</span>
             <span class="slist-qty">${qtyText}</span>
             <span class="slist-cat-badge"${catStyleAttr}>${catText}</span>
-            <span class="slist-unit-price">${unitPriceText}</span>
+            <span class="${unitPriceClass}"${unitPriceTitle}>${unitPriceText}</span>
             <span class="slist-price">${priceText}</span>
             <div class="slist-trail">${actionsHtml}</div>
         </div>
@@ -334,11 +389,21 @@ window.addShoppingListItem = function(e) {
     const items = window.getShoppingList(window.currentBookId);
     const qtyParsed = parseFloat(qtyInput.value);
     const qty = (qtyParsed > 0) ? qtyParsed : 1;
+    // [AUTO HARGA PANGAN] Kolom harga sengaja dikosongkan user -> coba isi
+    // dari harga referensi BI kalau nama barangnya cocok salah satu
+    // komoditas yang ditrack (js/harga-pangan.js). Kalau user memang mengisi
+    // harga sendiri, itu yang dipakai apa adanya -- referensi tidak pernah
+    // menimpa input manual.
+    const rawPrice = window.unRp(priceInput.value);
+    const ref = (!rawPrice && typeof window.getHargaPanganUntukItem === 'function')
+        ? window.getHargaPanganUntukItem(name) : null;
     items.push({
         id: 'sl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
         name: name,
         qty: qty,
-        price: window.unRp(priceInput.value),
+        price: rawPrice || (ref ? ref.price : 0),
+        priceSource: rawPrice ? 'manual' : (ref ? 'ref' : undefined),
+        priceRefDate: ref ? ref.date : undefined,
         category: categorySelect ? categorySelect.value : '',
         done: false
     });
@@ -414,15 +479,24 @@ window.handleEditShoppingListItemSubmit = function(e) {
     if (!name) return;
     const qtyParsed = parseFloat(document.getElementById('slistEditQty').value);
     const qty = (qtyParsed > 0) ? qtyParsed : 1;
-    const price = window.unRp(document.getElementById('slistEditPrice').value);
+    const rawPrice = window.unRp(document.getElementById('slistEditPrice').value);
     const category = document.getElementById('slistEditCategory').value;
 
     const items = window.getShoppingList(window.currentBookId);
     const item = items.find(i => i.id === id);
     if (!item) return;
+    // [AUTO HARGA PANGAN] Sama seperti addShoppingListItem: kalau field
+    // harga sengaja dikosongkan, coba isi dari referensi BI dulu sebelum
+    // jatuh ke 0. Kalau user isi angka sendiri (termasuk sengaja menimpa
+    // harga referensi sebelumnya), itu jadi harga manual & tidak akan
+    // ditimpa lagi oleh auto-update berikutnya.
+    const ref = (!rawPrice && typeof window.getHargaPanganUntukItem === 'function')
+        ? window.getHargaPanganUntukItem(name) : null;
     item.name = name;
     item.qty = qty;
-    item.price = price;
+    item.price = rawPrice || (ref ? ref.price : 0);
+    item.priceSource = rawPrice ? 'manual' : (ref ? 'ref' : undefined);
+    item.priceRefDate = ref ? ref.date : undefined;
     item.category = category;
 
     window.saveShoppingList(window.currentBookId, items);

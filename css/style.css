@@ -2467,6 +2467,11 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   color: var(--ink-faint);
   white-space: nowrap;
 }
+/* Harga yang diisi OTOMATIS dari referensi PIHPS BI (js/harga-pangan.js),
+   bukan diketik manual oleh user -- dibedakan warnanya (pakai --accent,
+   sama seperti indikator "belum dikonfirmasi" di bagian lain app) supaya
+   sekilas kelihatan ini perkiraan, bukan harga yang sudah dicek sendiri. */
+.slist-unit-price.is-ref-price { color: var(--accent); font-style: italic; }
 .slist-price {
   justify-self: end;
   font-family: var(--font-mono);
