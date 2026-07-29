@@ -639,6 +639,23 @@ window.skMakeBookShared = async function(bookId, skipConfirm) {
     if (book.id === 'b_default') {
         const newId = 'b_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
         window._skMigrateBookIdLocal('b_default', newId);
+        // [FIX BUKU HANTU b_default #2] Push best-effort di bawah TIDAK
+        // dijamin sukses (bisa gagal/offline sesaat) -- kalau gagal, snapshot
+        // cloud setting 'books' masih membawa baris lama 'b_default', dan
+        // pullAllSettings() (js/db.js, union-merge 'books') akan
+        // menghidupkannya lagi sebagai buku personal baru yang KOSONG (data
+        // aslinya sudah ikut pindah ke newId lewat _skMigrateBookIdLocal di
+        // atas) begitu user login lagi -- persis "buku hantu duplikat" yang
+        // dilaporkan user. Reuse mekanisme pendingDeletes yang sudah ada
+        // untuk fitur hapus buku (window.markBookPendingDelete) -- cocok
+        // dipakai di sini juga: union-merge pullAllSettings sudah menolak
+        // menghidupkan id yang ada di set ini (lihat pendingDeletes.has(cb.id)
+        // di db.js), dan window.flushPendingBookDeletesOnStart (dipanggil
+        // app.js saat start & saat online lagi) otomatis push ulang &
+        // membersihkan marker ini begitu cloud terkonfirmasi sudah lupa
+        // 'b_default' -- jadi aman dari race/offline yang tidak terduga,
+        // tanpa perlu mekanisme retry baru.
+        if (window.markBookPendingDelete) window.markBookPendingDelete('b_default');
         // book.id sudah ikut termutasi lewat referensi array di
         // _skMigrateBookIdLocal, jadi variabel `book` di sini otomatis
         // pegang ID baru untuk sisa fungsi ini (insert sk_books/book_members
