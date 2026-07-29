@@ -643,6 +643,23 @@ window.skMakeBookShared = async function(bookId, skipConfirm) {
         // _skMigrateBookIdLocal, jadi variabel `book` di sini otomatis
         // pegang ID baru untuk sisa fungsi ini (insert sk_books/book_members
         // di bawah, dst).
+        //
+        // [FIX BUKU HANTU DUPLIKAT] Selain localStorage 'sk_books' (yang
+        // baru saja dimigrasikan _skMigrateBookIdLocal), ada SALINAN LAIN
+        // daftar buku ini di cloud -- settings key='books' (lihat
+        // window.pushSettingBooks/pullAllSettings di js/db.js), dipakai
+        // union-merge lintas device. Kalau salinan cloud itu TIDAK ikut
+        // di-push sekarang, dia masih membawa ID LAMA 'b_default'. Pull
+        // berikutnya (mis. setelah logout+login ulang di gerbang Buku
+        // Bersama) akan melihat 'b_default' "cuma ada di cloud" lalu
+        // MENGHIDUPKANNYA LAGI sebagai entri BARU yang KOSONG (cache
+        // transaksinya sendiri sudah pindah ke ID baru) -- muncul sebagai
+        // dua "Buku Utama" duplikat: satu kosong, satu isi datanya. Push
+        // di sini (best-effort, sebelum ada kesempatan pull membangkitkan
+        // ID lama itu lagi) supaya cloud langsung ikut lupa 'b_default'.
+        if (window.isOnline && window.isOnline() && typeof window.pushSettingBooks === 'function') {
+            try { await window.pushSettingBooks(); } catch (e) { console.warn('[auth.js] Gagal push daftar buku setelah migrasi ID b_default:', e); }
+        }
     }
     try {
         // [FIX] created_by wajib diisi -- kolom NOT NULL di sk_books & juga
