@@ -163,6 +163,12 @@ window.renderBookList = function() {
         const sharedLabel = b._isShared ? `<div style="font-size:.6rem; color:var(--success); margin-top:2px;">🔗 Buku bersama · peran kamu: <b>${window.escapeHtml(b._role || '?')}</b></div>` : '';
         const makeSharedBtn = (!b._isShared && typeof window.skMakeBookShared === 'function') ?
             `<button class="btn-mini" style="background:var(--success-lt); color:var(--success); border:1px solid var(--rule);" onclick="window.skMakeBookShared('${b.id}')" title="Undang orang lain untuk ikut mengelola buku ini">Jadikan Bersama</button>` : '';
+        // [FITUR DUPLIKAT BUKU] Buku bersama SENGAJA tidak boleh diduplikat
+        // lewat tombol ini (lihat window.duplicateBook untuk alasannya) --
+        // jalur otentikasi & tabel book_members/sk_books-nya terpisah dari
+        // buku biasa, di luar cakupan fitur ini.
+        const duplicateBtn = !b._isShared ?
+            `<button class="btn-mini" style="background:#EFEAF7; color:#5C4E72; border:1px solid #B7A8D1;" onclick="window.duplicateBook('${b.id}')" title="Buat salinan buku ini (pengaturan &amp; opsional transaksinya)">Duplikat</button>` : '';
         div.innerHTML = `
             <span class="book-list-name">
                 ${window.escapeHtml(b.name)}
@@ -173,6 +179,7 @@ window.renderBookList = function() {
                 ${!isCurrent ? `<button class="btn-mini" onclick="window.switchBook('${b.id}')">Buka</button>` : ''}
                 <button class="btn-mini" style="background:#E3ECF3; color:#2E5C82; border:1px solid #7FA6C4;" onclick="window.renameBook('${b.id}')" ${canManageThisBook ? '' : 'disabled title="Hanya admin yang bisa mengganti nama buku bersama ini"'}>Nama</button>
                 <button class="btn-mini" style="background:#F1EBDA; color:#9C7A2E; border:1px solid #B99A4E;" onclick="window.openCardVisibilityModal('${b.id}')" title="Pilih card yang ditampilkan untuk buku ini">Card</button>
+                ${duplicateBtn}
                 ${makeSharedBtn}
                 ${b.parentId && isCurrent ? `<button class="btn-mini" style="background:#5C4E72; color:#fff;" onclick="window.closeModal('bookManagerModal'); window.openTutupAnakBuku()">Tutup & Kirim</button>` : ''}
                 ${delBtn}
@@ -374,6 +381,168 @@ window.deleteBook = async function(id) {
     const pushOk = await window.pushSettingBooks();
     if (pushOk && window.clearBookPendingDelete) window.clearBookPendingDelete(id);
     if (cfg.active) window.sendTelegramNotif(`<b>Buku Dihapus</b>\n\nBuku <b>${b.name}</b> telah dihapus permanen.\nDevice: ${window.deviceId}`);
+};
+
+// ==================== DUPLIKAT BUKU ====================
+// Bikin buku baru sebagai salinan dari buku yang sudah ada. Yang otomatis
+// disalin (selalu, tanpa tanya): setting per-buku yang dipush lewat
+// window.pushSetting (lihat daftar prefix localStorage <-> key setting di
+// DUPLICATE_BOOK_SETTINGS_MAP di bawah -- sinkron dengan yang dipakai
+// window.reEncryptAllCloudSettings di js/db.js) -- yaitu Anggaran Bulanan,
+// Anggaran Dasar, Anggaran Tahunan, visibilitas card, Daftar Belanja +
+// pemasukan bulanannya, Fase Kehidupan, dan target bulan Dana Darurat.
+// Transaksi (bisa banyak & makan waktu) BUKAN otomatis disalin -- user
+// ditanya dulu lewat customConfirm.
+//
+// SENGAJA TIDAK disalin (beda dari daftar PER_BOOK_PREFIXES di
+// js/auth.js window._skMigrateBookIdLocal, yang untuk MIGRASI id buku yang
+// SAMA, bukan duplikasi jadi buku BARU):
+// - sk_logs_ (log aktivitas lokal, spesifik histori device ini)
+// - sk_payment_reminders_ / sk_pr_pending_push_ / sk_pr_pending_delete_
+//   (pengingat pembayaran -- di luar cakupan awal fitur ini, tabel &
+//   enkripsi terpisah dari settings/transactions biasa)
+// - sk_manual_backups_ / sk_last_auto_backup_ / sk_last_cloud_backup_ /
+//   sk_last_gsheets_backup_ (metadata backup, tidak relevan utk buku baru)
+// - book.lastClosedAt (status "tutup anak buku" milik riwayat buku LAMA,
+//   buku baru harus mulai dari status belum pernah ditutup)
+window.DUPLICATE_BOOK_SETTINGS_MAP = [
+    ['sk_budgets_', 'budgets'],
+    ['sk_default_budget_', 'default_budget'],
+    ['sk_annual_budget_', 'annual_budget'],
+    ['sk_hidden_cards_', 'hidden_cards'],
+    ['sk_shopping_list_', 'shopping_list'],
+    ['sk_shopping_list_income_', 'shopping_list_income'],
+    ['sk_fase_kehidupan_', 'fase_kehidupan'],
+    ['sk_emergency_fund_months_', 'emergency_fund_months'],
+];
+
+window.duplicateBook = async function(id) {
+    if (!window.requireOnline('menduplikat buku')) return;
+    const book = window.books.find(b => b.id === id);
+    if (!book) { window.showToast('Buku tidak ditemukan (mungkin sudah dihapus device lain).', 'warning'); return; }
+
+    // Buku bersama pakai jalur otentikasi & tabel (book_members/sk_books)
+    // yang terpisah dari buku biasa -- tombol di renderBookList sudah
+    // disembunyikan, ini lapis kedua kalau dipanggil lewat jalur lain.
+    if (book._isShared) {
+        window.showToast('Buku bersama belum bisa diduplikat lewat menu ini.', 'warning');
+        return;
+    }
+
+    const defaultName = `${book.name} (Salinan)`;
+    const newNameRaw = prompt('Nama untuk buku hasil duplikat:', defaultName);
+    if (!newNameRaw || !newNameRaw.trim()) return;
+    const newName = newNameRaw.trim();
+
+    const copyTxs = await window.customConfirm({
+        title: 'Salin Transaksi Juga?',
+        message: `Anggaran, visibilitas card, Daftar Belanja, Fase Kehidupan, dan target Dana Darurat dari "${book.name}" akan otomatis disalin ke buku baru.\n\nSalin juga SEMUA transaksi dari buku ini? Untuk buku dengan banyak transaksi, proses ini bisa memakan waktu beberapa saat.`,
+        confirmLabel: 'Ya, Salin Transaksi',
+        cancelLabel: 'Tidak, Buku Kosong Saja',
+        danger: false
+    });
+
+    const newId = 'b_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    const newBook = { id: newId, name: newName };
+    if (book.parentId) newBook.parentId = book.parentId;
+    window.books.push(newBook);
+    localStorage.setItem('sk_books', JSON.stringify(window.books));
+    const pushBooksOk = await window.pushSettingBooks();
+    if (!pushBooksOk) {
+        // Rollback state lokal supaya tidak ada buku "hantu" yang gagal tersimpan di cloud.
+        window.books = window.books.filter(b => b.id !== newId);
+        localStorage.setItem('sk_books', JSON.stringify(window.books));
+        window.showToast('Gagal membuat buku baru di cloud, coba lagi.', 'error');
+        return;
+    }
+
+    window.showToast(`Menyalin pengaturan buku "${book.name}"...`, 'info');
+
+    // Salin setting per-buku: localStorage lokal + push ke cloud (settings table).
+    for (const [prefix, settingKey] of window.DUPLICATE_BOOK_SETTINGS_MAP) {
+        const raw = localStorage.getItem(prefix + book.id);
+        if (raw === null) continue; // tidak ada data lokal utk key ini, biarkan buku baru pakai default
+        localStorage.setItem(prefix + newId, raw);
+        let value;
+        try { value = JSON.parse(raw); } catch { value = raw; }
+        try { await window.pushSetting(settingKey, value, newId); }
+        catch (e) { console.warn(`[duplicateBook] Gagal salin setting '${settingKey}' ke buku baru:`, e); }
+    }
+
+    // Salin transaksi (opsional, sesuai pilihan user).
+    if (copyTxs) {
+        window.showToast('Menyalin transaksi, mohon tunggu...', 'info');
+        try {
+            const tag = window.getAccountTag ? window.getAccountTag() : null;
+            const tagFilter = window.tagOrFilter(tag);
+            // Tarik SEMUA transaksi buku sumber langsung dari cloud (paginated,
+            // sama seperti pola di window._getUnclosedChildTxs) -- bukan cuma
+            // window.txs, supaya buku sumber dengan >MAX_LOCAL_TXS transaksi
+            // tetap tersalin lengkap.
+            const PAGE_SIZE = 1000;
+            let allRows = [];
+            let offset = 0;
+            while (true) {
+                const query = `?book_id=eq.${book.id}&is_deleted=eq.false&order=date.asc&limit=${PAGE_SIZE}&offset=${offset}${tagFilter}`;
+                const rows = await window.callSupabaseAPI('transactions', 'GET', null, query);
+                if (rows === null) throw new Error('Gagal menarik transaksi buku sumber dari cloud.');
+                if (!Array.isArray(rows) || rows.length === 0) break;
+                allRows = allRows.concat(rows);
+                if (rows.length < PAGE_SIZE) break;
+                offset += PAGE_SIZE;
+            }
+            const decoded = await Promise.all(allRows.map(r => window.decodeCloudTxRow(r)));
+            const nowIso = new Date().toISOString();
+            // ID baru per transaksi (bukan salinan id lama) -- mencegah
+            // tabrakan primary key dengan baris asli yang masih ada di buku sumber.
+            const newTxs = decoded.map(t => ({
+                ...t,
+                id: 'tx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
+                updated_at: nowIso
+            }));
+
+            // Push ke cloud per-batch supaya payload POST tidak raksasa sekaligus
+            // untuk buku sumber yang sangat besar.
+            const PUSH_CHUNK = 300;
+            for (let i = 0; i < newTxs.length; i += PUSH_CHUNK) {
+                const chunk = newTxs.slice(i, i + PUSH_CHUNK);
+                const payload = await Promise.all(chunk.map(async t => {
+                    const encPayload = await window.encodeCloudTxPayload(t, newId);
+                    const base = {
+                        id: t.id,
+                        book_id: newId,
+                        device_id: window.deviceId,
+                        date: t.date,
+                        updated_at: t.updated_at,
+                        ...(tag ? { account_tag: tag } : {})
+                    };
+                    if (encPayload) {
+                        return { ...base, enc_payload: encPayload, type: null, amount: null, category: null, description: null, attachment: null };
+                    }
+                    return { ...base, type: t.type, amount: parseFloat(t.amount) || 0, category: t.category || '', description: t.description || '', attachment: t.attachment || null };
+                }));
+                const res = await window.callSupabaseAPI('transactions', 'POST', payload);
+                if (res === null) throw new Error('Gagal mengirim sebagian transaksi ke buku baru.');
+            }
+
+            // Simpan cache lokal buku baru (trimAndSaveLocal juga menghitung ulang
+            // balanceOffset/incomeOffset/expenseOffset dengan benar kalau jumlah
+            // transaksinya melebihi MAX_LOCAL_TXS).
+            window.trimAndSaveLocal(newId, newTxs);
+            window.showToast(`${newTxs.length} transaksi berhasil disalin ke "${newName}".`, 'success');
+        } catch (e) {
+            console.error('[duplicateBook] Gagal salin transaksi:', e);
+            window.showToast('Buku baru berhasil dibuat, tapi sebagian/semua transaksi gagal disalin: ' + (e && e.message ? e.message : 'error'), 'warning');
+        }
+    }
+
+    window.renderBookList();
+    window.renderBookParentOptions();
+    window.updateBookSelectDropdown();
+    window.showToast(`Buku "${newName}" berhasil dibuat sebagai duplikat "${book.name}"!`, 'success');
+    await window.addCloudLog('SISTEM', `Menduplikat buku "${book.name}" (ID ${book.id}) menjadi "${newName}" (ID ${newId})${copyTxs ? ', termasuk transaksi' : ', tanpa transaksi'}`);
+    const cfg = await window.getTgConfig();
+    if (cfg.active) window.sendTelegramNotif(`<b>Duplikat Buku</b>\n\nBuku baru: ${newName}\nSumber: ${book.name}\nSalin transaksi: ${copyTxs ? 'Ya' : 'Tidak'}\nID: ${newId}\nDevice: ${window.deviceId}`);
 };
 
 // Storage Estimasi

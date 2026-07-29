@@ -481,3 +481,33 @@ berlaku. Yang PERLU dicek ulang kalau rule ini diubah/dihapus: semua
 modal yang dibuka dari `js/shopping-list.js`, `js/budget.js`, `js/book.js`,
 dll. yang bisa dipanggil selagi halaman fullview terkait sedang aktif di
 layar hp — pastikan masih tampil di atas, bukan di belakang.
+
+## Fitur Duplikat Buku
+
+**Status:** Ditambahkan Juli 2026, di `window.duplicateBook` (`js/book.js`),
+tombol "Duplikat" di `renderBookList` (Buku Kas → daftar buku).
+
+Alur: minta nama buku baru (default `"<nama asli> (Salinan)"`), lalu tanya
+(via `customConfirm`) apakah transaksi juga ikut disalin. Buku baru dibuat
+dulu (push `pushSettingBooks`, rollback state lokal kalau push gagal),
+lalu:
+- **Selalu otomatis disalin** (lokal + push ke tabel `settings`): item di
+  `window.DUPLICATE_BOOK_SETTINGS_MAP` — Anggaran Bulanan, Anggaran Dasar,
+  Anggaran Tahunan, visibilitas card, Daftar Belanja + pemasukan
+  bulanannya, Fase Kehidupan, target bulan Dana Darurat.
+- **Opsional** (tergantung pilihan user): seluruh transaksi, ditarik
+  LANGSUNG dari cloud (paginated, bukan cuma `window.txs` yang terbatas
+  `MAX_LOCAL_TXS`), didekripsi lalu di-enkripsi ulang dengan `book_id`
+  baru dan **id transaksi baru** (bukan salin id lama — mencegah tabrakan
+  primary key dengan baris asli), dipush per-batch (300 baris), baru
+  disimpan ke cache lokal lewat `trimAndSaveLocal` (supaya
+  balanceOffset/incomeOffset/expenseOffset ikut terhitung benar kalau
+  jumlahnya besar).
+- **SENGAJA TIDAK disalin:** buku bersama (di luar cakupan — beda jalur
+  auth/tabel `book_members`/`sk_books`, tombol disembunyikan untuk buku
+  ini), log aktivitas, pengingat pembayaran, metadata backup, dan
+  `lastClosedAt` (status tutup anak buku milik riwayat buku lama).
+
+Kalau menambah state per-buku baru yang perlu ikut ter-duplikat di masa
+depan, tambahkan pasangan `[prefix_localStorage_, key_setting]`-nya ke
+`window.DUPLICATE_BOOK_SETTINGS_MAP` (bukan bikin mekanisme salin baru).
