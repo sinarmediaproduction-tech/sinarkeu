@@ -15,7 +15,7 @@ window.EXPENSE_CATEGORIES = [
     'Hiburan', 'Pendidikan', 'Transport', 'Investasi',
     'Perawatan Tubuh', 'Bumbu Dapur', 'Kebersihan Rumah', 'Iuran Warga',
     'Pertanian', 'Sedekah', 'Sumbangan', 'Pulsa', 'Pakan Peliharaan',
-    'Kosmetik', 'Token Listrik', 'Gas Melon'
+    'Kosmetik', 'Token Listrik', 'Gas Melon', 'Internet'
 ];
 // Warna per kategori -- dipakai badge kategori di Daftar Belanja (js/shopping-list.js)
 // supaya tiap kategori punya warna sendiri yang konsisten dan gampang dibedakan

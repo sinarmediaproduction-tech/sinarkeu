@@ -26,6 +26,7 @@ const EXPENSE_COLORS = {
   'Kosmetik':          '#B05C8F',
   'Token Listrik':     '#3D6E9C',
   'Gas Melon':         '#C97A2E',
+  'Internet':          '#2E7D8C',
 };
 
 const INCOME_COLORS = {
