@@ -321,6 +321,17 @@ semua file di atas.
   (`book_id`, `device_id`, `action`, `details`, `timestamp`, `account_tag`
   opsional) — skema tabel `audit_logs` di Supabase mengikuti bentuk ini.
 
+- **Modal biasa yang dibuka DI ATAS halaman fullview (mis. `editShoppingListItemModal`
+  di atas Belanja Bulanan) HARUS tetap terlihat di layar hp** — lihat
+  "Catatan Fix Modal Tertutup di Belakang Halaman Fullview (Mobile)" di
+  bawah untuk detail bug & fix-nya. Kalau menambah modal overlay baru yang
+  bisa dibuka dari dalam salah satu `FULLVIEW_MODALS`, pastikan tidak
+  butuh inline `style="z-index:..."` tambahan — sudah ditangani generik
+  lewat rule `body.view-fullpage .modal.show:not(.fullview-modal)` di
+  `css/style.css` (dekat blok `@media (max-width: 1023px)` fullview-modal).
+  Jangan hapus/turunkan rule itu tanpa cek ulang semua modal yang dibuka
+  dari dalam halaman fullview di layar hp.
+
 ## Checklist cepat sebelum anggap selesai
 
 Tidak ada test runner, jadi verifikasi ini gantinya — jalankan yang
@@ -377,3 +388,56 @@ Testing manual:
 5. Pastikan item terbaru muncul dari cloud.
 
 Jangan mengembalikan filter `account_tag` ke jalur shared book karena dapat membuat data shared terlihat "berhasil tersimpan" tetapi tidak muncul di perangkat anggota lain.
+
+
+## Catatan Fix Modal Tertutup di Belakang Halaman Fullview (Mobile)
+
+**Status:** Fix diterapkan pada Juli 2026.
+
+**Gejala:** Di menu sidebar Belanja Bulanan, tombol ✎ "Ubah Barang"
+(`window.openEditShoppingListItemModal`) terlihat tidak merespons di layar
+hp (<1024px) — modal tidak tampil sama sekali, meski di desktop normal.
+
+**Akar masalah:**
+`#editShoppingListItemModal` (dan modal biasa lain yang belum di-patch
+manual, mis. `budgetModal`, `cardVisibilityModal`, `annualBudgetModal`,
+`viewAttachmentModal`, `tutupAnakBukuModal`) hanya memakai z-index bawaan
+`.modal` (**1000**). Sementara halaman fullview yang membukanya (mis.
+`shoppingListModal`, class `fullview-modal`) di layar hp memakai
+`position: fixed; inset: 0; z-index: 2000` (lihat `@media (max-width:
+1023px)` di `css/style.css`, dekat komentar "Menu sidebar full-page").
+Karena keduanya sama-sama `position: fixed` menutupi seluruh layar dan
+latar halaman fullview solid (bukan transparan), modal dengan z-index
+lebih rendah (1000) render **tak terlihat & tak bisa disentuh** di
+belakangnya. Di desktop (`min-width: 1024px`) `.fullview-modal.show`
+memakai `position: static; z-index: auto` (bukan overlay penuh layar),
+jadi modal biasa yang `position: fixed` otomatis tampil normal di
+atasnya — makanya bug ini HANYA muncul di mobile.
+
+Beberapa modal lain sudah "kebetulan aman" karena sempat dipatch manual
+lewat inline `style="z-index:2000"` s/d `"z-index:10000"` (mis.
+`manualModal`, `conflictModal`, `customConfirmModal`, `accountUnlockModal`,
+`emergencyFundModal`, `firstTimeSetupModal`, `faseKehidupanModal`,
+`faseAIModal`) — tapi ini tidak konsisten diterapkan ke semua modal baru,
+sehingga bug yang sama berpotensi muncul lagi tiap ada modal baru yang
+lupa dikasih z-index tinggi.
+
+**Fix yang diterapkan** (generik, bukan per-ID) di `css/style.css`, di
+dalam blok `@media (max-width: 1023px)` fullview-modal:
+
+```css
+body.view-fullpage .modal.show:not(.fullview-modal) {
+  z-index: 2100;
+}
+```
+
+Ini menaikkan z-index SEMUA modal non-fullview yang terbuka selagi
+`body.view-fullpage` aktif (yaitu selagi salah satu halaman fullview
+sedang dibuka), tanpa perlu inline style satu-satu per modal baru.
+
+**Kalau menambah modal overlay baru yang bisa dibuka dari dalam halaman
+fullview:** tidak perlu tindakan tambahan, rule generik di atas otomatis
+berlaku. Yang PERLU dicek ulang kalau rule ini diubah/dihapus: semua
+modal yang dibuka dari `js/shopping-list.js`, `js/budget.js`, `js/book.js`,
+dll. yang bisa dipanggil selagi halaman fullview terkait sedang aktif di
+layar hp — pastikan masih tampil di atas, bukan di belakang.
