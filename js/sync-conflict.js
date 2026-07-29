@@ -117,19 +117,16 @@ window._registerConflict = function(id, bookId, localTx, serverTx, serverDeleted
 window._pushSingleTxConditional = async function(bookId, tx, baseline) {
     const tag = window.getAccountTag ? window.getAccountTag() : null;
     const tagFilter = window.tagOrFilter(tag);
-    const encPayload = await window.encodeCloudTxPayload(tx, bookId);
     const nowIso = new Date().toISOString();
-    const base = {
+    const body = {
         id: tx.id,
         book_id: bookId,
         device_id: window.deviceId,
         date: tx.date,
         updated_at: nowIso,
-        ...(tag ? { account_tag: tag } : {})
+        ...(tag ? { account_tag: tag } : {}),
+        type: tx.type, amount: parseFloat(tx.amount) || 0, category: tx.category || '', description: tx.description || '', attachment: tx.attachment || null
     };
-    const body = encPayload
-        ? { ...base, enc_payload: encPayload, type: null, amount: null, category: null, description: null, attachment: null }
-        : { ...base, type: tx.type, amount: parseFloat(tx.amount) || 0, category: tx.category || '', description: tx.description || '', attachment: tx.attachment || null };
 
     const query = `?id=eq.${tx.id}&book_id=eq.${bookId}&updated_at=eq.${encodeURIComponent(baseline)}${tagFilter}`;
     let res;
@@ -300,14 +297,11 @@ window.resolveConflictKeepMine = async function() {
     if (tx && window.isOnline()) {
         const tag = window.getAccountTag ? window.getAccountTag() : null;
         const tagFilter = window.tagOrFilter(tag);
-        const encPayload = await window.encodeCloudTxPayload(tx, c.bookId);
         const body = {
             id: tx.id, book_id: c.bookId, device_id: window.deviceId, date: tx.date,
             updated_at: new Date().toISOString(), is_deleted: false,
             ...(tag ? { account_tag: tag } : {}),
-            ...(encPayload
-                ? { enc_payload: encPayload, type: null, amount: null, category: null, description: null, attachment: null }
-                : { type: tx.type, amount: parseFloat(tx.amount) || 0, category: tx.category || '', description: tx.description || '', attachment: tx.attachment || null })
+            type: tx.type, amount: parseFloat(tx.amount) || 0, category: tx.category || '', description: tx.description || '', attachment: tx.attachment || null
         };
         // Upsert tanpa syarat (menang paksa) -- dipilih user secara sadar
         // setelah melihat kedua versi, jadi ini BUKAN lagi "diam-diam menimpa".

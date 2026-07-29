@@ -380,18 +380,13 @@ window.getTelegramConfigDecrypted = async function() {
 // sudah punya fallback plaintext ini dari sebelumnya (dulu untuk kasus
 // "kunci sesi belum siap"), jadi tidak perlu perubahan lain di sana selain
 // mengoper bookId ke sini.
-// [ENKRIPSI DINONAKTIFKAN] Transaksi BARU tidak lagi dienkripsi -- selalu
-// ditulis plaintext ke kolom asli (type/amount/category/description/
-// attachment). Fungsi ini SENGAJA selalu return null (semua pemanggil di
-// transaction.js/sync-conflict.js/backup.js/book.js sudah punya fallback
-// `encPayload ? {...enc_payload...} : {...kolom plaintext...}`, jadi return
-// null di sini otomatis membuat baris ditulis plaintext tanpa perlu ubah
-// pemanggilnya). decodeCloudTxRow di bawah TETAP bisa mendekripsi baris LAMA
-// yang sudah kadung terenkripsi sebelum perubahan ini, jadi data lama tidak
-// hilang/rusak -- cuma tidak ada enkripsi baru lagi mulai sekarang.
-window.encodeCloudTxPayload = async function(t, bookId) {
-    return null;
-};
+// [ENKRIPSI DINONAKTIFKAN] Transaksi BARU tidak lagi dienkripsi -- semua
+// pemanggil (transaction.js/sync-conflict.js/backup.js/book.js) sekarang
+// menulis langsung plaintext ke kolom asli (type/amount/category/
+// description/attachment) tanpa lewat fungsi encode ini lagi. decodeCloudTxRow
+// di bawah TETAP bisa mendekripsi baris LAMA yang sudah kadung terenkripsi
+// sebelum perubahan ini, jadi data lama tidak hilang/rusak -- cuma tidak ada
+// enkripsi baru lagi mulai sekarang.
 
 // Menerjemahkan satu baris hasil GET dari Supabase menjadi objek transaksi
 // yang dipakai di seluruh app (window.txs dst). Mendukung baris LAMA (belum
@@ -421,19 +416,11 @@ window.decodeCloudTxRow = async function(c) {
     };
 };
 
-// ==================== ENKRIPSI PAYMENT REMINDERS (pola sama seperti transaksi) ====================
-// Field sensitif: `name` (nama tagihan, mis. "Cicilan Motor", "SPP Anak")
-// dan `note`. day/recurrence/month juga ikut dienkripsi sekalian (tidak
-// pernah dipakai untuk query server-side, aman dienkripsi semua).
-// bookId (opsional): sama seperti window.encodeCloudTxPayload -- kalau
-// buku itu shared, SENGAJA return null (skip enkripsi), lihat catatan di
-// window.encodeCloudTxPayload untuk alasannya.
-// [ENKRIPSI DINONAKTIFKAN] Sama seperti window.encodeCloudTxPayload di atas --
-// payment reminder BARU selalu ditulis plaintext. decodeCloudReminderRow di
-// bawah tetap mendekripsi baris lama yang sudah kadung terenkripsi.
-window.encodeCloudReminderPayload = async function(r, bookId) {
-    return null;
-};
+// ==================== PAYMENT REMINDERS: BACA BARIS LAMA YANG TERENKRIPSI ====================
+// [ENKRIPSI DINONAKTIFKAN] Payment reminder BARU sekarang ditulis langsung
+// plaintext oleh pemanggilnya (payment-reminder.js/db.js). Fungsi di bawah
+// ini tetap dipertahankan untuk mendekripsi baris LAMA (kolom enc_payload)
+// yang sempat ditulis terenkripsi sebelum enkripsi dimatikan.
 window.decodeCloudReminderRow = async function(row) {
     if (row.enc_payload && window._sessionCryptoKey) {
         try {

@@ -27,8 +27,8 @@
 //      Ini defense-in-depth di client saja -- garis pertahanan utama tetap
 //      RLS di server.
 //
-// Skip enkripsi field transaksi untuk buku shared: sudah dikerjakan di
-// js/crypto.js (lihat encodeCloudTxPayload/encodeCloudReminderPayload).
+// Buku shared: transaksi & payment reminder sudah ditulis plaintext oleh
+// pemanggilnya (transaction.js/payment-reminder.js/dst di js/crypto.js).
 //
 // UI undang anggota (bagian ini): cari calon anggota lewat tabel
 // public.profiles (id+email saja, disinkron via trigger dari auth.users --
@@ -796,12 +796,11 @@ window.skMakeBookShared = async function(bookId, skipConfirm) {
     }
 // ── Konversi data lama (terenkripsi) ke plaintext saat buku jadi Bersama ──
 // [FIX DATA "NOL" UNTUK ANGGOTA LAIN] Sebelum jadi Buku Bersama, transaksi &
-// payment reminder buku ini ditulis TERENKRIPSI (kolom enc_payload, lihat
-// window.encodeCloudTxPayload/encodeCloudReminderPayload di js/crypto.js) --
+// payment reminder buku ini ditulis TERENKRIPSI (kolom enc_payload) --
 // kuncinya (_sessionCryptoKey) diturunkan dari password LOKAL akun pemilik,
 // tidak pernah dibagi ke anggota lain. Desain buku Bersama SENGAJA menulis
-// data BARU sebagai plaintext (kedua fungsi encode di atas return null utk
-// buku shared) supaya semua anggota, peran apa pun, bisa baca -- TAPI baris
+// data BARU sebagai plaintext supaya semua anggota, peran apa pun, bisa
+// baca -- TAPI baris
 // LAMA yang sudah kadung terenkripsi sebelum buku ini jadi shared tidak
 // pernah ikut dikonversi. Akibatnya anggota lain (mis. editor yang baru
 // diundang) melihat baris itu ADA (jumlahnya benar) tapi tiap kolom sensitif
@@ -868,9 +867,8 @@ window._skConvertBookDataToPlaintext = async function(bookId) {
 };
 
 // ==================== MIGRASI SATU-KALI: SELURUH DATA LAMA -> PLAINTEXT ====================
-// Sejak enkripsi dinonaktifkan (lihat js/crypto.js: encodeCloudTxPayload/
-// encodeCloudReminderPayload sekarang selalu return null, dan js/db.js:
-// pushSetting selalu menulis plaintext), tulisan BARU sudah otomatis
+// Sejak enkripsi dinonaktifkan (lihat js/transaction.js, js/payment-reminder.js,
+// dan js/db.js: pushSetting -- semua sekarang selalu menulis plaintext), tulisan BARU sudah otomatis
 // plaintext. TAPI baris yang sudah kadung ditulis SEBELUM perubahan itu
 // (enc_payload masih terisi) tetap ciphertext di Supabase -- app masih bisa
 // membacanya lewat fallback dekripsi di decodeCloudTxRow/dst, tapi kalau
@@ -1053,9 +1051,8 @@ window._skConvertTableToEncrypted = async function(table, bookId, buildEncrypted
     return { convertedCount, skippedCount: skippedIds.length };
 };
 
-// [ENKRIPSI DINONAKTIFKAN] Buku pribadi TIDAK LAGI mengenkripsi datanya
-// (lihat window.encodeCloudTxPayload/encodeCloudReminderPayload di
-// js/crypto.js, sekarang selalu return null). Jadi tidak ada lagi yang perlu
+// [ENKRIPSI DINONAKTIFKAN] Buku pribadi TIDAK LAGI mengenkripsi datanya --
+// semua pemanggil sekarang menulis langsung plaintext. Jadi tidak ada lagi yang perlu
 // dienkripsi ulang saat sebuah buku bersama dijadikan pribadi lagi -- data
 // yang sudah plaintext (ditulis selama jadi buku bersama) tetap plaintext.
 // Fungsi ini sengaja jadi no-op, nama & signature dipertahankan supaya

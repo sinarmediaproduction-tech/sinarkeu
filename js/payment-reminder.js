@@ -193,9 +193,6 @@ window.savePaymentReminder = async function(bookId, reminderData, skipLocalUpser
     if (window.isOnline()) {
         try {
             const tag = window.getAccountTag ? window.getAccountTag() : null;
-            // [SECURITY] name/note/day/recurrence/month dienkripsi jadi satu
-            // kolom enc_payload -- lihat window.encodeCloudReminderPayload.
-            const encPayload = await window.encodeCloudReminderPayload(reminderData, bookId);
             // [UNIVERSAL] Default is_universal=true untuk Buku Bersama (bisa
             // dioverride kalau reminderData.is_universal sudah eksplisit
             // diisi, mis. saat re-save item lama yang masih false). Buku
@@ -203,9 +200,7 @@ window.savePaymentReminder = async function(bookId, reminderData, skipLocalUpser
             // ada "tim" untuk dicocokkan -- lihat sk_book_member_signature).
             const isShared = window.skIsSharedBookId && window.skIsSharedBookId(bookId);
             const universalFlag = reminderData.is_universal !== undefined ? reminderData.is_universal : (isShared ? true : false);
-            const payload = encPayload
-                ? { id: reminderData.id, book_id: bookId, enc_payload: encPayload, name: null, day: null, recurrence: null, month: null, note: null, created_at: reminderData.created_at, updated_at: new Date().toISOString(), is_universal: universalFlag, ...(tag ? { account_tag: tag } : {}) }
-                : { ...reminderData, book_id: bookId, updated_at: new Date().toISOString(), is_universal: universalFlag, ...(tag ? { account_tag: tag } : {}) };
+            const payload = { ...reminderData, book_id: bookId, updated_at: new Date().toISOString(), is_universal: universalFlag, ...(tag ? { account_tag: tag } : {}) };
 
             const result = await window.callSupabaseAPI('payment_reminders', 'POST', [payload]);
             if (result) {
@@ -312,14 +307,7 @@ window.syncAllPaymentReminders = async function(bookId) {
         if (localReminders.length === 0) return true;
         
         const tag = window.getAccountTag ? window.getAccountTag() : null;
-        // [SECURITY] Enkripsi field sensitif -- lihat window.encodeCloudReminderPayload.
-        const payload = await Promise.all(localReminders.map(async r => {
-            const encPayload = await window.encodeCloudReminderPayload(r, bookId);
-            if (encPayload) {
-                return { id: r.id, book_id: bookId, enc_payload: encPayload, name: null, day: null, recurrence: null, month: null, note: null, created_at: r.created_at, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) };
-            }
-            return { ...r, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) };
-        }));
+        const payload = localReminders.map(r => ({ ...r, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) }));
         
         const result = await window.callSupabaseAPI('payment_reminders', 'POST', payload);
         return !!result;
@@ -394,14 +382,7 @@ window.migratePaymentReminders = async function(bookId) {
     
     try {
         const tag = window.getAccountTag ? window.getAccountTag() : null;
-        // [SECURITY] Enkripsi field sensitif -- lihat window.encodeCloudReminderPayload.
-        const payload = await Promise.all(toMigrate.map(async r => {
-            const encPayload = await window.encodeCloudReminderPayload(r, r.book_id || bookId);
-            if (encPayload) {
-                return { id: r.id, book_id: r.book_id || bookId, enc_payload: encPayload, name: null, day: null, recurrence: null, month: null, note: null, created_at: r.created_at, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) };
-            }
-            return { ...r, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) };
-        }));
+        const payload = toMigrate.map(r => ({ ...r, book_id: r.book_id || bookId, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) }));
         await window.callSupabaseAPI('payment_reminders', 'POST', payload);
         console.log('[PaymentReminder] Migrasi berhasil!');
         window.showToast(`${toMigrate.length} jadwal pembayaran berhasil dimigrasi ke cloud`, 'success');

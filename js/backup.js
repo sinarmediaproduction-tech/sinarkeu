@@ -105,8 +105,8 @@ window.restoreFromBackup = function() {
 window.pushBackupToSupabaseForBook = async function(bookId, bookTxs, backupType) {
     const _pbTag = window.getAccountTag ? window.getAccountTag() : null;
     // [ENKRIPSI DINONAKTIFKAN] Snapshot backup BARU disimpan plaintext lagi
-    // di kolom `data` (konsisten dengan window.encodeCloudTxPayload yang
-    // sekarang selalu return null). window._decodeBackupData di bawah tetap
+    // di kolom `data` (konsisten dengan transaksi & settings yang sekarang
+    // juga selalu plaintext). window._decodeBackupData di bawah tetap
     // bisa mendekripsi backup LAMA yang sempat dibuat terenkripsi.
     const dataToStore = JSON.stringify(bookTxs);
     const payload = [{ book_id: bookId, device_id: window.deviceId, backup_type: backupType, tx_count: bookTxs.length, data: dataToStore, created_at: new Date().toISOString(), ...(_pbTag ? { account_tag: _pbTag } : {}) }];
@@ -815,17 +815,13 @@ window.importAllDataFromFile = async function(input) {
             if (newTxs.length > 0 && window.isOnline() && window.getCloudUrl() && window.getSupabaseKey()) {
                 show('var(--warning)', 'var(--warning-lt)', `Upload ${newTxs.length} transaksi buku "${bookData.name}" ke Supabase...`);
                 const _rtTag = window.getAccountTag ? window.getAccountTag() : null;
-                // [SECURITY] Sama seperti pushToCloud() di transaction.js -- enkripsi
-                // field sensitif sebelum dikirim, bukan lagi plaintext.
-                const payload = await Promise.all(newTxs.map(async t => {
-                    const encPayload = await window.encodeCloudTxPayload(t, bookData.id);
-                    const base = {
-                        id: t.id, book_id: bookData.id, device_id: window.deviceId,
-                        date: t.date, updated_at: t.updated_at || new Date().toISOString(),
-                        is_deleted: false, ...(_rtTag ? { account_tag: _rtTag } : {})
-                    };
-                    if (encPayload) return { ...base, enc_payload: encPayload, type: null, amount: null, category: null, description: null, attachment: null };
-                    return { ...base, type: t.type, amount: parseFloat(t.amount) || 0, category: t.category || '', description: t.description || '', attachment: t.attachment || null };
+                // [ENKRIPSI DINONAKTIFKAN] Sama seperti pushToCloud() di transaction.js --
+                // transaksi diupload plaintext ke kolom asli.
+                const payload = newTxs.map(t => ({
+                    id: t.id, book_id: bookData.id, device_id: window.deviceId,
+                    date: t.date, updated_at: t.updated_at || new Date().toISOString(),
+                    is_deleted: false, ...(_rtTag ? { account_tag: _rtTag } : {}),
+                    type: t.type, amount: parseFloat(t.amount) || 0, category: t.category || '', description: t.description || '', attachment: t.attachment || null
                 }));
                 // Upload per-batch 50 agar tidak melebihi limit payload
                 for (let i = 0; i < payload.length; i += 50) {

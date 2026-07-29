@@ -539,31 +539,18 @@ window.pushToCloud = async function(bookId, txs, dirtyIds) {
         if (toPush.length === 0) return;
     }
     const _ptTag = window.getAccountTag ? window.getAccountTag() : null;
-    // [SECURITY] Jumlah/kategori/catatan/lampiran dienkripsi jadi satu kolom
-    // enc_payload sebelum dikirim -- kolom lama (amount/category/description/
-    // attachment/type) SENGAJA tidak lagi diisi nilai asli. Lihat
-    // window.encodeCloudTxPayload di crypto.js dan
-    // sql/harden_transactions_encryption.sql untuk migrasi kolomnya.
-    // Jika kunci sesi entah kenapa belum siap (seharusnya tidak mungkin saat
-    // terkunci), fallback aman: tetap kirim plaintext ke kolom lama supaya
-    // data tidak hilang, daripada gagal total.
-    const payload = await Promise.all(toPush.map(async t => {
-        const encPayload = await window.encodeCloudTxPayload(t, bookId);
-        const base = {
-            id: t.id,
-            book_id: bookId,
-            device_id: window.deviceId,
-            date: t.date,
-            updated_at: t.updated_at || new Date().toISOString(),
-            ...(_ptTag ? { account_tag: _ptTag } : {})
-        };
-        if (encPayload) {
-            return { ...base, enc_payload: encPayload, type: null, amount: null, category: null, description: null, attachment: null };
-        }
-        if (!(window.skIsSharedBookId && window.skIsSharedBookId(bookId))) {
-            console.warn('[Security] Kunci sesi tidak tersedia, transaksi', t.id, 'dikirim TIDAK terenkripsi (fallback).');
-        }
-        return { ...base, type: t.type, amount: parseFloat(t.amount) || 0, category: t.category || '', description: t.description || '', attachment: t.attachment || null };
+    // [ENKRIPSI DINONAKTIFKAN] Transaksi dikirim plaintext ke kolom asli
+    // (amount/category/description/attachment/type). Baris LAMA yang masih
+    // berisi enc_payload dari sebelum enkripsi dimatikan tetap bisa dibaca
+    // lewat window.decodeCloudTxRow (fallback dekripsi dipertahankan di sana).
+    const payload = toPush.map(t => ({
+        id: t.id,
+        book_id: bookId,
+        device_id: window.deviceId,
+        date: t.date,
+        updated_at: t.updated_at || new Date().toISOString(),
+        ...(_ptTag ? { account_tag: _ptTag } : {}),
+        type: t.type, amount: parseFloat(t.amount) || 0, category: t.category || '', description: t.description || '', attachment: t.attachment || null
     }));
     if (payload.length === 0) return;
     let res = await window.callSupabaseAPI('transactions', 'POST', payload);

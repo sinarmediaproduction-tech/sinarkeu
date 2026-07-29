@@ -513,20 +513,14 @@ window.duplicateBook = async function(id) {
             const PUSH_CHUNK = 300;
             for (let i = 0; i < newTxs.length; i += PUSH_CHUNK) {
                 const chunk = newTxs.slice(i, i + PUSH_CHUNK);
-                const payload = await Promise.all(chunk.map(async t => {
-                    const encPayload = await window.encodeCloudTxPayload(t, newId);
-                    const base = {
-                        id: t.id,
-                        book_id: newId,
-                        device_id: window.deviceId,
-                        date: t.date,
-                        updated_at: t.updated_at,
-                        ...(tag ? { account_tag: tag } : {})
-                    };
-                    if (encPayload) {
-                        return { ...base, enc_payload: encPayload, type: null, amount: null, category: null, description: null, attachment: null };
-                    }
-                    return { ...base, type: t.type, amount: parseFloat(t.amount) || 0, category: t.category || '', description: t.description || '', attachment: t.attachment || null };
+                const payload = chunk.map(t => ({
+                    id: t.id,
+                    book_id: newId,
+                    device_id: window.deviceId,
+                    date: t.date,
+                    updated_at: t.updated_at,
+                    ...(tag ? { account_tag: tag } : {}),
+                    type: t.type, amount: parseFloat(t.amount) || 0, category: t.category || '', description: t.description || '', attachment: t.attachment || null
                 }));
                 const res = await window.callSupabaseAPI('transactions', 'POST', payload);
                 if (res === null) throw new Error('Gagal mengirim sebagian transaksi ke buku baru.');
