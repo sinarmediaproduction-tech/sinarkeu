@@ -532,8 +532,8 @@ window.callSupabaseAPI = async function(table, method, body, queryString, option
 };
 
 // ── Patch openSetelanModal: kunci untuk role global non-admin ───────────
-// [DIUBAH] Sekarang berlaku untuk SEMUA buku (termasuk buku pribadi),
-// bukan cuma buku yang statusnya "Bersama" -- lihat skComputeGlobalRole.
+// [DIUBAH] Sekarang berlaku untuk SEMUA buku (termasuk buku pribadi) --
+// lihat skComputeGlobalRole.
 const _originalOpenSetelanModal = window.openSetelanModal;
 window.openSetelanModal = function(initialTab) {
     if (window.skComputeGlobalRole() !== 'admin') {
@@ -541,6 +541,23 @@ window.openSetelanModal = function(initialTab) {
         return;
     }
     return _originalOpenSetelanModal.apply(this, arguments);
+};
+
+// ── Patch openDataBackupView: kunci menu 'Cadangan Data' sesuai peran ───
+// [FIX BOCOR MENU CADANGAN DATA] Menyembunyikan #navBackupBtn di
+// skApplyRoleUI di atas cukup untuk UI normal, tapi tombolnya bukan
+// satu-satunya pemicu -- window.openDataBackupView juga dipanggil
+// langsung dari openBackupManager()/openSafetySnapshotManager() (js/
+// backup.js, js/safety-snapshot.js). Defense-in-depth: tolak juga di sini
+// kalau menu_visibility 'backup' untuk peran (global) user saat ini
+// dimatikan admin -- sama seperti pola openSetelanModal di atas.
+const _originalOpenDataBackupView = window.openDataBackupView;
+window.openDataBackupView = function(initialTab) {
+    if (!window.skGetMenuVisible(window.currentBookId, 'backup')) {
+        window.showToast && window.showToast('Menu Cadangan Data tidak diaktifkan untuk peran kamu di buku ini.', 'error');
+        return;
+    }
+    return _originalOpenDataBackupView.apply(this, arguments);
 };
 
 // ── Migrasi ID buku default yang bentrok lintas akun ────────────────────
@@ -1512,6 +1529,17 @@ window.skApplyRoleUI = function() {
     // tombol di panel "Akun & Perangkat" pada halaman Setelan.
     setVisible('navSetelanBtn', window.skGetMenuVisible(bookId, 'setelan'));
     setVisible('setelanBtnBackup', window.skGetMenuVisible(bookId, 'backup'));
+    // [FIX BOCOR MENU CADANGAN DATA] 'Cadangan Data' sekarang punya tombol
+    // sidebar SENDIRI (#navBackupBtn, lihat index.html + window.APP_NAV_BTN_MAP
+    // di js/settings.js) sejak fitur ini dipindah keluar dari Setelan --
+    // komentar lama di atas ("Akun/Cadangan Data/dst sudah tidak punya
+    // tombol sidebar sendiri") sudah tidak akurat untuk versi ini. Sebelum
+    // fix ini, hanya #setelanBtnBackup (tombol lama, sudah tidak dipakai
+    // alur normal) yang ikut di-toggle skGetMenuVisible -- #navBackupBtn
+    // luput sama sekali, jadi editor/viewer tetap bisa lihat & buka menu
+    // ini dari sidebar walau admin sudah set 'backup' ke false lewat panel
+    // "Atur Tampilan Menu per Peran".
+    setVisible('navBackupBtn', window.skGetMenuVisible(bookId, 'backup'));
     setVisible('setelanBtnDevice', window.skGetMenuVisible(bookId, 'device'));
     setVisible('navBudgetBtn', window.skGetMenuVisible(bookId, 'budget'));
     setVisible('tambahTransaksiBtn', window.skGetMenuVisible(bookId, 'tambahTransaksi'));
