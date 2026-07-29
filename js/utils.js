@@ -337,6 +337,24 @@ window.openModal = function(id) {
         // jatuh ke Dashboard.
         try { localStorage.setItem('sk_last_fullview', id); } catch { /* localStorage penuh/disabled -- tidak fatal */ }
     }
+    // [FIX SCROLL NYANGKUT] Modal fullview (mis. Belanja Bulanan) TIDAK
+    // pernah dibuang dari DOM antara buka/tutup -- cuma class `show` yang
+    // di-toggle. Kalau modal-content-nya scrollable (lihat CSS
+    // `body.view-fullpage .fullview-modal.show .modal-content { overflow-y:
+    // auto }` di layar hp) dan user terakhir kali scroll jauh ke bawah
+    // (mis. daftar belanja sudah banyak barang), posisi scroll itu
+    // TERBAWA ke sesi buka modal berikutnya. Kontrol yang letaknya di
+    // ATAS (mis. tombol "+ Tambah Barang" & form-nya di Belanja Bulanan)
+    // jadi ketutup/di luar layar -- klik tombolnya SEBENARNYA tetap
+    // berhasil expand form-nya, cuma user tidak melihatnya sama sekali
+    // karena posisi scroll masih di bawah, persis gejala "modal tidak
+    // mau muncul kalau daftar sudah banyak" yang dilaporkan user. Reset
+    // scrollTop ke 0 tiap kali modal (fullview ATAUPUN modal biasa) baru
+    // dibuka supaya user selalu mulai dari atas.
+    if (_modalEl.querySelector) {
+        const _scrollable = _modalEl.querySelector('.modal-content');
+        if (_scrollable) _scrollable.scrollTop = 0;
+    }
     // [FIX] Beberapa fungsi lama (mis. openBackupManager, openTelegramSettings)
     // mungkin masih memanggil openModal() dengan id yang sudah tidak ada lagi
     // di HTML karena section-nya sudah dipindah jadi panel inline di Setelan.
