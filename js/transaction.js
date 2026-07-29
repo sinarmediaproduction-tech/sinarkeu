@@ -271,7 +271,21 @@ window.pullAllBooksFromCloud = async function() {
     if (!window.isOnline()) return;
     const bookIds = window.books.map(b => b.id);
     if (bookIds.length === 0) return;
-    for (const bookId of bookIds) {
+    // [PERF FIX] Sebelumnya loop ini pakai `for...of` + `await` biasa --
+    // setiap buku menunggu round-trip network buku sebelumnya selesai
+    // DULU sebelum mulai buku berikutnya. Kalau user punya banyak buku
+    // (pribadi + bersama + anak buku), total waktu = jumlah buku x latency
+    // satu request, padahal continueAppInit() nge-`await` fungsi ini
+    // SEBELUM app dianggap siap dipakai -- jadi makin banyak buku, makin
+    // lama layar loading nyangkut. Request-request ini independen satu
+    // sama lain (beda book_id, tidak saling bergantung), jadi aman
+    // dijalankan PARALEL lewat Promise.allSettled -- total waktu jadi
+    // ~seburuk buku PALING LAMBAT, bukan jumlah semuanya. Buku yang sedang
+    // aktif (window.currentBookId) tetap langsung ke-render begitu
+    // request-nya sendiri selesai (tidak perlu menunggu buku lain), karena
+    // tiap pemanggilan async function di .map() di bawah mulai jalan
+    // serentak.
+    const pullOneBook = async (bookId) => {
         const _fxTag = window.getAccountTag ? window.getAccountTag() : null;
         // OR filter: baris ber-tag akun ini ATAU baris lama tanpa tag (data sebelum migrasi).
         // [FIX "TRANSAKSI TIDAK MUNCUL DI BUKU BERSAMA" -- device pertama kali buka
@@ -287,7 +301,7 @@ window.pullAllBooksFromCloud = async function() {
         const _fxTagFilter = window.tagOrFilter(_fxTag, bookId);
         let cloudData = await window.callSupabaseAPI('transactions', 'GET', null,
             `?book_id=eq.${bookId}&is_deleted=eq.false&order=date.desc&limit=${window.MAX_LOCAL_TXS}${_fxTagFilter}`);
-        if (!cloudData || !Array.isArray(cloudData)) continue;
+        if (!cloudData || !Array.isArray(cloudData)) return;
         // [SECURITY] Dekripsi field sensitif -- lihat window.decodeCloudTxRow di crypto.js.
         const cloudMapped = await Promise.all(cloudData.map(c => window.decodeCloudTxRow(c)));
         const trimmed = window.trimAndSaveLocal(bookId, cloudMapped);
@@ -313,7 +327,12 @@ window.pullAllBooksFromCloud = async function() {
             window.txs = trimmed;
             window.render();
         }
-    }
+    };
+    // allSettled (bukan Promise.all biasa) supaya satu buku gagal (mis.
+    // network error sesaat utk buku itu) tidak membatalkan/reject seluruh
+    // batch -- perilaku lama (for-loop + continue on failure) tetap sama:
+    // buku lain tetap lanjut diproses walau satu gagal.
+    await Promise.allSettled(bookIds.map(pullOneBook));
     window._lastSyncTime = new Date();
     window.updateSyncTimeBadge();
     console.log('[Sync] Selesai pull semua buku —', bookIds.length, 'buku diproses');

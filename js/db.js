@@ -487,20 +487,29 @@ window.pullAllSettings = async function() {
         }
     } catch (e) {}
     if (_sharedBookIds.length) {
+        // [PERF FIX] Sama seperti window.pullAllBooksFromCloud (js/transaction.js)
+        // -- sebelumnya loop ini menunggu tiap buku bersama SATU-SATU (for-loop
+        // + await berurutan), padahal request-nya independen per book_id. Makin
+        // banyak buku bersama yang diikuti user, makin lama switchBook()/pull
+        // penuh macet nunggu network round-trip demi round-trip. Jalankan
+        // paralel lewat Promise.allSettled -- satu buku gagal tetap tidak
+        // membatalkan buku lain (sama seperti try/catch per-iterasi yang lama).
+        const _sharedRowsResults = await Promise.allSettled(_sharedBookIds.map(function(_bookId) {
+            return window.callSupabaseAPI(
+                'settings',
+                'GET',
+                null,
+                `?book_id=eq.${encodeURIComponent(_bookId)}&order=updated_at.desc`
+            );
+        }));
         const _sharedRows = [];
-        for (const _bookId of _sharedBookIds) {
-            try {
-                const _rows = await window.callSupabaseAPI(
-                    'settings',
-                    'GET',
-                    null,
-                    `?book_id=eq.${encodeURIComponent(_bookId)}&order=updated_at.desc`
-                );
-                if (Array.isArray(_rows)) _sharedRows.push(..._rows);
-            } catch (e) {
-                console.warn('[Sync] shared book pull failed', _bookId, e);
+        _sharedRowsResults.forEach(function(_result, _idx) {
+            if (_result.status === 'fulfilled' && Array.isArray(_result.value)) {
+                _sharedRows.push(..._result.value);
+            } else if (_result.status === 'rejected') {
+                console.warn('[Sync] shared book pull failed', _sharedBookIds[_idx], _result.reason);
             }
-        }
+        });
         if (Array.isArray(allRows)) allRows = allRows.concat(_sharedRows);
         else allRows = _sharedRows;
     }
