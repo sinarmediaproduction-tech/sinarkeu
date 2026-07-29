@@ -322,6 +322,7 @@ window.doFirstTimeSetup = async function() {
     var key = document.getElementById('setupKeyInput').value.trim();
     var pwd = document.getElementById('setupPwdInput').value;
     var pwd2 = document.getElementById('setupPwdConfirm').value;
+    var adminEmail = (document.getElementById('setupAdminEmailInput').value || '').trim();
     var deviceNameRaw = (document.getElementById('setupDeviceNameInput').value || '').trim();
     var st = document.getElementById('setupStatusMsg');
     var btn = document.getElementById('setupConnectBtn');
@@ -329,6 +330,14 @@ window.doFirstTimeSetup = async function() {
     if (!url || !key) {
         st.className = 'setup-status error';
         st.innerText = window.t('supabase_url_key_required');
+        return;
+    }
+    // [ADMIN BOOTSTRAP] Wajib diisi supaya device pertama yang setup backend
+    // baru tidak nyangkut di skLoginGateScreen tanpa cara masuk (lihat
+    // window.skBootstrapFirstAdmin di js/auth.js untuk alasan lengkap).
+    if (!adminEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail)) {
+        st.className = 'setup-status error';
+        st.innerText = 'Email admin wajib diisi dengan format yang benar.';
         return;
     }
     if (!pwd || pwd.length < 6) {
@@ -399,17 +408,40 @@ window.doFirstTimeSetup = async function() {
     
     window.updateSyncStatusBadge();
     
-    st.className = 'setup-status success';
-    st.innerText = boot.joined
-        ? 'Berhasil! Perangkat ini bergabung memakai kunci yang sama dengan perangkat lain.'
-        : 'Berhasil! Kredensial terenkripsi dengan password Anda.';
+    // [ADMIN BOOTSTRAP] Backend BENAR-BENAR baru (belum ada device lain yang
+    // pernah setup) -> sekalian buatkan akun admin dari email di form ini,
+    // supaya skLoginGateScreen di continueAppInit (js/app.js) tidak jadi
+    // gerbang buntu tanpa cara masuk. Kalau boot.joined true (device ini
+    // "bergabung" ke backend yang sudah pernah disetup device lain),
+    // adminnya sudah ada duluan -- email di form ini sengaja DIABAIKAN,
+    // device ini harus login pakai akun yang sudah dibuatkan admin
+    // sebelumnya lewat Setelan → Kelola Anggota.
+    var adminResult = { ok: true };
+    if (!boot.joined) {
+        st.innerText = 'Membuat akun admin utama...';
+        if (typeof window.skBootstrapFirstAdmin === 'function') {
+            adminResult = await window.skBootstrapFirstAdmin(adminEmail, pwd, window.currentBookId);
+        } else {
+            adminResult = { ok: false, code: 'NO_FN', message: 'Modul Buku Bersama (js/auth.js) tidak termuat.' };
+        }
+    }
+    
+    st.className = adminResult.ok ? 'setup-status success' : 'setup-status warning';
+    if (!adminResult.ok) {
+        st.innerText = 'Kredensial & password tersimpan, tapi akun admin gagal dibuat: ' + adminResult.message +
+            ' Anda tetap bisa lanjut, atur "Buku Bersama" manual nanti lewat Setelan.';
+    } else {
+        st.innerText = boot.joined
+            ? 'Berhasil! Perangkat ini bergabung memakai kunci yang sama dengan perangkat lain.'
+            : 'Berhasil! Kredensial tersimpan & akun admin utama sudah aktif.';
+    }
     btn.innerText = window.t('connected');
     
     setTimeout(async function() {
         window.closeModal('firstTimeSetupModal');
-        window.showToast('Setup selesai! Data terenkripsi aman ', 'success');
+        window.showToast(adminResult.ok ? 'Setup selesai! Data terenkripsi aman ' : 'Setup selesai dengan catatan, cek Setelan → Buku Bersama', adminResult.ok ? 'success' : 'warning');
         await window.continueAppInit();
-    }, 900);
+    }, adminResult.ok ? 900 : 2200);
 };
 
 

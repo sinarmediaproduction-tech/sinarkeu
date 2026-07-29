@@ -603,7 +603,13 @@ window._skMigrateBookIdLocal = function(oldId, newId) {
 // ── Jadikan buku pribadi jadi buku bersama (bootstrap admin pertama) ────
 // Syarat: sudah login (skSignIn), dan sudah jalankan
 // sql/bootstrap_shared_book.sql (jalur RLS khusus buat baris admin pertama).
-window.skMakeBookShared = async function(bookId) {
+// skipConfirm: true kalau dipanggil otomatis dari alur setup awal
+// (window.skBootstrapFirstAdmin, js/settings.js doFirstTimeSetup) -- di situ
+// user SUDAH secara eksplisit mengisi form "Akun Admin Utama", jadi dialog
+// confirm() browser di bawah ini cuma pengulangan yang mengganggu. Tombol
+// "Jadikan Bersama" manual (js/book.js) TIDAK mengirim param ini -- tetap
+// pakai confirm() seperti biasa.
+window.skMakeBookShared = async function(bookId, skipConfirm) {
     const client = getSupabaseAuthClient();
     if (!client) {
         window.showToast && window.showToast('Supabase belum di-setup (cek Setelan → Supabase).', 'error');
@@ -619,12 +625,14 @@ window.skMakeBookShared = async function(bookId) {
         window.showToast && window.showToast('Buku ini sudah jadi buku bersama.', 'error');
         return;
     }
-    const ok = confirm(
-        'Jadikan "' + book.name + '" sebagai buku bersama?\n\n' +
-        'Setelah ini: buku hanya bisa diakses lewat login (bukan anon key lagi), ' +
-        'dan kamu jadi admin pertamanya. Aksi ini tidak bisa dibatalkan sendiri dari UI.'
-    );
-    if (!ok) return;
+    if (!skipConfirm) {
+        const ok = confirm(
+            'Jadikan "' + book.name + '" sebagai buku bersama?\n\n' +
+            'Setelah ini: buku hanya bisa diakses lewat login (bukan anon key lagi), ' +
+            'dan kamu jadi admin pertamanya. Aksi ini tidak bisa dibatalkan sendiri dari UI.'
+        );
+        if (!ok) return;
+    }
     // [FIX ID COLLISION b_default] Lihat catatan lengkap di
     // window._skMigrateBookIdLocal di atas. Migrasi DULU sebelum insert ke
     // sk_books, supaya baris shared yang ter-insert sudah pakai ID unik.
@@ -659,6 +667,76 @@ window.skMakeBookShared = async function(bookId) {
         console.error('[auth.js] Gagal menjadikan buku bersama:', e);
         window.showToast && window.showToast('Gagal: ' + e.message + ' (sudah jalankan sql/bootstrap_shared_book.sql?)', 'error');
     }
+};
+
+// ── Bootstrap admin pertama SEKALIGUS saat setup awal ───────────────────
+// Dipanggil HANYA dari window.doFirstTimeSetup (js/settings.js), HANYA
+// ketika window.bootstrapCryptoForBackend() mengembalikan joined:false --
+// artinya ini backend Supabase yang benar-benar kosong/baru pertama kali
+// disetup dari device manapun. Tujuannya: menutup kebuntuan ayam-telur yang
+// terjadi kalau setup kredensial selesai duluan lalu user "dihadang"
+// skLoginGateScreen (js/app.js continueAppInit -> needsLoginGate) padahal
+// self-signup di gerbang itu sudah sengaja dihapus (lihat catatan di
+// skRenderGateAuthPanel di atas) dan skAdminCreateMemberAccount mensyaratkan
+// admin yang SUDAH ADA -- tidak ada satu pun jalan masuk untuk device
+// pertama tanpa fungsi ini.
+//
+// Langkah: signUp akun baru -> pastikan sesinya yang aktif (bukan sesi lama
+// yang somehow masih nyangkut) -> panggil skMakeBookShared(bookId, true)
+// yang sudah punya semua logika (migrasi ID b_default, insert sk_books,
+// insert book_members role admin -- lolos policy
+// book_members_insert_bootstrap_admin di sql/bootstrap_shared_book.sql
+// karena buku ini belum punya baris book_members sama sekali).
+//
+// Mengembalikan { ok: true } kalau sukses penuh, atau { ok: false, code,
+// message } supaya doFirstTimeSetup bisa tampilkan pesan yang jelas tanpa
+// membatalkan setup lokal yang sudah berhasil (URL/key/password tetap
+// tersimpan -- app tetap bisa dipakai, hanya fitur Buku Bersama yang perlu
+// diulang manual lewat panel "Kelola Buku" kalau langkah ini gagal).
+window.skBootstrapFirstAdmin = async function(email, password, bookId) {
+    const client = getSupabaseAuthClient();
+    if (!client) {
+        return { ok: false, code: 'NO_CLIENT', message: 'Supabase belum tersambung.' };
+    }
+    let signUpData;
+    try {
+        const { data, error } = await client.auth.signUp({ email: email, password: password });
+        if (error) throw error;
+        signUpData = data;
+    } catch (e) {
+        console.error('[auth.js] skBootstrapFirstAdmin: signUp gagal:', e);
+        return { ok: false, code: 'SIGNUP_FAILED', message: e && e.message ? e.message : 'Gagal membuat akun.' };
+    }
+    // Kalau project ini mewajibkan konfirmasi email, signUp() TIDAK langsung
+    // memberi sesi aktif (data.session kosong) -- insert sk_books/book_members
+    // di bawah pasti ditolak RLS (auth.uid() masih null/anon) kalau dipaksa
+    // jalan. Berhenti di sini dengan pesan jelas -- akun Auth-nya sendiri
+    // SUDAH terbuat, tinggal dikonfirmasi lalu login manual + "Jadikan
+    // Bersama" dari panel "Kelola Buku" (bukan diulang dari sini).
+    if (!signUpData || !signUpData.session) {
+        return {
+            ok: false,
+            code: 'EMAIL_CONFIRM_REQUIRED',
+            message: 'Akun admin dibuat, tapi project Supabase ini mewajibkan konfirmasi email. Cek inbox untuk konfirmasi, lalu login lewat gerbang & jadikan buku ini "Bersama" manual dari panel Kelola Buku.'
+        };
+    }
+    window._skAuthUser = signUpData.user ? { id: signUpData.user.id, email: signUpData.user.email } : null;
+    if (!window._skAuthUser) {
+        return { ok: false, code: 'NO_USER_ID', message: 'Akun dibuat tapi user id tidak didapat dari respons Supabase.' };
+    }
+    try {
+        await window.skMakeBookShared(bookId, true);
+    } catch (e) {
+        console.error('[auth.js] skBootstrapFirstAdmin: gagal menjadikan buku bersama:', e);
+        return { ok: false, code: 'MAKE_SHARED_FAILED', message: e && e.message ? e.message : 'Gagal menjadikan buku ini bersama.' };
+    }
+    // skMakeBookShared menampilkan toast sukses/gagalnya sendiri. Anggap
+    // sukses kalau setelahnya buku sudah tercatat sebagai admin milik kita.
+    if (window.skGetRoleForBook(bookId) !== 'admin') {
+        return { ok: false, code: 'MAKE_SHARED_FAILED', message: 'Akun dibuat, tapi gagal ditautkan sebagai admin buku ini (cek console / sudah jalankan sql/bootstrap_shared_book.sql?).' };
+    }
+    await window.skRefreshSharedAccess();
+    return { ok: true };
 };
 
 // ── Kelola Anggota (undang / hapus / lihat daftar) ──────────────────────
