@@ -2605,19 +2605,21 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   }
   .slist-checkbox { order: 1; }
   .slist-name { order: 2; flex: 1 1 auto; min-width: 0; }
-  .slist-qty { order: 3; }
+  /* Badge kategori ditaruh sebaris dengan nama barang (bukan baris
+     sendiri lagi) supaya lebih hemat ruang -- max-width dibatasi &
+     ellipsis (aturan dasar .slist-cat-badge di atas) menjaga badge
+     kategori panjang tidak mendesak nama barang jadi terlalu sempit. */
   .slist-cat-badge {
-    order: 4;
-    flex-basis: 100%;
-    max-width: 100%;
-    margin-left: 28px;
-    width: fit-content;
+    order: 3;
+    flex: 0 1 auto;
+    max-width: 38%;
+    margin-left: 6px;
   }
   .slist-cat-badge:empty { flex-basis: 0; margin: 0; }
+  .slist-qty { order: 4; }
   /* Satuan & subtotal ditaruh sebaris (order sama) supaya tampil
      berdampingan "Rp.../pcs  Rp.../total" tanpa makan baris kartu
-     tersendiri -- beda dari badge kategori yang sengaja dipaksa baris
-     baru lewat flex-basis 100%. */
+     tersendiri. */
   .slist-unit-price {
     order: 5;
     margin-left: 28px;
