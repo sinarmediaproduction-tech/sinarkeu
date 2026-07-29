@@ -620,6 +620,14 @@ window.pullAllSettings = async function() {
                     }
                 }
             }
+            if (row.key === 'harga_komoditas_manual') {
+                // Merge per-slug (bukan timpa total) -- lihat catatan lengkap
+                // di window._hkMergeManualFromCloud (js/harga-pangan.js).
+                const _hkChanged = window._hkMergeManualFromCloud && window._hkMergeManualFromCloud(parsed);
+                if (_hkChanged && typeof window.renderHargaKomoditasModal === 'function') {
+                    window.renderHargaKomoditasModal(); // no-op aman kalau modalnya sedang tidak terbuka
+                }
+            }
             if (row.key === 'telegram_config') {
                 // Simpan ke encrypted storage, bukan plain-text
                 await window.saveTelegramConfigEncrypted(

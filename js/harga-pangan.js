@@ -63,9 +63,13 @@ const HP_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 jam -- BI update maks 2x/hari
 // dari HP_CACHE_KEY (yang isinya data resmi BI dan boleh kadaluarsa per 6
 // jam) supaya harga manual ini persisten -- tidak ikut ter-invalidate tiap
 // cache BI refresh, dan hanya berubah kalau user sendiri yang mengubahnya.
-// Disimpan HANYA di localStorage (tidak di Supabase), karena beda dengan
-// harga pangan dari BI, angka ini bukan data publik/acuan resmi -- murni
-// input pribadi tiap device/akun.
+// [CLOUD SYNC] Sebelumnya disimpan HANYA di localStorage (per-device, tidak
+// ikut kalau ganti/tambah device). Sekarang juga di-push ke Supabase lewat
+// window.pushSetting(key='harga_komoditas_manual', bookId='global') --
+// pola yang sama seperti 'telegram_config'/'books' (lihat js/db.js): scoped
+// per AKUN lewat account_tag, bukan per buku (harga komoditas memang tidak
+// terkait ke buku manapun). Nilai dari cloud di-pull balik & di-merge oleh
+// window._hkMergeManualFromCloud (dipanggil dari js/db.js pullAllSettings).
 const HK_MANUAL_KEY = 'sk_harga_komoditas_manual';
 function _hkReadManual() {
     try {
@@ -90,7 +94,62 @@ window.setManualHargaKomoditas = function(slug, price) {
     if (window._hargaPanganCache) {
         window._hargaPanganCache.set(slug, { slug: slug, name: meta.name, unit: meta.unit, price: Number(price), date: today });
     }
+    // [CLOUD SYNC] Fire-and-forget -- jangan blokir UI/modal nunggu network.
+    // Kalau gagal (offline dll), data tetap aman di localStorage lokal dan
+    // akan ke-push lagi di kesempatan berikutnya user mengubah harga manual
+    // apa pun (karena tiap push selalu kirim SELURUH map, bukan cuma slug
+    // yang berubah).
+    if (window.pushSettingHargaKomoditasManual) {
+        window.pushSettingHargaKomoditasManual().catch(function(e) {
+            console.warn('[HargaKomoditas] Gagal sync harga manual ke cloud:', e.message);
+        });
+    }
     return true;
+};
+
+// Push SELURUH map harga manual (bukan cuma yang barusan diubah) ke
+// Supabase, konsisten dengan pola pushSettingBooks/pushSettingTelegram di
+// js/db.js. Dipanggil otomatis dari setManualHargaKomoditas di atas.
+window.pushSettingHargaKomoditasManual = async function() {
+    if (!window.isOnline || !window.isOnline()) return false;
+    const map = _hkReadManual();
+    const result = await window.pushSetting('harga_komoditas_manual', map, 'global');
+    return !!result;
+};
+
+// Dipanggil dari js/db.js (pullAllSettings) waktu ketemu baris settings
+// dengan key 'harga_komoditas_manual' dari cloud. Merge PER-SLUG berdasarkan
+// tanggal terbaru (bukan timpa total map lokal) -- supaya kalau device A
+// baru saja mengubah 1 harga tapi belum sempat ke-pull-balik di device B,
+// device B tidak kehilangan perubahan harga lain yang sudah lebih dulu ada
+// di lokalnya (pola sama seperti union-merge 'books', lihat js/db.js).
+window._hkMergeManualFromCloud = function(cloudMap) {
+    if (!cloudMap || typeof cloudMap !== 'object') return false;
+    const local = _hkReadManual();
+    let changed = false;
+    Object.keys(cloudMap).forEach(function(slug) {
+        const meta = window.HARGA_PANGAN_COMMODITIES.find(function(c) { return c.slug === slug && c.manual; });
+        if (!meta) return; // slug tidak dikenal (mis. sudah dihapus dari daftar), abaikan
+        const cloudEntry = cloudMap[slug];
+        if (!cloudEntry || typeof cloudEntry.price !== 'number') return;
+        const localEntry = local[slug];
+        if (!localEntry || !localEntry.date || (cloudEntry.date && cloudEntry.date > localEntry.date)) {
+            local[slug] = cloudEntry;
+            changed = true;
+        }
+    });
+    if (changed) {
+        _hkWriteManual(local);
+        if (window._hargaPanganCache) {
+            Object.keys(local).forEach(function(slug) {
+                const meta = window.HARGA_PANGAN_COMMODITIES.find(function(c) { return c.slug === slug && c.manual; });
+                if (meta) {
+                    window._hargaPanganCache.set(slug, { slug: slug, name: meta.name, unit: meta.unit, price: local[slug].price, date: local[slug].date });
+                }
+            });
+        }
+    }
+    return changed;
 };
 
 // Map<slug, {slug, name, unit, price, date}> -- diisi setelah
