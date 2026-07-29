@@ -1618,13 +1618,24 @@ tr:hover td { background: var(--accent-lt); }
      menumpuk di baris yang sama. Tambah padding-top khusus desktop di
      sini supaya konten nav mulai DI BAWAH tombol, bukan sejajar dengannya. */
   #appSidebar { padding-top: 54px; }
+  /* [FIX] Sebelumnya position:absolute nempel di dalam #appSidebar
+     (right:-12px), tapi separuh tombol yang nongol keluar lebar sidebar
+     ikut TERPOTONG oleh #appSidebar { overflow-y: auto }. Sekarang
+     position:fixed relatif viewport (tombol sudah dipindah jadi sibling
+     #appSidebar di index.html, bukan child lagi) + left dihitung dari
+     var(--sidebar-w) supaya tetap nempel tepi sidebar & ikut geser saat
+     diciutkan/diperluas. z-index dinaikkan ke 9500 -- di ATAS semua UI
+     app lain (modal, dropdown, dst maks 3002 sebelumnya) supaya tidak
+     ketutup apa pun, tapi SENGAJA masih di BAWAH #passwordLockScreen /
+     #skLoginGateScreen (z-index 9999) supaya tidak menembus layer
+     keamanan layar kunci. */
   .sidebar-collapse-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
-    position: absolute;
+    position: fixed;
     top: 16px;
-    right: -12px;
+    left: calc(var(--sidebar-w) - 12px);
     width: 24px;
     height: 24px;
     padding: 0;
@@ -1633,7 +1644,8 @@ tr:hover td { background: var(--accent-lt); }
     border: 1px solid var(--topbar-border);
     color: var(--topbar-text-muted);
     cursor: pointer;
-    z-index: 3002;
+    z-index: 9500;
+    transition: left .18s ease;
   }
   .sidebar-collapse-toggle:hover {
     background: var(--topbar-item-hover-bg);
@@ -2946,6 +2958,12 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
    yang melepas class ini lagi. Lihat juga pelepasan defensifnya di
    window.submitLockPassword (js/app.js) saat password benar. */
 body.lockscreen-restricted #appSidebar { display: none !important; }
+/* [SIDEBAR-COLLAPSE] Tombol ini sudah bukan child #appSidebar lagi (lihat
+   index.html), jadi harus ikut disembunyikan manual saat sidebar
+   disembunyikan oleh gate keamanan di atas -- kalau tidak, tombolnya akan
+   tetap tampil (dan bisa diklik) walau sidebar-nya sendiri sudah
+   disembunyikan. */
+body.lockscreen-restricted #sidebarCollapseToggle { display: none !important; }
 body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel="akun"]) {
   display: none !important;
 }

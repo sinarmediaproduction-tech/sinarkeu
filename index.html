@@ -430,16 +430,6 @@ alter table public.settings
 <!-- ===== APP SIDEBAR (Desktop) ===== -->
 <div id="appSidebar">
 
-    <!-- [SIDEBAR-COLLAPSE] Tombol ciutkan/perluas sidebar, cuma tampil di
-         desktop (>=1024px, lihat .sidebar-collapse-toggle di style.css).
-         Diposisikan absolute nempel di tepi kanan sidebar. State disimpan
-         di localStorage (sk_sidebar_collapsed) dan diterapkan lewat class
-         body.sidebar-collapsed (lihat window.toggleSidebarCollapse di
-         js/app.js), sama polanya dengan window.toggleDarkMode. -->
-    <button type="button" class="sidebar-collapse-toggle" id="sidebarCollapseToggle" onclick="window.toggleSidebarCollapse()" title="Ciutkan Sidebar" aria-label="Ciutkan Sidebar">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-    </button>
-
     <div class="app-nav-group">
         <button type="button" class="app-nav-item active" id="navDashboardBtn" onclick="window.showDashboardView()" title="Dashboard">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
@@ -507,6 +497,26 @@ alter table public.settings
         </button>
     </div>
 </div>
+
+<!-- [SIDEBAR-COLLAPSE] Tombol ciutkan/perluas sidebar, cuma tampil di
+     desktop (>=1024px, lihat .sidebar-collapse-toggle di style.css).
+     [FIX] Sengaja diletakkan DI LUAR #appSidebar (bukan child lagi) --
+     sebelumnya tombol ini child #appSidebar dengan position:absolute
+     right:-12px (nempel tepi kanan sidebar), tapi #appSidebar punya
+     overflow-y:auto sehingga separuh tombol yang nongol keluar lebar
+     sidebar ikut TERPOTONG (clipped) oleh overflow parent-nya -- bukan
+     soal z-index. Sebagai sibling + position:fixed (lihat style.css),
+     tombol lepas dari clipping tsb dan posisinya dihitung dari
+     var(--sidebar-w) supaya tetap nempel tepi sidebar & ikut geser saat
+     diciutkan/diperluas. State disimpan di localStorage
+     (sk_sidebar_collapsed) dan diterapkan lewat class body.sidebar-collapsed
+     (lihat window.toggleSidebarCollapse di js/app.js), sama polanya dengan
+     window.toggleDarkMode. Otomatis ikut disembunyikan saat
+     body.lockscreen-restricted (lihat style.css) supaya tidak melanggar
+     gate keamanan layar kunci. -->
+<button type="button" class="sidebar-collapse-toggle" id="sidebarCollapseToggle" onclick="window.toggleSidebarCollapse()" title="Ciutkan Sidebar" aria-label="Ciutkan Sidebar">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+</button>
 
 <!-- ===== ACCOUNT BAR ===== -->
 <div class="container">
