@@ -3935,7 +3935,11 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   border: 1.5px solid var(--rule);
   border-radius: var(--radius);
   box-shadow: var(--shadow-lg);
-  z-index: 2000;
+  /* Harus lebih tinggi dari z-index modal nested di mobile (2100, lihat
+     body.view-fullpage .modal.show:not(.fullview-modal)), supaya dropdown
+     kategori di modal Tambah/Ubah Barang Belanja tidak ke-render di
+     belakang modal itu sendiri dan jadi tidak bisa dipilih di hape. */
+  z-index: 2200;
   animation: csFadeIn 0.12s ease;
   max-height: 260px;
   display: none;
