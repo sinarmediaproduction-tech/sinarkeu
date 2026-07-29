@@ -1539,6 +1539,28 @@ tr:hover td { background: var(--accent-lt); }
     order: -1;
     position: static;
   }
+
+  /* [FIX] Modal biasa (bukan fullview) yang dibuka SAAT halaman fullview
+     sedang aktif -- mis. "Ubah Barang" (editShoppingListItemModal) yang
+     dibuka dari atas Belanja Bulanan, atau modal lain yang dibuka dari
+     atas Anggaran/Buku Kas/dst -- sebelumnya z-index bawaan .modal (1000)
+     KALAH dari .fullview-modal.show (2000) di layar hp, sehingga modal
+     itu render TIDAK TERLIHAT & TIDAK BISA DISENTUH di belakang halaman
+     fullview (yang latarnya solid, bukan transparan). Efeknya: tombol
+     Ubah/Tambah terlihat merespons (modal "show" ditambahkan ke DOM),
+     tapi user tidak melihat apa-apa dan tidak bisa berinteraksi sama
+     sekali -- padahal di desktop tidak bermasalah karena di sana
+     .fullview-modal.show pakai position:static & z-index:auto (bukan
+     overlay penuh layar), lihat media query min-width:1024px di bawah.
+     Beberapa modal lain (mis. #manualModal, #customConfirmModal,
+     #conflictModal, #accountUnlockModal) sudah dipatch manual lewat
+     inline style="z-index:...", tapi modal seperti editShoppingListItemModal
+     terlewat. Rule generik ini menaikkan SEMUA modal non-fullview yang
+     terbuka di atas halaman fullview supaya konsisten tampil paling atas,
+     tanpa perlu inline style satu-satu per modal. */
+  body.view-fullpage .modal.show:not(.fullview-modal) {
+    z-index: 2100;
+  }
 }
 
 @media (min-width: 1024px) {
