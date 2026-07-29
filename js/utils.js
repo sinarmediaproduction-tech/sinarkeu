@@ -258,6 +258,46 @@ window.FULLVIEW_MODALS = {
     dataBackupModal:       'backupData'
 };
 
+// [RESTORE-REFRESH] Nama fungsi (STRING, bukan referensi langsung) yang
+// dipanggil untuk "membuka lagi" tiap menu full-page setelah reload.
+// Sengaja STRING supaya lookup-nya (window[fnName]) baru dilakukan saat
+// restoreLastFullviewModal() benar-benar jalan (setelah semua script defer
+// lain -- shopping-list.js, harga-pangan.js, dst -- selesai dimuat), bukan
+// saat file ini di-parse (yang mana fungsi-fungsi itu belum tentu sudah
+// terdefinisi karena urutan <script defer> di index.html).
+// PENTING kalau nambah menu full-page baru: tambahkan juga entrinya di
+// sini, bukan cuma di FULLVIEW_MODALS, supaya ikut ter-restore.
+window.FULLVIEW_MODAL_OPENERS = {
+    monthlyReportModal:    'openMonthlyReport',
+    defaultBudgetModal:    'openDefaultBudgetModal',
+    shoppingListModal:     'openShoppingListModal',
+    hargaKomoditasModal:   'openHargaKomoditasModal',
+    paymentReminderModal:  'openPaymentReminderModal',
+    bookManagerModal:      'openBookManager',
+    userManagerModal:      'openUserManager',
+    dataBackupModal:       'openDataBackupView'
+};
+
+// Dipanggil sekali dari js/app.js (DOMContentLoaded), SETELAH window.initApp()
+// selesai -- supaya data yang dibutuhkan fungsi open*() (buku aktif,
+// anggaran, dll) sudah siap sebelum menu-nya dibuka ulang. Aman kalau
+// dipanggil walau tidak ada menu tersimpan (langsung return).
+window.restoreLastFullviewModal = function() {
+    var id;
+    try { id = localStorage.getItem('sk_last_fullview'); } catch { return; }
+    if (!id || !window.FULLVIEW_MODAL_OPENERS[id]) return;
+    var fn = window[window.FULLVIEW_MODAL_OPENERS[id]];
+    if (typeof fn !== 'function') return;
+    try {
+        fn();
+    } catch (e) {
+        // Gagal buka ulang (mis. data buku belum sempat siap) -- biarkan
+        // user tetap di Dashboard daripada layar putih/error tak jelas.
+        console.warn('[Restore] Gagal membuka kembali menu "' + id + '":', e && e.message);
+        try { localStorage.removeItem('sk_last_fullview'); } catch { /* tidak fatal */ }
+    }
+};
+
 // Modal utility (dipanggil dari onclick di HTML)
 window.openModal = function(id) {
     // [FIX UX] addModal & editModal sekarang boleh dibuka offline -- lihat
@@ -290,6 +330,12 @@ window.openModal = function(id) {
         document.body.classList.add('view-fullpage');
         if (typeof window.updateAppSidebarNav === 'function') window.updateAppSidebarNav(window.FULLVIEW_MODALS[id]);
         if (typeof window.closeMobileDrawer === 'function') window.closeMobileDrawer();
+        // [RESTORE-REFRESH] Catat menu full-page yang sedang aktif supaya
+        // kalau halaman di-reload (F5), window.restoreLastFullviewModal()
+        // (dipanggil dari DOMContentLoaded di js/app.js setelah initApp
+        // selesai) bisa membuka lagi menu yang sama alih-alih selalu
+        // jatuh ke Dashboard.
+        try { localStorage.setItem('sk_last_fullview', id); } catch { /* localStorage penuh/disabled -- tidak fatal */ }
     }
     // [FIX] Beberapa fungsi lama (mis. openBackupManager, openTelegramSettings)
     // mungkin masih memanggil openModal() dengan id yang sudah tidak ada lagi
@@ -339,6 +385,7 @@ window.closeModal = function(id) {
     if (window.FULLVIEW_MODALS[id]) {
         document.body.classList.remove('view-fullpage');
         if (typeof window.updateAppSidebarNav === 'function') window.updateAppSidebarNav('dashboard');
+        try { localStorage.removeItem('sk_last_fullview'); } catch { /* tidak fatal */ }
     }
 };
 

@@ -442,15 +442,21 @@ window.toggleAuditLogInline = function() {
 };
 
 // ==================== START APP ====================
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
     // Sync dark mode icon state setelah DOM ready
     var savedDark = localStorage.getItem('sk_dark_mode') === '1';
     window.applyTheme(savedDark);
 
-    window.initApp();
+    await window.initApp();
     window.fetchForexRate();
     setTimeout(window.fetchGoldPrice, 1500);
     window.updateEmasQuotaDisplay();
+
+    // [RESTORE-REFRESH] Baru dipanggil SETELAH initApp() selesai (buku
+    // aktif, anggaran, dst sudah kebaca) supaya menu yang direstore (mis.
+    // Belanja Bulanan, Harga Komoditas) punya data yang benar, bukan
+    // render kosong/salah buku.
+    if (typeof window.restoreLastFullviewModal === 'function') window.restoreLastFullviewModal();
 });
 
 // ==================== DARK MODE ====================

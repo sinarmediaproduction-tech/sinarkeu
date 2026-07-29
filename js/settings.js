@@ -90,6 +90,7 @@ window.openSetelanModal = function(initialTab) {
         });
     }
     document.body.classList.remove('view-fullpage');
+    try { localStorage.removeItem('sk_last_fullview'); } catch { /* tidak fatal */ }
 
     window.openModal('setelanModal');
     if (initialTab) window.switchSetelanTab(initialTab);
@@ -138,6 +139,7 @@ window.openDataBackupView = function(initialTab) {
 window.showDashboardView = function() {
     document.body.classList.remove('view-settings', 'view-fullpage');
     window.updateAppSidebarNav('dashboard');
+    try { localStorage.removeItem('sk_last_fullview'); } catch { /* tidak fatal */ }
     // Kalau lagi buka Setelan sebagai modal (mode mobile), tutup juga saat
     // pindah ke menu Dashboard di sidebar.
     if (typeof window.closeModal === 'function') window.closeModal('setelanModal');
