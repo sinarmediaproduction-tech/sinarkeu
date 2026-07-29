@@ -159,6 +159,7 @@ window.APP_NAV_BTN_MAP = {
     laporan:   'navReportBtn',
     anggaran:  'navBudgetBtn',
     belanja:   'navShoppingListBtn',
+    hargaKomoditas: 'navHargaKomoditasBtn',
     reminder:  'navReminderBtn',
     buku:      'navBookBtn',
     // [PINDAH KE SETELAN] Halaman ini sekarang dibuka dari panel "Akun &

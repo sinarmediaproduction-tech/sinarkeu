@@ -248,6 +248,7 @@ window.FULLVIEW_MODALS = {
     monthlyReportModal:    'laporan',
     defaultBudgetModal:    'anggaran',
     shoppingListModal:     'belanja',
+    hargaKomoditasModal:   'hargaKomoditas',
     paymentReminderModal:  'reminder',
     bookManagerModal:      'buku',
     userManagerModal:      'userManager',

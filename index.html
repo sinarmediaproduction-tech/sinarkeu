@@ -461,6 +461,10 @@ alter table public.settings
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M8 7h8"></path><path d="M8 12l2 2 4-4"></path><path d="M8 17h5"></path></svg>
             <span>Belanja Bulanan</span>
         </button>
+        <button type="button" class="app-nav-item" id="navHargaKomoditasBtn" onclick="window.closeMobileDrawer(); window.openHargaKomoditasModal()" title="Harga Komoditas">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            <span>Harga Komoditas</span>
+        </button>
         <button type="button" class="app-nav-item" id="navReminderBtn" onclick="window.closeMobileDrawer(); openPaymentReminderModal()" style="position:relative;" title="Pengingat Pembayaran">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
             <span data-i18n="payment_reminder">Pengingat Pembayaran</span>
@@ -1273,6 +1277,50 @@ alter table public.settings
             <button type="button" class="btn btn-secondary" onclick="window.resetShoppingListChecks()">Reset Centang</button>
             <button type="button" class="btn btn-secondary" onclick="window.clearBoughtShoppingListItems()">Hapus yang Dibeli</button>
         </div>
+    </div>
+</div>
+
+<!-- Modal Harga Komoditas -->
+<div id="hargaKomoditasModal" class="modal fullview-modal">
+    <div class="modal-content wide">
+        <div class="modal-header"><h3>Harga Komoditas</h3><button class="modal-close" onclick="window.openMobileDrawer()" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button></div>
+        <p style="margin:0 0 14px;color:var(--text-secondary);font-size:.9rem;">
+            Harga acuan komoditas pangan dari Bank Indonesia (PIHPS), plus komoditas non-pangan yang harganya Anda input manual.
+            Dipakai untuk auto-isi harga di <b>Belanja Bulanan</b>.
+        </p>
+        <div id="hkAutoSection">
+            <div class="slist-summary-meta" style="margin-bottom:8px;">Harga Pangan (otomatis dari BI)</div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Komoditas</th><th>Satuan</th><th>Harga</th><th>Update</th></tr></thead>
+                    <tbody id="hkAutoTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div id="hkManualSection" style="margin-top:18px;">
+            <div class="slist-summary-meta" style="margin-bottom:8px;">Komoditas Lain (input manual)</div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Komoditas</th><th>Satuan</th><th>Harga</th><th>Update</th><th class="col-action">Aksi</th></tr></thead>
+                    <tbody id="hkManualTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="slist-actions">
+            <button type="button" class="btn btn-secondary" onclick="window.refreshHargaKomoditas()">Segarkan dari BI</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ubah Harga Manual -->
+<div id="editHargaKomoditasManualModal" class="modal" style="z-index:2000;">
+    <div class="modal-content" style="max-width:380px;">
+        <div class="modal-header"><h3>Ubah Harga</h3><button class="modal-close" onclick="closeModal('editHargaKomoditasManualModal')">×</button></div>
+        <form id="editHargaKomoditasManualForm" onsubmit="window.handleHargaKomoditasManualSubmit(event)">
+            <input type="hidden" id="hkManualSlug">
+            <div class="form-group"><label id="hkManualLabel">Harga</label><input type="text" id="hkManualPrice" class="form-control" inputmode="numeric" oninput="window.formatRupiah(this)" required></div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('editHargaKomoditasManualModal')">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div>
+        </form>
     </div>
 </div>
 

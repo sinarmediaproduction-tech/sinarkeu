@@ -36,13 +36,59 @@ window.HARGA_PANGAN_COMMODITIES = [
     { slug: 'minyak-goreng-kemasan', name: 'Minyak Goreng Kemasan', unit: 'liter', keywords: ['minyak goreng kemasan', 'minyak kemasan'] },
     { slug: 'minyak-goreng-curah', name: 'Minyak Goreng Curah', unit: 'liter', keywords: ['minyak goreng', 'minyak curah'] },
     { slug: 'gula-pasir', name: 'Gula Pasir', unit: 'kg', keywords: ['gula'] },
+    // [MANUAL] Bukan data pangan -> tidak ada di PIHPS/BI, jadi TIDAK
+    // ditarik dari proxy api/harga-pangan.js. Harganya diinput sendiri oleh
+    // user lewat menu sidebar "Harga Komoditas" dan disimpan lokal (lihat
+    // window.setManualHargaKomoditas di bawah), bukan lewat prefetch BI.
+    { slug: 'gas-melon', name: 'Gas Melon (LPG 3kg)', unit: 'tabung', keywords: ['gas melon', 'gas 3kg', 'elpiji 3kg', 'lpg 3kg'], manual: true },
+    { slug: 'token-listrik', name: 'Token Listrik', unit: 'kWh', keywords: ['token listrik', 'token pln', 'pulsa listrik'], manual: true },
 ];
+// [CATATAN] Kategori "Kosmetik" sengaja TIDAK ditambahkan ke sini: harga
+// kosmetik terlalu beragam per merek/jenis produk untuk punya satu "harga
+// acuan" yang berarti (beda dengan beras/gas/token yang harga per unit
+// wajarnya relatif seragam). Harga barang kosmetik tetap diisi manual
+// langsung di kolom harga Daftar Belanja seperti biasa.
 // [PENYESUAIAN] Sesuaikan `keywords` di atas dengan penamaan barang yang
 // biasa Anda pakai di Daftar Belanja kalau hasil pencocokan otomatisnya
 // masih meleset (mis. Anda selalu tulis "cabe" bukan "cabai").
 
 const HP_CACHE_KEY = 'sk_harga_pangan_cache';
 const HP_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 jam -- BI update maks 2x/hari
+
+// [MANUAL] Penyimpanan harga komoditas non-pangan (Gas Melon, Token Listrik)
+// yang diisi user sendiri lewat menu "Harga Komoditas". Sengaja TERPISAH
+// dari HP_CACHE_KEY (yang isinya data resmi BI dan boleh kadaluarsa per 6
+// jam) supaya harga manual ini persisten -- tidak ikut ter-invalidate tiap
+// cache BI refresh, dan hanya berubah kalau user sendiri yang mengubahnya.
+// Disimpan HANYA di localStorage (tidak di Supabase), karena beda dengan
+// harga pangan dari BI, angka ini bukan data publik/acuan resmi -- murni
+// input pribadi tiap device/akun.
+const HK_MANUAL_KEY = 'sk_harga_komoditas_manual';
+function _hkReadManual() {
+    try {
+        const raw = localStorage.getItem(HK_MANUAL_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+}
+function _hkWriteManual(map) {
+    try { localStorage.setItem(HK_MANUAL_KEY, JSON.stringify(map)); } catch { /* tidak fatal */ }
+}
+// Simpan/ubah harga 1 komoditas manual. Langsung update
+// window._hargaPanganCache juga (kalau sudah pernah di-prefetch) supaya
+// tabel di modal "Harga Komoditas" bisa langsung re-render tanpa perlu
+// prefetch ulang.
+window.setManualHargaKomoditas = function(slug, price) {
+    const meta = window.HARGA_PANGAN_COMMODITIES.find(function(c) { return c.slug === slug && c.manual; });
+    if (!meta || !price) return false;
+    const map = _hkReadManual();
+    const today = _hpTodayDate();
+    map[slug] = { price: Number(price), date: today };
+    _hkWriteManual(map);
+    if (window._hargaPanganCache) {
+        window._hargaPanganCache.set(slug, { slug: slug, name: meta.name, unit: meta.unit, price: Number(price), date: today });
+    }
+    return true;
+};
 
 // Map<slug, {slug, name, unit, price, date}> -- diisi setelah
 // prefetchHargaPanganReferensi() selesai. null selama belum pernah dipanggil.
@@ -86,15 +132,27 @@ function _hpWriteLocalCache(rows) {
 // request ke Supabase/BI cuma benar-benar terjadi kalau cache lokal sudah
 // kadaluarsa.
 window.prefetchHargaPanganReferensi = async function() {
+    const manualMap = _hkReadManual();
+    const mergeManual = function(cache) {
+        window.HARGA_PANGAN_COMMODITIES.filter(function(c) { return c.manual; }).forEach(function(c) {
+            const saved = manualMap[c.slug];
+            if (saved) cache.set(c.slug, { slug: c.slug, name: c.name, unit: c.unit, price: saved.price, date: saved.date });
+        });
+        return cache;
+    };
+
     const local = _hpReadLocalCache();
     if (local) {
-        window._hargaPanganCache = new Map(local.map(function(r) { return [r.slug, r]; }));
+        window._hargaPanganCache = mergeManual(new Map(local.map(function(r) { return [r.slug, r]; })));
         return window._hargaPanganCache;
     }
 
     const cache = new Map();
     const today = _hpTodayDate();
-    const allSlugs = window.HARGA_PANGAN_COMMODITIES.map(function(c) { return c.slug; });
+    // [MANUAL] Komoditas manual dikecualikan di sini -- tidak ada di PIHPS,
+    // jadi jangan ikut ditanyakan ke Supabase/BI (bakal selalu miss & buang
+    // 1 slot query percuma).
+    const allSlugs = window.HARGA_PANGAN_COMMODITIES.filter(function(c) { return !c.manual; }).map(function(c) { return c.slug; });
     const hasSupabase = typeof window.callSupabaseAPI === 'function' && window.getCloudUrl && window.getCloudUrl();
 
     // 1) Cek cache Supabase (mungkin sudah ditulis device lain hari ini)
@@ -159,8 +217,8 @@ window.prefetchHargaPanganReferensi = async function() {
     }
 
     if (cache.size) _hpWriteLocalCache(Array.from(cache.values()));
-    window._hargaPanganCache = cache;
-    return cache;
+    window._hargaPanganCache = mergeManual(cache);
+    return window._hargaPanganCache;
 };
 
 // Cari harga referensi untuk 1 nama barang. Panggil SETELAH
@@ -171,4 +229,69 @@ window.getHargaPanganUntukItem = function(itemName) {
     const commodity = window.matchHargaPanganCommodity(itemName);
     if (!commodity) return null;
     return window._hargaPanganCache.get(commodity.slug) || null;
+};
+
+// ==================== MODAL "HARGA KOMODITAS" ====================
+// Halaman sidebar baru yang menampilkan SEMUA komoditas yang ditrack:
+// grup "otomatis" (dari BI, read-only) dan grup "manual" (Gas Melon,
+// Token Listrik -- user isi sendiri via modal edit kecil).
+window.openHargaKomoditasModal = async function() {
+    await window.prefetchHargaPanganReferensi();
+    window.renderHargaKomoditasModal();
+    window.openModal('hargaKomoditasModal');
+};
+
+// Paksa tarik ulang harga BI walau cache lokal (6 jam) belum kadaluarsa --
+// dipicu tombol "Segarkan dari BI". Harga manual TIDAK ikut ke-reset di
+// sini (dibaca ulang dari HK_MANUAL_KEY, bukan HP_CACHE_KEY).
+window.refreshHargaKomoditas = async function() {
+    try { localStorage.removeItem(HP_CACHE_KEY); } catch { /* tidak fatal */ }
+    window._hargaPanganCache = null;
+    await window.prefetchHargaPanganReferensi();
+    window.renderHargaKomoditasModal();
+};
+
+window.renderHargaKomoditasModal = function() {
+    const autoBody = document.getElementById('hkAutoTableBody');
+    const manualBody = document.getElementById('hkManualTableBody');
+    if (!autoBody || !manualBody) return;
+    const cache = window._hargaPanganCache || new Map();
+
+    const renderRow = function(c, withAction) {
+        const hit = cache.get(c.slug);
+        const price = hit ? window.rp(hit.price) : '<span style="color:var(--text-secondary)">Belum ada data</span>';
+        const date = hit ? window.escapeHtml(hit.date) : '-';
+        let row = '<tr><td>' + window.escapeHtml(c.name) + '</td><td>' + window.escapeHtml(c.unit) + '</td><td>' + price + '</td><td>' + date + '</td>';
+        if (withAction) {
+            row += '<td class="col-action"><button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:.8rem;" onclick="window.openEditHargaKomoditasManual(\'' + c.slug + '\')">Ubah</button></td>';
+        }
+        return row + '</tr>';
+    };
+
+    const autoRows = window.HARGA_PANGAN_COMMODITIES.filter(function(c) { return !c.manual; });
+    autoBody.innerHTML = autoRows.map(function(c) { return renderRow(c, false); }).join('') || '<tr><td colspan="4">Tidak ada data.</td></tr>';
+
+    const manualRows = window.HARGA_PANGAN_COMMODITIES.filter(function(c) { return c.manual; });
+    manualBody.innerHTML = manualRows.map(function(c) { return renderRow(c, true); }).join('') || '<tr><td colspan="5">Tidak ada data.</td></tr>';
+};
+
+window.openEditHargaKomoditasManual = function(slug) {
+    const meta = window.HARGA_PANGAN_COMMODITIES.find(function(c) { return c.slug === slug && c.manual; });
+    if (!meta) return;
+    document.getElementById('hkManualSlug').value = slug;
+    document.getElementById('hkManualLabel').textContent = 'Harga ' + meta.name + ' (per ' + meta.unit + ')';
+    const hit = window._hargaPanganCache && window._hargaPanganCache.get(slug);
+    const priceInput = document.getElementById('hkManualPrice');
+    priceInput.value = hit ? Number(hit.price).toLocaleString('id-ID') : '';
+    window.openModal('editHargaKomoditasManualModal');
+};
+
+window.handleHargaKomoditasManualSubmit = function(e) {
+    e.preventDefault();
+    const slug = document.getElementById('hkManualSlug').value;
+    const price = window.unRp(document.getElementById('hkManualPrice').value);
+    if (!slug || !price) return;
+    window.setManualHargaKomoditas(slug, price);
+    window.closeModal('editHargaKomoditasManualModal');
+    window.renderHargaKomoditasModal();
 };
