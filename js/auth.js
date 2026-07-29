@@ -275,12 +275,28 @@ window.skGetSession = async function() {
 // selamanya di daftar/dropdown buku dengan _isShared/_role basi, padahal
 // user sudah tidak bisa mengakses apa pun di buku itu (RLS akan menolak
 // semua request cloud-nya).
-function _skRevokeStaleSharedBooks(stillAccessibleIds) {
+async function _skRevokeStaleSharedBooks(stillAccessibleIds) {
     if (!window.books) return;
     const revoked = window.books.filter(function(b) { return b._isShared && !stillAccessibleIds.has(b.id); });
     if (revoked.length === 0) return;
 
     const revokedIds = new Set(revoked.map(function(b) { return b.id; }));
+
+    // [FIX BUKU HANTU] Tandai dulu SEBAGAI "pending delete" (mekanisme yang
+    // sama dipakai window.deleteBook di js/book.js) SEBELUM buku ini
+    // difilter dari window.books. Alasan: pullAllSettings (js/db.js)
+    // dipanggil TIDAK LAMA setelah fungsi ini selesai (lihat continueAppInit
+    // di js/app.js) dan union-merge 'books' di sana akan MENGHIDUPKAN LAGI
+    // ID apa pun yang ada di blob cloud tapi tidak ada di window.books saat
+    // itu -- KECUALI id-nya ada di daftar pending-delete. Blob 'books' di
+    // cloud milik akun INI (viewer/editor) masih membawa buku ini dari
+    // sesi-sesi sebelumnya saat masih jadi anggota (device lain milik akun
+    // yang sama belum tentu ikut push penghapusan ini), jadi tanpa marker
+    // ini buku yang baru saja dicabut aksesnya di sini akan langsung
+    // "hidup lagi" begitu pullAllSettings jalan setelah fungsi ini --
+    // itulah "buku hantu" yang selalu muncul lagi tiap login.
+    revokedIds.forEach(function(id) { if (window.markBookPendingDelete) window.markBookPendingDelete(id); });
+
     window.books = window.books.filter(function(b) { return !revokedIds.has(b.id); });
     localStorage.setItem('sk_books', JSON.stringify(window.books));
     revoked.forEach(function(b) {
@@ -311,7 +327,20 @@ function _skRevokeStaleSharedBooks(stillAccessibleIds) {
     // Propagasikan penghapusan ini juga ke daftar buku pribadi (setting
     // 'books') supaya device lain milik akun yang sama tidak terus
     // menyimpan buku yang sudah tidak bisa diakses ini di cache-nya.
-    if (typeof window.pushSettingBooks === 'function') window.pushSettingBooks();
+    //
+    // [FIX BUKU HANTU] DI-AWAIT (dulu fire-and-forget) supaya caller
+    // (skRefreshSharedAccess) selesai lebih dulu daripada pullAllSettings
+    // yang dipanggil sesudahnya di continueAppInit -- kalau tidak, pull bisa
+    // saja jalan duluan sebelum push ini kekirim, menarik blob 'books' LAMA
+    // dari cloud (yang masih membawa buku ini) dan balik menghidupkannya
+    // sebelum marker pending-delete sempat dicek. Marker pending-delete di
+    // atas tetap jadi jaring pengaman kedua kalau push ini sendiri gagal
+    // (offline/network) -- baru dibersihkan setelah beneran terkonfirmasi
+    // sukses, sama seperti pola window.deleteBook.
+    if (typeof window.pushSettingBooks === 'function') {
+        const pushOk = await window.pushSettingBooks();
+        if (pushOk && window.clearBookPendingDelete) revokedIds.forEach(function(id) { window.clearBookPendingDelete(id); });
+    }
 }
 
 // Tarik sk_books + role milik user yang sedang login, gabungkan ke
@@ -370,7 +399,7 @@ window.skRefreshSharedAccess = async function() {
     // di situ. Dilakukan SEBELUM early-return di bawah supaya kasus
     // "kehilangan akses ke semua buku bersama" (bookIds kosong) juga ikut
     // dibersihkan, bukan cuma kasus "masih ada beberapa buku bersama lain".
-    _skRevokeStaleSharedBooks(new Set(bookIds));
+    await _skRevokeStaleSharedBooks(new Set(bookIds));
 
     if (bookIds.length === 0) {
         if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
