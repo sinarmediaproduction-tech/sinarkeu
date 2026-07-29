@@ -11,10 +11,11 @@ window.ACC_ACTIVE_KEY = 'sk_active_account';
 window.ACC_GLOBAL_KEYS = new Set(['sk_accounts', 'sk_active_account', 'sk_device_id']);
 
 window.EXPENSE_CATEGORIES = [
-    'Makanan & Minuman', 'Tagihan Bulanan', 'Belanja Harian', 'Kesehatan',
+    'Jajan', 'Tagihan Bulanan', 'Belanja Harian', 'Kesehatan',
     'Hiburan', 'Pendidikan', 'Transport', 'Investasi',
     'Perawatan Tubuh', 'Bumbu Dapur', 'Kebersihan Rumah', 'Iuran Warga',
-    'Pertanian', 'Sedekah', 'Sumbangan', 'Pulsa', 'Pakan Peliharaan'
+    'Pertanian', 'Sedekah', 'Sumbangan', 'Pulsa', 'Pakan Peliharaan',
+    'Kosmetik', 'Token Listrik', 'Gas Melon'
 ];
 // Warna per kategori -- dipakai badge kategori di Daftar Belanja (js/shopping-list.js)
 // supaya tiap kategori punya warna sendiri yang konsisten dan gampang dibedakan
@@ -48,7 +49,8 @@ window.CATEGORY_RENAME_MAP = {
     'Skin & Body Care': 'Perawatan Tubuh',
     'Kitchen': 'Bumbu Dapur',
     'Cleaning': 'Kebersihan Rumah',
-    'Pajak & Iuran': 'Iuran Warga'
+    'Pajak & Iuran': 'Iuran Warga',
+    'Makanan & Minuman': 'Jajan'
 };
 window.migrateBudgetCategoryKeys = function(budgetObj) {
     if (!budgetObj || typeof budgetObj !== 'object') return budgetObj;

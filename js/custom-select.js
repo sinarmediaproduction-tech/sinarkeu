@@ -6,7 +6,7 @@
 
 // ── Warna per kategori pengeluaran ──
 const EXPENSE_COLORS = {
-  'Makanan & Minuman': '#A13A3A',
+  'Jajan':             '#A13A3A',
   'Tagihan Bulanan':   '#8B5E3C',
   'Belanja Harian':    '#9C6B9E',
   'Kesehatan':         '#2E6B4F',
@@ -23,6 +23,9 @@ const EXPENSE_COLORS = {
   'Sumbangan':         '#9C7A2E',
   'Pulsa':             '#9E5B3E',
   'Pakan Peliharaan':  '#7D8C6B',
+  'Kosmetik':          '#B05C8F',
+  'Token Listrik':     '#3D6E9C',
+  'Gas Melon':         '#C97A2E',
 };
 
 const INCOME_COLORS = {
