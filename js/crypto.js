@@ -314,57 +314,42 @@ window.reEncryptCredentials = async function(url, apiKey) {
 };
 
 // ==================== TELEGRAM SECURE STORAGE ====================
+// [ENKRIPSI DINONAKTIFKAN] Konfigurasi Telegram sekarang selalu disimpan
+// plaintext di localStorage (nama fungsi dipertahankan apa adanya supaya
+// semua pemanggil di js/db.js & js/settings.js tidak perlu diubah).
 window.saveTelegramConfigEncrypted = async function(token, chatId, edgeUrl) {
-    if (!window._sessionCryptoKey) {
-        // Fallback plain-text jika session key belum tersedia
-        if (token)   localStorage.setItem('sk_tg_token', token);
-        if (chatId)  localStorage.setItem('sk_tg_chatid', chatId);
-        if (edgeUrl) localStorage.setItem('sk_tg_edge_url', edgeUrl);
-        else         localStorage.removeItem('sk_tg_edge_url');
-        return;
-    }
-    try {
-        const encToken  = token   ? await window.encryptStr(window._sessionCryptoKey, token)   : '';
-        const encChatId = chatId  ? await window.encryptStr(window._sessionCryptoKey, chatId)  : '';
-        const encEdge   = edgeUrl ? await window.encryptStr(window._sessionCryptoKey, edgeUrl) : '';
-        localStorage.setItem('sk_tg_token_enc',  encToken);
-        localStorage.setItem('sk_tg_chatid_enc', encChatId);
-        localStorage.setItem('sk_tg_edge_enc',   encEdge);
-        // Hapus nilai plain-text lama
-        localStorage.removeItem('sk_tg_token');
-        localStorage.removeItem('sk_tg_chatid');
-        localStorage.removeItem('sk_tg_edge_url');
-    } catch (e) {
-        console.warn('[Crypto] Gagal enkripsi Telegram config, fallback plain-text:', e);
-        localStorage.setItem('sk_tg_token', token);
-        localStorage.setItem('sk_tg_chatid', chatId);
-        if (edgeUrl) localStorage.setItem('sk_tg_edge_url', edgeUrl);
-    }
+    if (token)   localStorage.setItem('sk_tg_token', token);   else localStorage.removeItem('sk_tg_token');
+    if (chatId)  localStorage.setItem('sk_tg_chatid', chatId); else localStorage.removeItem('sk_tg_chatid');
+    if (edgeUrl) localStorage.setItem('sk_tg_edge_url', edgeUrl);
+    else         localStorage.removeItem('sk_tg_edge_url');
+    // Bersihkan sisa versi terenkripsi lama (jika ada) supaya tidak dibaca lagi.
+    localStorage.removeItem('sk_tg_token_enc');
+    localStorage.removeItem('sk_tg_chatid_enc');
+    localStorage.removeItem('sk_tg_edge_enc');
 };
 
 window.getTelegramConfigDecrypted = async function() {
-    const tryDecrypt = async (encVal) => {
-        if (!encVal || !window._sessionCryptoKey) return '';
-        try { return await window.decryptStr(window._sessionCryptoKey, encVal); }
-        catch { return ''; }
-    };
+    // Baca plain-text langsung -- ini jalur normal sekarang.
+    let token   = localStorage.getItem('sk_tg_token')    || '';
+    let chatId  = localStorage.getItem('sk_tg_chatid')   || '';
+    let edgeUrl = localStorage.getItem('sk_tg_edge_url') || '';
+
+    // Migrasi satu-kali: kalau device ini masih menyimpan versi terenkripsi
+    // dari SEBELUM enkripsi dinonaktifkan, dekripsi sekali pakai kunci sesi
+    // (kalau tersedia) lalu tulis ulang sebagai plaintext supaya tidak
+    // hilang dan tidak perlu didekripsi lagi di kemudian hari.
     const encToken  = localStorage.getItem('sk_tg_token_enc');
     const encChatId = localStorage.getItem('sk_tg_chatid_enc');
     const encEdge   = localStorage.getItem('sk_tg_edge_enc');
-    if (encToken || encChatId) {
-        // Baca versi terenkripsi
-        return {
-            token:   await tryDecrypt(encToken),
-            chatId:  await tryDecrypt(encChatId),
-            edgeUrl: await tryDecrypt(encEdge),
+    if ((encToken || encChatId) && window._sessionCryptoKey) {
+        const tryDecrypt = async (encVal) => {
+            if (!encVal) return '';
+            try { return await window.decryptStr(window._sessionCryptoKey, encVal); }
+            catch { return ''; }
         };
-    }
-    // Fallback migrasi: baca plain-text lama, lalu enkripsi ulang
-    const token   = localStorage.getItem('sk_tg_token')    || '';
-    const chatId  = localStorage.getItem('sk_tg_chatid')   || '';
-    const edgeUrl = localStorage.getItem('sk_tg_edge_url') || '';
-    if (token || chatId) {
-        // Migrasi otomatis ke enkripsi
+        token   = await tryDecrypt(encToken)  || token;
+        chatId  = await tryDecrypt(encChatId) || chatId;
+        edgeUrl = await tryDecrypt(encEdge)   || edgeUrl;
         await window.saveTelegramConfigEncrypted(token, chatId, edgeUrl);
     }
     return { token, chatId, edgeUrl };
@@ -395,17 +380,17 @@ window.getTelegramConfigDecrypted = async function() {
 // sudah punya fallback plaintext ini dari sebelumnya (dulu untuk kasus
 // "kunci sesi belum siap"), jadi tidak perlu perubahan lain di sana selain
 // mengoper bookId ke sini.
+// [ENKRIPSI DINONAKTIFKAN] Transaksi BARU tidak lagi dienkripsi -- selalu
+// ditulis plaintext ke kolom asli (type/amount/category/description/
+// attachment). Fungsi ini SENGAJA selalu return null (semua pemanggil di
+// transaction.js/sync-conflict.js/backup.js/book.js sudah punya fallback
+// `encPayload ? {...enc_payload...} : {...kolom plaintext...}`, jadi return
+// null di sini otomatis membuat baris ditulis plaintext tanpa perlu ubah
+// pemanggilnya). decodeCloudTxRow di bawah TETAP bisa mendekripsi baris LAMA
+// yang sudah kadung terenkripsi sebelum perubahan ini, jadi data lama tidak
+// hilang/rusak -- cuma tidak ada enkripsi baru lagi mulai sekarang.
 window.encodeCloudTxPayload = async function(t, bookId) {
-    if (bookId && window.skIsSharedBookId && window.skIsSharedBookId(bookId)) return null;
-    if (!window._sessionCryptoKey) return null; // seharusnya selalu ada saat sesi terbuka
-    const plain = JSON.stringify({
-        type: t.type,
-        amount: t.amount,
-        category: t.category || '',
-        description: t.description || '',
-        attachment: t.attachment || null
-    });
-    return await window.encryptStr(window._sessionCryptoKey, plain);
+    return null;
 };
 
 // Menerjemahkan satu baris hasil GET dari Supabase menjadi objek transaksi
@@ -443,14 +428,11 @@ window.decodeCloudTxRow = async function(c) {
 // bookId (opsional): sama seperti window.encodeCloudTxPayload -- kalau
 // buku itu shared, SENGAJA return null (skip enkripsi), lihat catatan di
 // window.encodeCloudTxPayload untuk alasannya.
+// [ENKRIPSI DINONAKTIFKAN] Sama seperti window.encodeCloudTxPayload di atas --
+// payment reminder BARU selalu ditulis plaintext. decodeCloudReminderRow di
+// bawah tetap mendekripsi baris lama yang sudah kadung terenkripsi.
 window.encodeCloudReminderPayload = async function(r, bookId) {
-    if (bookId && window.skIsSharedBookId && window.skIsSharedBookId(bookId)) return null;
-    if (!window._sessionCryptoKey) return null;
-    const plain = JSON.stringify({
-        name: r.name || '', day: r.day, recurrence: r.recurrence,
-        month: r.month || 1, note: r.note || ''
-    });
-    return await window.encryptStr(window._sessionCryptoKey, plain);
+    return null;
 };
 window.decodeCloudReminderRow = async function(row) {
     if (row.enc_payload && window._sessionCryptoKey) {

@@ -221,24 +221,13 @@ window.pushSetting = async function(key, value, bookId) {
     const resolvedBookId = bookId || window.currentBookId;
     const plainJson = JSON.stringify(value);
     const isSharedBook = window.skIsSharedBookId && window.skIsSharedBookId(resolvedBookId);
-    let encryptedValue;
-    if (isSharedBook) {
-        // Buku bersama: SKIP enkripsi (sengaja) -- kunci sesi bersifat lokal
-        // per device/password, anggota lain di buku shared tidak akan
-        // pernah punya kunci yang sama untuk mendekripsinya. Buku shared
-        // sudah disepakati datanya bisa dibaca semua anggota, lihat catatan
-        // di window.encodeCloudTxPayload (js/crypto.js) untuk alasan yang
-        // sama persis. _decryptSettingValue() di bawah sudah punya fallback
-        // "kalau bukan ciphertext, anggap plain JSON", jadi baris ini tetap
-        // terbaca normal saat pull, tidak perlu perubahan lain.
-        encryptedValue = plainJson;
-    } else {
-        if (!window._sessionCryptoKey) {
-            console.warn(`[Sync] Crypto key sesi tidak tersedia, push '${key}' dibatalkan (mencegah kebocoran plain text ke cloud).`);
-            return false;
-        }
-        encryptedValue = await window.encryptStr(window._sessionCryptoKey, plainJson);
-    }
+    // [ENKRIPSI DINONAKTIFKAN] Isi tabel `settings` sekarang SELALU ditulis
+    // plaintext, baik buku pribadi maupun bersama -- sebelumnya buku pribadi
+    // dienkripsi AES-GCM dengan kunci sesi lokal. _decryptSettingValue() di
+    // bawah tetap bisa membaca baris LAMA yang sudah kadung terenkripsi
+    // (fallback decryptStr, lalu fallback lagi ke plain JSON), jadi data
+    // lama tetap terbaca normal walau tidak ada enkripsi baru lagi.
+    const encryptedValue = plainJson;
     // [FIX] Buku bersama: JANGAN sertakan account_tag. account_tag dipakai
     // pullAllSettings()/window.tagOrFilter() untuk memfilter baris settings
     // supaya cuma baris ber-tag SAMA (atau tanpa tag) yang terbaca -- itu

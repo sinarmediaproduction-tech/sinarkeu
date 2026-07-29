@@ -104,12 +104,11 @@ window.restoreFromBackup = function() {
 // Cloud Backup
 window.pushBackupToSupabaseForBook = async function(bookId, bookTxs, backupType) {
     const _pbTag = window.getAccountTag ? window.getAccountTag() : null;
-    // [SECURITY] Snapshot backup berisi SELURUH transaksi buku ini -- sebelumnya
-    // disimpan sebagai JSON plaintext utuh di kolom `data`. Sekarang dienkripsi
-    // sebagai satu blob dengan kunci sesi yang sama (AES-GCM), konsisten dengan
-    // enkripsi per-baris di window.encodeCloudTxPayload.
-    const rawJson = JSON.stringify(bookTxs);
-    const dataToStore = window._sessionCryptoKey ? await window.encryptStr(window._sessionCryptoKey, rawJson) : rawJson;
+    // [ENKRIPSI DINONAKTIFKAN] Snapshot backup BARU disimpan plaintext lagi
+    // di kolom `data` (konsisten dengan window.encodeCloudTxPayload yang
+    // sekarang selalu return null). window._decodeBackupData di bawah tetap
+    // bisa mendekripsi backup LAMA yang sempat dibuat terenkripsi.
+    const dataToStore = JSON.stringify(bookTxs);
     const payload = [{ book_id: bookId, device_id: window.deviceId, backup_type: backupType, tx_count: bookTxs.length, data: dataToStore, created_at: new Date().toISOString(), ...(_pbTag ? { account_tag: _pbTag } : {}) }];
     return await window.callSupabaseAPI('backups', 'POST', payload);
 };

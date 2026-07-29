@@ -1087,6 +1087,32 @@ alter table public.settings
             <button class="btn btn-primary" style="width:100%;" onclick="changePassword()" data-i18n="change_pwd_btn">Ganti Password</button>
         </div>
 
+        <!-- Migrasi Data Lama ke Plaintext -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="password">
+            <div class="panel-title">Migrasi Data Lama ke Plaintext</div>
+            <div class="setelan-desc">
+                Transaksi, pengingat pembayaran, dan pengaturan yang ditulis SEBELUM enkripsi dinonaktifkan masih tersimpan terenkripsi di Supabase (aplikasi tetap bisa membacanya secara otomatis). Tombol ini menulis ulang baris-baris lama itu sebagai plaintext, satu kali saja. Butuh koneksi online dan aplikasi harus dalam keadaan unlocked.
+            </div>
+            <div id="migratePlaintextStatus" style="font-size:.7rem; min-height:16px; margin:8px 0;"></div>
+            <button class="btn btn-secondary" style="width:100%;" onclick="window._runMigratePlaintextUI()">Migrasi Sekarang</button>
+        </div>
+
+        <script>
+        window._runMigratePlaintextUI = async function() {
+            var st = document.getElementById('migratePlaintextStatus');
+            if (st) { st.style.color = '#9C7A2E'; st.innerText = 'Memigrasi, mohon tunggu...'; }
+            try {
+                var res = await window.migrateAllDataToPlaintext();
+                if (st && res) {
+                    st.style.color = res.skippedTotal > 0 ? '#A13A3A' : '#2E6B4F';
+                    st.innerText = 'Selesai: ' + res.convertedTotal + ' baris dikonversi' + (res.skippedTotal > 0 ? (', ' + res.skippedTotal + ' gagal (cek console).') : '.');
+                }
+            } catch (e) {
+                if (st) { st.style.color = '#A13A3A'; st.innerText = 'Gagal: ' + (e && e.message ? e.message : e); }
+            }
+        };
+        </script>
+
         <!-- Sinkronisasi Setelan -->
         <div class="data-management-panel setelan-tab-panel" data-tab-panel="sync">
             <div class="panel-title setelan-title--blue">
