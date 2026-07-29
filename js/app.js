@@ -404,7 +404,19 @@ window.initApp = async function() {
             console.warn('[App] Gagal restore session crypto key; push setting akan dinonaktifkan sampai user lock+unlock ulang.');
         }
     }
-    window.continueAppInit();
+    // [FIX RACE] Sebelumnya dipanggil TANPA await -- initApp() (dan promise
+    // yang ditunggu DOMContentLoaded di bawah) jadi selesai duluan sebelum
+    // continueAppInit() benar-benar rampung (skRefreshSharedAccess, login
+    // gate, populate #budgetYear/#budgetMonth, pullAllSettings/
+    // pullAllBooksFromCloud, dst). Akibatnya window.restoreLastFullviewModal()
+    // (dipanggil persis setelah `await window.initApp()` selesai) bisa jalan
+    // SEBELUM #budgetYear terisi opsi tahun -- renderBudget() lalu membaca
+    // value "" -> parseInt jadi NaN -> query cloud "NaN-01-01" (lihat
+    // toast-error-log 29 Juli 2026, error 22007 invalid input syntax for
+    // type timestamp). Menambahkan await ini mengembalikan urutan yang
+    // sudah diasumsikan oleh komentar di window.restoreLastFullviewModal
+    // (js/utils.js): "dipanggil SETELAH initApp() selesai".
+    await window.continueAppInit();
 };
 
 // Toggle Manual

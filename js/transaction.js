@@ -141,6 +141,13 @@ window._fetchOlderTxsBalanceOffset = async function(bookId) {
 // fallback ke window.txs (best effort, mungkin tidak lengkap).
 window.fetchMonthTransactionsFromCloud = async function(bookId, year, month) {
     if (!window.isOnline() || !bookId) return null;
+    // [GUARD] year/month kadang datang dari value <select> yang belum
+    // sempat diisi opsi (mis. #budgetYear sebelum continueAppInit selesai
+    // populate) -- parseInt("") = NaN lolos ke query jadi "NaN-01-01" dan
+    // ditolak Supabase (22007). Jangan pernah kirim request cloud dengan
+    // tanggal tidak valid; caller (renderBudget dkk) tetap fallback ke
+    // angka lokal karena null di sini diperlakukan sama seperti gagal/offline.
+    if (!Number.isFinite(year) || !Number.isFinite(month)) return null;
     const pad = (n) => String(n).padStart(2, '0');
     const startStr = `${year}-${pad(month)}-01`;
     const nextMonth = month === 12 ? 1 : month + 1;
