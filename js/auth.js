@@ -324,13 +324,38 @@ window.skRefreshSharedAccess = async function() {
     if (!session) { window._skAuthUser = null; window._skSharedRoles = {}; return; }
     window._skAuthUser = { id: session.user.id, email: session.user.email };
 
+    // [FIX RACE/JARINGAN FLAKY] Sebelumnya: SATU kegagalan jaringan di sini
+    // (fetch book_members gagal, mis. wifi sempat putus sebentar) membuat
+    // window._skSharedRoles tetap KOSONG untuk SISA SESI -- continueAppInit
+    // cuma memanggil skRefreshSharedAccess() SEKALI (try/catch yang cuma
+    // console.warn, tidak retry). Efeknya: skIsSharedBookId() salah
+    // mengira SEMUA buku bersama "privat" utk sisa sesi, dan callSupabaseAPI
+    // (patch di atas) salah pakai anon key terus-menerus utk buku itu --
+    // ditolak server (backups) atau gagal koneksi (settings/transactions)
+    // berulang kali, padahal jaringan sudah pulih. Retry pendek dengan
+    // backoff di sini menutup celah race itu tanpa perlu ubah urutan
+    // panggilan di continueAppInit/autosync sama sekali.
+    const MEMBER_FETCH_RETRIES = 3;
     let memberRows;
-    try {
-        const res = await client.from('book_members').select('book_id, role').eq('user_id', session.user.id);
-        if (res.error) throw res.error;
-        memberRows = res.data;
-    } catch (e) {
-        console.error('[auth.js] Gagal ambil book_members:', e);
+    let lastErr = null;
+    for (let attempt = 1; attempt <= MEMBER_FETCH_RETRIES; attempt++) {
+        try {
+            const res = await client.from('book_members').select('book_id, role').eq('user_id', session.user.id);
+            if (res.error) throw res.error;
+            memberRows = res.data;
+            lastErr = null;
+            break;
+        } catch (e) {
+            lastErr = e;
+            console.warn(`[auth.js] Gagal ambil book_members (percobaan ${attempt}/${MEMBER_FETCH_RETRIES}):`, e);
+            if (attempt < MEMBER_FETCH_RETRIES) {
+                await new Promise(function(r) { setTimeout(r, attempt * 1000); }); // 1s, lalu 2s
+            }
+        }
+    }
+    if (lastErr) {
+        console.error('[auth.js] Gagal ambil book_members setelah beberapa percobaan, akses Buku Bersama TIDAK diperbarui sesi ini:', lastErr);
+        window.showToast && window.showToast('Gagal memuat akses Buku Bersama (jaringan bermasalah) -- transaksi/pengaturan buku bersama mungkin gagal sinkron sampai kamu reload/refresh.', 'warning');
         return;
     }
 

@@ -63,6 +63,19 @@ window.startAutoSync = function() {
             if (window.flushPendingBookDeletesOnStart) await window.flushPendingBookDeletesOnStart();
             await window.flushPendingPaymentReminders();
             await window.flushPendingAuditLogs();
+            // [FIX RACE/JARINGAN FLAKY] Self-heal: kalau ada buku yang menurut
+            // cache lokal (window.books, persisten dari localStorage) berstatus
+            // shared TAPI belum tercatat di window._skSharedRoles (mis. gagal
+            // waktu continueAppInit dulu, ATAU retry di skRefreshSharedAccess
+            // sendiri juga sempat habis), coba refresh lagi di sini -- supaya
+            // sesi yang sempat "salah rute" (pakai anon key utk buku shared)
+            // tidak tersangkut begitu terus sampai reload manual. Lihat log
+            // toast-error 29 Juli 2026 untuk kasus nyata yang memicu ini.
+            const hasUnrefreshedSharedBook = window._skAuthUser && Array.isArray(window.books) &&
+                window.books.some(function(b) { return b._isShared && !window.skIsSharedBookId(b.id); });
+            if (hasUnrefreshedSharedBook && typeof window.skRefreshSharedAccess === 'function') {
+                try { await window.skRefreshSharedAccess(); } catch (e) { console.warn('[AutoSync] Self-heal skRefreshSharedAccess gagal:', e); }
+            }
             await window.pullAllSettings();
             await window.pullFromCloudSilently();
             window.updateBookSelectDropdown();
