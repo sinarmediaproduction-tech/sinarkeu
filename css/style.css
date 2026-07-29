@@ -2418,31 +2418,29 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   white-space: nowrap;
 }
 
-.slist-add-toggle { display: none; }
-.slist-add-wrap { }
-
-.slist-add-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-.slist-add-row .form-control { flex: 2; }
-.slist-add-row .slist-qty-field { flex: 1; }
-.slist-add-row .slist-price-field { flex: 1; }
-.slist-add-row .slist-cat-field,
-.slist-add-row [data-cs-for="slistNewCategory"] { flex: 1.4; }
-.slist-add-btn {
-  flex: 0 0 auto;
-  width: 42px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  padding: 0;
+/* Tombol "+ Tambah Barang" -- membuka pop up #addShoppingListItemModal
+   (lihat js/shopping-list.js: window.openAddShoppingListItemModal).
+   Sebelumnya tombol ini cuma tampak di hp (untuk expand/collapse form
+   inline yang slide turun); sekarang formnya selalu berupa pop up di
+   semua lebar layar, jadi tombolnya juga selalu tampak. */
+.slist-add-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  width: 100%;
+  height: 40px;
+  margin-bottom: 14px;
+  border: 1.5px dashed var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--accent);
+  font-size: .8rem;
+  font-weight: 600;
+  cursor: pointer;
 }
-.slist-add-label { display: none; }
+.slist-add-toggle:hover { border-style: solid; background: var(--accent-lt); }
+.slist-add-toggle-icon { font-size: 1rem; line-height: 1; }
 
 .slist-cat-badge {
   font-size: .64rem;
@@ -2707,72 +2705,6 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 
 /* ── Belanja Bulanan: optimasi layar hp ── */
 @media (max-width: 640px) {
-  /* Form tambah barang disembunyikan (collapsed) secara default di hp --
-     ini yang paling makan tempat (5 field) dan bikin daftar barang yang
-     sudah diisi terdorong jauh ke bawah / perlu discroll dulu. Diganti
-     jadi 1 tombol pill ringkas; form baru muncul kalau tombolnya diketuk
-     (lihat window.toggleShoppingListAddForm di js/shopping-list.js).
-     Di layar lebar (desktop/tablet) perilaku ini TIDAK berlaku -- form
-     tetap selalu terbuka seperti sebelumnya, karena rule ini di dalam
-     media query max-width:640px. */
-  .slist-add-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    width: 100%;
-    height: 40px;
-    margin-bottom: 12px;
-    border: 1.5px dashed var(--rule);
-    border-radius: var(--radius-sm);
-    background: var(--paper);
-    color: var(--accent);
-    font-size: .8rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .slist-add-toggle-icon { font-size: 1rem; line-height: 1; }
-  .slist-add-toggle[aria-expanded="true"] { color: var(--ink-muted); border-style: solid; }
-  .slist-add-toggle[aria-expanded="true"] .slist-add-toggle-icon { transform: rotate(45deg); }
-
-  .slist-add-wrap {
-    overflow: hidden;
-    max-height: 600px;
-    margin-bottom: 14px;
-    transition: max-height .2s ease, margin-bottom .2s ease;
-  }
-  .slist-add-wrap.collapsed { max-height: 0; margin-bottom: 0; }
-  .slist-add-row { margin-bottom: 0; }
-
-  /* Form tambah barang jadi grid 2 kolom -- Qty & Harga Satuan sengaja
-     dibiarkan berdampingan (tidak di-span penuh) di SEMUA lebar hp,
-     termasuk yang sempit (~360-400px), karena keduanya field pendek dan
-     menumpuknya jadi 2 baris terpisah cuma buang-buang tinggi layar. */
-  .slist-add-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .slist-add-row #slistNewName,
-  .slist-add-row .slist-cat-field,
-  .slist-add-row [data-cs-for="slistNewCategory"],
-  .slist-add-row .slist-add-btn {
-    grid-column: 1 / -1;
-  }
-  .slist-add-row .form-control,
-  .slist-add-row .slist-qty-field,
-  .slist-add-row .slist-price-field,
-  .slist-add-row .slist-cat-field,
-  .slist-add-row [data-cs-for="slistNewCategory"] { flex: initial; }
-  /* Tombol tambah jadi selebar penuh dengan label teks -- target ketuk
-     lebih besar & maksud tombolnya jelas dibanding cuma ikon "+". */
-  .slist-add-btn {
-    width: 100%;
-    height: 42px;
-    font-size: .82rem;
-  }
-  .slist-add-label { display: inline; }
-
   .slist-summary-card { padding: 12px 15px; margin-bottom: 10px; }
   .slist-summary-value { font-size: 1.28rem; }
   .slist-budget-warnings { margin-bottom: 10px; }

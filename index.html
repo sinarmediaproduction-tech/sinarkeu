@@ -1315,18 +1315,9 @@ alter table public.settings
             <p class="slist-forecast-note" id="slistForecastNote">Isi pemasukan bulanan di atas untuk melihat proyeksi setahun.</p>
         </div>
         <div id="slistViewerNotice" class="slist-viewer-notice" style="display:none;">Peran Anda di buku bersama ini adalah <b>Viewer</b> — hanya bisa melihat daftar belanja, tidak bisa menambah/mengubah/menghapus barang.</div>
-        <button type="button" id="slistAddToggle" class="slist-add-toggle" aria-expanded="false" aria-controls="slistAddWrap" onclick="window.toggleShoppingListAddForm()">
+        <button type="button" id="slistAddToggle" class="slist-add-toggle" onclick="window.openAddShoppingListItemModal()">
             <span class="slist-add-toggle-icon">+</span> Tambah Barang
         </button>
-        <div id="slistAddWrap" class="slist-add-wrap collapsed">
-            <form id="slistAddRow" class="slist-add-row" onsubmit="window.addShoppingListItem(event)">
-                <input type="text" id="slistNewName" class="form-control" placeholder="Nama barang… (mis. Beras 5kg)" required>
-                <input type="number" id="slistNewQty" class="form-control slist-qty-field" placeholder="Qty" min="1" step="1" inputmode="numeric">
-                <input type="text" id="slistNewPrice" class="form-control slist-price-field" placeholder="Harga satuan" oninput="window.formatRupiah(this)">
-                <select id="slistNewCategory" class="form-control slist-cat-field"></select>
-                <button type="submit" class="btn btn-primary slist-add-btn" title="Tambah barang"><span class="slist-add-icon">+</span><span class="slist-add-label">Tambah Barang</span></button>
-            </form>
-        </div>
         <div id="shoppingListContainer" class="slist-list"></div>
         <div id="slistActions" class="slist-actions">
             <button type="button" class="btn btn-secondary" onclick="window.resetShoppingListChecks()">Reset Centang</button>
@@ -1387,6 +1378,20 @@ alter table public.settings
             <div class="form-group"><label>Harga satuan</label><input type="text" id="slistEditPrice" class="form-control" oninput="window.formatRupiah(this)"></div>
             <div class="form-group"><label>Kategori</label><select id="slistEditCategory" class="form-control"></select></div>
             <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('editShoppingListItemModal')">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Tambah Barang Belanja -->
+<div id="addShoppingListItemModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>Tambah Barang</h3><button class="modal-close" onclick="closeModal('addShoppingListItemModal')">×</button></div>
+        <form id="slistAddRow" onsubmit="window.addShoppingListItem(event)">
+            <div class="form-group"><label>Nama barang</label><input type="text" id="slistNewName" class="form-control" placeholder="mis. Beras 5kg" required></div>
+            <div class="form-group"><label>Qty</label><input type="number" id="slistNewQty" class="form-control" placeholder="Qty" min="1" step="1" inputmode="numeric"></div>
+            <div class="form-group"><label>Harga satuan</label><input type="text" id="slistNewPrice" class="form-control" placeholder="Harga satuan" oninput="window.formatRupiah(this)"></div>
+            <div class="form-group"><label>Kategori</label><select id="slistNewCategory" class="form-control"></select></div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('addShoppingListItemModal')">Tutup</button><button type="submit" class="btn btn-primary">Tambah Barang</button></div>
         </form>
     </div>
 </div>
