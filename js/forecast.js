@@ -1,16 +1,6 @@
 // ==================== FINANCIAL FORECAST ====================
 
-window.renderForecastCard = function() {
-    const card = document.getElementById('forecastCard');
-    if (!card) return;
-
-    const txs = window.txs || [];
-    if (txs.length === 0) {
-        card.innerHTML = _forecastEmpty();
-        return;
-    }
-
-    // ── Kelompokkan transaksi per bulan ──
+function _forecastGroupByMonth(txs) {
     const monthMap = {};
     txs.forEach(t => {
         const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
@@ -21,7 +11,102 @@ window.renderForecastCard = function() {
         if (t.type === 'income') monthMap[key].inc += amt;
         else monthMap[key].exp += amt;
     });
+    return monthMap;
+}
 
+// [BUG FIX - ESTIMASI IKUT CACHE LOKAL TERPOTONG] Sebelumnya seluruh kartu ini
+// (rata-rata 6 bulan, tren vs bulan lalu, proyeksi saldo habis, kategori
+// terbesar bulan ini) dihitung murni dari window.txs -- cache lokal yang
+// dibatasi MAX_LOCAL_TXS (1000 transaksi terbaru per buku, lihat
+// trimAndSaveLocal di transaction.js). Untuk buku dengan riwayat transaksi
+// padat, bulan-bulan yang masuk basis rata-rata/tren bisa sudah "kepotong"
+// dari cache lokal, jadi angka yang tampil bisa lebih kecil dari kenyataan --
+// ini persis kelas bug yang sudah diperbaiki di report.js/budget.js tapi
+// kelewat di sini. (Saldo tidak termasuk masalah ini -- itu sudah benar
+// lewat balance_offset, lihat trimAndSaveLocal.)
+//
+// Perbaikan: tetap render SEKETIKA dari window.txs dulu (cepat, benar untuk
+// buku yang belum melewati MAX_LOCAL_TXS dan untuk mode offline), lalu --
+// kalau online -- tarik ulang bulan-bulan yang dipakai basis dari cloud
+// (window.fetchMonthTransactionsFromCloud, tanpa batas seperti window.txs)
+// dan render ulang dengan angka yang sudah dikoreksi. Token + pengecekan
+// currentBookId mencegah hasil fetch basi (user sudah ganti buku/pindah
+// tab) menimpa tampilan yang sedang aktif.
+window._forecastRenderToken = 0;
+// [THROTTLE] renderForecastCard() dipanggil dari window.render() yang jalan di
+// banyak tempat (tiap ketik search, ganti filter, tambah/ubah/hapus transaksi,
+// dst -- lihat js/render.js). Tanpa throttle, koreksi cloud di bawah bisa
+// nembak beberapa request paralel ke Supabase SETIAP KALI render() jalan --
+// boros kuota & bikin network tab penuh request percuma (hasil lama toh
+// langsung dibuang lewat token guard, tapi request-nya sudah kadung dikirim).
+// Cukup 1x per buku per 20 detik -- render lokal (cepat, instan) tetap jalan
+// setiap saat, cuma bagian cloud-nya yang dibatasi.
+window._forecastLastCloudFetchAt = {};
+const FORECAST_CLOUD_THROTTLE_MS = 20000;
+
+window.renderForecastCard = function() {
+    const card = document.getElementById('forecastCard');
+    if (!card) return;
+
+    const txs = window.txs || [];
+    if (txs.length === 0) {
+        card.innerHTML = _forecastEmpty();
+        return;
+    }
+
+    const monthMap = _forecastGroupByMonth(txs);
+    const months = Object.keys(monthMap).sort();
+    if (months.length === 0) { card.innerHTML = _forecastEmpty(); return; }
+
+    _renderForecastFromMonthMap(card, txs, monthMap, txs);
+
+    // ── Koreksi dengan data cloud lengkap kalau online (dibatasi throttle) ──
+    const myToken = ++window._forecastRenderToken;
+    const bookIdAtCall = window.currentBookId;
+    const lastFetchAt = window._forecastLastCloudFetchAt[bookIdAtCall] || 0;
+    const shouldFetchCloud = (Date.now() - lastFetchAt) > FORECAST_CLOUD_THROTTLE_MS;
+    if (shouldFetchCloud && window.isOnline() && typeof window.fetchMonthTransactionsFromCloud === 'function') {
+        window._forecastLastCloudFetchAt[bookIdAtCall] = Date.now();
+        const now0 = new Date();
+        const thisKey0 = `${now0.getFullYear()}-${String(now0.getMonth() + 1).padStart(2, '0')}`;
+        const completedMonths0 = months.filter(k => k !== thisKey0);
+        const basisKeys = (completedMonths0.length > 0 ? completedMonths0.slice(-6) : months.slice(-6));
+        const prevDate0 = new Date(now0.getFullYear(), now0.getMonth() - 1, 1);
+        const prevKey0 = `${prevDate0.getFullYear()}-${String(prevDate0.getMonth() + 1).padStart(2, '0')}`;
+        const keysToFetch = Array.from(new Set([...basisKeys, prevKey0, thisKey0]));
+
+        Promise.all(keysToFetch.map(key => {
+            const [y, m] = key.split('-').map(Number);
+            return window.fetchMonthTransactionsFromCloud(bookIdAtCall, y, m).then(rows => ({ key, rows }));
+        })).then(results => {
+            if (myToken !== window._forecastRenderToken) return; // sudah ada render lebih baru
+            if (bookIdAtCall !== window.currentBookId) return;   // buku sudah diganti
+            const cardNow = document.getElementById('forecastCard');
+            if (!cardNow) return; // card sudah tidak ada di DOM
+
+            const correctedMonthMap = Object.assign({}, monthMap);
+            let thisMonthCloudTxs = null;
+            results.forEach(({ key, rows }) => {
+                if (!rows || !Array.isArray(rows)) return; // gagal/offline di tengah jalan -- pertahankan angka lokal utk bulan ini
+                let inc = 0, exp = 0;
+                rows.forEach(t => {
+                    const amt = Number(t.amount) || 0;
+                    if (t.type === 'income') inc += amt; else exp += amt;
+                });
+                correctedMonthMap[key] = { inc, exp };
+                if (key === thisKey0) thisMonthCloudTxs = rows;
+            });
+
+            _renderForecastFromMonthMap(cardNow, txs, correctedMonthMap, thisMonthCloudTxs || txs);
+        }).catch(() => { /* biarkan angka lokal, sudah ditampilkan di atas */ });
+    }
+};
+
+// txsForSaldo: dipakai untuk hitung saldo (bersama balance_offset, sudah benar
+// dari cache lokal -- lihat catatan di atas). txsForTopCat: dipakai KHUSUS
+// untuk kategori pengeluaran terbesar bulan ini -- diganti data cloud bulan
+// berjalan kalau sudah tersedia, supaya tidak ikut kepotong cache lokal.
+function _renderForecastFromMonthMap(card, txsForSaldo, monthMap, txsForTopCat) {
     const months = Object.keys(monthMap).sort();
     if (months.length === 0) { card.innerHTML = _forecastEmpty(); return; }
 
@@ -58,7 +143,7 @@ window.renderForecastCard = function() {
     // ── Saldo saat ini ──
     const balanceOffset = Number(localStorage.getItem('sk_balance_offset_' + window.currentBookId)) || 0;
     let saldo = balanceOffset;
-    txs.forEach(t => {
+    txsForSaldo.forEach(t => {
         const amt = Number(t.amount) || 0;
         if (t.type === 'income') saldo += amt;
         else saldo -= amt;
@@ -109,7 +194,7 @@ window.renderForecastCard = function() {
 
     // ── Kategori pengeluaran terbesar bulan ini ──
     const catMap = {};
-    txs.forEach(t => {
+    txsForTopCat.forEach(t => {
         if (t.type !== 'expense') return;
         const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
         if (!d || isNaN(d)) return;
