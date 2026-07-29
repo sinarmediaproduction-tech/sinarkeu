@@ -621,6 +621,33 @@ window.debouncedPushToCloud = function(forceFullPush) {
     }, 1500);
 };
 
+// ==================== TAHAN-BANTING: PENDING AUDIT LOG ====================
+// [FIX] Sebelumnya kalau addCloudLog() dipanggil saat OFFLINE (atau POST ke
+// audit_logs gagal karena sebab lain di tengah jalan), log itu cuma nyangkut
+// di localStorage per-buku (sk_logs_<bookId>, dipakai buat tampilan lokal)
+// dan TIDAK PERNAH dicoba ulang ke cloud -- ini "known gap" yang sudah
+// didokumentasikan sendiri di CLAUDE.md. Polanya disamakan dengan
+// payment-reminder.js: simpan niat push ke antrean pending terpisah di
+// localStorage, baru dihapus dari antrean setelah POST ke audit_logs
+// benar-benar sukses. flushPendingAuditLogs() dipanggil di titik yang sama
+// dengan flushPendingPaymentReminders() (app start, event 'online', autosync
+// interval) -- lihat app.js.
+function _alPendingKey(bookId) { return 'sk_al_pending_push_' + bookId; }
+
+function _alLoadPending(bookId) {
+    try { return JSON.parse(localStorage.getItem(_alPendingKey(bookId)) || '[]'); }
+    catch (e) { return []; }
+}
+function _alSavePending(bookId, arr) {
+    try { localStorage.setItem(_alPendingKey(bookId), JSON.stringify(arr)); } catch (e) {}
+}
+function _alMarkPending(bookId, logPayload) {
+    const arr = _alLoadPending(bookId);
+    arr.push(logPayload);
+    if (arr.length > 200) arr.shift(); // jaga-jaga supaya localStorage tidak membengkak tanpa batas
+    _alSavePending(bookId, arr);
+}
+
 window.addCloudLog = async function(actionType, detailsText) {
     let localLogs = JSON.parse(localStorage.getItem('sk_logs_' + window.currentBookId) || '[]');
     let logObj = { timestamp: new Date().toISOString(), device_id: window.deviceId, action: actionType, details: detailsText };
@@ -628,17 +655,56 @@ window.addCloudLog = async function(actionType, detailsText) {
     if (localLogs.length > 50) localLogs.pop();
     localStorage.setItem('sk_logs_' + window.currentBookId, JSON.stringify(localLogs));
     window.renderLogs(localLogs);
-    if (!window.isOnline()) return;
+
     const _alTag = window.getAccountTag ? window.getAccountTag() : null;
-    const logPayload = [{
+    const logPayload = {
         book_id: window.currentBookId,
         device_id: window.deviceId,
         action: actionType,
         details: detailsText,
         timestamp: new Date().toISOString(),
         ...(_alTag ? { account_tag: _alTag } : {})
-    }];
-    await window.callSupabaseAPI('audit_logs', 'POST', logPayload);
+    };
+
+    if (!window.isOnline()) { _alMarkPending(window.currentBookId, logPayload); return; }
+
+    try {
+        await window.callSupabaseAPI('audit_logs', 'POST', [logPayload]);
+    } catch (e) {
+        // Gagal di tengah jalan (bukan cuma offline) -- tetap masukkan antrean
+        // supaya tidak hilang, sama seperti perlakuan payment-reminder.
+        _alMarkPending(window.currentBookId, logPayload);
+    }
+};
+
+// Dipanggil saat app start & saat koneksi online lagi (lihat app.js), supaya
+// log aktivitas yang sempat gagal ter-push akhirnya nyampe ke cloud tanpa
+// perlu aksi manual dari user. Tanpa argumen, fungsi ini menyisir SEMUA buku
+// yang punya sisa pending, bukan cuma buku yang sedang aktif.
+window.flushPendingAuditLogs = async function(bookId) {
+    if (!window.isOnline()) return;
+    let bookIds;
+    if (bookId) {
+        bookIds = [bookId];
+    } else {
+        const ids = new Set();
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('sk_al_pending_push_')) ids.add(k.slice('sk_al_pending_push_'.length));
+        }
+        bookIds = Array.from(ids);
+    }
+
+    for (const bId of bookIds) {
+        const pending = _alLoadPending(bId);
+        if (pending.length === 0) continue;
+        try {
+            await window.callSupabaseAPI('audit_logs', 'POST', pending);
+            _alSavePending(bId, []);
+        } catch (e) {
+            // Biarkan tetap di antrean, coba lagi di kesempatan flush berikutnya.
+        }
+    }
 };
 
 window.refreshLogsFromCloud = async function() {

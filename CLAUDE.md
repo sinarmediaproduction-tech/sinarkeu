@@ -317,23 +317,21 @@ semua file di atas.
   itu sendiri untuk daftar lengkap & alasannya. **Cek isi file ini benar-benar
   ada isinya**, bukan cuma placeholder kosong — sempat ketahuan pernah
   kosong padahal isinya harusnya persis yang didokumentasikan.
-- **Known gap — log aktivitas offline tidak di-retry:** `window.addCloudLog
-  (actionType, details)` di `js/transaction.js` selalu simpan ke
-  `localStorage` (`sk_logs_<bookId>`, maks 50 entri) dulu, lalu coba
-  `POST` ke tabel Supabase `audit_logs` HANYA kalau `window.isOnline()`
-  true saat itu juga (`if (!window.isOnline()) return;`). Kalau aksi
-  (tambah/ubah/**hapus** transaksi, backup, restore, dll — apa pun jenis
-  `actionType`-nya, warna tag di UI cuma indikator visual jenis aksi,
-  BUKAN penanda status sync) terjadi saat offline, log itu cuma nyangkut
-  lokal dan TIDAK PERNAH otomatis ke-push ke Supabase begitu online lagi
-  — beda dengan `txs` yang punya dirty-tracking + `debouncedPushToCloud()`
-  untuk re-sync. Kalau diminta perbaiki: jangan `return` langsung saat
-  offline, taruh ke antrean pending terpisah di localStorage (pola serupa
-  dirty-tracking transaksi), lalu flush ke `audit_logs` begitu koneksi
-  balik online (jangan hapus dari antrean kalau request-nya gagal, biar
-  dicoba ulang). Jangan ubah struktur `logPayload` yang sudah ada
-  (`book_id`, `device_id`, `action`, `details`, `timestamp`, `account_tag`
-  opsional) — skema tabel `audit_logs` di Supabase mengikuti bentuk ini.
+- **[FIXED] Log aktivitas offline sekarang di-retry:** `window.addCloudLog
+  (actionType, details)` di `js/transaction.js` tetap simpan ke
+  `localStorage` (`sk_logs_<bookId>`, maks 50 entri) untuk tampilan lokal,
+  tapi sekarang kalau `window.isOnline()` false ATAU `POST` ke
+  `audit_logs` gagal di tengah jalan, `logPayload`-nya dimasukkan ke
+  antrean pending terpisah `sk_al_pending_push_<bookId>` (localStorage,
+  maks 200 entri) — pola persis sama dengan pending-push
+  `payment-reminder.js`. `window.flushPendingAuditLogs(bookId?)` menyisir
+  antrean itu (semua buku kalau tanpa argumen) dan di-panggil di titik yang
+  sama dengan `flushPendingPaymentReminders()`: `continueAppInit()`,
+  `startAutoSync()` interval, dan event listener `online` di `js/app.js`.
+  Entri hanya dihapus dari antrean setelah `POST` benar-benar sukses.
+  Jangan ubah struktur `logPayload` (`book_id`, `device_id`, `action`,
+  `details`, `timestamp`, `account_tag` opsional) — skema tabel
+  `audit_logs` di Supabase mengikuti bentuk ini.
 
 - **Modal biasa yang dibuka DI ATAS halaman fullview (mis. `editShoppingListItemModal`
   di atas Belanja Bulanan) HARUS tetap terlihat di layar hp** — lihat
