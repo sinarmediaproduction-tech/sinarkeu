@@ -263,8 +263,6 @@ window.fetchGoldPrice = async function() {
             srcEl.textContent = 'Gagal hubungi API harga emas, beralih ke estimasi spot';
             srcEl.style.color = '#9C7A2E';
         }
-    } else if (refreshBtn) {
-        refreshBtn.style.display = 'none';
     }
     const apis = [
         { name: 'jsdelivr', url: 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/xau.json', parse: d => d?.xau?.usd },

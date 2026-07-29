@@ -59,6 +59,20 @@ langsung di chat. Pola yang dipakai:
 Static site murni, tidak ada proses compile/bundle apa pun — file yang ada
 di repo ini SAMA PERSIS dengan yang disajikan ke browser.
 
+- **PENTING — service worker cache:** `sw.js` men-cache app shell (semua
+  `js/*.js` + `css/style.css` + `index.html`, lihat `APP_SHELL`) dengan
+  strategi cache-first untuk aset same-origin. Kalau ada file APAPUN yang
+  diubah (JS, CSS, atau daftar `APP_SHELL` itu sendiri) dan itu TIDAK
+  dibarengi naikkan `CACHE_VERSION` di `sw.js`, HP user (terutama yang
+  sudah install PWA-nya) akan tetap kepakai file LAMA dari cache -- berjam-jam
+  bahkan berhari-hari, sampai entah kapan cache-nya kebetulan invalidate
+  sendiri. Ini bukan cuma soal "kelihatan belum update", tapi bisa bikin
+  bug yang sudah diperbaiki di source code kelihatan seperti masih ada di
+  HP user, dan sangat membingungkan untuk didiagnosis kalau lupa soal ini.
+  **Aturan: setiap kali menyentuh file apa pun yang ke-load lewat
+  `index.html` (semua isi `js/`, `css/style.css`, `manifest.json`, ikon,
+  dst), SELALU naikkan `CACHE_VERSION` di `sw.js` (mis. `v6` -> `v7`) di
+  commit/perubahan yang sama -- jangan ditunda atau dianggap opsional.**
 - **Vercel:** ada `vercel.json` di root yang secara EKSPLISIT mendeklarasikan
   `buildCommand`/`installCommand` sebagai perintah no-op (`echo ...`),
   `outputDirectory: "."`, dan `framework: null`. Ini BUKAN build sungguhan --
