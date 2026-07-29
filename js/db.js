@@ -357,6 +357,19 @@ window.reEncryptAllCloudSettings = async function() {
         await window.pushSettingBooks();
         const books = Array.isArray(window.books) ? window.books : [];
         for (const b of books) {
+            // [FIX SETTINGS BUKU BERSAMA] Baris settings buku bersama SUDAH
+            // dikonversi SEKALI ke plaintext tepat di titik "Jadikan Bersama"
+            // (window._skConvertBookSettingsToPlaintext, js/auth.js), pakai
+            // nilai ASLI milik pemilik. Device siapa pun yang memicu fungsi
+            // ini lewat hasStaleRows di pullAllSettings (termasuk anggota
+            // BARU yang cache lokalnya utk buku ini masih kosong/default,
+            // karena dia memang belum pernah dapat data aslinya) TIDAK BOLEH
+            // ikut push ulang dari sini -- tabel `settings` insert-only tanpa
+            // kolom `id` (tidak bisa di-PATCH per baris) dan pullAllSettings
+            // memilih baris ber-updated_at TERBARU per (book_id, key), jadi
+            // push kosong dari sini akan menimpa (secara efektif) data asli
+            // buku ini untuk SEMUA orang di pull berikutnya.
+            if (window.skIsSharedBookId && window.skIsSharedBookId(b.id)) continue;
             const bud = JSON.parse(localStorage.getItem('sk_budgets_' + b.id) || '{}');
             await window.pushSetting('budgets', bud, b.id);
             const defBud = window.getDefaultBudget(b.id);

@@ -841,6 +841,56 @@ window._skConvertBookDataToPlaintext = async function(bookId) {
     }
 };
 
+// [FIX DATA "KOSONG" SETELAH BUKU BERSAMA -- TABEL SETTINGS] Celah yang sama
+// seperti window._skConvertBookDataToPlaintext di atas (transaksi & payment
+// reminders), tapi utk tabel `settings` (Anggaran Bulanan, Anggaran Dasar,
+// Anggaran Tahunan, visibilitas Card, Daftar Belanja + pemasukannya, Fase
+// Kehidupan, target Dana Darurat -- daftar lengkap key-nya lihat
+// window.DUPLICATE_BOOK_SETTINGS_MAP di js/book.js, dipakai bersama oleh
+// fitur Duplikat Buku).
+//
+// MASALAH: baris `settings` buku ini yang ditulis SEBELUM jadi Bersama masih
+// terenkripsi kunci sesi PEMILIK. Beda dari transactions/payment_reminders
+// (yang punya kolom `id` biasa sehingga bisa di-PATCH per baris di atas),
+// tabel `settings` TIDAK punya kolom `id` (lihat catatan di
+// sql/fix_settings_upsert.sql) -- jadi baris lama tidak bisa ditimpa in-place,
+// dan desainnya memang insert-only + pullAllSettings() memilih baris
+// TERBARU (updated_at.desc) per (book_id, key).
+//
+// Kalau baris lama ini dibiarkan begitu saja: anggota lain (kunci beda)
+// gagal dekripsi saat pull -> ditandai hasStaleRows -> otomatis memicu
+// window.reEncryptAllCloudSettings() (js/db.js), yang push ulang CACHE
+// LOKAL device pemicunya sendiri -- untuk anggota BARU, cache itu
+// kosong/default (dia memang belum pernah dapat data aslinya). Baris kosong
+// itu jadi baris TERBARU, dan pull berikutnya (termasuk oleh PEMILIK
+// aslinya) akan melihat setting ini seolah ter-reset kosong.
+//
+// FIX: begitu buku resmi ditandai shared (SELAGI _sessionCryptoKey & cache
+// lokal PEMILIK masih membawa nilai ASLI), push ULANG tiap key setting buku
+// ini lewat window.pushSetting biasa -- yang sudah otomatis menulis
+// PLAINTEXT kalau skIsSharedBookId(bookId) true (lihat js/db.js). Baris
+// plaintext baru ini otomatis jadi "pemenang" updated_at.desc pada pull
+// berikutnya, tanpa perlu PATCH/hapus baris lama sama sekali. Sebagai lapis
+// kedua, window.reEncryptAllCloudSettings() (js/db.js) juga di-guard untuk
+// SELALU skip buku bersama -- lihat catatan di sana.
+window._skConvertBookSettingsToPlaintext = async function(bookId) {
+    if (!Array.isArray(window.DUPLICATE_BOOK_SETTINGS_MAP)) {
+        // js/book.js seharusnya selalu sudah termuat lebih dulu (urutan
+        // <script> di index.html) -- guard ini cuma jaga-jaga kalau urutan
+        // itu berubah di masa depan.
+        console.warn('[auth.js] DUPLICATE_BOOK_SETTINGS_MAP belum tersedia, lewati konversi plaintext settings buku bersama.');
+        return;
+    }
+    for (const [prefix, settingKey] of window.DUPLICATE_BOOK_SETTINGS_MAP) {
+        const raw = localStorage.getItem(prefix + bookId);
+        if (raw === null) continue; // tidak ada data lokal utk key ini di buku ini, tidak perlu dikonversi
+        let value;
+        try { value = JSON.parse(raw); } catch { value = raw; }
+        try { await window.pushSetting(settingKey, value, bookId); }
+        catch (e) { console.warn(`[auth.js] Gagal push plaintext setting '${settingKey}' saat menjadikan buku bersama:`, e); }
+    }
+};
+
     try {
         // [FIX] created_by wajib diisi -- kolom NOT NULL di sk_books & juga
         // dipakai policy RLS sk_books_insert_self (WITH CHECK created_by =
@@ -866,6 +916,14 @@ window._skConvertBookDataToPlaintext = async function(bookId) {
         // tidak membatalkan proses share yang sudah terlanjur sukses.
         try { await window._skConvertBookDataToPlaintext(book.id); }
         catch (e) { console.error('[auth.js] Gagal konversi data lama ke plaintext:', e); }
+
+        // [FIX DATA "KOSONG" -- TABEL SETTINGS] Lihat catatan lengkap di
+        // window._skConvertBookSettingsToPlaintext di atas -- tanpa ini,
+        // Anggaran/Card/Daftar Belanja/dst buku ini berisiko ter-reset
+        // kosong begitu anggota lain login & memicu heal-otomatis di
+        // pullAllSettings (js/db.js).
+        try { await window._skConvertBookSettingsToPlaintext(book.id); }
+        catch (e) { console.error('[auth.js] Gagal konversi setting lama ke plaintext:', e); }
 
         window.showToast && window.showToast('"' + book.name + '" sekarang jadi buku bersama. Kamu adalah admin.', 'success');
         if (typeof window.renderBookList === 'function') window.renderBookList();

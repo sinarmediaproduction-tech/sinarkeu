@@ -511,3 +511,47 @@ lalu:
 Kalau menambah state per-buku baru yang perlu ikut ter-duplikat di masa
 depan, tambahkan pasangan `[prefix_localStorage_, key_setting]`-nya ke
 `window.DUPLICATE_BOOK_SETTINGS_MAP` (bukan bikin mekanisme salin baru).
+
+## Fix: Setting Buku Bisa "Kosong" Setelah Dijadikan Bersama
+
+**Status:** Ditemukan & diperbaiki Juli 2026.
+
+**Gejala potensial (belum sempat terjadi di produksi, ditemukan lewat
+review kode):** Anggaran Bulanan/Dasar/Tahunan, visibilitas Card, Daftar
+Belanja + pemasukannya, Fase Kehidupan, dan target Dana Darurat milik
+sebuah buku bisa ter-reset kosong untuk SEMUA anggota (termasuk pemilik
+asli) begitu ada anggota baru yang login ke buku bersama tersebut.
+
+**Akar masalah:** `window.skMakeBookShared` (`js/auth.js`) sudah
+mengonversi `transactions`/`payment_reminders` lama (masih terenkripsi
+kunci pemilik) ke plaintext saat buku dijadikan Bersama, TAPI tabel
+`settings` (Anggaran, Card, dst -- lihat
+`window.DUPLICATE_BOOK_SETTINGS_MAP` di `js/book.js`) terlewat. Alurnya:
+anggota baru login → `pullAllSettings()` gagal dekripsi baris setting lama
+buku ini (kunci beda) → ditandai `hasStaleRows` → otomatis memicu
+`window.reEncryptAllCloudSettings()` (`js/db.js`) → fungsi itu TIDAK cek
+status shared, push ulang cache LOKAL device pemicunya sendiri (kosong,
+karena anggota baru memang belum pernah punya data aslinya) → karena
+tabel `settings` insert-only TANPA kolom `id` (tidak bisa di-PATCH per
+baris, lihat `sql/fix_settings_upsert.sql`) dan `pullAllSettings()` pilih
+baris ber-`updated_at` TERBARU per (book_id, key), baris kosong itu jadi
+"pemenang" di pull berikutnya untuk semua orang.
+
+**Fix (dua lapis):**
+1. `window._skConvertBookSettingsToPlaintext(bookId)` (`js/auth.js`) —
+   dipanggil tepat setelah `window._skConvertBookDataToPlaintext` di
+   `skMakeBookShared`, selagi cache lokal PEMILIK masih membawa nilai
+   asli. Push ulang tiap key di `window.DUPLICATE_BOOK_SETTINGS_MAP` lewat
+   `window.pushSetting` biasa (otomatis plaintext karena
+   `skIsSharedBookId` sudah true di titik ini) — baris plaintext baru ini
+   otomatis menang di dedup `updated_at.desc`, TANPA perlu PATCH/hapus
+   baris lama (tidak mungkin secara skema, tidak ada kolom `id`).
+2. `window.reEncryptAllCloudSettings()` (`js/db.js`) di-guard: `continue`
+   untuk buku mana pun yang `skIsSharedBookId(b.id)` true — device siapa
+   pun yang memicu fungsi ini (lewat `hasStaleRows`) tidak boleh lagi ikut
+   push ulang setting buku bersama dari cache lokalnya sendiri.
+
+Kalau menambah key setting per-buku baru di masa depan: cukup daftarkan di
+`window.DUPLICATE_BOOK_SETTINGS_MAP` (dipakai bersama oleh fitur Duplikat
+Buku) — fix ini otomatis ikut mencakupnya, tidak perlu sentuh
+`js/auth.js`/`js/db.js` lagi.
