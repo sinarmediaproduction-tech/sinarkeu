@@ -2588,8 +2588,8 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
      disusun ulang pakai `order`, TANPA mengubah urutan elemen di HTML (semua
      elemen sudah flat/sejajar, lihat js/shopping-list.js). Hasilnya kartu
      PAS 2 baris (kalau ada harga) atau 1 baris (kalau tidak):
-       Baris 1: checkbox + nama + badge kategori + qty
-       Baris 2: harga satuan + subtotal (kiri) + tombol ubah/hapus (kanan)
+       Baris 1: checkbox + nama + badge kategori
+       Baris 2: qty + harga satuan + subtotal (kiri) + tombol ubah/hapus (kanan)
      Baris baru dipaksa lewat ::before kosong (order di antara qty & harga,
      flex-basis 100%, tinggi 0) -- BUKAN dengan flex-basis 100% di elemen
      harga itu sendiri seperti sebelumnya, karena itu bikin harga satuan
@@ -2617,15 +2617,15 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
     margin-left: 6px;
   }
   .slist-cat-badge:empty { flex-basis: 0; margin: 0; }
-  .slist-qty { order: 4; }
   .slist-item::before {
     content: '';
     order: 5;
     flex-basis: 100%;
     height: 0;
   }
+  .slist-qty { order: 6; margin-right: 6px; }
   .slist-unit-price {
-    order: 6;
+    order: 7;
   }
   .slist-unit-price:empty { display: none; }
   .slist-unit-price::after {
@@ -2635,14 +2635,14 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   }
   .slist-unit-price:empty::after { content: none; }
   .slist-price {
-    order: 6;
+    order: 7;
     margin-left: 6px;
   }
   .slist-price:not(:empty)::before {
     content: '· ';
   }
   .slist-trail {
-    order: 7;
+    order: 8;
     margin-left: auto;
     gap: 6px;
   }
