@@ -484,7 +484,18 @@ window.pullAllSettings = async function() {
         // kombinasi yang sama WAJIB dilewati, kalau tidak, snapshot lama bisa
         // menimpa balik data terbaru di akhir loop (mis. buku yang sudah
         // dihapus muncul lagi).
+        //
+        // [PERF FIX] Dedup dilakukan DULU (sinkron, murah) SEBELUM dekripsi,
+        // supaya baris snapshot lama yang sudah kalah tidak ikut didekripsi
+        // sia-sia. Baris yang lolos dedup baru didekripsi PARALEL lewat
+        // Promise.all -- sebelumnya dekripsi jalan satu-satu di dalam for-loop
+        // (setiap baris menunggu WebCrypto baris sebelumnya selesai), padahal
+        // tabel settings ini insert-only dan terus membengkak seiring waktu,
+        // jadi switchBook() (yang memanggil pullAllSettings ini) makin lama
+        // makin lambat. Urutan pemrosesan hasil TETAP sama seperti for-loop
+        // asli, jadi semua logic key-by-key di bawah tidak berubah perilaku.
         const _seenSettingKeys = new Set();
+        const rowsToDecrypt = [];
         for (const row of allRows) {
             // crypto_salt & crypto_check bukan setting JSON terenkripsi biasa
             // (lihat window.pushCryptoSaltCheck) -- jangan diproses di sini,
@@ -493,8 +504,15 @@ window.pullAllSettings = async function() {
             const _rowDedupKey = (row.book_id || '') + '::' + row.key;
             if (_seenSettingKeys.has(_rowDedupKey)) continue; // sudah ada versi lebih baru
             _seenSettingKeys.add(_rowDedupKey);
+            rowsToDecrypt.push(row);
+        }
+        const decryptedValues = await Promise.all(
+            rowsToDecrypt.map(row => window._decryptSettingValue(row.value))
+        );
+        for (let _i = 0; _i < rowsToDecrypt.length; _i++) {
+            const row = rowsToDecrypt[_i];
+            const decryptedValue = decryptedValues[_i];
             let parsed;
-            const decryptedValue = await window._decryptSettingValue(row.value);
             if (decryptedValue === null) {
                 // Baris ini terenkripsi kunci lama — tandai untuk heal setelah loop.
                 hasStaleRows = true;
