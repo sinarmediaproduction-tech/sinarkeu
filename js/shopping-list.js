@@ -204,7 +204,7 @@ window.renderShoppingList = function() {
     // ikut hilang bareng daftar saat kosong, tanpa perlu toggle terpisah.
     const headerHtml = `
         <div class="slist-list-header" aria-hidden="true">
-            <span></span><span>Nama Barang</span><span>Qty</span><span>Kategori</span><span>Harga</span><span></span>
+            <span></span><span>Nama Barang</span><span>Qty</span><span>Kategori</span><span>Satuan</span><span>Subtotal</span><span></span>
         </div>
     `;
 
@@ -220,6 +220,7 @@ window.renderShoppingList = function() {
         const catText = item.category ? window.escapeHtml(item.category) : '';
         const catColor = item.category ? window.getCategoryColor(item.category) : null;
         const catStyleAttr = catColor ? ` style="--cat-color:${catColor}"` : '';
+        const unitPriceText = item.price ? window.rp(item.price) : '';
         const priceText = item.price ? window.rp(window._shoppingListItemSubtotal(item)) : '';
         const actionsHtml = isViewer ? '' : `
                 <button type="button" class="slist-edit-btn" title="Ubah" onclick="window.openEditShoppingListItemModal('${window.escapeHtml(item.id)}')">✎</button>
@@ -230,6 +231,7 @@ window.renderShoppingList = function() {
             <span class="slist-name">${window.escapeHtml(item.name)}</span>
             <span class="slist-qty">${qtyText}</span>
             <span class="slist-cat-badge"${catStyleAttr}>${catText}</span>
+            <span class="slist-unit-price">${unitPriceText}</span>
             <span class="slist-price">${priceText}</span>
             <div class="slist-trail">${actionsHtml}</div>
         </div>

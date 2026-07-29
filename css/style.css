@@ -2397,7 +2397,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 .slist-list-header,
 .slist-item {
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) 58px 128px 100px 60px;
+  grid-template-columns: 20px minmax(0, 1fr) 58px 128px 92px 100px 60px;
   column-gap: 12px;
   align-items: center;
 }
@@ -2414,6 +2414,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 }
 .slist-list-header span:nth-child(3) { text-align: right; }
 .slist-list-header span:nth-child(5) { text-align: right; }
+.slist-list-header span:nth-child(6) { text-align: right; }
 
 .slist-item {
   padding: 9px 10px;
@@ -2458,6 +2459,13 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   border: 1px solid color-mix(in srgb, var(--cat-color, var(--info)) 40%, var(--rule));
   padding: 2px 8px;
   border-radius: var(--radius-pill);
+}
+.slist-unit-price {
+  justify-self: end;
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  color: var(--ink-faint);
+  white-space: nowrap;
 }
 .slist-price {
   justify-self: end;
@@ -2606,9 +2614,27 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
     width: fit-content;
   }
   .slist-cat-badge:empty { flex-basis: 0; margin: 0; }
-  .slist-price {
+  /* Satuan & subtotal ditaruh sebaris (order sama) supaya tampil
+     berdampingan "Rp.../pcs  Rp.../total" tanpa makan baris kartu
+     tersendiri -- beda dari badge kategori yang sengaja dipaksa baris
+     baru lewat flex-basis 100%. */
+  .slist-unit-price {
     order: 5;
     margin-left: 28px;
+  }
+  .slist-unit-price:empty { display: none; }
+  .slist-unit-price::after {
+    content: '/satuan';
+    margin-left: 2px;
+    font-size: .6rem;
+  }
+  .slist-unit-price:empty::after { content: none; }
+  .slist-price {
+    order: 5;
+    margin-left: 8px;
+  }
+  .slist-price:not(:empty)::before {
+    content: '· ';
   }
   .slist-trail {
     order: 6;
