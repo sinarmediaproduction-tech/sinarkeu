@@ -543,6 +543,63 @@ window.openSetelanModal = function(initialTab) {
     return _originalOpenSetelanModal.apply(this, arguments);
 };
 
+// ── Migrasi ID buku default yang bentrok lintas akun ────────────────────
+// [FIX ID COLLISION b_default] 'b_default' adalah ID LITERAL yang dipakai
+// SEMUA akun untuk buku pertama mereka ("Buku Utama" -- lihat js/account.js,
+// js/app.js, js/config.js: semuanya hardcode string 'b_default', beda dari
+// buku lain yang ID-nya di-random pakai timestamp+random). `sk_books.id`
+// (fondasi Buku Bersama, sql/shared_books_roles.sql) adalah TEXT PRIMARY KEY
+// GLOBAL lintas akun -- satu backend Supabase dipakai banyak akun sekaligus,
+// isolasi data personal SELAMA INI cuma lewat account_tag, bukan lewat baris
+// sk_books.id yang terpisah per akun.
+//
+// Akibatnya: begitu SATU akun menjadikan "Buku Utama"-nya (id='b_default')
+// sebagai Buku Bersama, sk_book_is_shared('b_default') di server jadi TRUE
+// untuk SEMUA akun lain yang buku utamanya masih ID default sama -- padahal
+// buku mereka tidak terkait sama sekali. Policy settings_legacy_anon/
+// transactions_legacy_anon (sql/harden_shared_book_data_rls.sql) yang
+// mengizinkan tulis anon-key HANYA kalau `NOT sk_book_is_shared(book_id)`
+// jadi menolak semua tulisan mereka ke buku pribadi itu (error 42501),
+// walau mereka tidak pernah ikut buku bersama apa pun.
+//
+// Fix: kalau buku yang mau dijadikan shared masih pakai ID 'b_default',
+// generate ID baru yang unik DULU, migrasikan semua data lokal (localStorage)
+// ke ID baru itu, baru lanjut proses share pakai ID baru -- supaya
+// 'b_default' tetap "bersih"/tidak pernah masuk sk_books, aman dipakai
+// sebagai ID buku pribadi biasa oleh siapa pun.
+window._skMigrateBookIdLocal = function(oldId, newId) {
+    // Semua prefix localStorage yang menyimpan data PER BUKU (hasil audit
+    // `grep -noE "'sk_[a-z_]+_'\s*\+" js/*.js` -- kalau nanti nambah fitur
+    // baru yang nyimpan data per-buku ke localStorage, tambahkan prefix-nya
+    // di sini juga supaya ikut termigrasi kalau kasus ini terulang).
+    const PER_BOOK_PREFIXES = [
+        'sk_txs_', 'sk_budgets_', 'sk_default_budget_', 'sk_annual_budget_',
+        'sk_logs_', 'sk_balance_offset_', 'sk_income_offset_', 'sk_expense_offset_',
+        'sk_payment_reminders_', 'sk_hidden_cards_', 'sk_shopping_list_',
+        'sk_shopping_list_income_', 'sk_manual_backups_', 'sk_last_auto_backup_',
+        'sk_last_cloud_backup_', 'sk_last_gsheets_backup_', 'sk_fase_kehidupan_',
+        'sk_emergency_fund_months_', 'sk_pr_pending_push_', 'sk_pr_pending_delete_'
+    ];
+    PER_BOOK_PREFIXES.forEach(function(prefix) {
+        const val = localStorage.getItem(prefix + oldId);
+        if (val !== null) {
+            localStorage.setItem(prefix + newId, val);
+            localStorage.removeItem(prefix + oldId);
+        }
+    });
+    if (window.currentBookId === oldId) {
+        window.currentBookId = newId;
+        localStorage.setItem('sk_current_book_id', newId);
+    }
+    // book.id dimutasi lewat referensi array window.books di sini supaya
+    // pemanggil (skMakeBookShared) yang masih pegang variabel `book` lokal
+    // otomatis ikut lihat ID barunya tanpa perlu assignment terpisah.
+    if (Array.isArray(window.books)) {
+        const b = window.books.find(function(bk) { return bk.id === oldId; });
+        if (b) b.id = newId;
+    }
+};
+
 // ── Jadikan buku pribadi jadi buku bersama (bootstrap admin pertama) ────
 // Syarat: sudah login (skSignIn), dan sudah jalankan
 // sql/bootstrap_shared_book.sql (jalur RLS khusus buat baris admin pertama).
@@ -568,6 +625,17 @@ window.skMakeBookShared = async function(bookId) {
         'dan kamu jadi admin pertamanya. Aksi ini tidak bisa dibatalkan sendiri dari UI.'
     );
     if (!ok) return;
+    // [FIX ID COLLISION b_default] Lihat catatan lengkap di
+    // window._skMigrateBookIdLocal di atas. Migrasi DULU sebelum insert ke
+    // sk_books, supaya baris shared yang ter-insert sudah pakai ID unik.
+    if (book.id === 'b_default') {
+        const newId = 'b_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+        window._skMigrateBookIdLocal('b_default', newId);
+        // book.id sudah ikut termutasi lewat referensi array di
+        // _skMigrateBookIdLocal, jadi variabel `book` di sini otomatis
+        // pegang ID baru untuk sisa fungsi ini (insert sk_books/book_members
+        // di bawah, dst).
+    }
     try {
         // [FIX] created_by wajib diisi -- kolom NOT NULL di sk_books & juga
         // dipakai policy RLS sk_books_insert_self (WITH CHECK created_by =
