@@ -476,12 +476,25 @@ window._collectAllDataForExport = function() {
         const annBudget= JSON.parse(localStorage.getItem('sk_annual_budget_'   + book.id) || '{}');
         const reminders= JSON.parse(localStorage.getItem('sk_payment_reminders_' + book.id) || '[]');
         const logs     = JSON.parse(localStorage.getItem('sk_logs_'            + book.id) || '[]');
+        // [FIX DATA HILANG SAAT EXPORT/RESET] Sebelum ini, setting per-buku
+        // berikut TIDAK ikut diekspor -- kalau user reset total setelah
+        // export, keempatnya hilang permanen walau sudah "backup" JSON.
+        // Daftar ini sinkron dengan window.DUPLICATE_BOOK_SETTINGS_MAP di
+        // js/book.js (kecuali budgets/default_budget/annual_budget yang
+        // sudah lebih dulu ada di atas).
+        const hiddenCards   = JSON.parse(localStorage.getItem('sk_hidden_cards_'   + book.id) || '[]');
+        const shoppingList  = JSON.parse(localStorage.getItem('sk_shopping_list_'  + book.id) || '[]');
+        const shoppingIncome= Number(localStorage.getItem('sk_shopping_list_income_' + book.id) || 0);
+        const faseKehidupanRaw = localStorage.getItem('sk_fase_kehidupan_' + book.id);
+        const faseKehidupan = faseKehidupanRaw ? JSON.parse(faseKehidupanRaw) : null;
+        const emergencyFundMonths = Number(localStorage.getItem('sk_emergency_fund_months_' + book.id) || 0);
         exportData.books.push({
             id: book.id, name: book.name,
             transactions: txs,
             budgets, defaultBudget: defBudget, annualBudget: annBudget,
             paymentReminders: reminders,
             auditLogs: logs,
+            hiddenCards, shoppingList, shoppingIncome, faseKehidupan, emergencyFundMonths,
         });
     });
     return exportData;
@@ -758,6 +771,36 @@ window.importAllDataFromFile = async function(input) {
                 }
             }
 
+            // ── Setting per-buku lain (hanya tulis kalau lokal masih kosong,
+            //    jangan timpa data yang sudah ada di device ini) ──
+            if (Array.isArray(bookData.hiddenCards) && bookData.hiddenCards.length > 0) {
+                const localHidden = localStorage.getItem('sk_hidden_cards_' + bookData.id);
+                if (!localHidden || localHidden === '[]') {
+                    localStorage.setItem('sk_hidden_cards_' + bookData.id, JSON.stringify(bookData.hiddenCards));
+                }
+            }
+            if (Array.isArray(bookData.shoppingList) && bookData.shoppingList.length > 0) {
+                const localShopping = localStorage.getItem('sk_shopping_list_' + bookData.id);
+                if (!localShopping || localShopping === '[]') {
+                    localStorage.setItem('sk_shopping_list_' + bookData.id, JSON.stringify(bookData.shoppingList));
+                    if (bookData.shoppingIncome) {
+                        localStorage.setItem('sk_shopping_list_income_' + bookData.id, String(bookData.shoppingIncome));
+                    }
+                }
+            }
+            if (bookData.faseKehidupan) {
+                const localFase = localStorage.getItem('sk_fase_kehidupan_' + bookData.id);
+                if (!localFase) {
+                    localStorage.setItem('sk_fase_kehidupan_' + bookData.id, JSON.stringify(bookData.faseKehidupan));
+                }
+            }
+            if (bookData.emergencyFundMonths) {
+                const localEmergency = localStorage.getItem('sk_emergency_fund_months_' + bookData.id);
+                if (!localEmergency) {
+                    localStorage.setItem('sk_emergency_fund_months_' + bookData.id, String(bookData.emergencyFundMonths));
+                }
+            }
+
             // ── Payment reminders: merge by id ──
             if (Array.isArray(bookData.paymentReminders) && bookData.paymentReminders.length > 0) {
                 const existingRem    = JSON.parse(localStorage.getItem('sk_payment_reminders_' + bookData.id) || '[]');
@@ -790,11 +833,33 @@ window.importAllDataFromFile = async function(input) {
                 }
             }
 
-            // ── Push anggaran ke Supabase ──
+            // ── Push anggaran & setting lain ke Supabase ──
             if (window.isOnline() && window._sessionCryptoKey) {
                 await window.pushSetting('budgets', bookData.budgets || {}, bookData.id);
                 await window.pushSetting('default_budget', bookData.defaultBudget || {}, bookData.id);
                 if (bookData.annualBudget) await window.pushSetting('annual_budget', bookData.annualBudget, bookData.id);
+                // [FIX] Sebelum ini, hiddenCards/shoppingList/faseKehidupan/
+                // emergencyFundMonths (dan payment reminders) ditulis ke
+                // localStorage tapi TIDAK PERNAH di-push ke cloud saat
+                // import -- baru tersinkron kalau device ini kebetulan
+                // mengubahnya lagi nanti. Push eksplisit di sini supaya
+                // device lain langsung dapat data yang baru diimpor.
+                const localHiddenNow   = JSON.parse(localStorage.getItem('sk_hidden_cards_'   + bookData.id) || '[]');
+                const localShoppingNow = JSON.parse(localStorage.getItem('sk_shopping_list_'  + bookData.id) || '[]');
+                const localShopIncome  = Number(localStorage.getItem('sk_shopping_list_income_' + bookData.id) || 0);
+                const localFaseNow     = localStorage.getItem('sk_fase_kehidupan_' + bookData.id);
+                const localEmergencyNow= Number(localStorage.getItem('sk_emergency_fund_months_' + bookData.id) || 0);
+                await window.pushSetting('hidden_cards', localHiddenNow, bookData.id);
+                await window.pushSetting('shopping_list', localShoppingNow, bookData.id);
+                await window.pushSetting('shopping_list_income', localShopIncome, bookData.id);
+                if (localFaseNow) { try { await window.pushSetting('fase_kehidupan', JSON.parse(localFaseNow), bookData.id); } catch (e) {} }
+                if (localEmergencyNow) await window.pushSetting('emergency_fund_months', localEmergencyNow, bookData.id);
+                if (Array.isArray(bookData.paymentReminders) && bookData.paymentReminders.length > 0 && typeof window.savePaymentReminder === 'function') {
+                    const localRemNow = JSON.parse(localStorage.getItem('sk_payment_reminders_' + bookData.id) || '[]');
+                    for (const rem of localRemNow) {
+                        try { await window.savePaymentReminder(bookData.id, rem, true); } catch (e) {}
+                    }
+                }
             }
 
             importedBooks++;
