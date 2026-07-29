@@ -554,18 +554,16 @@ window._renderAnnualRow = function(idx) {
     const row = window._annualBudgetRows[idx];
     const isOnlyRow = window._annualBudgetRows.length <= 1;
     const div = document.createElement('div');
-    div.className = 'budget-cat-row';
+    div.className = 'annual-budget-row';
     div.id = 'annual-row-' + idx;
-    div.style.cssText = 'display:flex; gap:8px; align-items:center; margin-bottom:8px;';
     div.innerHTML = `
-        <input type="text" class="form-control" style="flex:2;" placeholder="Nama kebutuhan (misal: THR, Pajak, Servis)" 
+        <input type="text" class="form-control annual-budget-name" placeholder="Nama kebutuhan (misal: THR, Pajak, Servis)" 
             value="${window.escapeHtml(row.name)}"
             oninput="window._annualBudgetRows[${idx}].name = this.value; window.updateAnnualBudgetSummary();">
-        <input type="text" class="form-control" style="flex:1;" placeholder="Rp 0"
+        <input type="text" class="form-control annual-budget-amount" placeholder="Rp 0"
             value="${row.amount ? Number(row.amount).toLocaleString('id-ID') : ''}"
             oninput="window.formatRupiah(this); window._annualBudgetRows[${idx}].amount = window.unRp(this.value); window.updateAnnualBudgetSummary();">
-        ${isOnlyRow ? '' : `<button onclick="window.removeAnnualBudgetRow(${idx})" 
-            style="background:none; border:1.5px solid #A13A3A; color:#A13A3A; border-radius: var(--radius-sm); padding:4px 10px; cursor:pointer; font-size:.85rem; flex-shrink:0;">Hapus</button>`}
+        ${isOnlyRow ? '' : `<button class="annual-budget-remove-btn" onclick="window.removeAnnualBudgetRow(${idx})">Hapus</button>`}
     `;
     container.appendChild(div);
 };

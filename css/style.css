@@ -2171,6 +2171,53 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   .budget-cat-row .budget-cat-label { width: auto; }
 }
 
+/* ── Anggaran Tahunan: baris per-item ──
+   Beda dari .budget-cat-row (label tetap + 1 input) di atas -- baris ini
+   punya 2 input (nama & harga) + tombol Hapus opsional, jadi butuh susunan
+   sendiri, bukan numpang class budget-cat-row (yang sebelumnya ditimpa lagi
+   pakai inline style, sehingga aturan mobile budget-cat-row di atas tidak
+   pernah kepakai sama sekali untuk baris ini). */
+.annual-budget-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.annual-budget-row .annual-budget-name { flex: 2; }
+.annual-budget-row .annual-budget-amount { flex: 1; }
+.annual-budget-row .annual-budget-remove-btn {
+  background: none;
+  border: 1.5px solid #A13A3A;
+  color: #A13A3A;
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: .85rem;
+  flex-shrink: 0;
+}
+@media (max-width: 480px) {
+  /* Nama kebutuhan sering panjang ("Servis Kendaraan Tahunan", dst.) --
+     dipaksa sejajar dengan harga & tombol Hapus di layar sempit membuat
+     ketiganya kepotong/kelewat kecil. Susun ulang jadi grid 2 kolom: nama
+     full-width di baris atas, harga & Hapus sejajar di baris bawah --
+     pola yang sama seperti form tambah barang di Daftar Belanja
+     (.slist-add-row), supaya konsisten & tetap nyaman diketuk di hp. */
+  .annual-budget-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    align-items: stretch;
+  }
+  .annual-budget-row .annual-budget-name { grid-column: 1 / -1; }
+  .annual-budget-row .annual-budget-amount,
+  .annual-budget-row .annual-budget-remove-btn { flex: initial; }
+  .annual-budget-row .annual-budget-remove-btn {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: .78rem;
+  }
+}
+
 .budget-summary-row {
   background: var(--paper-warm);
   padding: 10px 14px;
