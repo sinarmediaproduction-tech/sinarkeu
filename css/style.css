@@ -2622,6 +2622,8 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
      tersendiri. */
   .slist-unit-price {
     order: 5;
+    flex-basis: 100%;
+    max-width: 100%;
     margin-left: 28px;
   }
   .slist-unit-price:empty { display: none; }
