@@ -2018,6 +2018,22 @@ window.skApplyRoleUI = function() {
     // admin-only.
     setVisible('navUserManagerBtn', role === 'admin' && !!window._skAuthUser);
 
+    // [FIX LABEL "KELOLA" KOSONG UNTUK EDITOR/VIEWER] Ketiga tombol di atas
+    // (#navUserManagerBtn, #navBackupBtn, #navSetelanBtn) sudah benar
+    // disembunyikan per role lewat setVisible di atas, TAPI judul group
+    // "<div class="app-nav-group-label">Kelola</div>" di index.html tidak
+    // punya id sendiri dan tidak pernah ikut di-toggle -- jadi begitu
+    // ketiganya sembunyi (editor/viewer, atau admin yang menu 'setelan'/
+    // 'backup'-nya sengaja dimatikan lewat "Atur Tampilan Menu per Peran"),
+    // label "KELOLA" tetap tampil sendirian tanpa isi apa pun di
+    // bawahnya. Sembunyikan seluruh grup (#navKelolaGroup, wrapper div-nya
+    // di index.html) kalau ketiga tombol di dalamnya sama-sama tersembunyi.
+    const _kelolaGroupHasVisibleItem = ['navUserManagerBtn', 'navBackupBtn', 'navSetelanBtn'].some(function(id) {
+        const el = document.getElementById(id);
+        return el && el.style.display !== 'none';
+    });
+    setVisible('navKelolaGroup', _kelolaGroupHasVisibleItem);
+
     // [MULTIROLE] Tombol logout Buku Bersama sekarang di footer sidebar
     // (dipindah dari panel "Kelola Buku") -- tampil kapan pun sedang login,
     // terlepas dari role & buku aktif.
