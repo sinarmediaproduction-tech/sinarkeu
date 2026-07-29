@@ -126,12 +126,28 @@ window.getAccountTag = function() {
 // sebelum kolom ini ditambahkan, dan tidak pernah di-backfill) langsung tersaring habis
 // dan tidak pernah muncul lagi -- termasuk saat device baru join backend yang sama.
 //
-// window.tagOrFilter(tag) menghasilkan filter PostgREST yang benar-benar OR:
+// window.tagOrFilter(tag, bookId) menghasilkan filter PostgREST yang benar-benar OR:
 // baris ber-tag SAMA milik akun ini, ATAU baris lama tanpa tag sama sekali.
 // Dipakai di semua query GET (baca) yang sebelumnya cuma AND-tag. Untuk operasi
 // DELETE/PATCH massal tetap sengaja pakai AND-tag saja (lebih aman kalau satu
 // backend Supabase dipakai lebih dari satu akun/password berbeda).
-window.tagOrFilter = function(tag) {
+//
+// [FIX "TRANSAKSI TIDAK MUNCUL DI BUKU BERSAMA"] account_tag HANYA berguna
+// untuk memisahkan akun PRIBADI berbeda yang kebetulan berbagi satu backend
+// Supabase yang sama -- untuk Buku Bersama, akses sudah benar-benar dijaga
+// lewat RLS role (public.sk_role_for_book, lihat sql/harden_shared_book_*.sql),
+// jadi filter account_tag tidak boleh ikut membatasi bacaan lagi. Kalau tetap
+// diterapkan: baris LAMA (ditulis sebelum buku ini jadi Bersama, atau ditulis
+// anggota lain dengan salt/password lokal berbeda) tetap membawa account_tag
+// SI PENULIS ASLI -- device anggota lain yang tag-nya beda dan bukan NULL
+// jadi tidak pernah melihatnya sama sekali, TANPA error apa pun (bukan
+// pelanggaran RLS, cuma baris tersaring di WHERE) -- persis gejala "online,
+// tidak ada toast error, transaksi cuma kosong" yang dilaporkan user.
+// Kalau bookId diberikan dan window.skIsSharedBookId(bookId) true, jangan
+// kirim filter account_tag sama sekali -- baca semua baris buku itu apa
+// adanya, biar RLS role yang menjaga.
+window.tagOrFilter = function(tag, bookId) {
+    if (bookId && typeof window.skIsSharedBookId === 'function' && window.skIsSharedBookId(bookId)) return '';
     return tag ? `&or=(account_tag.eq.${tag},account_tag.is.null)` : '';
 };
 

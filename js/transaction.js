@@ -154,7 +154,7 @@ window.fetchMonthTransactionsFromCloud = async function(bookId, year, month) {
     const nextYear = month === 12 ? year + 1 : year;
     const endStr = `${nextYear}-${pad(nextMonth)}-01`;
     const tag = window.getAccountTag ? window.getAccountTag() : null;
-    const tagFilter = window.tagOrFilter(tag);
+    const tagFilter = window.tagOrFilter(tag, bookId);
     const query = `?book_id=eq.${bookId}&is_deleted=eq.false&date=gte.${startStr}&date=lt.${endStr}&order=date.asc${tagFilter}`;
     const rows = await window.callSupabaseAPI('transactions', 'GET', null, query);
     if (!rows || !Array.isArray(rows)) return null;
@@ -183,7 +183,7 @@ window.pullFromCloudSilently = async function() {
         // OR filter: ambil baris ber-tag milik akun ini ATAU baris lama tanpa tag (NULL).
         // Baris NULL adalah data sebelum fitur account_tag ditambahkan; harus tetap terbaca
         // sampai migrasi selesai men-tag ulang semua baris tersebut.
-        const _txTagFilter = window.tagOrFilter(_txTag);
+        const _txTagFilter = window.tagOrFilter(_txTag, window.currentBookId);
         let query = `?book_id=eq.${window.currentBookId}&is_deleted=eq.false&order=date.desc&limit=${window.MAX_LOCAL_TXS}${_txTagFilter}`;
         if (lastSync) {
             // [FIX] Timestamp dari SERVER (lihat sql/fix_server_side_updated_at.sql)
@@ -274,7 +274,17 @@ window.pullAllBooksFromCloud = async function() {
     for (const bookId of bookIds) {
         const _fxTag = window.getAccountTag ? window.getAccountTag() : null;
         // OR filter: baris ber-tag akun ini ATAU baris lama tanpa tag (data sebelum migrasi).
-        const _fxTagFilter = window.tagOrFilter(_fxTag);
+        // [FIX "TRANSAKSI TIDAK MUNCUL DI BUKU BERSAMA" -- device pertama kali buka
+        // buku ini] bookId di bawah membuat tagOrFilter() SKIP filter account_tag
+        // total kalau bookId ini shared (lihat window.tagOrFilter di js/db.js) --
+        // menutup celah yang sama seperti komentar "[FIX SYNC SHARED BOOK PULL]"
+        // di window.pullAllSettings (js/db.js), yang sebelumnya hanya menutup celah
+        // itu untuk tabel `settings`, bukan `transactions`. Tanpa ini, baris lama
+        // ber-account_tag milik anggota/device LAIN (bukan NULL, bukan tag device
+        // ini) tidak pernah kebaca device ini -- tanpa error apa pun (bukan RLS
+        // violation, cuma baris tersaring WHERE), persis gejala buku bersama
+        // "online, tidak ada toast, transaksi kosong" yang dilaporkan user.
+        const _fxTagFilter = window.tagOrFilter(_fxTag, bookId);
         let cloudData = await window.callSupabaseAPI('transactions', 'GET', null,
             `?book_id=eq.${bookId}&is_deleted=eq.false&order=date.desc&limit=${window.MAX_LOCAL_TXS}${_fxTagFilter}`);
         if (!cloudData || !Array.isArray(cloudData)) continue;
