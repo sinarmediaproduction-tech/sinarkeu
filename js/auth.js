@@ -769,6 +769,78 @@ window.skMakeBookShared = async function(bookId, skipConfirm) {
             try { await window.pushSettingBooks(); } catch (e) { console.warn('[auth.js] Gagal push daftar buku setelah migrasi ID b_default:', e); }
         }
     }
+// ── Konversi data lama (terenkripsi) ke plaintext saat buku jadi Bersama ──
+// [FIX DATA "NOL" UNTUK ANGGOTA LAIN] Sebelum jadi Buku Bersama, transaksi &
+// payment reminder buku ini ditulis TERENKRIPSI (kolom enc_payload, lihat
+// window.encodeCloudTxPayload/encodeCloudReminderPayload di js/crypto.js) --
+// kuncinya (_sessionCryptoKey) diturunkan dari password LOKAL akun pemilik,
+// tidak pernah dibagi ke anggota lain. Desain buku Bersama SENGAJA menulis
+// data BARU sebagai plaintext (kedua fungsi encode di atas return null utk
+// buku shared) supaya semua anggota, peran apa pun, bisa baca -- TAPI baris
+// LAMA yang sudah kadung terenkripsi sebelum buku ini jadi shared tidak
+// pernah ikut dikonversi. Akibatnya anggota lain (mis. editor yang baru
+// diundang) melihat baris itu ADA (jumlahnya benar) tapi tiap kolom sensitif
+// gagal didekripsi (dia tidak punya _sessionCryptoKey pemilik) -- fallback
+// decodeCloudTxRow/decodeCloudReminderRow lalu memakai kolom plaintext lama
+// yang memang kosong (NULL) untuk baris terenkripsi, sehingga muncul
+// sebagai transaksi "isi nol/kosong" alih-alih data sungguhan. Fungsi ini
+// dipanggil SEKALI tepat setelah buku resmi ditandai shared (memakai
+// _sessionCryptoKey PEMILIK yang masih aktif di sesi ini saat itu juga) --
+// menarik baris ber-enc_payload milik buku ini, mendekripsinya, lalu
+// menulis ulang sebagai plaintext & mengosongkan enc_payload-nya.
+// Best-effort: kalau _sessionCryptoKey tidak ada (seharusnya tidak mungkin
+// di titik pemanggilan ini) atau sebagian baris gagal dikonversi, fungsi ini
+// tidak membatalkan proses "Jadikan Bersama" yang sudah terlanjur sukses --
+// cuma dicatat & dilaporkan lewat toast supaya admin tahu perlu diperiksa.
+window._skConvertTableToPlaintext = async function(table, bookId, decrypt, buildPlainRow) {
+    const skippedIds = [];
+    let convertedCount = 0;
+    const MAX_PAGES = 200; // guard: jangan sampai loop tak berhenti kalau ada baris yang terus gagal
+    for (let page = 0; page < MAX_PAGES; page++) {
+        const excludeFilter = skippedIds.length > 0 ? `&id=not.in.(${skippedIds.join(',')})` : '';
+        const query = `?book_id=eq.${bookId}&enc_payload=not.is.null&order=id&limit=200${excludeFilter}`;
+        let rows;
+        try { rows = await window.callSupabaseAPI(table, 'GET', null, query); }
+        catch (e) { console.error('[auth.js] Gagal ambil baris ' + table + ' untuk konversi plaintext:', e); break; }
+        if (!rows || !Array.isArray(rows) || rows.length === 0) break;
+        for (const row of rows) {
+            try {
+                const plain = await decrypt(row.enc_payload);
+                const d = JSON.parse(plain);
+                const plainRow = buildPlainRow(row, d);
+                plainRow.enc_payload = null;
+                const res = await window.callSupabaseAPI(table, 'PATCH', plainRow, `?id=eq.${row.id}`);
+                if (res === null) throw new Error('PATCH ditolak');
+                convertedCount++;
+            } catch (e) {
+                console.error('[auth.js] Gagal konversi ' + table + ' id=' + row.id + ' ke plaintext:', e);
+                skippedIds.push(row.id);
+            }
+        }
+        if (rows.length < 200) break;
+    }
+    return { convertedCount, skippedCount: skippedIds.length };
+};
+
+window._skConvertBookDataToPlaintext = async function(bookId) {
+    if (!window._sessionCryptoKey) return; // tidak ada kunci utk dekripsi -- seharusnya tidak terjadi di titik panggil ini
+    const decrypt = (encPayload) => window.decryptStr(window._sessionCryptoKey, encPayload);
+    const txResult = await window._skConvertTableToPlaintext('transactions', bookId, decrypt, (row, d) => ({
+        type: d.type, amount: d.amount, category: d.category || (d.type === 'income' ? 'Pemasukan' : ''),
+        description: d.description || '', attachment: d.attachment || null
+    }));
+    const prResult = await window._skConvertTableToPlaintext('payment_reminders', bookId, decrypt, (row, d) => ({
+        name: d.name || '', day: d.day, recurrence: d.recurrence, month: d.month || 1, note: d.note || ''
+    }));
+    const totalSkipped = txResult.skippedCount + prResult.skippedCount;
+    if (totalSkipped > 0) {
+        window.showToast && window.showToast(
+            totalSkipped + ' baris data lama gagal dikonversi ke format buku bersama (cek console) -- anggota lain mungkin melihatnya kosong untuk baris itu.',
+            'warning'
+        );
+    }
+};
+
     try {
         // [FIX] created_by wajib diisi -- kolom NOT NULL di sk_books & juga
         // dipakai policy RLS sk_books_insert_self (WITH CHECK created_by =
@@ -784,6 +856,17 @@ window.skMakeBookShared = async function(bookId, skipConfirm) {
         window._skSharedRoles[book.id] = 'admin';
         localStorage.setItem('sk_books', JSON.stringify(window.books));
 
+        // [FIX DATA "NOL" UNTUK ANGGOTA LAIN] Lihat catatan lengkap di
+        // window._skConvertBookDataToPlaintext di atas -- baris lama yang
+        // masih terenkripsi kunci pemilik harus dikonversi ke plaintext DI
+        // SINI (bukan cuma barisan baru), selagi window._sessionCryptoKey
+        // pemilik masih aktif di sesi ini & book.id sudah dianggap shared
+        // (skIsSharedBookId sudah true lewat _skSharedRoles di atas, jadi
+        // callSupabaseAPI otomatis pakai JWT bukan anon key). Best-effort,
+        // tidak membatalkan proses share yang sudah terlanjur sukses.
+        try { await window._skConvertBookDataToPlaintext(book.id); }
+        catch (e) { console.error('[auth.js] Gagal konversi data lama ke plaintext:', e); }
+
         window.showToast && window.showToast('"' + book.name + '" sekarang jadi buku bersama. Kamu adalah admin.', 'success');
         if (typeof window.renderBookList === 'function') window.renderBookList();
         if (typeof window.updateBookSelectDropdown === 'function') window.updateBookSelectDropdown();
@@ -793,6 +876,7 @@ window.skMakeBookShared = async function(bookId, skipConfirm) {
         window.showToast && window.showToast('Gagal: ' + e.message + ' (sudah jalankan sql/bootstrap_shared_book.sql?)', 'error');
     }
 };
+
 
 // ── Bootstrap admin pertama SEKALIGUS saat setup awal ───────────────────
 // Dipanggil HANYA dari window.doFirstTimeSetup (js/settings.js), HANYA
