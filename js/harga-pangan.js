@@ -263,29 +263,51 @@ window.refreshHargaKomoditas = async function() {
 window.renderHargaKomoditasModal = function() {
     const autoBody = document.getElementById('hkAutoTableBody');
     const manualBody = document.getElementById('hkManualTableBody');
+    const autoUpdateInfo = document.getElementById('hkAutoUpdateInfo');
     if (!autoBody || !manualBody) return;
     const cache = window._hargaPanganCache || new Map();
 
-    const renderRow = function(c, withAction) {
+    const autoRows = window.HARGA_PANGAN_COMMODITIES.filter(function(c) { return !c.manual; });
+    const manualRows = window.HARGA_PANGAN_COMMODITIES.filter(function(c) { return c.manual; });
+
+    // Baris auto (BI) semuanya ditarik dalam 1 batch yang sama, jadi
+    // tanggalnya praktis selalu sama antar komoditas -- tidak perlu kolom
+    // "Update" per baris, cukup 1 ringkasan di atas tabel. Ambil tanggal
+    // TERBARU yang ada di antara komoditas auto (kalau ada yang beda,
+    // misal 1 komoditas gagal ditarik BI hari ini & masih pakai cache lama).
+    let latestAutoDate = null;
+    autoRows.forEach(function(c) {
+        const hit = cache.get(c.slug);
+        if (hit && hit.date && (!latestAutoDate || hit.date > latestAutoDate)) latestAutoDate = hit.date;
+    });
+    if (autoUpdateInfo) {
+        autoUpdateInfo.textContent = latestAutoDate
+            ? ('Update terakhir: ' + latestAutoDate)
+            : 'Update terakhir: belum ada data';
+    }
+
+    const renderAutoRow = function(c) {
+        const hit = cache.get(c.slug);
+        const price = hit ? window.rp(hit.price) : '<span style="color:var(--text-secondary)">Belum ada data</span>';
+        // [WILAYAH] Kalau harga sudah ada tapi region tidak tercatat (mis.
+        // data ini datang dari cache Supabase yang memang tidak menyimpan
+        // kolom region -- lihat catatan di prefetchHargaPanganReferensi),
+        // anggap level Nasional: itu fallback terakhir & selalu berhasil
+        // di api/harga-pangan.js kalau level Kabupaten/Provinsi gagal.
+        const region = hit ? (hit.region ? window.escapeHtml(hit.region) : 'Nasional') : '-';
+        return '<tr><td>' + window.escapeHtml(c.name) + '</td><td>' + window.escapeHtml(c.unit) + '</td><td>' + price + '</td><td>' + region + '</td></tr>';
+    };
+
+    const renderManualRow = function(c) {
         const hit = cache.get(c.slug);
         const price = hit ? window.rp(hit.price) : '<span style="color:var(--text-secondary)">Belum ada data</span>';
         const date = hit ? window.escapeHtml(hit.date) : '-';
-        let row = '<tr><td>' + window.escapeHtml(c.name) + '</td><td>' + window.escapeHtml(c.unit) + '</td><td>' + price + '</td><td>' + date + '</td>';
-        if (!withAction) {
-            const region = hit && hit.region ? window.escapeHtml(hit.region) : '-';
-            row += '<td>' + region + '</td>';
-        }
-        if (withAction) {
-            row += '<td class="col-action"><button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:.8rem;" onclick="window.openEditHargaKomoditasManual(\'' + c.slug + '\')">Ubah</button></td>';
-        }
-        return row + '</tr>';
+        return '<tr><td>' + window.escapeHtml(c.name) + '</td><td>' + window.escapeHtml(c.unit) + '</td><td>' + price + '</td><td>' + date + '</td>' +
+            '<td class="col-action"><button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:.8rem;" onclick="window.openEditHargaKomoditasManual(\'' + c.slug + '\')">Ubah</button></td></tr>';
     };
 
-    const autoRows = window.HARGA_PANGAN_COMMODITIES.filter(function(c) { return !c.manual; });
-    autoBody.innerHTML = autoRows.map(function(c) { return renderRow(c, false); }).join('') || '<tr><td colspan="5">Tidak ada data.</td></tr>';
-
-    const manualRows = window.HARGA_PANGAN_COMMODITIES.filter(function(c) { return c.manual; });
-    manualBody.innerHTML = manualRows.map(function(c) { return renderRow(c, true); }).join('') || '<tr><td colspan="5">Tidak ada data.</td></tr>';
+    autoBody.innerHTML = autoRows.map(renderAutoRow).join('') || '<tr><td colspan="4">Tidak ada data.</td></tr>';
+    manualBody.innerHTML = manualRows.map(renderManualRow).join('') || '<tr><td colspan="5">Tidak ada data.</td></tr>';
 };
 
 window.openEditHargaKomoditasManual = function(slug) {
