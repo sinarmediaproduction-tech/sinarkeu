@@ -2587,21 +2587,22 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   /* Kartu barang di hp: dari grid 6-kolom (desktop) balik jadi flexbox yang
      disusun ulang pakai `order`, TANPA mengubah urutan elemen di HTML (semua
      elemen sudah flat/sejajar, lihat js/shopping-list.js). Hasilnya kartu
-     1-3 baris tergantung isinya:
-       Baris 1: checkbox + nama + qty (selalu ada)
-       Baris 2: badge kategori (baris sendiri, cuma muncul kalau ada kategori
-                -- flex-basis 100% jadi maksa baris baru sebelum & sesudahnya)
-       Baris 3: harga di kiri, tombol ubah/hapus di kanan (baris sendiri lewat
-                margin-left:auto pada .slist-trail, cuma muncul kalau ada
-                harga dan/atau tombol aksi)
-     Kalau barang cuma punya nama (tanpa qty/kategori/harga), otomatis jadi
-     1 baris pendek saja -- tidak ada ruang kosong yang dipaksakan. */
+     PAS 2 baris (kalau ada harga) atau 1 baris (kalau tidak):
+       Baris 1: checkbox + nama + badge kategori + qty
+       Baris 2: harga satuan + subtotal (kiri) + tombol ubah/hapus (kanan)
+     Baris baru dipaksa lewat ::before kosong (order di antara qty & harga,
+     flex-basis 100%, tinggi 0) -- BUKAN dengan flex-basis 100% di elemen
+     harga itu sendiri seperti sebelumnya, karena itu bikin harga satuan
+     dan subtotal masing-masing dapat baris SENDIRI (3 baris, boros tempat)
+     alih-alih sebaris berdua. Trik ::before ini cuma memaksa baris baru
+     dimulai, elemen-elemen sesudahnya (order lebih besar) tetap dikemas
+     berdampingan di baris baru itu seperti biasa. */
   .slist-item {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    row-gap: 6px;
-    padding: 10px;
+    row-gap: 3px;
+    padding: 9px 10px;
   }
   .slist-checkbox { order: 1; }
   .slist-name { order: 2; flex: 1 1 auto; min-width: 0; }
@@ -2617,14 +2618,14 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   }
   .slist-cat-badge:empty { flex-basis: 0; margin: 0; }
   .slist-qty { order: 4; }
-  /* Satuan & subtotal ditaruh sebaris (order sama) supaya tampil
-     berdampingan "Rp.../pcs  Rp.../total" tanpa makan baris kartu
-     tersendiri. */
-  .slist-unit-price {
+  .slist-item::before {
+    content: '';
     order: 5;
     flex-basis: 100%;
-    max-width: 100%;
-    margin-left: 28px;
+    height: 0;
+  }
+  .slist-unit-price {
+    order: 6;
   }
   .slist-unit-price:empty { display: none; }
   .slist-unit-price::after {
@@ -2634,16 +2635,16 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   }
   .slist-unit-price:empty::after { content: none; }
   .slist-price {
-    order: 5;
-    margin-left: 8px;
+    order: 6;
+    margin-left: 6px;
   }
   .slist-price:not(:empty)::before {
     content: '· ';
   }
   .slist-trail {
-    order: 6;
+    order: 7;
     margin-left: auto;
-    gap: 10px;
+    gap: 6px;
   }
   .slist-budget-warning { font-size: .7rem; padding: 8px 11px; }
 
