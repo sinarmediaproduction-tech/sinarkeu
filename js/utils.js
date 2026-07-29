@@ -337,6 +337,13 @@ window.openModal = function(id) {
         // jatuh ke Dashboard.
         try { localStorage.setItem('sk_last_fullview', id); } catch { /* localStorage penuh/disabled -- tidak fatal */ }
     }
+    // [FIX] Beberapa fungsi lama (mis. openBackupManager, openTelegramSettings)
+    // mungkin masih memanggil openModal() dengan id yang sudah tidak ada lagi
+    // di HTML karena section-nya sudah dipindah jadi panel inline di Setelan.
+    // Guard null di sini supaya panggilan lama itu tidak melempar error dan
+    // menghentikan sisa fungsi (mis. render list) yang seharusnya tetap jalan.
+    var _modalEl = document.getElementById(id);
+    if (!_modalEl) return;
     // [FIX SCROLL NYANGKUT] Modal fullview (mis. Belanja Bulanan) TIDAK
     // pernah dibuang dari DOM antara buka/tutup -- cuma class `show` yang
     // di-toggle. Kalau modal-content-nya scrollable (lihat CSS
@@ -351,17 +358,22 @@ window.openModal = function(id) {
     // mau muncul kalau daftar sudah banyak" yang dilaporkan user. Reset
     // scrollTop ke 0 tiap kali modal (fullview ATAUPUN modal biasa) baru
     // dibuka supaya user selalu mulai dari atas.
+    //
+    // [FIX BLANK MENU] Blok ini dulu ditulis DI ATAS deklarasi `var
+    // _modalEl` di bawah -- karena `var` di-hoist (deklarasi naik ke atas
+    // fungsi TAPI TIDAK nilainya), `_modalEl` masih `undefined` persis di
+    // titik pengecekan `_modalEl.querySelector`, jadi baris ini SELALU
+    // melempar "Cannot read properties of undefined (reading
+    // 'querySelector')" -- setiap panggilan openModal() (dari mana pun,
+    // termasuk semua menu fullview: Laporan, Anggaran, Buku Kas, Harga
+    // Komoditas, dst) gagal total sebelum sempat menambahkan class `show`,
+    // sehingga layar tetap kosong/nyangkut di Dashboard. Pindahkan blok
+    // pengecekan `_modalEl.querySelector` ke SETELAH deklarasi & guard
+    // null di atas supaya `_modalEl` sudah pasti terisi saat dipakai.
     if (_modalEl.querySelector) {
         const _scrollable = _modalEl.querySelector('.modal-content');
         if (_scrollable) _scrollable.scrollTop = 0;
     }
-    // [FIX] Beberapa fungsi lama (mis. openBackupManager, openTelegramSettings)
-    // mungkin masih memanggil openModal() dengan id yang sudah tidak ada lagi
-    // di HTML karena section-nya sudah dipindah jadi panel inline di Setelan.
-    // Guard null di sini supaya panggilan lama itu tidak melempar error dan
-    // menghentikan sisa fungsi (mis. render list) yang seharusnya tetap jalan.
-    var _modalEl = document.getElementById(id);
-    if (!_modalEl) return;
     _modalEl.classList.add('show');
     if (id === 'addModal') {
         document.getElementById('addForm').reset();
