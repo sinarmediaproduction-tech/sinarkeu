@@ -2322,6 +2322,25 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   white-space: nowrap;
 }
 
+/* [KONTRAS] Label pill "Harga Komoditas" (Harga Pangan otomatis / Update
+   terakhir / Komoditas Lain) sengaja TIDAK pakai .slist-summary-meta di
+   atas -- warna emas itu didesain untuk kartu gelap (.slist-summary-card,
+   gradient navy), kalau dipakai di atas modal background TERANG (seperti
+   modal Harga Komoditas) kontrasnya jadi lemah/susah dibaca. Pakai token
+   --accent/--accent-lt yang sudah dipakai badge lain di atas latar terang
+   (lihat .budget-info-badge.custom) supaya tegas & konsisten. */
+.hk-section-label {
+  display: inline-block;
+  font-size: .68rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-lt);
+  border: 1px solid var(--accent);
+  padding: 5px 11px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
 .slist-add-toggle { display: none; }
 .slist-add-wrap { }
 
