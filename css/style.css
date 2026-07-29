@@ -718,6 +718,15 @@ h1, h2, h3, h4,
 }
 .expense-chart-canvas-wrap canvas { max-height: 200px !important; }
 
+/* [HARGA KOMODITAS] Wrapper terpisah untuk grafik garis tren harga (js/harga-pangan.js)
+   -- BEDA dari .expense-chart-canvas-wrap di atas yang sengaja di-fix 200x200px
+   untuk grafik donut; line chart tren perlu lebar penuh kartu, bukan kotak kecil. */
+.hk-trend-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 260px;
+}
+
 .expense-chart-legend {
   flex: 1;
   min-width: 180px;

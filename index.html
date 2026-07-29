@@ -1335,7 +1335,7 @@ alter table public.settings
             <div id="hkAutoUpdateInfo" class="hk-section-label" style="margin-bottom:8px;"></div>
             <div class="table-container">
                 <table>
-                    <thead><tr><th>Komoditas</th><th>Satuan</th><th>Harga</th><th>Wilayah</th></tr></thead>
+                    <thead><tr><th>Komoditas</th><th>Satuan</th><th>Harga</th><th>Wilayah</th><th>Perubahan</th><th class="col-action">Tren</th></tr></thead>
                     <tbody id="hkAutoTableBody"></tbody>
                 </table>
             </div>
@@ -1352,6 +1352,14 @@ alter table public.settings
         <div class="slist-actions">
             <button type="button" class="btn btn-secondary" onclick="window.refreshHargaKomoditas()">Segarkan dari BI</button>
         </div>
+    </div>
+</div>
+
+<!-- Modal Tren Harga Komoditas -->
+<div id="hkTrendModal" class="modal" style="z-index:2000;">
+    <div class="modal-content" style="max-width:520px;">
+        <div class="modal-header"><h3 id="hkTrendTitle">Tren Harga</h3><button class="modal-close" onclick="closeModal('hkTrendModal')">×</button></div>
+        <div id="hkTrendChartBody" style="min-height:260px;"></div>
     </div>
 </div>
 

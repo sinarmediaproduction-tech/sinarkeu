@@ -299,12 +299,73 @@ window.getHargaPanganUntukItem = function(itemName) {
     return window._hargaPanganCache.get(commodity.slug) || null;
 };
 
+// ==================== HISTORI & TREN (komoditas auto/BI) ====================
+// Tabel harga_pangan_referensi menyimpan SATU baris per (komoditas, tanggal)
+// dan baris lama tidak pernah ditimpa (lihat sql/harga_pangan_referensi.sql)
+// -- jadi histori tren sebenarnya sudah terkumpul otomatis sejak modul ini
+// dipakai, tinggal ditarik. Dipakai untuk 2 hal: (1) indikator naik/turun
+// %-vs-hari-sebelumnya di tabel utama, (2) grafik tren per komoditas.
+//
+// Map<slug, [{date, price}, ...]> terurut tanggal ASCENDING. null selama
+// belum pernah ditarik di sesi ini (beda dari Map kosong -- dipakai buat
+// bedakan "belum coba" vs "sudah coba, hasilnya kosong").
+window._hargaPanganHistory = null;
+
+// Tarik histori N hari terakhir untuk SEMUA komoditas auto sekaligus (1
+// request, bukan per-komoditas) -- cukup untuk isi indikator %-perubahan
+// DAN data grafik tren, jadi dipanggil sekali saja tiap modal dibuka.
+// Komoditas manual (Gas Melon dll) dilewati: tidak ada histori BI untuk
+// itu, dan harga manual memang cuma 1 titik (harga saat ini), bukan seri.
+window.fetchHargaPanganHistory = async function(days) {
+    const history = new Map();
+    if (!window.isOnline || !window.isOnline() || typeof window.callSupabaseAPI !== 'function' || !window.getCloudUrl || !window.getCloudUrl()) {
+        window._hargaPanganHistory = history;
+        return history;
+    }
+    const autoSlugs = window.HARGA_PANGAN_COMMODITIES.filter(function(c) { return !c.manual; }).map(function(c) { return c.slug; });
+    const since = new Date();
+    since.setDate(since.getDate() - (days || 30));
+    const sinceStr = since.getFullYear() + '-' + String(since.getMonth() + 1).padStart(2, '0') + '-' + String(since.getDate()).padStart(2, '0');
+    try {
+        const rows = await window.callSupabaseAPI(
+            'harga_pangan_referensi', 'GET', null,
+            '?select=commodity_slug,price,price_date&price_date=gte.' + sinceStr +
+            '&commodity_slug=in.(' + autoSlugs.join(',') + ')&order=price_date.asc'
+        );
+        (rows || []).forEach(function(r) {
+            if (!history.has(r.commodity_slug)) history.set(r.commodity_slug, []);
+            history.get(r.commodity_slug).push({ date: r.price_date, price: Number(r.price) });
+        });
+    } catch (e) {
+        console.warn('[HargaPangan] Gagal ambil histori:', e.message);
+    }
+    window._hargaPanganHistory = history;
+    return history;
+};
+
+// Hitung persentase perubahan harga TERBARU vs titik sebelumnya di histori
+// (bukan selalu "kemarin" persis -- kalau ada hari libur/gagal-tarik BI di
+// tengah, titik sebelumnya bisa beberapa hari sebelumnya; itu tetap valid
+// secara historis, cuma labelnya digeneralisasi jadi "vs sebelumnya").
+// Return null kalau histori < 2 titik (belum bisa dibandingkan).
+function _hkPctChange(slug) {
+    const series = window._hargaPanganHistory && window._hargaPanganHistory.get(slug);
+    if (!series || series.length < 2) return null;
+    const latest = series[series.length - 1];
+    const prev = series[series.length - 2];
+    if (!prev.price) return null;
+    return { pct: ((latest.price - prev.price) / prev.price) * 100, prevDate: prev.date };
+}
+
 // ==================== MODAL "HARGA KOMODITAS" ====================
 // Halaman sidebar baru yang menampilkan SEMUA komoditas yang ditrack:
 // grup "otomatis" (dari BI, read-only) dan grup "manual" (Gas Melon,
 // Token Listrik -- user isi sendiri via modal edit kecil).
 window.openHargaKomoditasModal = async function() {
-    await window.prefetchHargaPanganReferensi();
+    await Promise.all([
+        window.prefetchHargaPanganReferensi(),
+        window.fetchHargaPanganHistory(30)
+    ]);
     window.renderHargaKomoditasModal();
     window.openModal('hargaKomoditasModal');
 };
@@ -315,7 +376,10 @@ window.openHargaKomoditasModal = async function() {
 window.refreshHargaKomoditas = async function() {
     try { localStorage.removeItem(HP_CACHE_KEY); } catch { /* tidak fatal */ }
     window._hargaPanganCache = null;
-    await window.prefetchHargaPanganReferensi();
+    await Promise.all([
+        window.prefetchHargaPanganReferensi(),
+        window.fetchHargaPanganHistory(30)
+    ]);
     window.renderHargaKomoditasModal();
 };
 
@@ -354,7 +418,26 @@ window.renderHargaKomoditasModal = function() {
         // anggap level Nasional: itu fallback terakhir & selalu berhasil
         // di api/harga-pangan.js kalau level Kabupaten/Provinsi gagal.
         const region = hit ? (hit.region ? window.escapeHtml(hit.region) : 'Nasional') : '-';
-        return '<tr><td>' + window.escapeHtml(c.name) + '</td><td>' + window.escapeHtml(c.unit) + '</td><td>' + price + '</td><td>' + region + '</td></tr>';
+
+        // [TREN] Perubahan %-vs-titik-sebelumnya, dari histori 30 hari yang
+        // ditarik bareng di window.openHargaKomoditasModal. '-' kalau
+        // histori belum ada/kurang dari 2 titik (mis. baru pertama kali
+        // fitur ini dipakai, atau offline saat modal dibuka).
+        const change = _hkPctChange(c.slug);
+        let changeHtml = '<span style="color:var(--text-secondary)">-</span>';
+        if (change) {
+            const up = change.pct > 0;
+            const flat = Math.abs(change.pct) < 0.05;
+            const color = flat ? 'var(--text-secondary)' : (up ? 'var(--danger)' : 'var(--success)');
+            const arrow = flat ? '' : (up ? '\u25B2 ' : '\u25BC ');
+            changeHtml = '<span style="color:' + color + '">' + arrow + Math.abs(change.pct).toFixed(1) + '%</span>';
+        }
+        const hasHistory = window._hargaPanganHistory && (window._hargaPanganHistory.get(c.slug) || []).length >= 2;
+        const trendBtn = hasHistory
+            ? '<button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:.8rem;" onclick="window.openHargaKomoditasTrend(\'' + c.slug + '\')">Tren</button>'
+            : '<span style="color:var(--text-secondary)">-</span>';
+
+        return '<tr><td>' + window.escapeHtml(c.name) + '</td><td>' + window.escapeHtml(c.unit) + '</td><td>' + price + '</td><td>' + region + '</td><td>' + changeHtml + '</td><td class="col-action">' + trendBtn + '</td></tr>';
     };
 
     const renderManualRow = function(c) {
@@ -365,7 +448,7 @@ window.renderHargaKomoditasModal = function() {
             '<td class="col-action"><button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:.8rem;" onclick="window.openEditHargaKomoditasManual(\'' + c.slug + '\')">Ubah</button></td></tr>';
     };
 
-    autoBody.innerHTML = autoRows.map(renderAutoRow).join('') || '<tr><td colspan="4">Tidak ada data.</td></tr>';
+    autoBody.innerHTML = autoRows.map(renderAutoRow).join('') || '<tr><td colspan="6">Tidak ada data.</td></tr>';
     manualBody.innerHTML = manualRows.map(renderManualRow).join('') || '<tr><td colspan="5">Tidak ada data.</td></tr>';
 };
 
@@ -388,4 +471,68 @@ window.handleHargaKomoditasManualSubmit = function(e) {
     window.setManualHargaKomoditas(slug, price);
     window.closeModal('editHargaKomoditasManualModal');
     window.renderHargaKomoditasModal();
+};
+
+// ==================== MODAL "TREN HARGA" (grafik per komoditas) ====================
+// Dipicu tombol "Tren" di baris auto. Pakai data yang SUDAH ditarik di
+// window._hargaPanganHistory (tidak request ulang) -- 1 fetch histori per
+// buka modal Harga Komoditas sudah cukup untuk semua komoditas.
+window._hkTrendChart = null;
+
+window.openHargaKomoditasTrend = function(slug) {
+    const meta = window.HARGA_PANGAN_COMMODITIES.find(function(c) { return c.slug === slug; });
+    const series = window._hargaPanganHistory && window._hargaPanganHistory.get(slug);
+    if (!meta || !series || series.length < 2) return;
+
+    document.getElementById('hkTrendTitle').textContent = 'Tren ' + meta.name + ' (30 hari)';
+    window.openModal('hkTrendModal');
+    window.renderHargaKomoditasTrendChart(meta, series);
+};
+
+window.renderHargaKomoditasTrendChart = function(meta, series) {
+    const body = document.getElementById('hkTrendChartBody');
+    if (!body) return;
+
+    // [PERF] Sama seperti js/expense-chart.js: Chart.js dimuat lazy sekali
+    // saja lewat window.loadScriptOnce, bukan <script defer> statis.
+    if (typeof Chart === 'undefined') {
+        body.innerHTML = '<div class="expense-chart-empty">Memuat grafik…</div>';
+        window.loadScriptOnce(window.CHART_JS_URL).then(function() {
+            window.renderHargaKomoditasTrendChart(meta, series);
+        }).catch(function(err) {
+            console.error('[HargaKomoditas] Gagal memuat chart.js:', err);
+            body.innerHTML = '<div class="expense-chart-empty">Gagal memuat grafik. Periksa koneksi internet.</div>';
+        });
+        return;
+    }
+
+    body.innerHTML = '<div class="hk-trend-canvas-wrap"><canvas id="hkTrendCanvas"></canvas></div>';
+    const ctx = document.getElementById('hkTrendCanvas');
+    if (window._hkTrendChart) { window._hkTrendChart.destroy(); window._hkTrendChart = null; }
+
+    window._hkTrendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: series.map(function(p) { return p.date; }),
+            datasets: [{
+                label: meta.name + ' (Rp/' + meta.unit + ')',
+                data: series.map(function(p) { return p.price; }),
+                borderColor: '#2E5C82',
+                backgroundColor: 'rgba(46, 92, 130, 0.12)',
+                fill: true,
+                tension: 0.15,
+                pointRadius: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    ticks: { callback: function(value) { return window.rp(value); } }
+                }
+            }
+        }
+    });
 };
