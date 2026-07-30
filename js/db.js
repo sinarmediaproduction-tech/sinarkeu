@@ -55,9 +55,16 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
             if (!window._lastSyncErrorToastAt || now - window._lastSyncErrorToastAt > 15000) {
                 window._lastSyncErrorToastAt = now;
                 const isConflictErr = e && e.status === 400 && /on conflict|constraint/i.test(e.message || '');
+                // PostgREST dapat membungkus penolakan RLS PostgreSQL
+                // (kode 42501) sebagai HTTP 401 untuk request anon. Ini
+                // bukan berarti URL/anon key salah; penyebabnya adalah
+                // policy RLS tabel belum mencakup jalur akses aplikasi.
+                const isRlsErr = /row-level security|42501|permission denied for table/i.test(e && e.message || '');
                 const detail = window._supabaseErrDetail(e && e.message);
                 const msg = isConflictErr
                     ? `Gagal sinkron tabel '${table}': constraint database belum di-setup. Jalankan fix_settings_upsert.sql di Supabase SQL Editor.`
+                    : isRlsErr
+                        ? `Gagal sinkron tabel '${table}': akses ditolak oleh aturan RLS database. Jalankan sql/fix_rls_sync_42501.sql di Supabase SQL Editor.`
                     : `Gagal sinkron tabel '${table}' (${e && e.status ? e.status : 'network'})${detail ? ': ' + detail : '. Cek koneksi/URL/API key.'}`;
                 window.showToast(msg, 'error');
             }
