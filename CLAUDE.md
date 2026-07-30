@@ -636,3 +636,86 @@ dibutuhkan lagi nanti.
 Kalau menambah form kredensial Supabase baru di masa depan: jangan buat input
 baru di tempat lain — arahkan ke panel Akun (`window.editAccount`) supaya
 tetap satu pintu.
+
+## Catatan Insiden: Toast RLS Berulang di Buku yang Terasa Pribadi (Juli 2026)
+
+**Gejala:** toast error RLS (kode 42501, lewat `settings_legacy_anon`) muncul
+berulang HANYA saat membuka satu buku tertentu yang menurut user "buku
+pribadi biasa" — tidak ada indikasi shared di UI (tidak ada badge/tombol
+admin). Menghapus buku itu langsung menghentikan toast, tapi bukunya
+"muncul lagi" begitu sync berikutnya jalan.
+
+**Proses diagnosis (penting, karena awalnya menyesatkan):** teori awal
+adalah race condition — `window.currentBookId` sempat menunjuk ke buku
+bersama lain saat `reEncryptAllCloudSettings`/push jalan. Sudah 2x
+percobaan fix berbasis teori ini GAGAL (toast tetap persis sama). Baru
+setelah menambahkan diagnostik eksplisit (field `sk_shared_debug` di log
+toast, `_recordToastError` di `js/utils.js`) dan user melaporkan pola
+"hapus → toast berhenti → buku muncul lagi", ditemukan kontradiksi kunci:
+kode `switchBook()` sudah benar urutannya (currentBookId di-set sebelum
+pull), jadi race condition seharusnya TIDAK mungkin terjadi seperti yang
+dikira. Ini sinyal untuk berhenti menebak dan verifikasi langsung ke server
+lewat Supabase SQL Editor.
+
+**Akar masalah sebenarnya — BUKAN race condition, tapi data yatim piatu:**
+baris `sk_books` untuk buku ini punya `is_shared = true`, tapi tabel
+`book_members` untuk `book_id` itu **kosong total** (tidak ada admin/editor/
+viewer sama sekali). Kemungkinan sisa dari percobaan "Jadikan Bersama" yang
+gagal separuh jalan (insert `sk_books` sukses, insert baris admin ke
+`book_members` gagal/terhapus belakangan).
+
+Akibat dari data yatim ini di dua sisi yang saling kontradiksi:
+- **Di database:** `public.sk_book_is_shared(book_id)` (lihat
+  `sql/harden_shared_book_data_rls.sql`) HANYA mengecek `sk_books.is_shared`,
+  sama sekali tidak peduli `book_members`. Jadi RLS `settings_legacy_anon`
+  menganggap buku ini shared → menolak tulisan lewat anon key → toast.
+- **Di klien:** `window.skIsSharedBookId()` (`js/auth.js`) cuma cek
+  `window._skSharedRoles`, yang diisi dari query `book_members` untuk user
+  yang login. Karena `book_members` kosong, TIDAK ADA seorang pun yang
+  pernah dapat entri `_skSharedRoles` untuk buku ini — jadi klien meyakini
+  ini buku pribadi biasa, tanpa cara mendeteksi sebaliknya.
+- **Kenapa "hapus → hilang → muncul lagi":** karena klien tidak tahu buku
+  ini shared, `deleteBook()` jalan lewat jalur buku pribadi biasa (cuma
+  hapus transaksi/log/settings, TIDAK menyentuh `sk_books`/`book_members` —
+  lihat blok `if (b._isShared)` di `js/book.js`). Baris `sk_books` yatim
+  itu tetap hidup, dan bukunya balik lagi lewat mekanisme sync blob
+  `books` biasa (union-merge di `pullAllSettings`, `js/db.js`) — sama
+  sekali tidak ada hubungannya dengan sistem Buku Bersama.
+
+**Fix:** murni data-fix satu baris di server, BUKAN perubahan kode:
+
+```sql
+UPDATE public.sk_books SET is_shared = false WHERE id = '<book_id>';
+```
+
+Setelah `is_shared` balik `false`, `sk_book_is_shared()` ikut balik `false`,
+RLS mengizinkan lagi tulisan anon key, dan toast berhenti permanen tanpa
+perlu hapus buku.
+
+**Kalau kejadian serupa muncul lagi** (toast RLS di buku yang "terasa"
+pribadi, tidak ada indikasi shared di UI): langsung cek dulu ke Supabase —
+bandingkan `sk_books.is_shared` untuk `book_id` itu dengan isi
+`book_members` untuk `book_id` yang sama:
+
+```sql
+SELECT id, name, is_shared FROM public.sk_books WHERE id = '<book_id>';
+SELECT * FROM public.book_members WHERE book_id = '<book_id>';
+```
+
+Kalau `is_shared = true` tapi `book_members` kosong (atau tidak mencakup
+user yang mengeluh), itu tandanya data yatim piatu seperti kasus ini —
+JANGAN buru-buru curiga race condition di `switchBook()`/push-pull seperti
+sesi ini di awal, itu jalan buntu yang sudah terbukti 2x salah.
+
+**Perbaikan defense-in-depth yang tetap ditambahkan** (bukan penyebab kasus
+ini, tapi menutup celah terkait untuk ke depan):
+- `deleteBook()` (`js/book.js`, `[FIX BUG #1]`): untuk buku yang memang
+  `_isShared`, sekarang benar-benar menghapus baris `book_members` +
+  `sk_books` di server, bukan cuma cache lokal.
+- `pushSettingBooks()` (`js/db.js`, `_skDropDeadSharedBooksBeforePush`):
+  sebelum push, verifikasi ke server (`sk_books`, query batch) bahwa buku
+  yang device ini percaya masih shared (`_isShared`/`window._skSharedRoles`)
+  benar-benar masih ada. Kalau tidak, buku itu dibuang dari device ini
+  duluan — mencegah device yang lama offline menghidupkan lagi buku
+  bersama yang sudah dihapus device/admin lain lewat push blob `books`
+  penuh miliknya sendiri.
