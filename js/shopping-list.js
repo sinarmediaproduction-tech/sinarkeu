@@ -512,14 +512,16 @@ window._renderShoppingListCategoryBreakdown = function(items) {
     }
 
     box.innerHTML = `
-        <div class="slist-cat-breakdown-title">Sisa Anggaran per Kategori</div>
-        ${rows.map(r => `
-            <div class="slist-cat-row">
-                <span class="slist-cat-row-name" title="${window.escapeHtml(r.cat)}">${window.escapeHtml(r.cat)}</span>
-                <span class="slist-cat-row-bar"><span class="slist-cat-row-bar-fill${r.sisa < 0 ? ' is-over' : ''}" style="width:${r.pct}%"></span></span>
-                <span class="slist-cat-row-sisa${r.sisa < 0 ? ' is-over' : ''}">${window.rp(r.sisa)}</span>
-            </div>
-        `).join('')}
+        <div class="slist-cat-breakdown-title">Sisa per Kategori</div>
+        <div class="slist-cat-rows">
+            ${rows.map(r => `
+                <div class="slist-cat-row">
+                    <span class="slist-cat-row-name" title="${window.escapeHtml(r.cat)}">${window.escapeHtml(r.cat)}</span>
+                    <span class="slist-cat-row-bar"><span class="slist-cat-row-bar-fill${r.sisa < 0 ? ' is-over' : ''}" style="width:${r.pct}%"></span></span>
+                    <span class="slist-cat-row-sisa${r.sisa < 0 ? ' is-over' : ''}">${window.rp(r.sisa)}</span>
+                </div>
+            `).join('')}
+        </div>
     `;
 };
 

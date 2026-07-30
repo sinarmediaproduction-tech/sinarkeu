@@ -2509,29 +2509,32 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   background: var(--paper);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
-  padding: 12px 14px;
+  padding: 8px 10px;
   margin-bottom: 14px;
 }
 .slist-cat-breakdown-title {
-  font-size: .68rem;
+  font-size: .64rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: .05em;
   color: var(--ink-faint);
-  margin-bottom: 10px;
+  margin-bottom: 4px;
+}
+.slist-cat-rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0 14px;
 }
 .slist-cat-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--rule);
+  gap: 6px;
+  padding: 3px 0;
 }
-.slist-cat-row:last-child { border-bottom: none; }
 .slist-cat-row-name {
   flex: 0 0 auto;
-  width: 108px;
-  font-size: .74rem;
+  width: 62px;
+  font-size: .68rem;
   font-weight: 500;
   color: var(--ink);
   white-space: nowrap;
@@ -2540,7 +2543,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 }
 .slist-cat-row-bar {
   flex: 1 1 auto;
-  height: 6px;
+  height: 4px;
   border-radius: var(--radius-pill);
   background: var(--paper-warm);
   overflow: hidden;
@@ -2553,22 +2556,23 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 .slist-cat-row-bar-fill.is-over { background: var(--danger); }
 .slist-cat-row-sisa {
   flex: 0 0 auto;
-  width: 110px;
+  width: 66px;
   text-align: right;
-  font-size: .74rem;
+  font-size: .68rem;
   font-weight: 600;
   color: var(--success);
 }
 .slist-cat-row-sisa.is-over { color: var(--danger); }
 .slist-cat-breakdown-empty {
-  font-size: .74rem;
+  font-size: .72rem;
   color: var(--ink-faint);
   text-align: center;
-  padding: 6px 0;
+  padding: 4px 0;
 }
 @media (max-width: 640px) {
-  .slist-cat-row-name { width: 84px; }
-  .slist-cat-row-sisa { width: 92px; font-size: .7rem; }
+  .slist-cat-rows { grid-template-columns: 1fr; }
+  .slist-cat-row-name { width: 78px; }
+  .slist-cat-row-sisa { width: 84px; font-size: .66rem; }
 }
 .slist-summary-label {
   display: block;
