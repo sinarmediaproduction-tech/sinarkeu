@@ -2915,6 +2915,12 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   font-size: .75rem; line-height: 1;
 }
 .slist-edit-btn:hover { background: var(--accent-lt, var(--paper-warm)); color: var(--accent, var(--ink)); }
+
+/* Anggaran Tahunan menambahkan aksi Ubah sebagai kolom tersendiri. */
+#annualBudgetItemsContainer .slist-item {
+  grid-template-columns: 20px minmax(0, 1fr) 58px 128px 92px 100px 22px 22px;
+}
+#annualBudgetItemsContainer > .slist-item > .slist-trail { gap: 0; }
 .slist-empty { font-size: .74rem; color: var(--ink-faint); text-align: center; padding: 26px 0; }
 .slist-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .slist-actions .btn { flex: 1; min-width: 140px; }
@@ -3011,6 +3017,8 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   /* Target ketuk edit/hapus diperbesar khusus hp (jempol > kursor mouse),
      ukuran visual ikon tetap sama supaya tidak mendominasi baris. */
   .slist-edit-btn, .slist-del-btn { width: 30px; height: 30px; }
+  #annualBudgetItemsContainer .slist-item > .slist-edit-btn { order: 8; margin-left: auto; }
+  #annualBudgetItemsContainer .slist-item > .slist-trail { order: 8; margin-left: 6px; }
 }
 
 /* ── Report ── */

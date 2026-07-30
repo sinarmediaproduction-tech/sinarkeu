@@ -629,7 +629,10 @@ window.ensureAnnualBudgetYearlyCycle = function(bookId) {
     const target = bookId || window.currentBookId;
     const items = window.getAnnualBudget(target);
     const year = window.getAnnualBudgetYearKey(); let changed = false;
-    items.forEach(function(item) {
+    items.forEach(function(item, index) {
+        // Data anggaran versi lama hanya berisi name/amount. Beri id saat
+        // dimuat agar item lama juga bisa diedit, dihapus, dan dicentang.
+        if (!item.id) { item.id = 'ab_legacy_' + Date.now() + '_' + index + '_' + Math.random().toString(36).slice(2, 7); changed = true; }
         if (!item.checklistYear) { item.checklistYear = year; changed = true; }
         else if (item.checklistYear !== year) { item.done = false; item.checklistYear = year; changed = true; }
     });
@@ -665,6 +668,7 @@ window.renderAnnualBudgetForm = function() {
         <span class="slist-name">${window.escapeHtml(i.name || '')}</span><span class="slist-qty">${(Number(i.qty) || 1) > 1 ? 'x' + window.escapeHtml(String(i.qty)) : ''}</span>
         <span class="slist-cat-badge">${window.escapeHtml(i.category || 'Belanja Harian')}</span><span class="slist-unit-price"></span>
         <span class="slist-price">${window.rp(window._annualBudgetItemSubtotal(i))}</span>
+        <button type="button" class="slist-edit-btn" title="Ubah kebutuhan" aria-label="Ubah kebutuhan" onclick="window.openEditAnnualBudgetItemModal('${window.escapeHtml(i.id)}')">✎</button>
         <div class="slist-trail"><button type="button" class="slist-del-btn" title="Hapus" onclick="window.deleteAnnualBudgetItem('${window.escapeHtml(i.id)}')">×</button></div>
     </div>`).join('');
 };
@@ -690,7 +694,47 @@ window.toggleAnnualBudgetItem = async function(id) {
     }
     item.done=done; item.checklistYear=year; window.saveAnnualBudgetList(window.currentBookId, items); window.renderAnnualBudgetForm();
 };
-window.deleteAnnualBudgetItem = function(id) { const items=window.getAnnualBudget(window.currentBookId).filter(i=>i.id!==id); window.saveAnnualBudgetList(window.currentBookId,items); window.renderAnnualBudgetForm(); };
+window.openEditAnnualBudgetItemModal = function(id) {
+    const item = window.getAnnualBudget(window.currentBookId).find(i => i.id === id);
+    if (!item) return;
+    const catSelect = document.getElementById('annualEditCategory');
+    catSelect.innerHTML = '<option value="">Belanja Harian</option>' +
+        (window.EXPENSE_CATEGORIES || []).map(c => `<option value="${window.escapeHtml(c)}">${window.escapeHtml(c)}</option>`).join('');
+    catSelect.value = item.category || '';
+    document.getElementById('annualEditId').value = item.id;
+    document.getElementById('annualEditName').value = item.name || '';
+    document.getElementById('annualEditQty').value = Number(item.qty) > 0 ? item.qty : 1;
+    document.getElementById('annualEditAmount').value = item.amount ? Number(item.amount).toLocaleString('id-ID') : '';
+    window.openModal('editAnnualBudgetItemModal');
+};
+
+window.handleEditAnnualBudgetItemSubmit = function(event) {
+    event.preventDefault();
+    const id = document.getElementById('annualEditId').value;
+    const name = document.getElementById('annualEditName').value.trim();
+    const amount = window.unRp(document.getElementById('annualEditAmount').value);
+    const qtyParsed = Number(document.getElementById('annualEditQty').value);
+    if (!name || amount <= 0) { window.showToast('Isi nama dan nominal kebutuhan tahunan.', 'warning'); return; }
+    const item = window.getAnnualBudget(window.currentBookId).find(i => i.id === id);
+    if (!item) return;
+    item.name = name;
+    item.qty = qtyParsed > 0 ? qtyParsed : 1;
+    item.amount = amount;
+    item.category = document.getElementById('annualEditCategory').value;
+    window.saveAnnualBudgetList(window.currentBookId, window.getAnnualBudget(window.currentBookId));
+    window.closeModal('editAnnualBudgetItemModal');
+    window.renderAnnualBudgetForm();
+    window.showToast('Kebutuhan tahunan diperbarui.', 'success');
+};
+
+window.deleteAnnualBudgetItem = function(id) {
+    const item = window.getAnnualBudget(window.currentBookId).find(i => i.id === id);
+    if (!item || !window.confirm(`Hapus kebutuhan "${item.name || 'ini'}"?`)) return;
+    const items = window.getAnnualBudget(window.currentBookId).filter(i => i.id !== id);
+    window.saveAnnualBudgetList(window.currentBookId, items);
+    window.renderAnnualBudgetForm();
+    window.showToast('Kebutuhan tahunan dihapus.', 'success');
+};
 window.resetAnnualBudgetChecks = function() { const items=window.getAnnualBudget(window.currentBookId); items.forEach(i=>{i.done=false;}); window.saveAnnualBudgetList(window.currentBookId,items); window.renderAnnualBudgetForm(); };
 
 // ============================================================
