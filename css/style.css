@@ -2522,7 +2522,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 }
 .slist-cat-rows {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px 16px;
 }
 .slist-cat-row {
@@ -2578,7 +2578,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   padding: 4px 0;
 }
 @media (max-width: 640px) {
-  .slist-cat-rows { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px 12px; }
+  .slist-cat-rows { grid-template-columns: repeat(2, 1fr); gap: 8px 10px; }
   .slist-cat-row-name, .slist-cat-row-sisa { font-size: .68rem; }
 }
 .slist-summary-label {
