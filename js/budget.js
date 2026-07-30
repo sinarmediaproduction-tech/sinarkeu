@@ -645,8 +645,8 @@ window.saveAnnualBudgetList = function(bookId, items) {
     if (window.isOnline && window.isOnline() && window.pushSetting) window.pushSetting('annual_budget', items, target).catch(function() {});
     if (typeof window.updateFinancialCards === 'function') window.updateFinancialCards();
 };
-window._populateAnnualBudgetCategory = function() {
-    const sel = document.getElementById('annualNewCategory'); if (!sel) return;
+window._populateAnnualBudgetCategory = function(selectId) {
+    const sel = document.getElementById(selectId || 'annualNewCategory'); if (!sel) return;
     sel.innerHTML = '<option value="">Belanja Harian</option>' + (window.EXPENSE_CATEGORIES || []).map(c => `<option value="${window.escapeHtml(c)}">${window.escapeHtml(c)}</option>`).join('');
 };
 window.openAnnualBudgetModal = function() {
@@ -680,6 +680,23 @@ window.addAnnualBudgetRow = function() {
     const qty = qtyEl && Number(qtyEl.value) > 0 ? Number(qtyEl.value) : 1;
     items.push({ id:'ab_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), name, qty, amount, category:catEl ? catEl.value : '', done:false, checklistYear:window.getAnnualBudgetYearKey() });
     window.saveAnnualBudgetList(window.currentBookId, items); nameEl.value = ''; qtyEl.value = ''; amountEl.value = ''; window.renderAnnualBudgetForm();
+};
+window.openAddAnnualBudgetItemModal = function() {
+    window._populateAnnualBudgetCategory('annualNewCategory');
+    const form = document.getElementById('addAnnualBudgetItemForm');
+    if (form) form.reset();
+    const qty = document.getElementById('annualNewQty');
+    if (qty) qty.value = 1;
+    window.openModal('addAnnualBudgetItemModal');
+};
+window.handleAddAnnualBudgetItemSubmit = function(event) {
+    event.preventDefault();
+    const name = document.getElementById('annualNewName');
+    const amount = document.getElementById('annualNewAmount');
+    if (!name || !amount) return;
+    const isValid = name.value.trim() !== '' && window.unRp(amount.value) > 0;
+    window.addAnnualBudgetRow();
+    if (isValid) window.closeModal('addAnnualBudgetItemModal');
 };
 window.toggleAnnualBudgetItem = async function(id) {
     window.ensureAnnualBudgetYearlyCycle(window.currentBookId); const items = window.getAnnualBudget(window.currentBookId), item = items.find(i => i.id === id); if (!item) return;

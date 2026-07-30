@@ -1506,6 +1506,7 @@ alter table public.settings
                 <span class="slist-summary-meta" id="annualBudgetProgressCard">0 dari 0 kebutuhan direalisasikan</span>
             </div>
         </div>
+        <!-- Form inline lama disembunyikan: di ponsel lima kolom membuat input terpotong.
         <div class="slist-add-wrap" style="display:grid; grid-template-columns:2fr .65fr 1fr 1fr auto; gap:8px; margin-bottom:12px;">
             <input id="annualNewName" type="text" class="form-control" placeholder="Nama kebutuhan (mis. Pajak kendaraan)">
             <input id="annualNewQty" type="number" min="1" step="1" class="form-control" inputmode="numeric" placeholder="QTY">
@@ -1513,6 +1514,8 @@ alter table public.settings
             <input id="annualNewAmount" type="text" class="form-control" inputmode="numeric" placeholder="Harga satuan" oninput="window.formatRupiah(this)">
             <button class="btn btn-primary" type="button" onclick="window.addAnnualBudgetRow()">Tambah</button>
         </div>
+        -->
+        <button class="btn btn-primary" type="button" style="width:100%; margin-bottom:12px;" onclick="window.openAddAnnualBudgetItemModal()">+ Tambah Kebutuhan</button>
         <div id="annualBudgetItemsContainer" class="slist-list"></div>
         <div style="display:none; margin:10px 0;">
             <button class="btn btn-secondary" style="width:100%;" onclick="addAnnualBudgetRow()">＋ Tambah Item</button>
@@ -1522,6 +1525,20 @@ alter table public.settings
             <button class="btn btn-secondary" onclick="closeModal('annualBudgetModal')">Tutup</button>
             <button class="btn btn-primary" onclick="saveAnnualBudget()">Simpan</button>
         </div>
+    </div>
+</div>
+
+<!-- Modal Tambah Kebutuhan Anggaran Tahunan -->
+<div id="addAnnualBudgetItemModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>Tambah Kebutuhan Tahunan</h3><button class="modal-close" type="button" onclick="closeModal('addAnnualBudgetItemModal')" aria-label="Tutup">×</button></div>
+        <form id="addAnnualBudgetItemForm" onsubmit="window.handleAddAnnualBudgetItemSubmit(event)">
+            <div class="form-group"><label>Nama kebutuhan</label><input id="annualNewName" type="text" class="form-control" placeholder="mis. Pajak kendaraan" required></div>
+            <div class="form-group"><label>Qty</label><input id="annualNewQty" type="number" min="1" step="1" class="form-control" inputmode="numeric" value="1"></div>
+            <div class="form-group"><label>Harga satuan</label><input id="annualNewAmount" type="text" class="form-control" inputmode="numeric" placeholder="Rp 0" oninput="window.formatRupiah(this)" required></div>
+            <div class="form-group"><label>Kategori</label><select id="annualNewCategory" class="form-control"></select></div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('addAnnualBudgetItemModal')">Batal</button><button type="submit" class="btn btn-primary">Tambah</button></div>
+        </form>
     </div>
 </div>
 
