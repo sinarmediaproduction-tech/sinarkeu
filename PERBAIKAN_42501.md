@@ -21,6 +21,11 @@ di header file SQL tersebut.
 Notifikasi aplikasi di `js/db.js` kini juga menyebut RLS dan nama migrasi
 yang harus dijalankan, alih-alih mengarahkan pengguna memeriksa API key.
 
+Paket ini juga memastikan request `settings` dan `backups` tetap memilih JWT
+Supabase untuk buku bersama bila daftar role sedang terlambat dimuat saat
+aplikasi dibuka. Tanpa fallback ini, request dapat salah jatuh ke anon key
+dan akan ditolak RLS meski policy database sudah benar.
+
 Setelah dijalankan, policy lama seperti `anon_full_access`,
 `authenticated_full_access`, dan `shared_settings_admin_*` tidak boleh lagi
 muncul pada tabel `settings` atau `backups`; policy tersebut permissive dan

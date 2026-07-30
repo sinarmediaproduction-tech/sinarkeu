@@ -175,7 +175,20 @@ window.skGetMenuVisible = function(bookId, menuKey, roleOverride) {
 // dipakai lagi untuk menentukan visibilitas menu/Setelan -- pakai
 // skComputeGlobalRole untuk itu.
 window.skIsSharedBookId = function(bookId) {
-    return !!bookId && Object.prototype.hasOwnProperty.call(window._skSharedRoles, bookId);
+    if (!bookId) return false;
+    if (Object.prototype.hasOwnProperty.call(window._skSharedRoles, bookId)) return true;
+
+    // _skSharedRoles diisi ulang dari jaringan saat app mulai. Jika request
+    // awal itu sempat gagal/terlambat, daftar role dapat kosong sesaat padahal
+    // metadata buku yang sudah dimuat masih menandainya sebagai shared.
+    // Mengandalkan role saja membuat callSupabaseAPI jatuh ke anon key untuk
+    // settings/backup dan kemudian ditolak policy RLS (42501). Metadata ini
+    // hanya fallback klasifikasi client; otorisasi tetap sepenuhnya diputuskan
+    // oleh JWT + RLS Supabase pada server.
+    const book = Array.isArray(window.books)
+        ? window.books.find(function(item) { return item && item.id === bookId; })
+        : null;
+    return !!(book && book._isShared === true);
 };
 
 window.skGetRoleForBook = function(bookId) {
