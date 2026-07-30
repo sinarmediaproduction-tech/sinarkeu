@@ -262,6 +262,7 @@ window.pullFromCloudSilently = async function() {
             window.render();
             window._lastSyncTime = new Date();
             window.updateSyncTimeBadge();
+            if (window._maybeWarnLockedTx) window._maybeWarnLockedTx();
         }
     } finally {
         // Pastikan lock selalu dilepas, bahkan jika ada exception tak terduga.
@@ -337,6 +338,7 @@ window.pullAllBooksFromCloud = async function() {
     await Promise.allSettled(bookIds.map(pullOneBook));
     window._lastSyncTime = new Date();
     window.updateSyncTimeBadge();
+    if (window._maybeWarnLockedTx) window._maybeWarnLockedTx();
     console.log('[Sync] Selesai pull semua buku —', bookIds.length, 'buku diproses');
 };
 

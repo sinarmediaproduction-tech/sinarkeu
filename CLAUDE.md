@@ -100,9 +100,14 @@ di repo ini SAMA PERSIS dengan yang disajikan ke browser.
   isolation — lihat `js/account.js` dan `ACC_GLOBAL_KEYS` di `config.js`).
 - **Data cloud (opsional):** Supabase, kredensial user disimpan terenkripsi
   client-side (AES-256-GCM + PBKDF2, lihat `js/crypto.js`). Kolom finansial
-  sensitif (`amount`, `category`, `description`, `attachment`, `type`)
+  sensitif (`amount`, `category`, `description`, `attachment`, `type`) DULU
   dienkripsi jadi satu kolom `enc_payload` sebelum dikirim ke server — lihat
-  `sql/harden_transactions_encryption.sql` untuk migrasi & alasannya.
+  `sql/harden_transactions_encryption.sql` untuk migrasi & alasannya. **[ENKRIPSI
+  DINONAKTIFKAN]** enkripsi transaksi baru sudah dimatikan (lihat "Catatan
+  Insiden: Transaksi Terkunci akibat Rotasi Password" di bawah) — transaksi
+  baru ditulis plaintext ke kolom asli. `enc_payload`/`decodeCloudTxRow` di
+  `js/crypto.js` hanya dipertahankan untuk membaca baris LAMA yang sempat
+  ditulis terenkripsi sebelum perubahan ini.
 - **Sinkronisasi antar device:** deteksi konflik untuk row singleton
   (`js/sync-conflict.js`), butuh trigger `updated_at` di server — lihat
   `sql/fix_server_side_updated_at.sql`.
@@ -555,3 +560,51 @@ Kalau menambah key setting per-buku baru di masa depan: cukup daftarkan di
 `window.DUPLICATE_BOOK_SETTINGS_MAP` (dipakai bersama oleh fitur Duplikat
 Buku) — fix ini otomatis ikut mencakupnya, tidak perlu sentuh
 `js/auth.js`/`js/db.js` lagi.
+
+## Catatan Insiden: Transaksi Terkunci akibat Rotasi Password (Juli 2026)
+
+**Gejala:** 48 transaksi di sebuah buku bersama tampil jumlah 0 / kategori
+kosong, dengan `console.warn('[Crypto] Gagal dekripsi transaksi ... OperationError')`
+bertumpuk. Baris terkait di database tetap punya `enc_payload` terisi, tapi
+kolom plaintext lama (`amount`/`category`/dst) sudah kosong (sudah migrasi ke
+`enc_payload`), jadi fallback `decodeCloudTxRow` menampilkan nilai kosong,
+bukan error yang jelas.
+
+**Akar masalah:** kunci enkripsi (`window._sessionCryptoKey`) diturunkan dari
+password LOKAL per device/akun. Untuk buku bersama, tiap anggota device-nya
+sendiri punya kunci sendiri — data yang dienkripsi salah satu anggota TIDAK
+BISA didekripsi anggota lain. 48 baris ini ditulis anggota lain dari
+device/password mereka sendiri, sehingga permanen tidak terbaca dari device
+yang dipakai untuk diagnosis.
+
+**Fix yang sudah diterapkan (bertahap, di beberapa sesi):**
+1. Enkripsi field transaksi (`enc_payload`) untuk transaksi BARU **dimatikan**
+   (lihat `[ENKRIPSI DINONAKTIFKAN]` di `js/crypto.js`/`js/transaction.js`).
+   Semua pemanggil sekarang menulis plaintext ke kolom asli. `enc_payload`
+   hanya dipertahankan untuk membaca baris lama.
+2. `js/account.js` (form Edit Akun): sebelum diam-diam menganggap field
+   password sebagai rotasi kunci, sistem sekarang mengecek dulu apakah
+   password yang diketik SAMA dengan yang aktif (lewat `sk_crypto_check`).
+   Kalau beda, user WAJIB konfirmasi eksplisit (ketik `GANTI PASSWORD`)
+   sebelum kunci benar-benar dirotasi — mencegah rotasi tidak sengaja akibat
+   typo.
+3. `js/crypto.js` — `window._lockedTxIds` + `window._maybeWarnLockedTx()`:
+   setiap kegagalan dekripsi sekarang dicatat, dan sekali per sesi (dipanggil
+   dari `pullFromCloudSilently`/`pullAllBooksFromCloud` di `js/transaction.js`
+   setelah render) ditampilkan toast ke user kalau ada baris terkunci —
+   supaya tidak lagi diam-diam tersembunyi berminggu-minggu seperti kasus ini.
+4. `recovery-enc-payload.html` — alat pemulihan sekali-pakai: Tahap 1
+   memindai & mencoba kandidat password lama, Tahap 2 menerapkan hasil yang
+   berhasil didekripsi ke kolom plaintext. **Tahap 4 (baru):** untuk baris
+   yang TETAP terkunci setelah semua kandidat dicoba, tersedia tombol hapus
+   permanen (perlu ketik `HAPUS PERMANEN`) — dipakai ketika isi baris memang
+   sudah diputuskan tidak perlu/tidak mungkin dipulihkan (mis. anggota yang
+   menulisnya sudah tidak diketahui/tidak bisa dihubungi). Jalankan file ini
+   langsung dari perangkat, lalu hapus dari server setelah selesai dipakai.
+
+**Kalau kejadian serupa muncul lagi** (baris terkunci baru, bukan transaksi
+lama pra-migrasi): karena enkripsi transaksi baru sudah dimatikan, kemungkinan
+besar berarti ada device yang masih menjalankan build LAMA (cache service
+worker belum ter-update — cek `CACHE_VERSION` di `sw.js` sudah dinaikkan
+setelah setiap perubahan) atau ada jalur tulis baru yang belum diaudit untuk
+memastikan tidak lagi memanggil fungsi enkripsi transaksi.

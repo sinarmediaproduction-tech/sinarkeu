@@ -392,6 +392,31 @@ window.getTelegramConfigDecrypted = async function() {
 // yang dipakai di seluruh app (window.txs dst). Mendukung baris LAMA (belum
 // bermigrasi, masih plaintext di kolom asli) secara transparan, supaya
 // migrasi bisa berjalan bertahap tanpa kehilangan data.
+// [FIX SILENT LOCKED-TX] SEBELUM INI: transaksi yang gagal didekripsi (kunci
+// sesi tidak cocok dengan enc_payload -- lihat riwayat kasus 48 transaksi
+// akibat rotasi password di js/account.js) hanya mencatat console.warn.
+// Console tidak pernah dilihat pengguna biasa, jadi baris yang tampil
+// jumlah 0/kategori kosong bisa tidak disadari berminggu-minggu (baru
+// ketahuan lewat laporan manual). Sekarang tiap kegagalan dekripsi dicatat
+// ke window._lockedTxIds, dan window._maybeWarnLockedTx() (dipanggil sekali
+// di akhir tiap siklus sinkron penuh -- lihat pullFromCloudSilently &
+// pullAllBooksFromCloud di transaction.js) menampilkan toast SEKALI per
+// sesi kalau ada baris yang terkunci, mengarahkan ke recovery-enc-payload.html.
+window._lockedTxIds = window._lockedTxIds || new Set();
+window._lockedTxWarnShown = window._lockedTxWarnShown || false;
+window._maybeWarnLockedTx = function() {
+    if (window._lockedTxWarnShown) return;
+    if (!window._lockedTxIds || window._lockedTxIds.size === 0) return;
+    window._lockedTxWarnShown = true;
+    const n = window._lockedTxIds.size;
+    if (window.showToast) {
+        window.showToast(
+            `${n} transaksi lama tidak bisa ditampilkan (terkunci, kunci enkripsi tidak cocok). Data tidak hilang di server -- gunakan recovery-enc-payload.html untuk memulihkan atau menghapusnya.`,
+            'warning'
+        );
+    }
+};
+
 window.decodeCloudTxRow = async function(c) {
     if (c.enc_payload && window._sessionCryptoKey) {
         try {
@@ -404,6 +429,7 @@ window.decodeCloudTxRow = async function(c) {
                 attachment: d.attachment || null, updated_at: c.updated_at || null
             };
         } catch (e) {
+            window._lockedTxIds.add(c.id);
             console.warn('[Crypto] Gagal dekripsi transaksi', c.id, '-- fallback ke kolom plaintext (jika ada).', e);
         }
     }

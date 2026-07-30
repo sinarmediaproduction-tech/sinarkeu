@@ -104,6 +104,25 @@
     <div id="log"></div>
     <div id="resultTableWrap"></div>
   </div>
+
+  <div class="card" id="lockedCard" style="display:none;">
+    <h2>4. Transaksi yang Masih Terkunci</h2>
+    <p class="hint">
+      Baris di bawah ini tidak cocok dengan kandidat password manapun di atas. Kalau kamu sudah
+      tidak berniat memulihkan isinya (mis. tidak tahu/tidak ingat password anggota yang menulis
+      baris ini), kamu bisa menghapusnya permanen daripada dibiarkan tampil sebagai transaksi
+      kosong/nol di aplikasi utama.
+    </p>
+    <div id="lockedTableWrap"></div>
+    <div class="banner" style="border-color:var(--danger); background:#FBEAEA; color:#6E2020;">
+      ⚠️ Penghapusan ini <b>permanen dan tidak bisa dibatalkan</b>. Isi asli baris ini (jumlah,
+      kategori, keterangan) sudah tidak bisa dibaca lagi, tapi ID &amp; tanggalnya akan hilang juga.
+      Pastikan sudah membuat backup cloud/manual dulu kalau ragu.
+    </div>
+    <label>Ketik <code>HAPUS PERMANEN</code> untuk mengaktifkan tombol hapus</label>
+    <input type="text" id="deleteConfirmInput" placeholder="HAPUS PERMANEN">
+    <button class="btn-danger" id="deleteLockedBtn" type="button" disabled>Tahap 4 — Hapus Semua Transaksi Terkunci di Atas</button>
+  </div>
 </div>
 
 <script>
@@ -169,12 +188,18 @@ async function sbFetch(baseUrl, apiKey, method, path, body) {
 }
 
 let scanResults = []; // { row, recoveredData, viaPasswordIndex }
+let lockedRows = []; // rows that didn't match any candidate password
 
 document.getElementById('scanBtn').addEventListener('click', async () => {
   clearLog();
   document.getElementById('resultTableWrap').innerHTML = '';
+  document.getElementById('lockedCard').style.display = 'none';
+  document.getElementById('lockedTableWrap').innerHTML = '';
+  document.getElementById('deleteConfirmInput').value = '';
+  document.getElementById('deleteLockedBtn').disabled = true;
   document.getElementById('applyBtn').disabled = true;
   scanResults = [];
+  lockedRows = [];
 
   const baseUrl = document.getElementById('sbUrl').value.trim().replace(/\/+$/, '');
   const apiKey = document.getElementById('sbKey').value.trim();
@@ -223,13 +248,64 @@ document.getElementById('scanBtn').addEventListener('click', async () => {
         break;
       } catch (e) { /* coba kandidat berikutnya */ }
     }
-    if (!done) failed++;
+    if (!done) { lockedRows.push(row); failed++; }
   }
   log(`Selesai. Berhasil dipulihkan: ${recovered}. Masih terkunci (tidak cocok kandidat manapun): ${failed}.`,
       recovered > 0 ? 'row-ok' : 'row-fail');
 
   renderResultTable(allRows.length);
   if (recovered > 0) document.getElementById('applyBtn').disabled = false;
+  renderLockedTable();
+});
+
+function renderLockedTable() {
+  const card = document.getElementById('lockedCard');
+  if (lockedRows.length === 0) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  let html = `<p class="hint">${lockedRows.length} baris masih terkunci.</p>`;
+  html += `<table><thead><tr><th>ID</th><th>Book ID</th><th>Tanggal</th></tr></thead><tbody>`;
+  lockedRows.slice(0, 200).forEach(r => {
+    html += `<tr><td>${escapeHtml(r.id)}</td><td>${escapeHtml(r.book_id || '')}</td><td>${escapeHtml(r.date || '')}</td></tr>`;
+  });
+  html += `</tbody></table>`;
+  if (lockedRows.length > 200) html += `<p class="hint">Menampilkan 200 dari ${lockedRows.length} baris yang masih terkunci (semuanya akan tetap dihapus kalau kamu lanjut ke Tahap 4).</p>`;
+  document.getElementById('lockedTableWrap').innerHTML = html;
+}
+
+document.getElementById('deleteConfirmInput').addEventListener('input', (e) => {
+  document.getElementById('deleteLockedBtn').disabled = e.target.value.trim() !== 'HAPUS PERMANEN' || lockedRows.length === 0;
+});
+
+document.getElementById('deleteLockedBtn').addEventListener('click', async () => {
+  if (lockedRows.length === 0) return;
+  if (!confirm(`Akan MENGHAPUS PERMANEN ${lockedRows.length} transaksi terkunci dari Supabase. Tindakan ini tidak bisa dibatalkan. Lanjutkan?`)) return;
+
+  const baseUrl = document.getElementById('sbUrl').value.trim().replace(/\/+$/, '');
+  const apiKey = document.getElementById('sbKey').value.trim();
+  document.getElementById('deleteLockedBtn').disabled = true;
+  document.getElementById('deleteConfirmInput').value = '';
+
+  // Hapus per-batch pakai filter id=in.(...) supaya tidak perlu satu request per baris.
+  const BATCH = 50;
+  let ok = 0, fail = 0;
+  for (let i = 0; i < lockedRows.length; i += BATCH) {
+    const batch = lockedRows.slice(i, i + BATCH);
+    const idList = batch.map(r => encodeURIComponent(r.id)).join(',');
+    try {
+      await sbFetch(baseUrl, apiKey, 'DELETE', `transactions?id=in.(${idList})`);
+      ok += batch.length;
+      log(`Terhapus: ${batch.map(r => r.id).join(', ')}`, 'row-ok');
+    } catch (e) {
+      fail += batch.length;
+      log(`GAGAL menghapus batch (${batch.map(r => r.id).join(', ')}): ${e.message}`, 'row-fail');
+    }
+  }
+  log(`Selesai menghapus transaksi terkunci. Berhasil: ${ok}. Gagal: ${fail}.`, fail === 0 ? 'row-ok' : 'row-fail');
+  if (ok > 0) {
+    lockedRows = lockedRows.filter(r => fail === 0); // kalau semua sukses, kosongkan; kalau ada yang gagal, biarkan log jadi acuan manual
+    if (fail === 0) { lockedRows = []; renderLockedTable(); }
+  }
+  log('Buka ulang aplikasi SinarKeu utama dan lakukan sinkronisasi manual untuk memastikan transaksi yang dihapus sudah tidak muncul lagi.');
 });
 
 function renderResultTable(total) {
