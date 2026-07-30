@@ -338,6 +338,17 @@ window._closeShoppingListChildModals = function() {
     });
 };
 
+// Fase Kehidupan adalah modal biasa yang dapat dibuka dari kartu Dashboard
+// maupun sidebar. Karena bukan fullview, ia tidak ikut tertutup otomatis
+// saat pengguna berpindah ke menu sidebar lain. Tutup juga modal AI terkait
+// agar tidak ada overlay yang tertinggal di atas halaman baru.
+window._closeFaseKehidupanModals = function() {
+    ['faseKehidupanModal', 'faseAIModal'].forEach(function(cid) {
+        var el = document.getElementById(cid);
+        if (el) el.classList.remove('show');
+    });
+};
+
 // Modal utility (dipanggil dari onclick di HTML)
 window.openModal = function(id) {
     // [FIX UX] addModal & editModal sekarang boleh dibuka offline -- lihat
@@ -357,6 +368,7 @@ window.openModal = function(id) {
     // sidebar aktif, dan tutup drawer mobile kalau lagi terbuka.
     if (window.FULLVIEW_MODALS[id]) {
         if (id !== 'shoppingListModal') window._closeShoppingListChildModals();
+        window._closeFaseKehidupanModals();
         document.body.classList.remove('view-settings');
         document.getElementById('setelanModal').classList.remove('show');
         // Kalau lagi pindah langsung dari satu menu full-page ke menu
