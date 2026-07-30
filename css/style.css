@@ -2607,6 +2607,11 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   border-radius: var(--radius-pill);
   white-space: nowrap;
 }
+.slist-summary-meta.is-negative {
+  color: #F2A7A0;
+  background: rgba(200,60,50,.18);
+  border: 1px solid rgba(200,60,50,.42);
+}
 
 /* [KONTRAS] Label pill "Harga Komoditas" (Harga Pangan otomatis / Update
    terakhir / Komoditas Lain) sengaja TIDAK pakai .slist-summary-meta di

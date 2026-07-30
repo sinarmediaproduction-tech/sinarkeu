@@ -557,6 +557,12 @@ window._updateShoppingListSummary = function(items) {
         budgetRemainingEl.innerText = window.rp(sisaAnggaran);
         budgetRemainingEl.classList.toggle('is-negative', sisaAnggaran < 0);
     }
+    const absorptionEl = document.getElementById('slistBudgetAbsorptionMeta');
+    if (absorptionEl) {
+        const pct = totalBudget > 0 ? Math.round((totalBelanja / totalBudget) * 100) : 0;
+        absorptionEl.innerText = `Penyerapan anggaran ${pct}%`;
+        absorptionEl.classList.toggle('is-negative', pct > 100);
+    }
 };
 
 window.addShoppingListItem = function(e) {
