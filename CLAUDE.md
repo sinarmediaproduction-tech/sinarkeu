@@ -608,3 +608,31 @@ besar berarti ada device yang masih menjalankan build LAMA (cache service
 worker belum ter-update — cek `CACHE_VERSION` di `sw.js` sudah dinaikkan
 setelah setiap perubahan) atau ada jalur tulis baru yang belum diaudit untuk
 memastikan tidak lagi memanggil fungsi enkripsi transaksi.
+
+## Fix: Satu Pintu Kredensial Supabase di Halaman Setelan (Juli 2026)
+
+**Masalah:** halaman Setelan punya DUA form berbeda untuk mengisi URL & Anon
+Key Supabase yang sama: panel "Akun" (`newAccUrl`/`newAccKey`, lewat
+`window.editAccount`, dengan alur aman konfirmasi rotasi password) DAN panel
+"Koneksi Supabase" (`supabaseUrlInput`/`supabaseKeyInput` + `testCloudConnection`,
+langsung menulis ke kunci global lewat `window.reEncryptCredentials`). Bug
+turunannya: mengubah kredensial lewat panel "Koneksi Supabase" tidak
+memperbarui salinan namespaced per-akun (`sk_a<id>_enc_supabase_url` dkk),
+jadi begitu user pindah akun lalu kembali, perubahan itu diam-diam hilang
+tertimpa snapshot lama.
+
+**Fix:** panel "Koneksi Supabase" (`index.html`, tab `data-tab-panel="supabase"`)
+tidak lagi punya input URL/Key sendiri — sekarang cuma menampilkan URL yang
+sedang aktif (read-only, `#supabaseCurrentUrlDisplay`) + tombol "Tes Koneksi"
+yang menguji kredensial yang SUDAH tersimpan (tanpa input baru), dan tombol
+"Kelola di Panel Akun" yang lompat ke panel Akun & langsung membuka form edit
+akun aktif (`window.editAccount`). `window.testCloudConnection()` (`js/settings.js`)
+ditulis ulang untuk baca dari `window.globalSupabaseUrl/Key` yang sudah ada,
+bukan dari input yang sudah dihapus. Satu-satunya tempat mengisi/mengubah URL
+& Anon Key sekarang panel **Akun**. `window.reEncryptCredentials` (`js/crypto.js`)
+dipertahankan (tidak dihapus, tidak dipakai lagi) untuk kompatibilitas kalau
+dibutuhkan lagi nanti.
+
+Kalau menambah form kredensial Supabase baru di masa depan: jangan buat input
+baru di tempat lain — arahkan ke panel Akun (`window.editAccount`) supaya
+tetap satu pintu.

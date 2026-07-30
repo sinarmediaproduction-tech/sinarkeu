@@ -1050,6 +1050,25 @@ alter table public.settings
         </div>
 
         <!-- Koneksi Supabase -->
+        <!-- [SATU PINTU KREDENSIAL] SEBELUM INI: panel ini punya input URL & Anon
+             Key sendiri (supabaseUrlInput/supabaseKeyInput) yang lewat
+             testCloudConnection() menulis kredensial LANGSUNG ke kunci global
+             (window.reEncryptCredentials -> saveEncryptedCredentials), TANPA
+             menyentuh salinan namespaced per-akun (sk_a<id>_enc_supabase_url dkk
+             -- lihat window._saveOutAccount di js/account.js). Akibatnya kalau
+             kredensial diubah dari sini, salinan per-akun jadi USANG/tidak
+             sinkron -- begitu user pindah akun lalu kembali lagi
+             (switchAccount -> _restoreInAccount), perubahan yang baru saja
+             dilakukan dari panel ini DIAM-DIAM HILANG, tertimpa nilai lama yang
+             tersimpan di snapshot per-akun. Ini juga membuat tampilan Setelan
+             punya DUA form kredensial Supabase (di sini & di panel "Akun" di
+             atas) yang membingungkan dan gampang dikira dua hal berbeda.
+             Perbaikan: panel ini sekarang hanya MENAMPILKAN status koneksi akun
+             aktif (read-only) + tombol "Tes Koneksi" yang memakai kredensial
+             yang SUDAH tersimpan (tidak ada input baru). Satu-satunya pintu
+             untuk mengisi/mengubah URL & Anon Key adalah panel "Akun" di atas
+             (window.editAccount), yang sudah melalui alur aman rotasi
+             password (lihat catatan di js/account.js). -->
         <div class="data-management-panel setelan-tab-panel" data-tab-panel="supabase">
             <div id="storageEstimPanel" style="background:var(--info-lt); border:1px solid var(--info); border-radius: var(--radius-sm); padding:14px 16px; margin-bottom:16px;">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
@@ -1065,12 +1084,18 @@ alter table public.settings
                     <span data-i18n="supabase_section">Koneksi Supabase</span>
                     <span class="setelan-badge setelan-badge--success"><span data-i18n="supabase_all_books">Berlaku untuk semua buku</span></span>
                 </div>
-                <label data-i18n="supabase_url_label">Supabase URL Connection</label>
-                <input type="text" id="supabaseUrlInput" class="form-control" placeholder="https://yourproject.supabase.co" style="margin-bottom: 10px;">
-                <label data-i18n="supabase_key_label">Supabase Anon Key</label>
-                <input type="password" id="supabaseKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-                <div class="cloud-connect-row">
-                    <button class="btn btn-primary" style="width:100%" onclick="testCloudConnection()" data-i18n="connect_sync">Hubungkan & Sinkronkan Semua Buku</button>
+                <div style="font-size:.72rem; color:var(--ink-faint); background:var(--panel-alt, #F4F4F1); border:1px solid var(--rule); border-radius: var(--radius-sm); padding:8px 10px; margin-bottom:10px; word-break:break-all;">
+                    <span id="supabaseCurrentUrlDisplay">–</span>
+                </div>
+                <div class="setelan-hint" style="margin-bottom:10px;">
+                    Untuk mengisi atau mengubah URL &amp; Anon Key, kelola lewat panel
+                    <strong>Akun</strong> di atas (setiap akun punya kredensial &amp; password
+                    enkripsinya sendiri) — bukan di sini, supaya tidak ada dua tempat
+                    berbeda yang menyimpan kredensial yang sama.
+                </div>
+                <div class="cloud-connect-row" style="display:flex; gap:8px;">
+                    <button class="btn btn-secondary" style="flex:1;" onclick="window.switchSetelanTab('akun'); var activeId=window.getActiveAccountId ? window.getActiveAccountId() : null; if (activeId && window.editAccount) window.editAccount(activeId);">Kelola di Panel Akun</button>
+                    <button class="btn btn-primary" style="flex:1;" onclick="testCloudConnection()" data-i18n="connect_sync">Tes Koneksi</button>
                 </div>
                 <div id="connectionStatus" style="margin-top:8px"></div>
                 <div class="setelan-divider"></div>

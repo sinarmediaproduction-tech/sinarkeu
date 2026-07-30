@@ -16,12 +16,13 @@ window.switchSetelanTab = function(tabId) {
 };
 
 window.openSetelanModal = function(initialTab) {
-    var urlEl = document.getElementById('supabaseUrlInput');
-    var keyEl = document.getElementById('supabaseKeyInput');
+    var urlDisplayEl = document.getElementById('supabaseCurrentUrlDisplay');
     var statusEl = document.getElementById('connectionStatus');
-    
-    if (urlEl) urlEl.value = window.getCloudUrl() || window.globalSupabaseUrl || '';
-    if (keyEl) keyEl.value = '';
+
+    if (urlDisplayEl) {
+        var curUrl = window.getCloudUrl() || window.globalSupabaseUrl || '';
+        urlDisplayEl.innerText = curUrl ? curUrl : 'Belum terhubung ke Supabase manapun.';
+    }
     if (statusEl) statusEl.innerHTML = '';
     
     var workerInp = document.getElementById('aiWorkerUrlInput');
@@ -185,26 +186,31 @@ window.updateAppSidebarNav = function(which) {
     });
 };
 
+// [SATU PINTU KREDENSIAL] Tidak lagi baca dari input URL/Key sendiri (lihat
+// catatan di index.html panel "Koneksi Supabase") -- fungsi ini sekarang
+// cuma MENGUJI kredensial yang sudah tersimpan untuk akun aktif
+// (window.globalSupabaseUrl/Key, diisi saat unlock/switch akun). Kalau belum
+// ada kredensial sama sekali, arahkan user ke panel Akun (satu-satunya
+// tempat mengisi URL & Anon Key), jangan minta input ulang di sini.
 window.testCloudConnection = async function() {
-    var urlInput = document.getElementById('supabaseUrlInput').value.trim();
-    var keyInput = document.getElementById('supabaseKeyInput').value.trim();
     var statusDiv = document.getElementById('connectionStatus');
-    
+    var urlInput = window.getCloudUrl() || window.globalSupabaseUrl || '';
+    var keyInput = window.globalSupabaseKey || '';
+
     if (!urlInput || !keyInput) {
-        statusDiv.innerHTML = '<div class="connection-status error">Gagal: Harap isi URL & Anon Key!</div>';
+        statusDiv.innerHTML = '<div class="connection-status error">Belum ada URL & Anon Key untuk akun ini. Isi lewat panel Akun terlebih dahulu.</div>';
         return;
     }
-    
+
     statusDiv.innerHTML = '<div class="connection-status testing">Sedang mengetes koneksi ke Supabase...</div>';
     window.globalSupabaseUrl = urlInput;
     window.globalSupabaseKey = keyInput;
-    
+
     var testFetch = await window.callSupabaseAPI('transactions', 'GET', null, '?limit=1');
-    
+
     if (testFetch !== null) {
-        await window.reEncryptCredentials(window.globalSupabaseUrl, window.globalSupabaseKey);
-        statusDiv.innerHTML = '<div class="connection-status success">Sukses! Koneksi terenkripsi & berlaku untuk semua buku. Memulai unduh data...</div>';
-        window.showToast('Supabase terhubung & terenkripsi!', 'success');
+        statusDiv.innerHTML = '<div class="connection-status success">Koneksi berhasil. Memulai unduh data...</div>';
+        window.showToast('Koneksi Supabase OK!', 'success');
         window.updateSyncStatusBadge();
         await window.pullAllSettings();
         window.updateBookSelectDropdown();
@@ -213,9 +219,7 @@ window.testCloudConnection = async function() {
         await window.pullAllBooksFromCloud();
         window.updateUIForOnlineStatus();
     } else {
-        window.globalSupabaseUrl = '';
-        window.globalSupabaseKey = '';
-        statusDiv.innerHTML = '<div class="connection-status error">Koneksi Gagal: Silakan periksa URL, Key, atau Skema Tabel SQL Anda!</div>';
+        statusDiv.innerHTML = '<div class="connection-status error">Koneksi Gagal: Silakan periksa URL/Key lewat panel Akun, atau skema tabel SQL Anda!</div>';
         window.showToast('Koneksi cloud gagal!', 'error');
         window.updateSyncStatusBadge();
     }
