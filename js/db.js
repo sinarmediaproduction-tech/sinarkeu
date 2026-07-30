@@ -184,7 +184,7 @@ window.pushCryptoSaltCheck = async function(saltB64, checkB64) {
     // semula -- aman karena baris ber-tag NULL tidak dibatasi unique constraint.
     const onConflict = tag ? '?on_conflict=book_id,key,account_tag' : '';
     const result = await window.callSupabaseAPI(
-        'settings', 'POST', payload, onConflict, { bookId: resolvedBookId }
+        'settings', 'POST', payload, onConflict, { bookId: 'global' }
     );
     return result !== null;
 };
