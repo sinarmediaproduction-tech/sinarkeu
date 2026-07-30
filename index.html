@@ -1294,12 +1294,24 @@ alter table public.settings
 <div id="shoppingListModal" class="modal fullview-modal">
     <div class="modal-content wide slist-modal">
         <div class="modal-header"><h3>Belanja Bulanan</h3><button class="modal-close" onclick="window.openMobileDrawer()" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button></div>
-        <div class="slist-summary-card">
-            <div>
-                <span class="slist-summary-label">Sisa Perkiraan Belanja</span>
-                <span class="slist-summary-value" id="slistRemainingValue">Rp 0</span>
+        <div class="slist-summary-grid">
+            <div class="slist-summary-card">
+                <span class="slist-summary-label">Anggaran Bulanan</span>
+                <span class="slist-summary-value" id="slistBudgetValue">Rp 0</span>
             </div>
-            <span class="slist-summary-meta" id="slistProgressCount">0 dari 0 dibeli</span>
+            <div class="slist-summary-card">
+                <div>
+                    <span class="slist-summary-label">Sisa Perkiraan Belanja / Total Belanja</span>
+                    <span class="slist-summary-value" id="slistRemainingValue">Rp 0</span>
+                    <span class="slist-summary-value-sep">/</span>
+                    <span class="slist-summary-value slist-summary-value-total" id="slistTotalValue">Rp 0</span>
+                </div>
+                <span class="slist-summary-meta" id="slistProgressCount">0 dari 0 dibeli</span>
+            </div>
+            <div class="slist-summary-card">
+                <span class="slist-summary-label">Sisa Anggaran</span>
+                <span class="slist-summary-value" id="slistBudgetRemainingValue">Rp 0</span>
+            </div>
         </div>
         <div id="slistBudgetWarnings" class="slist-budget-warnings"></div>
         <div id="slistForecastCard" class="slist-forecast-card">

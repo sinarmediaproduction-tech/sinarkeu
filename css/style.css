@@ -2469,6 +2469,12 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 .dbudget-empty-hint { font-size: .74rem; color: var(--ink-faint); text-align: center; padding: 22px 0; }
 
 /* ── Belanja Bulanan ── */
+.slist-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
 .slist-summary-card {
   display: flex;
   align-items: center;
@@ -2478,7 +2484,24 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   background: linear-gradient(135deg, #22335A 0%, #0C1424 100%);
   border-radius: var(--radius);
   padding: 16px 20px;
-  margin-bottom: 14px;
+  margin-bottom: 0;
+}
+.slist-summary-value-sep {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: rgba(242,244,247,.45);
+  margin: 0 4px;
+}
+.slist-summary-value-total {
+  font-size: 1.1rem;
+  color: rgba(242,244,247,.78);
+}
+.slist-summary-value.is-negative {
+  color: #F2A7A0;
+}
+@media (max-width: 760px) {
+  .slist-summary-grid { grid-template-columns: 1fr; gap: 10px; }
 }
 .slist-summary-label {
   display: block;

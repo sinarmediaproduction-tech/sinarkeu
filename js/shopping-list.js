@@ -468,10 +468,32 @@ window._updateShoppingListSummary = function(items) {
     const total = items.length;
     const done = items.filter(i => i.done).length;
     const remaining = items.filter(i => !i.done).reduce((sum, i) => sum + window._shoppingListItemSubtotal(i), 0);
+    const totalBelanja = items.reduce((sum, i) => sum + window._shoppingListItemSubtotal(i), 0);
+
     const valEl = document.getElementById('slistRemainingValue');
     if (valEl) valEl.innerText = window.rp(remaining);
+    const totalValEl = document.getElementById('slistTotalValue');
+    if (totalValEl) totalValEl.innerText = window.rp(totalBelanja);
     const metaEl = document.getElementById('slistProgressCount');
     if (metaEl) metaEl.innerText = `${done} dari ${total} dibeli`;
+
+    // Anggaran Bulanan (efektif -- custom bulan ini, atau jatuh balik ke
+    // Anggaran Dasar) & Sisa Anggaran (anggaran dikurangi total belanja).
+    const budgetEl = document.getElementById('slistBudgetValue');
+    const budgetRemainingEl = document.getElementById('slistBudgetRemainingValue');
+    let totalBudget = 0;
+    if (window.EXPENSE_CATEGORIES && typeof window.getEffectiveBudget === 'function') {
+        const now = new Date();
+        const effective = window.getEffectiveBudget(now.getFullYear(), now.getMonth() + 1, window.currentBookId);
+        const currentBudget = effective.budget || {};
+        window.EXPENSE_CATEGORIES.forEach(c => totalBudget += (currentBudget[c] || 0));
+    }
+    if (budgetEl) budgetEl.innerText = window.rp(totalBudget);
+    if (budgetRemainingEl) {
+        const sisaAnggaran = totalBudget - totalBelanja;
+        budgetRemainingEl.innerText = window.rp(sisaAnggaran);
+        budgetRemainingEl.classList.toggle('is-negative', sisaAnggaran < 0);
+    }
 };
 
 window.addShoppingListItem = function(e) {
