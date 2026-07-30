@@ -26,6 +26,10 @@ Supabase untuk buku bersama bila daftar role sedang terlambat dimuat saat
 aplikasi dibuka. Tanpa fallback ini, request dapat salah jatuh ke anon key
 dan akan ditolak RLS meski policy database sudah benar.
 
+Selain fallback, semua request tulis dan baca cadangan kini meneruskan ID
+buku secara eksplisit ke lapisan autentikasi. Ini mencegah request buku
+bersama salah memakai anon key karena konteks buku gagal diinfer dari payload.
+
 Setelah dijalankan, policy lama seperti `anon_full_access`,
 `authenticated_full_access`, dan `shared_settings_admin_*` tidak boleh lagi
 muncul pada tabel `settings` atau `backups`; policy tersebut permissive dan

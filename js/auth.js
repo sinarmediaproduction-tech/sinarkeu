@@ -513,10 +513,14 @@ window.skCheckAnonHardeningForBook = async function(bookId) {
 // ── Patch callSupabaseAPI: pakai JWT user untuk request ke buku shared ──
 const _originalCallSupabaseAPI = window.callSupabaseAPI;
 window.callSupabaseAPI = async function(table, method, body, queryString, options) {
-    let targetBookId = null;
-    if (queryString && /book_id=eq\.([^&]+)/.test(queryString)) {
+    // Pemanggil yang sudah tahu konteks buku (khususnya POST settings dan
+    // backups) dapat mengirim options.bookId. Jangan bergantung hanya pada
+    // inferensi query/body karena request tanpa filter book_id pernah salah
+    // jatuh ke anon key saat proses awal aplikasi berlangsung.
+    let targetBookId = options && options.bookId ? options.bookId : null;
+    if (!targetBookId && queryString && /book_id=eq\.([^&]+)/.test(queryString)) {
         targetBookId = decodeURIComponent(RegExp.$1);
-    } else if (body) {
+    } else if (!targetBookId && body) {
         const row = Array.isArray(body) ? body[0] : body;
         if (row && row.book_id) targetBookId = row.book_id;
     }

@@ -110,7 +110,7 @@ window.pushBackupToSupabaseForBook = async function(bookId, bookTxs, backupType)
     // bisa mendekripsi backup LAMA yang sempat dibuat terenkripsi.
     const dataToStore = JSON.stringify(bookTxs);
     const payload = [{ book_id: bookId, device_id: window.deviceId, backup_type: backupType, tx_count: bookTxs.length, data: dataToStore, created_at: new Date().toISOString(), ...(_pbTag ? { account_tag: _pbTag } : {}) }];
-    return await window.callSupabaseAPI('backups', 'POST', payload);
+    return await window.callSupabaseAPI('backups', 'POST', payload, '', { bookId: bookId });
 };
 // Membaca kolom `data` dari tabel `backups`, mendekripsi jika terenkripsi
 // (ciphertext AES-GCM base64), dengan fallback baca JSON plaintext lama
@@ -178,7 +178,11 @@ window.loadCloudBackupList = async function() {
     try {
         const _blTag = window.getAccountTag ? window.getAccountTag() : null;
         const _blTagFilter = window.tagOrFilter(_blTag, window.currentBookId);
-        const backups = await window.callSupabaseAPI('backups', 'GET', null, `?book_id=eq.${window.currentBookId}&order=created_at.desc&limit=10${_blTagFilter}`);
+        const backups = await window.callSupabaseAPI(
+            'backups', 'GET', null,
+            `?book_id=eq.${window.currentBookId}&order=created_at.desc&limit=10${_blTagFilter}`,
+            { bookId: window.currentBookId }
+        );
         window.renderCloudBackupList(backups || []);
     } catch (e) { container.innerHTML = '<div style="color:var(--danger); font-size:.7rem; text-align:center; padding:8px;">Gagal memuat cadangan cloud</div>'; }
 };
