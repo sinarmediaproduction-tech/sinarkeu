@@ -2503,6 +2503,73 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 @media (max-width: 760px) {
   .slist-summary-grid { grid-template-columns: 1fr; gap: 10px; }
 }
+
+/* ── Belanja Bulanan: rincian sisa anggaran per kategori ── */
+.slist-cat-breakdown {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.slist-cat-breakdown-title {
+  font-size: .68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--ink-faint);
+  margin-bottom: 10px;
+}
+.slist-cat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.slist-cat-row:last-child { border-bottom: none; }
+.slist-cat-row-name {
+  flex: 0 0 auto;
+  width: 108px;
+  font-size: .74rem;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.slist-cat-row-bar {
+  flex: 1 1 auto;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--paper-warm);
+  overflow: hidden;
+}
+.slist-cat-row-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--success);
+}
+.slist-cat-row-bar-fill.is-over { background: var(--danger); }
+.slist-cat-row-sisa {
+  flex: 0 0 auto;
+  width: 110px;
+  text-align: right;
+  font-size: .74rem;
+  font-weight: 600;
+  color: var(--success);
+}
+.slist-cat-row-sisa.is-over { color: var(--danger); }
+.slist-cat-breakdown-empty {
+  font-size: .74rem;
+  color: var(--ink-faint);
+  text-align: center;
+  padding: 6px 0;
+}
+@media (max-width: 640px) {
+  .slist-cat-row-name { width: 84px; }
+  .slist-cat-row-sisa { width: 92px; font-size: .7rem; }
+}
 .slist-summary-label {
   display: block;
   font-size: .62rem;

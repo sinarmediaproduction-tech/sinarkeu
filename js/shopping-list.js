@@ -240,6 +240,7 @@ window.renderShoppingList = function() {
     if (!items.length) {
         container.innerHTML = '<div class="slist-empty">Daftar belanja masih kosong. Tambahkan barang lewat form di atas.</div>';
         window._updateShoppingListSummary(items);
+        window._renderShoppingListCategoryBreakdown(items);
         window._renderShoppingListForecast(items);
         return;
     }
@@ -294,6 +295,7 @@ window.renderShoppingList = function() {
     }).join('');
 
     window._updateShoppingListSummary(items);
+    window._renderShoppingListCategoryBreakdown(items);
     window._renderShoppingListBudgetWarnings(items);
     window._renderShoppingListForecast(items);
 };
@@ -462,6 +464,63 @@ window._renderShoppingListBudgetWarnings = function(items) {
         </div>
     `).join('');
     window._lastShoppingListWarnings = warnings;
+};
+
+// ==================== RINCIAN SISA ANGGARAN PER KATEGORI ====================
+// Menjawab "anggaran mana saja yang masih bersisa": daftar tiap kategori
+// yang punya anggaran bulan ini (custom atau Anggaran Dasar), dibandingkan
+// dengan total belanja kategori itu di daftar belanja ini (SEMUA barang,
+// dicentang maupun belum -- sama seperti _renderShoppingListBudgetWarnings,
+// karena daftar ini mewakili rencana belanja bulan ini). Diurutkan dari
+// sisa TERBANYAK ke yang paling sedikit/minus, supaya kategori yang masih
+// longgar langsung terlihat di atas.
+window._renderShoppingListCategoryBreakdown = function(items) {
+    const box = document.getElementById('slistCategoryBreakdown');
+    if (!box) return;
+    if (!window.EXPENSE_CATEGORIES || typeof window.getEffectiveBudget !== 'function') {
+        box.innerHTML = '';
+        return;
+    }
+    const now = new Date();
+    const effective = window.getEffectiveBudget(now.getFullYear(), now.getMonth() + 1, window.currentBookId);
+    const currentBudget = effective.budget || {};
+
+    const catTotals = {};
+    items.forEach(i => {
+        if (i.category && window.EXPENSE_CATEGORIES.includes(i.category)) {
+            catTotals[i.category] = (catTotals[i.category] || 0) + window._shoppingListItemSubtotal(i);
+        }
+    });
+
+    const rows = window.EXPENSE_CATEGORIES
+        .filter(cat => (currentBudget[cat] || 0) > 0)
+        .map(cat => {
+            const budget = currentBudget[cat] || 0;
+            const spent = catTotals[cat] || 0;
+            const sisa = budget - spent;
+            const pct = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
+            return { cat, budget, spent, sisa, pct };
+        })
+        .sort((a, b) => b.sisa - a.sisa);
+
+    if (!rows.length) {
+        box.innerHTML = `
+            <div class="slist-cat-breakdown-title">Sisa Anggaran per Kategori</div>
+            <div class="slist-cat-breakdown-empty">Belum ada anggaran kategori yang disetel untuk bulan ini.</div>
+        `;
+        return;
+    }
+
+    box.innerHTML = `
+        <div class="slist-cat-breakdown-title">Sisa Anggaran per Kategori</div>
+        ${rows.map(r => `
+            <div class="slist-cat-row">
+                <span class="slist-cat-row-name" title="${window.escapeHtml(r.cat)}">${window.escapeHtml(r.cat)}</span>
+                <span class="slist-cat-row-bar"><span class="slist-cat-row-bar-fill${r.sisa < 0 ? ' is-over' : ''}" style="width:${r.pct}%"></span></span>
+                <span class="slist-cat-row-sisa${r.sisa < 0 ? ' is-over' : ''}">${window.rp(r.sisa)}</span>
+            </div>
+        `).join('')}
+    `;
 };
 
 window._updateShoppingListSummary = function(items) {
