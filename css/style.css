@@ -1077,6 +1077,29 @@ button:disabled, .btn:disabled,
 .hk-card-meta { font-size: .65rem; color: var(--ink-faint); }
 .hk-card-trend-btn { padding: 4px 12px !important; font-size: .68rem !important; white-space: nowrap; flex-shrink: 0; }
 
+/* Sparkline tren 30-hari yang tertanam langsung di kartu (tap untuk buka
+   grafik lengkap di modal) -- pengganti tombol "Tren" terpisah supaya
+   bentuk tren langsung kelihatan tanpa perlu klik dulu. */
+.hk-card-spark-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin-top: 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  line-height: 0;
+}
+.hk-card-spark-btn:active { opacity: 0.6; }
+.hk-card-spark { display: block; width: 100%; height: 40px; }
+.hk-card-spark-empty {
+  font-size: .65rem;
+  color: var(--ink-faint);
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--rule);
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

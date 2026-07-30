@@ -453,6 +453,30 @@ window.renderHargaKomoditasModal = function() {
     // (hampir selalu "Nasional", kurang penting) supaya kolom "Tren" yang
     // sebelumnya kepotong di luar layar (butuh scroll horizontal tabel)
     // sekarang langsung terlihat tanpa scroll.
+    // Sparkline SVG ringan dari histori 30 hari (window._hargaPanganHistory)
+    // -- dipilih dibanding Chart.js/canvas supaya tidak berat me-render
+    // banyak grafik sekaligus (1 per kartu) di kartu-kartu hape.
+    const _hkSparklineSvg = function(series, color) {
+        const prices = series.map(function(p) { return p.price; });
+        const w = 280, h = 44, pad = 3;
+        const min = Math.min.apply(null, prices);
+        const max = Math.max.apply(null, prices);
+        const range = (max - min) || 1;
+        const stepX = prices.length > 1 ? (w - pad * 2) / (prices.length - 1) : 0;
+        const pts = prices.map(function(price, i) {
+            const x = pad + i * stepX;
+            const y = pad + (1 - (price - min) / range) * (h - pad * 2);
+            return x.toFixed(1) + ',' + y.toFixed(1);
+        });
+        const linePath = 'M' + pts.join(' L');
+        const lastX = (pad + (prices.length - 1) * stepX).toFixed(1);
+        const areaPath = linePath + ' L' + lastX + ',' + (h - pad) + ' L' + pad + ',' + (h - pad) + ' Z';
+        return '<svg class="hk-card-spark" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true">' +
+            '<path d="' + areaPath + '" fill="' + color + '" opacity="0.12" stroke="none"></path>' +
+            '<path d="' + linePath + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>' +
+            '</svg>';
+    };
+
     const renderAutoCard = function(c) {
         const hit = cache.get(c.slug);
         const priceHtml = hit
@@ -460,24 +484,26 @@ window.renderHargaKomoditasModal = function() {
             : '<span style="color:var(--ink-faint);font-size:.75rem;">Belum ada data</span>';
 
         const change = _hkPctChange(c.slug);
-        let changeHtml = '<span class="hk-card-change" style="color:var(--ink-faint);">Tren belum cukup data</span>';
+        let changeColor = 'var(--ink-faint)';
+        let changeHtml = '<span class="hk-card-change" style="color:var(--ink-faint);">-</span>';
         if (change) {
             const up = change.pct > 0;
             const flat = Math.abs(change.pct) < 0.05;
-            const color = flat ? 'var(--ink-faint)' : (up ? 'var(--danger)' : 'var(--success)');
+            changeColor = flat ? 'var(--ink-faint)' : (up ? 'var(--danger)' : 'var(--success)');
             const arrow = flat ? '' : (up ? '\u25B2 ' : '\u25BC ');
-            changeHtml = '<span class="hk-card-change" style="color:' + color + '">' + arrow + Math.abs(change.pct).toFixed(1) + '%</span>';
+            changeHtml = '<span class="hk-card-change" style="color:' + changeColor + '">' + arrow + Math.abs(change.pct).toFixed(1) + '%</span>';
         }
 
-        const hasHistory = window._hargaPanganHistory && (window._hargaPanganHistory.get(c.slug) || []).length >= 2;
-        const trendBtn = hasHistory
-            ? '<button type="button" class="btn btn-secondary hk-card-trend-btn" onclick="window.openHargaKomoditasTrend(\'' + c.slug + '\')">Tren</button>'
-            : '';
+        const series = window._hargaPanganHistory && window._hargaPanganHistory.get(c.slug);
+        const hasHistory = series && series.length >= 2;
+        const sparkHtml = hasHistory
+            ? '<button type="button" class="hk-card-spark-btn" onclick="window.openHargaKomoditasTrend(\'' + c.slug + '\')" aria-label="Lihat detail tren ' + window.escapeHtml(c.name) + '">' + _hkSparklineSvg(series, changeColor) + '</button>'
+            : '<div class="hk-card-spark-empty">Tren belum cukup data</div>';
 
         return '<div class="hk-card">' +
-            '<div class="hk-card-top"><span class="hk-card-name">' + window.escapeHtml(c.name) + '</span>' + trendBtn + '</div>' +
+            '<div class="hk-card-top"><span class="hk-card-name">' + window.escapeHtml(c.name) + '</span>' + changeHtml + '</div>' +
             '<div class="hk-card-price-row">' + priceHtml + '</div>' +
-            changeHtml +
+            sparkHtml +
             '</div>';
     };
 
