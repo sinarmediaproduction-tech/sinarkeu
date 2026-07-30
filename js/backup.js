@@ -137,6 +137,26 @@ window.createCloudBackup = async function() {
         window.loadCloudBackupList();
     } else window.showToast('Gagal menyimpan cadangan ke cloud!', 'error');
 };
+// [SIMPLIFIKASI UI] Gabungan "Cadangan Lokal" + "Cadangan Cloud" jadi SATU
+// tombol/aksi ("Buat Cadangan") supaya user tidak perlu klik 2 tombol
+// terpisah tiap mau backup manual. window.createBackup() dan
+// window.createCloudBackup() SENGAJA tidak diubah/dihapus -- keduanya tetap
+// ada persis seperti sebelumnya (dipakai fungsi lain / masih bisa dipanggil
+// terpisah kalau perlu) -- fungsi ini cuma memanggil keduanya berurutan.
+// Lokal selalu jalan dulu (tidak butuh internet, tidak pernah gagal), lalu
+// cloud HANYA dicoba kalau online (createCloudBackup sendiri sudah menolak
+// kalau offline, tapi dicek dulu di sini supaya tidak muncul toast
+// "harus online" yang isinya seolah aksi gagal, padahal cadangan lokalnya
+// sendiri sudah berhasil).
+window.createFullBackup = async function() {
+    window.createBackup();
+    if (window.isOnline && window.isOnline()) {
+        await window.createCloudBackup();
+    } else {
+        window.showToast('Cadangan cloud dilewati (offline) -- cadangan lokal tetap tersimpan.', 'warning');
+    }
+};
+
 window.checkAndRunDailyAutoBackup = async function() {
     if (!window.isOnline()) return;
     let now = new Date();
