@@ -945,12 +945,14 @@ alter table public.settings
                 <span>Notifikasi Telegram</span>
                 <span id="tgStatusBadge" class="setelan-badge setelan-badge--neutral">Belum dikonfigurasi</span>
             </div>
-            <div style="background:var(--paper-warm); border:1px solid var(--rule); border-radius: var(--radius-sm); padding:12px 14px; margin:10px 0 16px; font-size:.72rem; line-height:1.8; color:var(--ink-muted);">
-                <b>Cara setup (3 langkah):</b><br>
-                <b>1.</b> Buka <a href="https://t.me/BotFather" target="_blank" style="color:#0088cc;">@BotFather</a> → kirim <code>/newbot</code> → ikuti instruksi → copy <b>Bot Token</b><br>
-                <b>2.</b> Buka bot kamu di Telegram → klik <b>Start</b> (wajib, agar bot bisa kirim pesan)<br>
-                <b>3.</b> Buka <a href="https://t.me/userinfobot" target="_blank" style="color:#0088cc;">@userinfobot</a> → kirim pesan apapun → copy angka <b>Id</b> sebagai Chat ID
-            </div>
+            <details class="setelan-collapse">
+                <summary>Cara setup (3 langkah)</summary>
+                <div class="setelan-collapse-body">
+                    <b>1.</b> Buka <a href="https://t.me/BotFather" target="_blank" style="color:#0088cc;">@BotFather</a> → kirim <code>/newbot</code> → ikuti instruksi → copy <b>Bot Token</b><br>
+                    <b>2.</b> Buka bot kamu di Telegram → klik <b>Start</b> (wajib, agar bot bisa kirim pesan)<br>
+                    <b>3.</b> Buka <a href="https://t.me/userinfobot" target="_blank" style="color:#0088cc;">@userinfobot</a> → kirim pesan apapun → copy angka <b>Id</b> sebagai Chat ID
+                </div>
+            </details>
             <div class="form-group"><label>Bot Token <span style="font-weight:400;color:var(--ink-faint);font-size:.7rem;">dari @BotFather</span></label><input type="text" id="tgBotTokenInput" class="form-control" placeholder="123456789:AAF-contoh-token-dari-botfather" autocomplete="off"></div>
             <div class="form-group"><label>Chat ID <span style="font-weight:400;color:var(--ink-faint);font-size:.7rem;">dari @userinfobot (angka, bisa negatif untuk grup)</span></label><input type="text" id="tgChatIdInput" class="form-control" placeholder="123456789" autocomplete="off"></div>
             <input type="hidden" id="tgEdgeUrlInput" value="">
@@ -1087,12 +1089,14 @@ alter table public.settings
                 <div style="font-size:.72rem; color:var(--ink-faint); background:var(--panel-alt, #F4F4F1); border:1px solid var(--rule); border-radius: var(--radius-sm); padding:8px 10px; margin-bottom:10px; word-break:break-all;">
                     <span id="supabaseCurrentUrlDisplay">–</span>
                 </div>
-                <div class="setelan-hint" style="margin-bottom:10px;">
-                    Untuk mengisi atau mengubah URL &amp; Anon Key, kelola lewat panel
-                    <strong>Akun</strong> di atas (setiap akun punya kredensial &amp; password
-                    enkripsinya sendiri) — bukan di sini, supaya tidak ada dua tempat
-                    berbeda yang menyimpan kredensial yang sama.
-                </div>
+                <details class="setelan-collapse">
+                    <summary>Cara mengubah URL &amp; Anon Key</summary>
+                    <div class="setelan-collapse-body">
+                        Kelola lewat panel <strong>Akun</strong> di atas (setiap akun punya kredensial &amp; password
+                        enkripsinya sendiri) — bukan di sini, supaya tidak ada dua tempat
+                        berbeda yang menyimpan kredensial yang sama.
+                    </div>
+                </details>
                 <div class="cloud-connect-row" style="display:flex; gap:8px;">
                     <button class="btn btn-secondary" style="flex:1;" onclick="window.switchSetelanTab('akun'); var activeId=window.getActiveAccountId ? window.getActiveAccountId() : null; if (activeId && window.editAccount) window.editAccount(activeId);">Kelola di Panel Akun</button>
                     <button class="btn btn-primary" style="flex:1;" onclick="testCloudConnection()" data-i18n="connect_sync">Tes Koneksi</button>
@@ -1128,9 +1132,10 @@ alter table public.settings
                 <span data-i18n="settings_sync_section">Sinkronisasi Setelan</span>
                 <span id="settingsSyncBadge" class="setelan-badge setelan-badge--success" data-i18n="settings_sync_auto">Otomatis</span>
             </div>
-            <div class="setelan-desc--tight">
-                <span data-i18n="settings_sync_desc">Daftar buku kas, anggaran dasar, anggaran bulanan, dan konfigurasi Telegram tersinkronisasi otomatis ke Supabase setiap kali ada perubahan.</span>
-            </div>
+            <details class="setelan-collapse">
+                <summary>Apa yang disinkronkan?</summary>
+                <div class="setelan-collapse-body" data-i18n="settings_sync_desc">Daftar buku kas, anggaran dasar, anggaran bulanan, dan konfigurasi Telegram tersinkronisasi otomatis ke Supabase setiap kali ada perubahan.</div>
+            </details>
             <div id="settingsSyncStatus" class="setelan-status-text"></div>
         </div>
 

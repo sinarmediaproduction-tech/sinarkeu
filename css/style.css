@@ -1943,6 +1943,43 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 
 .setelan-divider { border-top: 1px dashed var(--rule); margin: 14px 0; }
 
+/* Blok penjelasan yang bisa dibuka/tutup (default tertutup) —
+   dipakai untuk menyembunyikan teks panduan/hint yang panjang
+   supaya tampilan Setelan lebih ringkas. */
+.setelan-collapse {
+  margin: 8px 0 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--panel-alt, #F4F4F1);
+}
+.setelan-collapse summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: .68rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+.setelan-collapse summary::-webkit-details-marker { display: none; }
+.setelan-collapse summary::before {
+  content: '▸';
+  font-size: .62rem;
+  color: var(--ink-faint);
+  transition: transform .15s ease;
+}
+.setelan-collapse[open] summary::before { transform: rotate(90deg); }
+.setelan-collapse summary:hover { color: var(--ink); }
+.setelan-collapse-body {
+  font-size: .7rem;
+  line-height: 1.8;
+  color: var(--ink-muted);
+  padding: 0 10px 12px;
+}
+
 /* Judul tiap tab — warna kategori, otomatis ikut tema */
 .setelan-title          { color: var(--ink); display: flex; align-items: center; gap: 8px; }
 .setelan-title--purple  { color: var(--purple); display: flex; align-items: center; gap: 8px; }
