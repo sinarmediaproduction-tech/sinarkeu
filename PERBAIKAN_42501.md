@@ -20,3 +20,8 @@ di header file SQL tersebut.
 
 Notifikasi aplikasi di `js/db.js` kini juga menyebut RLS dan nama migrasi
 yang harus dijalankan, alih-alih mengarahkan pengguna memeriksa API key.
+
+Setelah dijalankan, policy lama seperti `anon_full_access`,
+`authenticated_full_access`, dan `shared_settings_admin_*` tidak boleh lagi
+muncul pada tabel `settings` atau `backups`; policy tersebut permissive dan
+dapat menembus aturan peran Buku Bersama.

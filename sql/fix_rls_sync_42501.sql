@@ -27,6 +27,21 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.backups TO anon, authenticated;
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.backups ENABLE ROW LEVEL SECURITY;
 
+-- Bersihkan policy lama/duplikat. Policy RLS PostgreSQL bersifat
+-- permissive-OR, sehingga satu policy ALL yang longgar dapat membatalkan
+-- seluruh pembatasan role di bawahnya.
+DROP POLICY IF EXISTS anon_full_access ON public.settings;
+DROP POLICY IF EXISTS authenticated_full_access ON public.settings;
+DROP POLICY IF EXISTS shared_settings_select ON public.settings;
+DROP POLICY IF EXISTS shared_settings_admin_write ON public.settings;
+DROP POLICY IF EXISTS shared_settings_admin_update ON public.settings;
+DROP POLICY IF EXISTS shared_settings_admin_delete ON public.settings;
+
+DROP POLICY IF EXISTS anon_full_access ON public.backups;
+DROP POLICY IF EXISTS authenticated_full_access ON public.backups;
+DROP POLICY IF EXISTS backups_shared_insert ON public.backups;
+DROP POLICY IF EXISTS backups_shared_delete ON public.backups;
+
 -- Buku pribadi: request memakai anon key dan tidak boleh mengakses buku
 -- yang telah ditandai sebagai shared.
 DROP POLICY IF EXISTS settings_legacy_anon ON public.settings;
