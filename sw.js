@@ -32,34 +32,28 @@ const APP_SHELL = [
   './icons/logo-kop.png',
   './icons/lucide-icons.local.js',
   './vendor/supabase.js',
-  './js/i18n.js',
-  './js/config.js',
-  './js/utils.js',
-  './js/crypto.js',
-  './js/db.js',
-  './js/telegram.js',
-  './js/account.js',
-  './js/book.js',
-  './js/transaction.js',
-  './js/sync-conflict.js',
-  './js/budget.js',
-  './js/shopping-list.js',
-  './js/payment-reminder.js',
-  './js/expense-chart.js',
-  './js/render.js',
-  './js/report.js',
-  './js/forecast.js',
-  './js/report-shortcuts.js',
-  './js/backup.js',
-  './js/safety-snapshot.js',
-  './js/forex.js',
-  './js/ai.js',
-  './js/settings.js',
-  './js/auth.js',
-  './js/autolock.js',
-  './js/app.js',
-  './js/custom-select.js',
 ];
+
+// [CACHE-BUSTING] File JS di sini di-precache pakai URL PERSIS yang sama
+// dengan yang diminta index.html (lihat SK_JS_FILES + APP_JS_VERSION di
+// index.html) -- yaitu dengan suffix "?v=" + CACHE_VERSION. Kalau daftar di
+// sini tidak versioned tapi index.html sudah minta versi baru, precache
+// 'install' di bawah jadi sia-sia (key beda, tidak pernah kepakai) dan
+// device WAJIB fetch dari network dulu di kunjungan pertama pasca-update
+// (tetap benar, cuma kehilangan manfaat precache-nya). Menjaga APP_JS_VERSION
+// (index.html) & CACHE_VERSION (sini) tetap SAMA memastikan keduanya cocok.
+const APP_SHELL_JS = [
+  'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js', 'js/db.js',
+  'js/telegram.js', 'js/account.js', 'js/book.js', 'js/transaction.js',
+  'js/sync-conflict.js', 'js/budget.js', 'js/harga-pangan.js',
+  'js/shopping-list.js', 'js/payment-reminder.js', 'js/expense-chart.js',
+  'js/render.js', 'js/report.js', 'js/forecast.js', 'js/report-shortcuts.js',
+  'js/backup.js', 'js/safety-snapshot.js', 'js/forex.js', 'js/ai.js',
+  'js/settings.js', 'js/auth.js', 'js/autolock.js', 'js/app.js',
+  'js/custom-select.js',
+].map((f) => `./${f}?v=${CACHE_VERSION}`);
+
+APP_SHELL.push(...APP_SHELL_JS);
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

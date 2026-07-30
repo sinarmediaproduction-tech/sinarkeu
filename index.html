@@ -1821,34 +1821,43 @@ alter table public.settings
 </div>
 
 <!-- ===== SKRIP UTAMA ===== -->
-<script src="js/i18n.js" defer></script>
-<script src="js/config.js" defer></script>
-<script src="js/utils.js" defer></script>
-<script src="js/crypto.js" defer></script>
-<script src="js/db.js" defer></script>
-<script src="js/telegram.js" defer></script>
-<script src="js/account.js" defer></script>
-<script src="js/book.js" defer></script>
-<script src="js/transaction.js" defer></script>
-<script src="js/sync-conflict.js" defer></script>
-<script src="js/budget.js" defer></script>
-<script src="js/harga-pangan.js" defer></script>
-<script src="js/shopping-list.js" defer></script>
-<script src="js/payment-reminder.js" defer></script>
-<script src="js/expense-chart.js" defer></script>
-<script src="js/render.js" defer></script>
-<script src="js/report.js" defer></script>
-<script src="js/forecast.js" defer></script>
-<script src="js/report-shortcuts.js" defer></script>
-<script src="js/backup.js" defer></script>
-<script src="js/safety-snapshot.js" defer></script>
-<script src="js/forex.js" defer></script>
-<script src="js/ai.js" defer></script>
-<script src="js/settings.js" defer></script>
-<script src="js/auth.js" defer></script>
-    <script src="js/autolock.js" defer></script>
-<script src="js/app.js" defer></script>
-<script src="js/custom-select.js" defer></script>
+<!--
+  [CACHE-BUSTING] Sebelumnya <script src="js/xxx.js"> di sini TIDAK punya
+  query-string versi -- akibatnya sw.js (cache-first/stale-while-revalidate
+  untuk aset same-origin, lihat sw.js baris ~119) bisa terus melayani JS
+  LAMA dari Cache Storage ke tab yang sudah lama terbuka, walau
+  CACHE_VERSION di sw.js sudah dibump dan cache barunya sudah terisi di
+  belakang layar -- karena kunci cache-nya ("js/backup.js") tetap sama,
+  tab yang belum reload penuh tidak otomatis dapat isi baru itu.
+
+  Sekarang tiap file di-suffix "?v=" + APP_JS_VERSION (HARUS SAMA dengan
+  CACHE_VERSION di sw.js -- update KEDUANYA bareng tiap ada perubahan isi
+  JS). Query-string beda = URL beda = entri Cache Storage beda = browser
+  WAJIB fetch ulang dari network, TANPA perlu nunggu siklus update Service
+  Worker dulu. index.html sendiri aman jadi "tempat baca versi" karena
+  navigasi (mode:'navigate') sudah network-first di sw.js.
+
+  document.write() di sini aman (tidak kena block/warning) karena dipanggil
+  SELAGI dokumen masih di-parse, dan urutan <script defer> hasilnya tetap
+  dijamin browser dieksekusi sesuai urutan dokumen -- persis seperti tag
+  statis sebelumnya, jadi urutan dependency antar file tidak berubah.
+-->
+<script>
+    var APP_JS_VERSION = 'v20'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
+    var SK_JS_FILES = [
+        'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js', 'js/db.js',
+        'js/telegram.js', 'js/account.js', 'js/book.js', 'js/transaction.js',
+        'js/sync-conflict.js', 'js/budget.js', 'js/harga-pangan.js',
+        'js/shopping-list.js', 'js/payment-reminder.js', 'js/expense-chart.js',
+        'js/render.js', 'js/report.js', 'js/forecast.js', 'js/report-shortcuts.js',
+        'js/backup.js', 'js/safety-snapshot.js', 'js/forex.js', 'js/ai.js',
+        'js/settings.js', 'js/auth.js', 'js/autolock.js', 'js/app.js',
+        'js/custom-select.js'
+    ];
+    SK_JS_FILES.forEach(function(src) {
+        document.write('<script src="' + src + '?v=' + APP_JS_VERSION + '" defer><' + '/script>');
+    });
+</script>
 
 <!-- ===== PATCH: SINKRONISASI ANGGARAN & JADWAL PEMBAYARAN ANTAR PERANGKAT ===== -->
 <!--
