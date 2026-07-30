@@ -560,6 +560,14 @@ window.reEncryptAllCloudSettings = async function() {
             await window.pushSetting('shopping_list', shoppingList, b.id);
             const shoppingIncome = window.getShoppingListMonthlyIncome ? window.getShoppingListMonthlyIncome(b.id) : 0;
             await window.pushSetting('shopping_list_income', shoppingIncome, b.id);
+            // Fase Kehidupan juga setting per-buku. Tanpa baris ini, data
+            // fase yang masih memakai format cloud lama tidak ikut dipulihkan
+            // saat proses re-enkripsi/self-heal berjalan.
+            const faseRaw = localStorage.getItem('sk_fase_kehidupan_' + b.id);
+            if (faseRaw) {
+                try { await window.pushSetting('fase_kehidupan', JSON.parse(faseRaw), b.id); }
+                catch (e) { console.warn('[Sync] Fase Kehidupan lokal tidak valid, dilewati:', e); }
+            }
         }
         await window.pushSettingTelegram();
         console.log('[Sync] Re-enkripsi & push ulang semua setting ke cloud selesai (kunci baru).');

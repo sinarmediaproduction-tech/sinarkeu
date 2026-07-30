@@ -644,6 +644,43 @@ window.saveFaseKehidupanToLocal = function(data) {
     localStorage.setItem('sk_fase_kehidupan_' + window.currentBookId, JSON.stringify(data));
 };
 
+window._faseKehidupanPendingKey = function(bookId) {
+    return 'sk_pending_fase_kehidupan_' + (bookId || window.currentBookId);
+};
+
+// Simpan perubahan fase ke antrean lokal terlebih dahulu. Bila koneksi sedang
+// putus atau Supabase gagal merespons, data akan dicoba lagi otomatis saat
+// aplikasi kembali online (lihat flushPendingFaseKehidupanSync di app.js).
+window.syncFaseKehidupanToCloud = async function(data, bookId) {
+    const targetBookId = bookId || window.currentBookId;
+    const pendingKey = window._faseKehidupanPendingKey(targetBookId);
+    localStorage.setItem(pendingKey, JSON.stringify(data));
+    if (!window.isOnline() || !window.pushSetting) return false;
+    try {
+        const result = await window.pushSetting('fase_kehidupan', data, targetBookId);
+        if (!result) return false;
+        if (Array.isArray(result) && result[0] && result[0].updated_at) {
+            localStorage.setItem('sk_fase_kehidupan_' + targetBookId, JSON.stringify({ ...data, _serverUpdatedAt: result[0].updated_at }));
+        }
+        localStorage.removeItem(pendingKey);
+        return true;
+    } catch (error) {
+        console.warn('[FaseKehidupan] Gagal sinkron ke cloud, akan dicoba lagi:', error);
+        return false;
+    }
+};
+
+window.flushPendingFaseKehidupanSync = async function() {
+    const bookId = window.currentBookId;
+    const raw = localStorage.getItem(window._faseKehidupanPendingKey(bookId));
+    if (!raw || !window.isOnline()) return false;
+    try { return await window.syncFaseKehidupanToCloud(JSON.parse(raw), bookId); }
+    catch (error) {
+        console.warn('[FaseKehidupan] Data antrean tidak valid:', error);
+        return false;
+    }
+};
+
 window.openFaseKehidupanModal = function() {
     const fase = window.getFaseKehidupan();
     const sel = document.getElementById('faseSelect');
@@ -678,19 +715,7 @@ window.saveFaseKehidupan = function() {
     if (!fase) { window.showToast('Pilih fase kehidupan terlebih dahulu!', 'warning'); return; }
     const data = { fase, target, tanggungan, updatedAt: new Date().toISOString() };
     window.saveFaseKehidupanToLocal(data);
-    if (window.isOnline()) {
-        // [FIX CLOCK SKEW] pushSetting() sekarang balikin baris hasil
-        // representasi server (lihat db.js), yang updated_at-nya sudah
-        // dijamin server lewat trigger -- bukan jam device manapun. Simpan
-        // nilai itu sebagai _serverUpdatedAt di cache lokal supaya
-        // perbandingan LWW berikutnya di pullAllSettings() (db.js) pakai jam
-        // yang konsisten dengan device lain, bukan jam device INI sendiri.
-        window.pushSetting('fase_kehidupan', data, window.currentBookId).then(result => {
-            if (result && Array.isArray(result) && result[0] && result[0].updated_at) {
-                window.saveFaseKehidupanToLocal({ ...data, _serverUpdatedAt: result[0].updated_at });
-            }
-        });
-    }
+    window.syncFaseKehidupanToCloud(data, window.currentBookId);
     window.updateFaseCard();
     window.closeModal('faseKehidupanModal');
     window.showToast('Fase kehidupan berhasil disimpan!', 'success');

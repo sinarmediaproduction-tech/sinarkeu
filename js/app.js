@@ -55,6 +55,10 @@ window.startAutoSync = function() {
         // proses tambah/edit akun selesai.
         if (window._acctCredTestLock) return;
         if (window.isOnline()) {
+            // Prioritaskan perubahan Fase Kehidupan yang tersimpan saat
+            // offline/gagal koneksi sebelum menarik setting dari cloud,
+            // supaya nilai lokal yang paling baru tidak tertimpa snapshot lama.
+            if (window.flushPendingFaseKehidupanSync) await window.flushPendingFaseKehidupanSync();
             // Retry dulu penghapusan yang mungkin masih tertunda (gagal PATCH
             // sebelumnya) SEBELUM pull, dengan alasan yang sama seperti di
             // continueAppInit(): supaya baris yang harusnya sudah dihapus tidak
@@ -259,6 +263,7 @@ window.continueAppInit = async function() {
             if (window.flushPendingBookDeletesOnStart) await window.flushPendingBookDeletesOnStart();
             await window.flushPendingPaymentReminders();
             await window.flushPendingAuditLogs();
+            if (window.flushPendingFaseKehidupanSync) await window.flushPendingFaseKehidupanSync();
             await window.pullAllSettings();
             // Self-heal: kalau device ini sudah lama pakai salt lokal sendiri tapi
             // belum pernah ke-push ke cloud, push sekarang. Mencegah device lain
