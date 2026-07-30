@@ -298,6 +298,24 @@ window.restoreLastFullviewModal = function() {
     }
 };
 
+// [FIX MODAL NYANGKUT DI ATAS] addShoppingListItemModal & editShoppingListItemModal
+// adalah popup ANAK dari halaman fullview shoppingListModal (Belanja Bulanan),
+// bukan modal fullview itu sendiri -- jadi tidak ikut disembunyikan oleh logika
+// "tutup sesama fullview" di openModal/closeModal di bawah. Kalau popup ini kebuka
+// (termasuk otomatis saat daftar belanja masih kosong, lihat openShoppingListModal
+// di js/shopping-list.js) lalu user PINDAH MENU tanpa klik tombol "Tutup"/×, class
+// `show`-nya tidak pernah dilepas -- popup itu nempel selamanya melayang di atas
+// halaman apa pun yang dibuka setelahnya, dan muncul lagi "sendiri" tiap kali balik
+// ke Belanja karena memang belum pernah benar-benar tertutup. Tutup paksa keduanya
+// setiap kali user keluar dari halaman Belanja Bulanan (baik pindah ke fullview
+// lain maupun kembali ke Dashboard) supaya tidak pernah nyangkut lagi.
+window._closeShoppingListChildModals = function() {
+    ['addShoppingListItemModal', 'editShoppingListItemModal'].forEach(function(cid) {
+        var el = document.getElementById(cid);
+        if (el) el.classList.remove('show');
+    });
+};
+
 // Modal utility (dipanggil dari onclick di HTML)
 window.openModal = function(id) {
     // [FIX UX] addModal & editModal sekarang boleh dibuka offline -- lihat
@@ -316,6 +334,7 @@ window.openModal = function(id) {
     // bukan modal mengambang -- sembunyikan Dashboard/Setelan, tandai nav
     // sidebar aktif, dan tutup drawer mobile kalau lagi terbuka.
     if (window.FULLVIEW_MODALS[id]) {
+        if (id !== 'shoppingListModal') window._closeShoppingListChildModals();
         document.body.classList.remove('view-settings');
         document.getElementById('setelanModal').classList.remove('show');
         // Kalau lagi pindah langsung dari satu menu full-page ke menu
@@ -413,6 +432,7 @@ window.closeModal = function(id) {
     // kembali ke Dashboard (bukan sekadar hilang, karena Dashboard-nya
     // sendiri disembunyikan selama mode fullview aktif).
     if (window.FULLVIEW_MODALS[id]) {
+        if (id === 'shoppingListModal') window._closeShoppingListChildModals();
         document.body.classList.remove('view-fullpage');
         if (typeof window.updateAppSidebarNav === 'function') window.updateAppSidebarNav('dashboard');
         try { localStorage.removeItem('sk_last_fullview'); } catch { /* tidak fatal */ }
