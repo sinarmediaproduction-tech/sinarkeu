@@ -152,8 +152,16 @@ window.createFullBackup = async function() {
     window.createBackup();
     if (window.isOnline && window.isOnline()) {
         await window.createCloudBackup();
+        // Google Sheets IKUT dijalankan HANYA kalau user sudah pernah
+        // menyimpan URL Web App-nya (sk_google_sheets_url) -- kalau belum
+        // pernah disambungkan, dilewati diam-diam (tidak munculkan toast
+        // "Belum ada URL Web App" yang isinya seolah backup ini gagal,
+        // padahal memang user belum pernah mau pakai fitur ini).
+        if (localStorage.getItem('sk_google_sheets_url')) {
+            await window.backupToGoogleSheets();
+        }
     } else {
-        window.showToast('Cadangan cloud dilewati (offline) -- cadangan lokal tetap tersimpan.', 'warning');
+        window.showToast('Cadangan cloud & Google Sheets dilewati (offline) -- cadangan lokal tetap tersimpan.', 'warning');
     }
 };
 
