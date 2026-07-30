@@ -364,9 +364,9 @@ window.initApp = async function() {
     document.getElementById('deviceIdDisplay').innerText = window.deviceId;
     let storedBooks = localStorage.getItem('sk_books');
     if (storedBooks) window.books = JSON.parse(storedBooks);
-    else { window.books = [{ id: 'b_default', name: 'Buku Umum' }]; localStorage.setItem('sk_books', JSON.stringify(window.books)); }
-    window.currentBookId = localStorage.getItem('sk_current_book_id') || 'b_default';
-    if (!window.books.find(b => b.id === window.currentBookId)) window.currentBookId = window.books[0].id;
+    else window.books = [];
+    window.currentBookId = localStorage.getItem('sk_current_book_id') || null;
+    if (window.books.length && !window.books.find(b => b.id === window.currentBookId)) window.currentBookId = window.books[0].id;
     window.loadGoogleSheetsUrl();
 
     if (!window.isPasswordConfigured()) {

@@ -79,12 +79,10 @@ window._doSwitch = function(fromId, toId) {
     // Reset cache Supabase client milik SyncPatch agar tidak bocor ke akun lain
     window._syncPatchSupabaseClient = null;
     window._supabaseClient = null;
-    const nsHasBooks = localStorage.getItem('sk_a' + toId + '_books');
-    if (!nsHasBooks && !localStorage.getItem('sk_books')) {
-        const defaultBook = [{ id: 'b_default', name: 'Buku Umum' }];
-        localStorage.setItem('sk_books', JSON.stringify(defaultBook));
-        localStorage.setItem('sk_current_book_id', 'b_default');
-    }
+    // Jangan membuat b_default saat perangkat/akun ini belum punya cache.
+    // Daftar buku akan dipulihkan dari cloud setelah akun dibuka. Bootstrap
+    // lama membuat "Buku Utama/Buku Umum" lokal yang kemudian dianggap buku
+    // baru oleh union-merge dan muncul lagi walau sudah dihapus dari cloud.
     window._setActiveAccountId(toId);
     localStorage.removeItem('sk_switching_in_progress');
     sessionStorage.setItem('sk_session_unlocked', '1');

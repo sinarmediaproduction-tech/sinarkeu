@@ -762,12 +762,28 @@ window.pullAllSettings = async function() {
                 const localById = {};
                 window.books.forEach(b => { localById[b.id] = b; });
                 const pendingDeletes = window._loadBooksPendingDeletes ? window._loadBooksPendingDeletes() : new Set();
+                // b_default adalah placeholder yang dibuat versi lama saat
+                // perangkat baru belum sempat menarik daftar buku cloud.
+                // Jika cloud sudah punya buku lain namun b_default tidak ada
+                // di sana, anggap ia sisa bootstrap lokal, bukan buku baru
+                // yang harus di-union lalu dikirim ulang ke cloud.
+                const cloudHasRealBook = parsed.some(function(book) { return book && book.id !== 'b_default'; });
                 let changed = false;
                 let needsHealPush = false;
                 const merged = [];
                 const seenIds = new Set();
 
                 parsed.forEach(cb => {
+                    // Bersihkan placeholder default lama yang sudah sempat
+                    // ter-push oleh perangkat baru. Hanya nama bootstrap
+                    // standar yang dibuang, dan hanya jika cloud jelas punya
+                    // buku lain; buku b_default yang masih menjadi satu-satunya
+                    // buku tetap aman untuk kompatibilitas instalasi lama.
+                    if (cloudHasRealBook && cb.id === 'b_default' && /^(Buku Utama|Buku Umum)$/i.test(String(cb.name || '').trim())) {
+                        changed = true;
+                        needsHealPush = true;
+                        return;
+                    }
                     seenIds.add(cb.id);
                     const lb = localById[cb.id];
                     // [FIX BUG #4] `cb` (baris dari cloud) bisa membawa
@@ -810,6 +826,11 @@ window.pullAllSettings = async function() {
 
                 window.books.forEach(lb => {
                     if (seenIds.has(lb.id)) return; // sudah diproses di atas
+                    if (lb.id === 'b_default' && cloudHasRealBook) {
+                        console.log('[Sync] Menghapus placeholder b_default yang tidak ada di cloud.');
+                        changed = true;
+                        return;
+                    }
                     if (pendingDeletes.has(lb.id)) {
                         // Penghapusan buku ini sekarang terkonfirmasi juga
                         // hilang di cloud -- baru di sini aman membersihkan
