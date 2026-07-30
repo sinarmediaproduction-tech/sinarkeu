@@ -580,6 +580,37 @@ window._updateShoppingListSummary = function(items) {
         window.EXPENSE_CATEGORIES.forEach(c => totalBudget += (currentBudget[c] || 0));
     }
     if (budgetEl) budgetEl.innerText = window.rp(totalBudget);
+
+    // [TREN ANGGARAN] Perubahan %-vs-bulan-lalu, dihitung dari total Anggaran
+    // Bulanan efektif bulan ini vs bulan sebelumnya (perubahan biasanya
+    // "berlaku" per tanggal 1 lewat auto-copy Anggaran Dasar / ensureMonthlyBudgetExists,
+    // sama seperti indikator naik/turun di Harga Komoditas). '-' kalau bulan
+    // lalu belum ada anggaran sama sekali (belum bisa dibandingkan).
+    const changeMetaEl = document.getElementById('slistBudgetChangeMeta');
+    if (changeMetaEl) {
+        changeMetaEl.innerHTML = '';
+        if (window.EXPENSE_CATEGORIES && typeof window.getEffectiveBudget === 'function') {
+            const now = new Date();
+            let prevMonth = now.getMonth(); // 0-based bulan sekarang = bulan lalu (1-based)
+            let prevYear = now.getFullYear();
+            if (prevMonth === 0) { prevMonth = 12; prevYear -= 1; }
+            const prevEffective = window.getEffectiveBudget(prevYear, prevMonth, window.currentBookId);
+            const prevBudgetObj = prevEffective.budget || {};
+            let prevTotalBudget = 0;
+            window.EXPENSE_CATEGORIES.forEach(c => prevTotalBudget += (prevBudgetObj[c] || 0));
+            if (prevTotalBudget > 0) {
+                const pct = ((totalBudget - prevTotalBudget) / prevTotalBudget) * 100;
+                const up = pct > 0;
+                const flat = Math.abs(pct) < 0.05;
+                const color = flat ? 'var(--text-secondary)' : (up ? 'var(--danger)' : 'var(--success)');
+                const arrow = flat ? '' : (up ? '\u25B2 ' : '\u25BC ');
+                changeMetaEl.innerHTML = '<span style="color:' + color + '">' + arrow + Math.abs(pct).toFixed(1) + '% dari bulan lalu</span>';
+            } else {
+                changeMetaEl.innerHTML = '<span style="color:var(--text-secondary)">-</span>';
+            }
+        }
+    }
+
     if (budgetRemainingEl) {
         const sisaAnggaran = totalBudget - totalBelanja;
         budgetRemainingEl.innerText = window.rp(sisaAnggaran);
