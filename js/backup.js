@@ -246,20 +246,21 @@ window.createFullBackup = async function() {
 
 window.checkAndRunDailyAutoBackup = async function() {
     if (!window.isOnline()) return;
-    // [FIX RACE/JARINGAN FLAKY] Self-heal yang SAMA seperti di
-    // window.startAutoSync (js/app.js) -- tapi dipasang di sini juga karena
-    // auto-backup harian ini jalan lebih DULU (3 detik setelah unlock, lewat
-    // continueAppInit) daripada tick pertama startAutoSync (30 detik).
-    // Tanpa ini, percobaan auto-backup PERTAMA di tiap sesi selalu rentan
-    // kena race: skRefreshSharedAccess() di continueAppInit sempat belum
-    // benar-benar selesai/gagal jaringan sesaat, window._skSharedRoles jadi
-    // belum lengkap tepat saat fungsi ini jalan, sehingga buku yang
-    // sebenarnya shared jatuh ke jalur anon key -> 401/42501 (lihat log
-    // toast-error 29-30 Juli 2026 untuk kasus nyata). Cek & perbaiki dulu di
-    // sini sebelum loop di bawah membaca role per buku.
-    const hasUnrefreshedSharedBook = window._skAuthUser && Array.isArray(window.books) &&
-        window.books.some(function(b) { return b._isShared && !window.skIsSharedBookId(b.id); });
-    if (hasUnrefreshedSharedBook && typeof window.skRefreshSharedAccess === 'function') {
+    // [FIX RACE/JARINGAN FLAKY - DIPERKUAT] Percobaan pertama pakai syarat
+    // "book._isShared && !skIsSharedBookId(id)" (lihat window.startAutoSync
+    // di js/app.js) ternyata TIDAK CUKUP di sini: syarat itu baru ke-trigger
+    // kalau window.books SUDAH pernah punya flag _isShared:true dari sesi
+    // sukses sebelumnya. Kalau ini kali PERTAMA device memuat status buku
+    // ini (atau skRefreshSharedAccess awal di continueAppInit sendiri yang
+    // gagal), flag itu belum ada sama sekali -> self-heal tidak ke-trigger
+    // -> gate role-check di bawah ikut lolos begitu saja (dianggap "bukan
+    // buku bersama" padahal sebenarnya iya, cuma belum diketahui) -> push
+    // jatuh ke anon key -> 401/42501 (lihat log toast-error 29-30 Juli
+    // 2026). Makanya di sini REFRESH TANPA SYARAT (bukan cuma kalau ada
+    // tanda flag lama) selama user memang sedang login -- fungsi ini cuma
+    // jalan 1x/hari jadi satu request tambahan ini murah dibanding risiko
+    // RLS gagal berulang.
+    if (window._skAuthUser && typeof window.skRefreshSharedAccess === 'function') {
         try { await window.skRefreshSharedAccess(); } catch (e) { console.warn('[AutoBackup] Self-heal skRefreshSharedAccess gagal:', e); }
     }
     let now = new Date();
