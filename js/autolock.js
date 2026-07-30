@@ -19,8 +19,13 @@
         return uaMatch || touchMatch;
     }
 
-    const LOCK_TIMEOUT_PC     = 60 * 1000;  // 1 menit untuk PC/laptop
-    const LOCK_TIMEOUT_MOBILE = 3 * 60 * 1000; // 3 menit untuk hape/tablet
+    // [DISAMAKAN] Sebelumnya PC 1 menit & hape 3 menit (beda perangkat beda
+    // toleransi) -- sekarang disamakan 5 menit untuk semua perangkat sesuai
+    // permintaan, jadi _isMobileDevice() di atas tidak lagi dipakai untuk
+    // menentukan durasi (masih dibiarkan ada, siapa tahu perlu dibedakan
+    // lagi nanti).
+    const LOCK_TIMEOUT_PC     = 5 * 60 * 1000;  // 5 menit untuk PC/laptop
+    const LOCK_TIMEOUT_MOBILE = 5 * 60 * 1000;  // 5 menit untuk hape/tablet
     const LOCK_TIMEOUT = _isMobileDevice() ? LOCK_TIMEOUT_MOBILE : LOCK_TIMEOUT_PC;
     const WARN_BEFORE  = 15 * 1000; // munculkan peringatan 15 detik sebelum kunci
 
