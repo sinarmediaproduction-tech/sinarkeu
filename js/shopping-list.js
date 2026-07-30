@@ -715,7 +715,7 @@ window.addShoppingListItem = function(e) {
     }
 };
 
-window.toggleShoppingListItem = function(id) {
+window.toggleShoppingListItem = async function(id) {
     if (window._slistBlockIfViewer()) { window.renderShoppingList(); return; }
     window.ensureShoppingListMonthlyCycle(window.currentBookId);
     const items = window.getShoppingList(window.currentBookId);
@@ -765,6 +765,40 @@ window.toggleShoppingListItem = function(id) {
                 window.sendTelegramNotif(window.buildTxNotifMessage('TAMBAH', transaction, window.getCurrentBookName()));
             }
             window.showToast('Pengeluaran otomatis ditambahkan ke dashboard.', 'success');
+        }
+    } else {
+        // Uncheck berarti pembelian dibatalkan. Hapus HANYA transaksi yang
+        // dibuat otomatis untuk item ini pada bulan aktif; transaksi bulan
+        // sebelumnya tidak pernah disentuh.
+        const monthKey = window.getShoppingListMonthKey();
+        const txId = item.lastExpenseMonth === monthKey ? item.lastExpenseTransactionId : null;
+        if (txId) {
+            const transaction = window.txs.find(t => t.id === txId);
+            // Batalkan antrean upsert bila centang dibatalkan sebelum transaksi
+            // sempat tersinkron, agar transaksi yang sudah dihapus tidak malah
+            // terkirim kemudian.
+            if (typeof window.clearTxDirty === 'function') window.clearTxDirty([txId]);
+            window.txs = window.txs.filter(t => t.id !== txId);
+            window.saveTransactions();
+
+            // Penghapusan cloud memakai soft-delete dan antrean persisten yang
+            // sama dengan hapus transaksi biasa, jadi tetap aman saat offline.
+            if (typeof window.markTxPendingDelete === 'function') {
+                window.markTxPendingDelete(txId, window.currentBookId);
+                if (window.isOnline && window.isOnline() && typeof window.pushDeleteToCloud === 'function') {
+                    const deleted = await window.pushDeleteToCloud(txId, window.currentBookId);
+                    if (deleted && typeof window.clearTxPendingDelete === 'function') window.clearTxPendingDelete(txId);
+                }
+            }
+            if (transaction && typeof window.addCloudLog === 'function') {
+                window.addCloudLog('HAPUS', `Membatalkan pengeluaran belanja otomatis "${item.name}" ber-ID: ${txId}`).catch(function() {});
+            }
+            if (transaction && typeof window.sendTelegramNotif === 'function' && typeof window.buildTxNotifMessage === 'function') {
+                window.sendTelegramNotif(window.buildTxNotifMessage('HAPUS', transaction, window.getCurrentBookName()));
+            }
+            item.lastExpenseMonth = null;
+            item.lastExpenseTransactionId = null;
+            window.showToast('Centang dibatalkan dan pengeluaran otomatis dihapus.', 'success');
         }
     }
     item.done = willBeDone;
