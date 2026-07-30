@@ -154,8 +154,12 @@ window._shoppingListItemSubtotal = function(item) {
 window.openShoppingListModal = function() {
     window.ensureShoppingListMonthlyCycle(window.currentBookId);
     window._populateShoppingListCategorySelect();
-    window.renderShoppingList();
     window.openModal('shoppingListModal');
+
+    window.runAfterNextPaint(function() {
+        const modal = document.getElementById('shoppingListModal');
+        if (modal && modal.classList.contains('show')) window.renderShoppingList();
+    });
 
     // Daftar masih kosong -> langsung buka pop up tambah barang supaya
     // user baru tidak perlu ketuk "+ Tambah Barang" dulu untuk mulai isi.

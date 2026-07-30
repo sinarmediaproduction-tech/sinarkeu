@@ -349,6 +349,14 @@ window._closeFaseKehidupanModals = function() {
     });
 };
 
+// Beri browser satu frame untuk menggambar perpindahan halaman sebelum
+// pekerjaan render daftar/form yang lebih berat dimulai. Ini membuat klik
+// menu terasa langsung merespons, terutama di ponsel kelas menengah.
+window.runAfterNextPaint = function(callback) {
+    const schedule = window.requestAnimationFrame || function(fn) { return setTimeout(fn, 0); };
+    schedule(function() { schedule(callback); });
+};
+
 // Modal utility (dipanggil dari onclick di HTML)
 window.openModal = function(id) {
     // [FIX UX] addModal & editModal sekarang boleh dibuka offline -- lihat

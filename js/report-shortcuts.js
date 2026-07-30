@@ -9,9 +9,10 @@ window.openMonthlyReport = function() {
     if (monthSel) monthSel.value = String(now.getMonth() + 1);
     if (yearInp) yearInp.value = String(now.getFullYear());
     window.openModal('monthlyReportModal');
-    if (typeof generateMonthlyReport === 'function') {
-        generateMonthlyReport();
-    }
+    window.runAfterNextPaint(function() {
+        const modal = document.getElementById('monthlyReportModal');
+        if (modal && modal.classList.contains('show') && typeof generateMonthlyReport === 'function') generateMonthlyReport();
+    });
 };
 
 // generatePDFReport: dipanggil dari tombol pintas "PDF" di panel anggaran.

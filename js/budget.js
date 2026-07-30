@@ -326,8 +326,11 @@ window.openDefaultBudgetModal = function() {
     if (!window.requireOnline('mengatur anggaran bulanan')) return;
     const search = document.getElementById('defaultBudgetSearch');
     if (search) search.value = '';
-    window.renderDefaultBudgetForm();
     window.openModal('defaultBudgetModal');
+    window.runAfterNextPaint(function() {
+        const modal = document.getElementById('defaultBudgetModal');
+        if (modal && modal.classList.contains('show')) window.renderDefaultBudgetForm();
+    });
 };
 window.renderDefaultBudgetForm = function() {
     const container = document.getElementById('defaultBudgetCategoriesContainer');
@@ -651,7 +654,12 @@ window._populateAnnualBudgetCategory = function(selectId) {
 };
 window.openAnnualBudgetModal = function() {
     window.ensureAnnualBudgetYearlyCycle(window.currentBookId);
-    window._populateAnnualBudgetCategory(); window.renderAnnualBudgetForm(); window.openModal('annualBudgetModal');
+    window._populateAnnualBudgetCategory();
+    window.openModal('annualBudgetModal');
+    window.runAfterNextPaint(function() {
+        const modal = document.getElementById('annualBudgetModal');
+        if (modal && modal.classList.contains('show')) window.renderAnnualBudgetForm();
+    });
 };
 window.renderAnnualBudgetForm = function() {
     window.ensureAnnualBudgetYearlyCycle(window.currentBookId);

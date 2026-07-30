@@ -1311,6 +1311,10 @@ tr:hover td { background: var(--accent-lt); }
 }
 .modal.show { display: flex; }
 
+/* Isolasi area halaman penuh agar perubahan daftar besar di satu menu tidak
+   memaksa browser menghitung ulang layout Dashboard/sidebar secara luas. */
+.fullview-modal { contain: layout paint style; }
+
 .modal-content {
   background: var(--paper);
   border: 1.5px solid var(--rule);
@@ -1584,6 +1588,8 @@ tr:hover td { background: var(--accent-lt); }
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     padding: 0 12px 12px;
   }
   body.view-fullpage .fullview-modal.show .modal-header {
