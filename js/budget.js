@@ -338,15 +338,19 @@ window.renderDefaultBudgetForm = function() {
         window.updateDefaultBudgetSummary();
         return;
     }
-    window.EXPENSE_CATEGORIES.forEach((cat, idx) => {
+    const sortedCategories = [...window.EXPENSE_CATEGORIES].sort((a, b) => {
+        const valA = defaultBudget[a] || 0;
+        const valB = defaultBudget[b] || 0;
+        return valB - valA;
+    });
+    sortedCategories.forEach((cat, idx) => {
         const val = defaultBudget[cat] || 0;
-        const initial = window.escapeHtml(cat).trim().charAt(0).toUpperCase() || '?';
         const colorClass = 'c' + (idx % 5);
         const div = document.createElement('div');
         div.className = 'dbudget-item' + (val ? ' filled' : '');
         div.dataset.catName = cat.toLowerCase();
         div.innerHTML = `
-            <span class="dbudget-badge ${colorClass}">${initial}</span>
+            <span class="dbudget-badge ${colorClass}">${idx + 1}</span>
             <div class="dbudget-body">
                 <span class="dbudget-name">${window.escapeHtml(cat)}</span>
                 <div class="dbudget-input-row">
