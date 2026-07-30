@@ -403,13 +403,59 @@ window.saveNewAccount = async function() {
                 let cryptoKey, saltB64, checkB64;
 
                 if (isActiveEdit && localStorage.getItem('sk_crypto_salt')) {
-                    // Ini rotasi password untuk akun yang SEDANG aktif -> pertahankan
-                    // salt yang sama (lihat window.rotatePasswordKeepingSalt di
-                    // crypto.js), supaya perangkat lain yang sudah "join" backend ini
-                    // tidak kehilangan kecocokan kunci hanya karena password diganti
-                    // lewat form akun ini (bukan lewat menu "Ubah Password").
-                    const rotated = await window.rotatePasswordKeepingSalt(pwd, localStorage.getItem('sk_crypto_salt'));
-                    cryptoKey = rotated.key; saltB64 = rotated.saltB64; checkB64 = rotated.checkB64;
+                    // [FIX BUG SILENT KEY ROTATION] SEBELUM INI: field password di form
+                    // ini SELALU diperlakukan sebagai rotasi password (rotatePasswordKeepingSalt)
+                    // begitu saja, walau tujuan user cuma edit URL/Anon Key -- BUKAN ganti
+                    // password. Akibatnya kalau user salah ketik (typo) atau tidak sadar
+                    // field ini "berarti" password, key AES sesi diam-diam berubah tanpa
+                    // peringatan apa pun. Transaksi lama yang enc_payload-nya sudah
+                    // terlanjur dienkripsi dengan key SEBELUMNYA jadi permanen tidak bisa
+                    // didekripsi key baru (gejala: warning "[Crypto] Gagal dekripsi
+                    // transaksi ... OperationError" bertumpuk di console, transaksi lama
+                    // tampil kosong/nol).
+                    //
+                    // Perbaikan: cek dulu apakah pwd yang diketik SAMA dengan password
+                    // yang sedang aktif sekarang (verifikasi ke sk_crypto_check lokal,
+                    // salt yang sama). PBKDF2 deterministik -- kalau memang password
+                    // yang sama persis, key yang diturunkan pasti identik, jadi aman
+                    // langsung dipakai ulang TANPA memanggil rotatePasswordKeepingSalt.
+                    // Kalau TIDAK cocok -- baik karena user memang sengaja mau ganti
+                    // password lewat form ini, maupun karena typo -- user WAJIB
+                    // konfirmasi eksplisit lewat window.customPrompt (ketik ulang frasa
+                    // tertentu) sebelum key benar-benar dirotasi, dengan peringatan jelas
+                    // soal transaksi lama yang bisa jadi tidak terbaca lagi. Ini menutup
+                    // celah "ganti password tanpa sadar" sekaligus tetap membolehkan
+                    // ganti password yang memang disengaja lewat form ini.
+                    const existingSalt = localStorage.getItem('sk_crypto_salt');
+                    const existingCheck = localStorage.getItem('sk_crypto_check');
+                    const saltBytes = Uint8Array.from(atob(existingSalt), c => c.charCodeAt(0));
+                    const candidateKey = await window.deriveKey(pwd, saltBytes);
+                    let samePassword = false;
+                    if (existingCheck) {
+                        try {
+                            const plain = await window.decryptStr(candidateKey, existingCheck);
+                            samePassword = (plain === 'sinarkeu_ok');
+                        } catch { samePassword = false; }
+                    }
+
+                    if (samePassword) {
+                        cryptoKey = candidateKey; saltB64 = existingSalt; checkB64 = existingCheck;
+                    } else {
+                        const typed = await window.customPrompt({
+                            title: 'Password berbeda terdeteksi',
+                            message: 'Password yang kamu ketik berbeda dari password yang sedang aktif sekarang. Melanjutkan akan MENGGANTI kunci enkripsi -- transaksi lama yang sudah terlanjur terenkripsi dengan kunci sebelumnya TIDAK AKAN BISA dibaca lagi dengan password baru ini. Kalau ini cuma salah ketik, batalkan dan coba lagi. Ketik GANTI PASSWORD untuk melanjutkan dengan sengaja.',
+                            expectedValue: 'GANTI PASSWORD',
+                            confirmLabel: 'Ganti Password',
+                            cancelLabel: 'Batal'
+                        });
+                        if (!typed) {
+                            st.style.color = '#A13A3A';
+                            st.innerText = 'Dibatalkan -- password tidak diubah. Periksa kembali password yang kamu ketik.';
+                            return;
+                        }
+                        const rotated = await window.rotatePasswordKeepingSalt(pwd, existingSalt);
+                        cryptoKey = rotated.key; saltB64 = rotated.saltB64; checkB64 = rotated.checkB64;
+                    }
                 } else {
                     // Akun baru, atau akun yang sedang TIDAK aktif, atau belum ada
                     // salt lokal sama sekali -> backend ini bisa jadi sudah pernah
