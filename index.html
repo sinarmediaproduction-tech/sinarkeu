@@ -1218,22 +1218,19 @@ alter table public.settings
                 <div id="googleSheetsStatus" style="font-size:.7rem; margin-top:6px; min-height:16px;"></div>
                 <div id="googleSheetsLastBackup" class="setelan-hint"></div>
             </div>
-            <div style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--rule);">
-                <div class="form-group"><label>Auto-Backup Terakhir</label><div id="lastBackupInfo" style="background:var(--paper-warm); padding:10px; border-radius: var(--radius-sm); font-size:.75rem">Memuat...</div></div>
-                <div class="form-group"><label>Cadangan Lokal</label><div id="backupListContainer" style="max-height:130px; overflow-y:auto; border:1px solid var(--rule); border-radius: var(--radius-sm); padding:10px"></div></div>
-                <div class="form-group"><label style="display:flex; align-items:center; gap:8px;">Cadangan Cloud (Supabase) <span id="cloudBackupStatus" style="font-size:.65rem; padding:2px 8px; border-radius: var(--radius-sm); background:var(--success-lt); color:var(--success);">Otomatis Harian</span></label><div id="cloudBackupListContainer" style="max-height:130px; overflow-y:auto; border:1px solid var(--rule); border-radius: var(--radius-sm); padding:10px"><div style="color:var(--ink-faint); font-size:.7rem; text-align:center;">Memuat cadangan cloud...</div></div></div>
-                <div class="panel-actions-row">
-                    <button class="btn btn-primary" onclick="createFullBackup()" style="flex:1"> Buat Cadangan</button>
-                    <button class="btn btn-warning" onclick="restoreFromBackup()" style="flex:1">Pulihkan</button>
-                </div>
-            </div>
+            <!-- [FITUR DIHAPUS] Backup manual (lokal+cloud, tombol "Buat Cadangan")
+                 dan auto-backup harian cloud sudah dihapus -- lihat catatan di
+                 js/backup.js. Pemulihan data sekarang sepenuhnya lewat tab
+                 "Snapshot Keamanan" di bawah. -->
         </div>
 
-        <!-- Snapshot Keamanan -- dipindah dari Setelan -->
+        <!-- Snapshot Keamanan -- dipindah dari Setelan, sekarang jadi SATU-SATUNYA
+             mekanisme pemulihan data (backup manual & auto-backup cloud sudah
+             dihapus, lihat catatan di js/backup.js) -->
         <div class="data-management-panel setelan-tab-panel" data-tab-panel="snapshot">
             <div class="panel-title">Snapshot Keamanan</div>
             <div class="setelan-desc" style="margin-bottom:12px;">
-                Berbeda dari <b>Cadangan Data</b>: snapshot di sini dibuat <b>otomatis</b> oleh aplikasi tanpa perlu diklik — baik <b>1x per hari</b> (snapshot harian), maupun tepat sebelum aksi berisiko dijalankan (hapus buku, hapus akun, reset total aplikasi, arsipkan &amp; kosongkan database, restore Cadangan Data, atau impor JSON). Gunakan untuk berjaga-jaga kalau ada error atau hasil aksi tersebut ternyata keliru.
+                Snapshot di sini dibuat <b>otomatis</b> oleh aplikasi tanpa perlu diklik — baik <b>1x per hari</b> (snapshot harian), maupun tepat sebelum aksi berisiko dijalankan (hapus buku, hapus akun, reset total aplikasi, arsipkan &amp; kosongkan database, restore data, atau impor JSON). Gunakan untuk berjaga-jaga kalau ada error atau hasil aksi tersebut ternyata keliru.
                 <br><br>
                 Menyimpan <b>seluruh data lokal akun ini</b> (semua buku, anggaran, pengingat pembayaran, setelan) pada perangkat ini saja — maksimal 10 snapshot terbaru disimpan (snapshot tertua otomatis dihapus kalau sudah penuh). <b>Catatan:</b> jika aksi terkait sudah menghapus data secara permanen di cloud/Supabase, snapshot ini hanya memulihkan salinan lokal, bukan data di cloud.
             </div>
@@ -1843,7 +1840,7 @@ alter table public.settings
   statis sebelumnya, jadi urutan dependency antar file tidak berubah.
 -->
 <script>
-    var APP_JS_VERSION = 'v20'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
+    var APP_JS_VERSION = 'v21'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
     var SK_JS_FILES = [
         'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js', 'js/db.js',
         'js/telegram.js', 'js/account.js', 'js/book.js', 'js/transaction.js',
