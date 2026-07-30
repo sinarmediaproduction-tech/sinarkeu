@@ -624,6 +624,7 @@ window.saveAnnualBudget = async function() {
 // Item tahunan juga merupakan daftar pengeluaran berulang. Struktur lama
 // {name, amount} tetap didukung; properti baru ditambahkan saat item dipakai.
 window.getAnnualBudgetYearKey = function(date) { return String((date || new Date()).getFullYear()); };
+window._annualBudgetItemSubtotal = function(item) { return (Number(item.amount) || 0) * ((Number(item.qty) || 0) > 0 ? Number(item.qty) : 1); };
 window.ensureAnnualBudgetYearlyCycle = function(bookId) {
     const target = bookId || window.currentBookId;
     const items = window.getAnnualBudget(target);
@@ -653,30 +654,34 @@ window.renderAnnualBudgetForm = function() {
     window.ensureAnnualBudgetYearlyCycle(window.currentBookId);
     const box = document.getElementById('annualBudgetItemsContainer'); if (!box) return;
     const items = window.getAnnualBudget(window.currentBookId);
-    const total = items.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+    const total = items.reduce((s, i) => s + window._annualBudgetItemSubtotal(i), 0);
     const summary = document.getElementById('annualBudgetSummary'); if (summary) summary.innerText = 'Total Anggaran Tahunan: ' + window.rp(total);
+    const totalCard = document.getElementById('annualBudgetTotalCard'); if (totalCard) totalCard.innerText = window.rp(total);
+    const progressCard = document.getElementById('annualBudgetProgressCard');
+    if (progressCard) progressCard.innerText = `${items.filter(i => i.done).length} dari ${items.length} kebutuhan direalisasikan`;
     if (!items.length) { box.innerHTML = '<div class="slist-empty">Belum ada kebutuhan tahunan. Tambahkan THR, pajak, servis, atau kebutuhan lainnya.</div>'; return; }
     box.innerHTML = items.map(i => `<div class="slist-item${i.done ? ' done' : ''}">
         <input type="checkbox" class="slist-checkbox" ${i.done ? 'checked' : ''} onchange="window.toggleAnnualBudgetItem('${window.escapeHtml(i.id)}')">
-        <span class="slist-name">${window.escapeHtml(i.name || '')}</span><span class="slist-qty"></span>
+        <span class="slist-name">${window.escapeHtml(i.name || '')}</span><span class="slist-qty">${(Number(i.qty) || 1) > 1 ? 'x' + window.escapeHtml(String(i.qty)) : ''}</span>
         <span class="slist-cat-badge">${window.escapeHtml(i.category || 'Belanja Harian')}</span><span class="slist-unit-price"></span>
-        <span class="slist-price">${window.rp(Number(i.amount) || 0)}</span>
+        <span class="slist-price">${window.rp(window._annualBudgetItemSubtotal(i))}</span>
         <div class="slist-trail"><button type="button" class="slist-del-btn" title="Hapus" onclick="window.deleteAnnualBudgetItem('${window.escapeHtml(i.id)}')">×</button></div>
     </div>`).join('');
 };
 window.addAnnualBudgetRow = function() {
-    const nameEl = document.getElementById('annualNewName'), amountEl = document.getElementById('annualNewAmount'), catEl = document.getElementById('annualNewCategory');
+    const nameEl = document.getElementById('annualNewName'), qtyEl = document.getElementById('annualNewQty'), amountEl = document.getElementById('annualNewAmount'), catEl = document.getElementById('annualNewCategory');
     const name = nameEl && nameEl.value.trim(), amount = amountEl ? window.unRp(amountEl.value) : 0;
     if (!name || amount <= 0) { window.showToast('Isi nama dan nominal kebutuhan tahunan.', 'warning'); return; }
     const items = window.getAnnualBudget(window.currentBookId);
-    items.push({ id:'ab_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), name, amount, category:catEl ? catEl.value : '', done:false, checklistYear:window.getAnnualBudgetYearKey() });
-    window.saveAnnualBudgetList(window.currentBookId, items); nameEl.value = ''; amountEl.value = ''; window.renderAnnualBudgetForm();
+    const qty = qtyEl && Number(qtyEl.value) > 0 ? Number(qtyEl.value) : 1;
+    items.push({ id:'ab_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), name, qty, amount, category:catEl ? catEl.value : '', done:false, checklistYear:window.getAnnualBudgetYearKey() });
+    window.saveAnnualBudgetList(window.currentBookId, items); nameEl.value = ''; qtyEl.value = ''; amountEl.value = ''; window.renderAnnualBudgetForm();
 };
 window.toggleAnnualBudgetItem = async function(id) {
     window.ensureAnnualBudgetYearlyCycle(window.currentBookId); const items = window.getAnnualBudget(window.currentBookId), item = items.find(i => i.id === id); if (!item) return;
     const done = !item.done, year = window.getAnnualBudgetYearKey();
     if (done && item.lastExpenseYear !== year) {
-        const now = new Date(), pad=n=>String(n).padStart(2,'0'), tx = { id:'tx_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), type:'expense', date:`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`, category:item.category || 'Belanja Harian', description:`[Anggaran Tahunan] ${item.name}`, amount:Number(item.amount)||0, attachment:null, annualBudgetItemId:item.id, annualBudgetYear:year, updated_at:now.toISOString() };
+        const now = new Date(), pad=n=>String(n).padStart(2,'0'), tx = { id:'tx_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), type:'expense', date:`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`, category:item.category || 'Belanja Harian', description:`[Anggaran Tahunan] ${item.name}`, amount:window._annualBudgetItemSubtotal(item), attachment:null, annualBudgetItemId:item.id, annualBudgetYear:year, updated_at:now.toISOString() };
         window.txs.unshift(tx); window.markTxDirty(tx.id); window.saveTransactions(); item.lastExpenseYear=year; item.lastExpenseTransactionId=tx.id; window.showToast('Pengeluaran tahunan otomatis ditambahkan ke dashboard.', 'success');
     } else if (!done && item.lastExpenseYear === year && item.lastExpenseTransactionId) {
         const txId=item.lastExpenseTransactionId; if (window.clearTxDirty) window.clearTxDirty([txId]); window.txs=window.txs.filter(t=>t.id!==txId); window.saveTransactions();

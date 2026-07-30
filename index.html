@@ -1499,10 +1499,18 @@ alter table public.settings
         <div style="background:var(--purple-lt); border:1px solid color-mix(in srgb, var(--purple) 35%, var(--purple-lt)); border-radius: var(--radius-sm); padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:var(--purple);">
             <b>Anggaran Tahunan</b> adalah rencana biaya yang terjadi <b>tidak setiap bulan</b> — seperti hari raya, pajak, servis kendaraan, liburan, dll. Total anggaran ini membantu menghitung kebutuhan cadangan dana Anda.
         </div>
-        <div class="slist-add-wrap" style="display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:8px; margin-bottom:12px;">
+        <div class="slist-summary-grid" style="margin-bottom:14px;">
+            <div class="slist-summary-card">
+                <span class="slist-summary-label">Total Anggaran Tahunan</span>
+                <span class="slist-summary-value" id="annualBudgetTotalCard">Rp 0</span>
+                <span class="slist-summary-meta" id="annualBudgetProgressCard">0 dari 0 kebutuhan direalisasikan</span>
+            </div>
+        </div>
+        <div class="slist-add-wrap" style="display:grid; grid-template-columns:2fr .65fr 1fr 1fr auto; gap:8px; margin-bottom:12px;">
             <input id="annualNewName" type="text" class="form-control" placeholder="Nama kebutuhan (mis. Pajak kendaraan)">
+            <input id="annualNewQty" type="number" min="1" step="1" class="form-control" inputmode="numeric" placeholder="QTY">
             <select id="annualNewCategory" class="form-control"></select>
-            <input id="annualNewAmount" type="text" class="form-control" inputmode="numeric" placeholder="Rp 0" oninput="window.formatRupiah(this)">
+            <input id="annualNewAmount" type="text" class="form-control" inputmode="numeric" placeholder="Harga satuan" oninput="window.formatRupiah(this)">
             <button class="btn btn-primary" type="button" onclick="window.addAnnualBudgetRow()">Tambah</button>
         </div>
         <div id="annualBudgetItemsContainer" class="slist-list"></div>

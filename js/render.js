@@ -189,7 +189,10 @@ window.updateFinancialCards = function() {
     // Anggaran Tahunan dari annual_budget
     const annualBudget = window.getAnnualBudget(window.currentBookId);
     let anggaranTahunan = 0;
-    annualBudget.forEach(item => { anggaranTahunan += (Number(item.amount) || 0); });
+    annualBudget.forEach(item => {
+        const qty = (Number(item.qty) || 0) > 0 ? Number(item.qty) : 1;
+        anggaranTahunan += (Number(item.amount) || 0) * qty;
+    });
 
     // Saldo akhir seluruh histori
     let totalInc = 0, totalExp = 0;
