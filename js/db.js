@@ -424,6 +424,23 @@ window.pushSettingTelegram = async function() {
 window.reEncryptAllCloudSettings = async function() {
     if (!window.isOnline() || !window._sessionCryptoKey) return;
     try {
+        // [FIX RACE CONDITION -- TOAST RLS 42501 BERULANG UTK BUKU BERSAMA]
+        // Fungsi ini bisa terpicu OTOMATIS oleh hasStaleRows di
+        // pullAllSettings() (lihat pemanggilnya di bawah), termasuk lewat
+        // AutoSync tick di js/app.js. window._skSharedRoles bisa saja BELUM
+        // sempat ter-refresh ulang sejak reload/login di momen itu (mis. app
+        // baru login lagi tapi skRefreshSharedAccess() masih berjalan/belum
+        // kepanggil di tick ini) -- kalau begitu, skIsSharedBookId(b.id) di
+        // bawah keliru balik false utk buku yang SEBENARNYA shared, lolos ke
+        // pushSetting() lewat anon key, lalu ditolak RLS (device "lupa
+        // sesaat" kalau buku ini shared, padahal user sudah login). Refresh
+        // eksplisit di sini dulu supaya keputusan skip di bawah selalu pakai
+        // state ter-update, bukan bergantung self-heal parsial di app.js
+        // yang cuma jalan kalau b._isShared SUDAH pernah true sebelumnya.
+        if (typeof window.skRefreshSharedAccess === 'function') {
+            try { await window.skRefreshSharedAccess(); }
+            catch (e) { console.warn('[Sync] Gagal refresh akses buku bersama sebelum re-enkripsi (lanjut pakai state lama):', e); }
+        }
         await window.pushSettingBooks();
         const books = Array.isArray(window.books) ? window.books : [];
         for (const b of books) {
