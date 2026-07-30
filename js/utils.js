@@ -80,6 +80,25 @@ window._recordToastError = function(msg) {
         // saja untuk bantu telusur, bukan jaminan akurat di semua browser.
         let stack = '';
         try { stack = (new Error()).stack || ''; } catch (_) {}
+        // [DIAGNOSTIK BUKU BERSAMA -- toast RLS 42501 sulit dilacak]
+        // book_id di atas diambil dari window.currentBookId SAAT TOAST
+        // TAMPIL -- kalau request yang gagal sempat menunggu (network
+        // lambat/retry) dan user keburu pindah buku, nilai ini bisa BEDA
+        // dari buku yang sebenarnya gagal di-push. Field tambahan di bawah
+        // merekam status akses Buku Bersama PADA SAAT toast ini muncul,
+        // supaya ketahuan pasti: apakah device ini memang sedang menganggap
+        // buku itu shared (skIsSharedBookId), apakah sesi login Buku
+        // Bersama ada, dan buku apa saja yang dikenali shared saat itu --
+        // tanpa ini, kita cuma bisa menduga-duga dari kode statis.
+        let sk_shared_debug = null;
+        try {
+            sk_shared_debug = {
+                sk_auth_email: window._skAuthUser ? window._skAuthUser.email : null,
+                sk_current_book_is_shared: (typeof window.skIsSharedBookId === 'function' && window.currentBookId)
+                    ? window.skIsSharedBookId(window.currentBookId) : null,
+                sk_shared_role_book_ids: Object.keys(window._skSharedRoles || {}),
+            };
+        } catch (_) {}
         log.push({
             timestamp: new Date().toISOString(),
             message: String(msg),
@@ -87,6 +106,7 @@ window._recordToastError = function(msg) {
             device_id: window.deviceId || null,
             url: (typeof location !== 'undefined' ? location.href : ''),
             stack: stack,
+            sk_shared_debug: sk_shared_debug,
         });
         // Buang yang paling lama kalau kelebihan kapasitas.
         while (log.length > window.TOAST_ERROR_LOG_MAX) log.shift();
