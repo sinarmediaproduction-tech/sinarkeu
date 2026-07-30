@@ -142,6 +142,20 @@ window.checkAndRunDailyAutoBackup = async function() {
     let now = new Date();
     let backedUpBooks = 0;
     for (const book of window.books) {
+        // [FIX SPAM RLS HARIAN] Backup HANYA boleh ditulis oleh admin/editor
+        // buku bersama (lihat policy backups_shared_write di
+        // sql/fix_rls_sync_42501.sql -- FOR INSERT TO authenticated WITH
+        // CHECK role IN admin/editor). Kalau device ini viewer di buku
+        // shared tersebut, percobaan push di bawah PASTI selalu ditolak RLS
+        // -- bukan sekali gagal lalu beres, tapi akan terus terulang SETIAP
+        // hari selamanya (skip-jika-sudah-backup-hari-ini di atas tidak
+        // membantu karena baris `result` selalu falsy, lastKey tidak pernah
+        // ke-set). Lewati dari awal supaya tidak spam toast error tiap hari
+        // untuk sesuatu yang memang tidak bisa/tidak boleh ditulis viewer.
+        if (window.skIsSharedBookId && window.skIsSharedBookId(book.id)) {
+            const role = window.skGetRoleForBook ? window.skGetRoleForBook(book.id) : null;
+            if (role !== 'admin' && role !== 'editor') continue;
+        }
         let lastKey = 'sk_last_cloud_backup_' + book.id;
         let last = localStorage.getItem(lastKey);
         if (last) {

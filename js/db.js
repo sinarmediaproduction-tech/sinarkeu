@@ -43,6 +43,39 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
             e.message = 'Waktu koneksi ke server habis (timeout). Coba lagi.';
         }
         console.error(`Supabase API Error (${table}):`, e);
+        // [FIX SALAH DIAGNOSIS RLS] Pesan RLS di bawah dulu SELALU mengarah
+        // ke "jalankan fix_rls_sync_42501.sql" -- benar untuk kasus policy
+        // memang belum ada, TAPI ada penyebab lain yang menghasilkan gejala
+        // identik (401/42501) walau policy sudah lengkap: request ini lewat
+        // jalur ANON (bukan jalur JWT "buku bersama" di js/auth.js), yang
+        // hanya terjadi kalau window.skIsSharedBookId(book_id) mengembalikan
+        // false di device ini -- padahal server (policy *_legacy_anon di
+        // sql/fix_rls_sync_42501.sql sengaja menolak anon untuk buku yang
+        // sudah is_shared=true) sudah tahu buku ini Buku Bersama. Mismatch
+        // ini terjadi kalau device belum pernah/belum sempat memuat status
+        // keanggotaan Buku Bersama-nya (window._skSharedRoles) -- mis.
+        // belum login Supabase Auth di device ini, atau load-nya sempat
+        // gagal/telat saat app dibuka. Coba self-heal: minta ulang status
+        // keanggotaan (throttle 60 detik biar tidak spam kalau memang belum
+        // login) supaya permintaan BERIKUTNYA untuk buku ini otomatis lewat
+        // jalur JWT yang benar tanpa perlu reload manual.
+        const _bookIdForRls = (function() {
+            if (body) {
+                const row = Array.isArray(body) ? body[0] : body;
+                if (row && row.book_id) return row.book_id;
+            }
+            if (queryString && /book_id=eq\.([^&]+)/.test(queryString)) return decodeURIComponent(RegExp.$1);
+            return null;
+        })();
+        const _isRlsErrForHeal = /row-level security|42501|permission denied for table/i.test(e && e.message || '');
+        if (_isRlsErrForHeal && _bookIdForRls && typeof window.skIsSharedBookId === 'function'
+            && !window.skIsSharedBookId(_bookIdForRls) && typeof window.skRefreshSharedAccess === 'function') {
+            const nowHeal = Date.now();
+            if (!window._lastSkRefreshSelfHealAt || nowHeal - window._lastSkRefreshSelfHealAt > 60000) {
+                window._lastSkRefreshSelfHealAt = nowHeal;
+                window.skRefreshSharedAccess().catch(function() { /* diamkan, coba lagi lain kali */ });
+            }
+        }
         // [FIX] Sebelumnya kegagalan (selain offline) selalu diam-diam --
         // cuma masuk console, tidak pernah kelihatan oleh user. Ini yang
         // membuat masalah seperti "constraint on_conflict tidak ada di
@@ -58,13 +91,16 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
                 // PostgREST dapat membungkus penolakan RLS PostgreSQL
                 // (kode 42501) sebagai HTTP 401 untuk request anon. Ini
                 // bukan berarti URL/anon key salah; penyebabnya adalah
-                // policy RLS tabel belum mencakup jalur akses aplikasi.
+                // policy RLS tabel belum mencakup jalur akses aplikasi --
+                // ATAU (lihat blok self-heal di atas) buku ini sebenarnya
+                // sudah jadi Buku Bersama tapi device ini belum mengenali
+                // keanggotaannya (belum login / sesi belum termuat).
                 const isRlsErr = /row-level security|42501|permission denied for table/i.test(e && e.message || '');
                 const detail = window._supabaseErrDetail(e && e.message);
                 const msg = isConflictErr
                     ? `Gagal sinkron tabel '${table}': constraint database belum di-setup. Jalankan fix_settings_upsert.sql di Supabase SQL Editor.`
                     : isRlsErr
-                        ? `Gagal sinkron tabel '${table}': akses ditolak oleh aturan RLS database. Jalankan sql/fix_rls_sync_42501.sql di Supabase SQL Editor.`
+                        ? `Gagal sinkron tabel '${table}': akses ditolak oleh aturan RLS database. Kalau sql/fix_rls_sync_42501.sql sudah pernah dijalankan, ini mungkin Buku Bersama yang belum dikenali device ini -- coba login ulang.`
                     : `Gagal sinkron tabel '${table}' (${e && e.status ? e.status : 'network'})${detail ? ': ' + detail : '. Cek koneksi/URL/API key.'}`;
                 window.showToast(msg, 'error');
             }
