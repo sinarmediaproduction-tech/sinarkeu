@@ -448,8 +448,61 @@ window.renderHargaKomoditasModal = function() {
             '<td class="col-action"><button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:.8rem;" onclick="window.openEditHargaKomoditasManual(\'' + c.slug + '\')">Ubah</button></td></tr>';
     };
 
+    // [KARTU MOBILE] Versi non-tabel untuk layar sempit (lihat .hk-card-list
+    // di css/style.css) -- kolom "Wilayah" sengaja TIDAK ditampilkan di sini
+    // (hampir selalu "Nasional", kurang penting) supaya kolom "Tren" yang
+    // sebelumnya kepotong di luar layar (butuh scroll horizontal tabel)
+    // sekarang langsung terlihat tanpa scroll.
+    const renderAutoCard = function(c) {
+        const hit = cache.get(c.slug);
+        const priceHtml = hit
+            ? ('<span class="hk-card-price">' + window.rp(hit.price) + '</span><span class="hk-card-unit">/ ' + window.escapeHtml(c.unit) + '</span>')
+            : '<span style="color:var(--ink-faint);font-size:.75rem;">Belum ada data</span>';
+
+        const change = _hkPctChange(c.slug);
+        let changeHtml = '<span class="hk-card-change" style="color:var(--ink-faint);">Tren belum cukup data</span>';
+        if (change) {
+            const up = change.pct > 0;
+            const flat = Math.abs(change.pct) < 0.05;
+            const color = flat ? 'var(--ink-faint)' : (up ? 'var(--danger)' : 'var(--success)');
+            const arrow = flat ? '' : (up ? '\u25B2 ' : '\u25BC ');
+            changeHtml = '<span class="hk-card-change" style="color:' + color + '">' + arrow + Math.abs(change.pct).toFixed(1) + '%</span>';
+        }
+
+        const hasHistory = window._hargaPanganHistory && (window._hargaPanganHistory.get(c.slug) || []).length >= 2;
+        const trendBtn = hasHistory
+            ? '<button type="button" class="btn btn-secondary hk-card-trend-btn" onclick="window.openHargaKomoditasTrend(\'' + c.slug + '\')">Tren</button>'
+            : '';
+
+        return '<div class="hk-card">' +
+            '<div class="hk-card-top"><span class="hk-card-name">' + window.escapeHtml(c.name) + '</span>' + trendBtn + '</div>' +
+            '<div class="hk-card-price-row">' + priceHtml + '</div>' +
+            changeHtml +
+            '</div>';
+    };
+
+    const renderManualCard = function(c) {
+        const hit = cache.get(c.slug);
+        const priceHtml = hit
+            ? ('<span class="hk-card-price">' + window.rp(hit.price) + '</span><span class="hk-card-unit">/ ' + window.escapeHtml(c.unit) + '</span>')
+            : '<span style="color:var(--ink-faint);font-size:.75rem;">Belum ada data</span>';
+        const dateHtml = hit ? ('<span class="hk-card-meta">Update: ' + window.escapeHtml(hit.date) + '</span>') : '';
+
+        return '<div class="hk-card">' +
+            '<div class="hk-card-top"><span class="hk-card-name">' + window.escapeHtml(c.name) + '</span>' +
+            '<button type="button" class="btn btn-secondary hk-card-trend-btn" onclick="window.openEditHargaKomoditasManual(\'' + c.slug + '\')">Ubah</button></div>' +
+            '<div class="hk-card-price-row">' + priceHtml + '</div>' +
+            dateHtml +
+            '</div>';
+    };
+
+    const autoCardList = document.getElementById('hkAutoCardList');
+    const manualCardList = document.getElementById('hkManualCardList');
+
     autoBody.innerHTML = autoRows.map(renderAutoRow).join('') || '<tr><td colspan="6">Tidak ada data.</td></tr>';
     manualBody.innerHTML = manualRows.map(renderManualRow).join('') || '<tr><td colspan="5">Tidak ada data.</td></tr>';
+    if (autoCardList) autoCardList.innerHTML = autoRows.map(renderAutoCard).join('') || '<div style="font-size:.75rem;color:var(--ink-faint);">Tidak ada data.</div>';
+    if (manualCardList) manualCardList.innerHTML = manualRows.map(renderManualCard).join('') || '<div style="font-size:.75rem;color:var(--ink-faint);">Tidak ada data.</div>';
 };
 
 window.openEditHargaKomoditasManual = function(slug) {

@@ -1343,21 +1343,23 @@ alter table public.settings
         <div id="hkAutoSection">
             <div class="hk-section-label" style="margin-bottom:8px;">Harga Pangan (otomatis dari BI)</div>
             <div id="hkAutoUpdateInfo" class="hk-section-label" style="margin-bottom:8px;"></div>
-            <div class="table-container">
+            <div class="table-container hk-table-desktop">
                 <table>
                     <thead><tr><th>Komoditas</th><th>Satuan</th><th>Harga</th><th>Wilayah</th><th>Perubahan</th><th class="col-action">Tren</th></tr></thead>
                     <tbody id="hkAutoTableBody"></tbody>
                 </table>
             </div>
+            <div id="hkAutoCardList" class="hk-card-list"></div>
         </div>
         <div id="hkManualSection" style="margin-top:18px;">
             <div class="hk-section-label" style="margin-bottom:8px;">Komoditas Lain (input manual)</div>
-            <div class="table-container">
+            <div class="table-container hk-table-desktop">
                 <table>
                     <thead><tr><th>Komoditas</th><th>Satuan</th><th>Harga</th><th>Update</th><th class="col-action">Aksi</th></tr></thead>
                     <tbody id="hkManualTableBody"></tbody>
                 </table>
             </div>
+            <div id="hkManualCardList" class="hk-card-list"></div>
         </div>
         <div class="slist-actions">
             <button type="button" class="btn btn-secondary" onclick="window.refreshHargaKomoditas()">Segarkan dari BI</button>

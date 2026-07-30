@@ -1044,6 +1044,39 @@ button:disabled, .btn:disabled,
   margin-bottom: 20px;
 }
 
+/* ── Harga Komoditas: kartu ala-app untuk hape (pengganti tabel scroll
+   horizontal yang terasa "native"/mentah di layar sempit) --
+   disembunyikan by default, baru tampil di breakpoint mobile (lihat
+   media query @max-width:640px) yang juga menyembunyikan .hk-table-desktop. ── */
+.hk-card-list { display: none; }
+.hk-card {
+  background: var(--paper);
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 12px 14px;
+}
+.hk-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.hk-card-name { font-weight: 700; font-size: .82rem; color: var(--ink); }
+.hk-card-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-bottom: 5px;
+  flex-wrap: wrap;
+}
+.hk-card-price { font-family: var(--font-mono); font-weight: 700; font-size: 1rem; color: var(--ink); }
+.hk-card-unit { font-size: .65rem; color: var(--ink-faint); }
+.hk-card-change { font-size: .74rem; font-weight: 600; }
+.hk-card-meta { font-size: .65rem; color: var(--ink-faint); }
+.hk-card-trend-btn { padding: 4px 12px !important; font-size: .68rem !important; white-space: nowrap; flex-shrink: 0; }
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -3231,6 +3264,9 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 @media (max-width: 640px) {
   .desktop-only { display: none !important; }
   .mobile-only  { display: inline-flex !important; }
+  /* Harga Komoditas: tabel scroll-horizontal diganti kartu ala-app di hape */
+  .hk-table-desktop { display: none !important; }
+  .hk-card-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
   body { padding: 0; }
   .container { padding: 0 16px 32px; }
   .account-bar { padding: 0 16px; }
