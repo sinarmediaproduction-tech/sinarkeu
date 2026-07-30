@@ -29,6 +29,37 @@ window.renderBackupList = function() {
         container.appendChild(div);
     });
 };
+// [FIX QUOTA - PERMANEN] Dipanggil createBackup() saat localStorage device
+// benar-benar penuh DAN buku yang lagi aktif sendiri sudah tidak bisa
+// dipangkas lagi (localBackups-nya cuma tersisa 1: snapshot yang baru saja
+// mau dibuat). Daripada langsung menyerah, coba bebaskan ruang dari
+// snapshot cadangan lokal BUKU LAIN dulu -- ambil snapshot PALING LAMA
+// (paling tidak relevan) dari buku lain mana pun yang masih menyimpan
+// riwayat manual backup-nya sendiri, baru menyerah kalau memang tidak ada
+// lagi yang bisa dibebaskan di seluruh device ini. Ini permanen (jalan
+// otomatis kapan pun kejadian, bukan cuma sekali) dan tidak mengurangi
+// jatah 5 snapshot per buku yang berlaku normal -- cuma jadi jaring
+// pengaman tambahan saat device benar-benar kehabisan tempat.
+window._skFreeSomeLocalBackupSpace = function(exceptKey) {
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (!k || !k.startsWith('sk_manual_backups_') || k === exceptKey) continue;
+            let arr;
+            try { arr = JSON.parse(localStorage.getItem(k) || '[]'); } catch (e) { continue; }
+            if (Array.isArray(arr) && arr.length > 0) {
+                arr.pop(); // buang snapshot TERLAMA milik buku lain itu
+                try {
+                    if (arr.length > 0) localStorage.setItem(k, JSON.stringify(arr));
+                    else localStorage.removeItem(k);
+                } catch (e2) { continue; } // gagal nulis versi lebih kecil -- coba key lain
+                return true;
+            }
+        }
+    } catch (e) { /* localStorage API bermasalah, abaikan */ }
+    return false;
+};
+
 window.createBackup = function() {
     // [FIX QUOTA] Sebelumnya localStorage.setItem() di sini bisa lempar
     // QuotaExceededError kalau localStorage device penuh (buku dengan
@@ -37,28 +68,37 @@ window.createBackup = function() {
     // cadangan cloud & Google Sheets yang seharusnya tetap jalan pun ikut
     // batal, padahal keduanya tidak bergantung pada localStorage sama
     // sekali. Sekarang kegagalan lokal ditangani di sini saja (coba
-    // persempit dulu, baru kalau tetap tidak muat, dilewati dengan toast
-    // peringatan) dan TIDAK PERNAH melempar ke pemanggil -- supaya
-    // createFullBackup() bisa lanjut ke langkah berikutnya apa pun yang
-    // terjadi di sini. Return true/false menandakan berhasil/tidaknya,
-    // untuk pemanggil yang mau tahu (opsional, tidak wajib dicek).
+    // persempit dulu, lalu coba bebaskan ruang dari buku LAIN lewat
+    // window._skFreeSomeLocalBackupSpace di atas, baru kalau tetap tidak
+    // muat sama sekali, dilewati dengan toast peringatan) dan TIDAK PERNAH
+    // melempar ke pemanggil -- supaya createFullBackup() bisa lanjut ke
+    // langkah berikutnya apa pun yang terjadi di sini. Return true/false
+    // menandakan berhasil/tidaknya, untuk pemanggil yang mau tahu
+    // (opsional, tidak wajib dicek).
+    const bookKey = 'sk_manual_backups_' + window.currentBookId;
     try {
-        let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + window.currentBookId) || '[]');
+        let localBackups = JSON.parse(localStorage.getItem(bookKey) || '[]');
         localBackups.unshift({ timestamp: new Date().toISOString(), count: window.txs.length, data: window.txs });
         if (localBackups.length > 5) localBackups.pop();
         let saved = false;
-        while (!saved) {
+        let attempts = 0;
+        while (!saved && attempts < 50) {
+            attempts++;
             try {
-                localStorage.setItem('sk_manual_backups_' + window.currentBookId, JSON.stringify(localBackups));
+                localStorage.setItem(bookKey, JSON.stringify(localBackups));
                 saved = true;
             } catch (e) {
-                if (e && e.name === 'QuotaExceededError' && localBackups.length > 1) {
-                    // Buang snapshot lokal PALING LAMA dulu (bukan yang baru
-                    // saja dibuat) supaya masih muat, sebelum menyerah total.
+                if (!(e && e.name === 'QuotaExceededError')) throw e;
+                if (localBackups.length > 1) {
+                    // Buang snapshot lokal PALING LAMA milik buku INI dulu.
                     localBackups.pop();
-                } else {
-                    throw e;
+                    continue;
                 }
+                // Snapshot buku ini sendiri sudah minimal (cuma yang baru
+                // saja mau dibuat) -- coba bebaskan ruang dari buku LAIN.
+                if (window._skFreeSomeLocalBackupSpace(bookKey)) continue;
+                // Sudah tidak ada lagi yang bisa dibebaskan di device ini.
+                throw e;
             }
         }
         localStorage.setItem('sk_last_auto_backup_' + window.currentBookId, new Date().toISOString());
@@ -70,7 +110,7 @@ window.createBackup = function() {
         const isQuota = e && e.name === 'QuotaExceededError';
         window.showToast(
             isQuota
-                ? 'Penyimpanan lokal device ini penuh -- cadangan lokal dilewati (cadangan cloud tetap lanjut).'
+                ? 'Penyimpanan lokal device ini penuh (sudah dicoba bebaskan ruang dari buku lain, tapi tetap tidak cukup) -- cadangan lokal dilewati, cadangan cloud tetap lanjut.'
                 : 'Gagal membuat cadangan lokal: ' + (e && e.message ? e.message : 'error'),
             'warning'
         );
