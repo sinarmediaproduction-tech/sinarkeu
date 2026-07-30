@@ -913,63 +913,6 @@ window._skConvertBookDataToPlaintext = async function(bookId) {
     return { convertedCount: txResult.convertedCount + prResult.convertedCount, skippedCount: totalSkipped };
 };
 
-// ==================== MIGRASI SATU-KALI: SELURUH DATA LAMA -> PLAINTEXT ====================
-// Sejak enkripsi dinonaktifkan (lihat js/transaction.js, js/payment-reminder.js,
-// dan js/db.js: pushSetting -- semua sekarang selalu menulis plaintext), tulisan BARU sudah otomatis
-// plaintext. TAPI baris yang sudah kadung ditulis SEBELUM perubahan itu
-// (enc_payload masih terisi) tetap ciphertext di Supabase -- app masih bisa
-// membacanya lewat fallback dekripsi di decodeCloudTxRow/dst, tapi kalau
-// user memang mau membersihkan database supaya BENAR-BENAR tidak ada
-// ciphertext tersisa, fungsi ini melakukannya:
-//   1. Untuk setiap buku (pribadi ATAUPUN bersama -- beda dari
-//      window._skConvertBookDataToPlaintext yang tadinya hanya dipanggil
-//      saat SATU buku baru saja dijadikan bersama), tarik semua baris
-//      `transactions`/`payment_reminders` yang masih enc_payload != null,
-//      dekripsi dengan kunci sesi device ini, PATCH balik sebagai plaintext.
-//   2. Push ulang cache lokal (books/budgets/telegram/dll) lewat
-//      window.reEncryptAllCloudSettings() -- karena tabel `settings` bersifat
-//      insert-only (tidak ada kolom `id` per baris), baris plaintext BARU ini
-//      otomatis "menang" lewat updated_at.desc di pullAllSettings(), baris
-//      ciphertext lama tertinggal sebagai riwayat tak terpakai (aman
-//      diabaikan, atau dibersihkan manual lewat SQL kalau mau).
-// Butuh online + _sessionCryptoKey (app harus dalam keadaan unlocked) supaya
-// baris lama bisa didekripsi dulu sebelum ditulis ulang plaintext.
-window.migrateAllDataToPlaintext = async function() {
-    if (!window.isOnline || !window.isOnline()) {
-        window.showToast && window.showToast('Perlu online untuk migrasi data ke plaintext.', 'error');
-        return;
-    }
-    if (!window._sessionCryptoKey) {
-        window.showToast && window.showToast('Buka & unlock app dulu di device ini (perlu kunci sesi utk mendekripsi data lama).', 'error');
-        return;
-    }
-    const books = Array.isArray(window.books) ? window.books : [];
-    if (books.length === 0) {
-        window.showToast && window.showToast('Tidak ada buku untuk dimigrasi.', 'warning');
-        return;
-    }
-    window.showToast && window.showToast('Memulai migrasi data lama ke plaintext...', 'info');
-    let convertedTotal = 0, skippedTotal = 0;
-    for (const b of books) {
-        try {
-            const res = await window._skConvertBookDataToPlaintext(b.id);
-            if (res) { convertedTotal += res.convertedCount; skippedTotal += res.skippedCount; }
-        } catch (e) {
-            console.error('[auth.js] Migrasi plaintext gagal untuk buku', b.id, e);
-        }
-    }
-    try { await window.reEncryptAllCloudSettings(); } catch (e) { console.warn('[auth.js] Gagal push ulang settings plaintext:', e); }
-    if (skippedTotal > 0) {
-        window.showToast && window.showToast(
-            `Migrasi selesai: ${convertedTotal} baris dikonversi ke plaintext, ${skippedTotal} baris gagal (cek console).`,
-            'warning'
-        );
-    } else {
-        window.showToast && window.showToast(`Migrasi selesai: ${convertedTotal} baris berhasil dikonversi ke plaintext.`, 'success');
-    }
-    return { convertedTotal, skippedTotal };
-};
-
 // [FIX DATA "KOSONG" SETELAH BUKU BERSAMA -- TABEL SETTINGS] Celah yang sama
 // seperti window._skConvertBookDataToPlaintext di atas (transaksi & payment
 // reminders), tapi utk tabel `settings` (Anggaran Bulanan, Anggaran Dasar,
