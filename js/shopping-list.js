@@ -37,6 +37,42 @@ window.saveShoppingList = function(bookId, items) {
     }
 };
 
+// Siklus checklist mengikuti bulan kalender. Saat aplikasi dibuka pada bulan
+// baru (atau daftar belanja kembali ditampilkan), semua centang bulan lalu
+// dibuka lagi. Daftar barang dan transaksi TIDAK disentuh; penanda
+// lastExpenseMonth menjaga agar satu barang hanya masuk sekali per bulan.
+window.getShoppingListMonthKey = function(date) {
+    const d = date || new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+};
+
+window.ensureShoppingListMonthlyCycle = function(bookId) {
+    const targetId = bookId || window.currentBookId;
+    if (!targetId) return false;
+    const raw = localStorage.getItem('sk_shopping_list_' + targetId);
+    if (!raw) return false;
+    let items;
+    try { items = JSON.parse(raw); } catch { return false; }
+    if (!Array.isArray(items) || !items.length) return false;
+
+    const monthKey = window.getShoppingListMonthKey();
+    let changed = false;
+    items.forEach(function(item) {
+        // Data sebelum fitur ini dianggap sebagai checklist bulan berjalan,
+        // sehingga upgrade aplikasi tidak tiba-tiba membatalkan belanja hari ini.
+        if (!item.checklistMonth) {
+            item.checklistMonth = monthKey;
+            changed = true;
+        } else if (item.checklistMonth !== monthKey) {
+            item.done = false;
+            item.checklistMonth = monthKey;
+            changed = true;
+        }
+    });
+    if (changed) window.saveShoppingList(targetId, items);
+    return changed;
+};
+
 // ── Pembatasan role viewer (mengikuti pola yang sama seperti transaksi di
 // js/auth.js -- lihat window.skIsViewerOnCurrentBook & patch openModal di
 // sana). Daftar Belanja sebelumnya TIDAK masuk daftar menu yang dibatasi
@@ -116,6 +152,7 @@ window._shoppingListItemSubtotal = function(item) {
 };
 
 window.openShoppingListModal = function() {
+    window.ensureShoppingListMonthlyCycle(window.currentBookId);
     window._populateShoppingListCategorySelect();
     window.renderShoppingList();
     window.openModal('shoppingListModal');
@@ -248,6 +285,7 @@ window._sortShoppingListForDisplay = function(items) {
 };
 
 window.renderShoppingList = function() {
+    window.ensureShoppingListMonthlyCycle(window.currentBookId);
     const container = document.getElementById('shoppingListContainer');
     const items = window._sortShoppingListForDisplay(window.getShoppingList(window.currentBookId));
     const isViewer = window._slistIsViewer();
@@ -679,10 +717,58 @@ window.addShoppingListItem = function(e) {
 
 window.toggleShoppingListItem = function(id) {
     if (window._slistBlockIfViewer()) { window.renderShoppingList(); return; }
+    window.ensureShoppingListMonthlyCycle(window.currentBookId);
     const items = window.getShoppingList(window.currentBookId);
     const item = items.find(i => i.id === id);
     if (!item) return;
-    item.done = !item.done;
+    const willBeDone = !item.done;
+    if (willBeDone) {
+        const amount = window._shoppingListItemSubtotal(item);
+        if (amount <= 0) {
+            window.showToast('Isi harga barang terlebih dahulu agar pengeluaran dapat dibuat otomatis.', 'warning');
+            window.renderShoppingList();
+            return;
+        }
+
+        const monthKey = window.getShoppingListMonthKey();
+        // Satu centang hanya mencatat satu transaksi untuk siklus bulan ini.
+        // Penanda ini tersimpan bersama item agar reload/offline tidak membuat
+        // transaksi ganda; bulan berikutnya otomatis memakai monthKey baru.
+        if (item.lastExpenseMonth !== monthKey) {
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            const txId = 'tx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+            const transaction = {
+                id: txId,
+                type: 'expense',
+                date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`,
+                category: item.category || 'Belanja Harian',
+                description: `[Belanja Bulanan] ${item.name}`,
+                amount: amount,
+                attachment: null,
+                shoppingListItemId: item.id,
+                shoppingListMonth: monthKey,
+                updated_at: now.toISOString()
+            };
+            window.txs.unshift(transaction);
+            window.markTxDirty(transaction.id);
+            window.saveTransactions();
+            item.lastExpenseMonth = monthKey;
+            item.lastExpenseTransactionId = transaction.id;
+            if (typeof window.checkBudgetWarningAfterSave === 'function') {
+                window.checkBudgetWarningAfterSave(transaction.date, transaction.category);
+            }
+            if (typeof window.addCloudLog === 'function') {
+                window.addCloudLog('TAMBAH', `Mencatat belanja "${item.name}" otomatis sebesar ${window.rp(amount)}`).catch(function() {});
+            }
+            if (typeof window.sendTelegramNotif === 'function' && typeof window.buildTxNotifMessage === 'function') {
+                window.sendTelegramNotif(window.buildTxNotifMessage('TAMBAH', transaction, window.getCurrentBookName()));
+            }
+            window.showToast('Pengeluaran otomatis ditambahkan ke dashboard.', 'success');
+        }
+    }
+    item.done = willBeDone;
+    item.checklistMonth = window.getShoppingListMonthKey();
     window.saveShoppingList(window.currentBookId, items);
     window.renderShoppingList();
 };

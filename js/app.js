@@ -316,6 +316,12 @@ window.continueAppInit = async function() {
         }
     }
     window.startAutoSync();
+    // Checklist belanja adalah daftar rutin: ketika sesi pertama dibuka di
+    // bulan baru, buka kembali semua centang tanpa menghapus transaksi bulan
+    // sebelumnya. Fungsi yang sama juga dipanggil saat halaman Belanja dibuka.
+    if (typeof window.ensureShoppingListMonthlyCycle === 'function') {
+        window.ensureShoppingListMonthlyCycle(window.currentBookId);
+    }
     window.updateUIForOnlineStatus();
     // Snapshot Keamanan harian: tidak perlu online (murni localStorage), jadi
     // dipanggil di sini -- di luar percabangan online/offline di atas -- supaya
