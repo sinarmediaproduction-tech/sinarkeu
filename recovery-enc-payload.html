@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SinarKeu — Pemulihan Transaksi Terkunci</title>
+<style>
+  :root{
+    --ink:#1E2328; --paper:#FAFAF7; --line:#D8DBDE; --accent:#1F5138;
+    --danger:#A13A3A; --warn:#9C7A2E; --muted:#6B7178;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--paper); color:var(--ink); margin:0; padding:24px;
+    line-height:1.5;
+  }
+  .wrap{max-width:760px; margin:0 auto;}
+  h1{font-size:20px; margin:0 0 4px;}
+  .sub{color:var(--muted); font-size:13px; margin:0 0 24px;}
+  .card{
+    background:#fff; border:1px solid var(--line); border-radius:10px;
+    padding:20px; margin-bottom:16px;
+  }
+  .card h2{font-size:14px; text-transform:uppercase; letter-spacing:.04em; margin:0 0 12px; color:var(--muted);}
+  label{display:block; font-size:13px; font-weight:600; margin:12px 0 4px;}
+  label:first-child{margin-top:0;}
+  input[type=text], input[type=password], textarea{
+    width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:6px;
+    font-size:14px; font-family:inherit; background:#fff;
+  }
+  textarea{min-height:90px; resize:vertical; font-family:ui-monospace,monospace;}
+  .hint{font-size:12px; color:var(--muted); margin-top:4px;}
+  button{
+    appearance:none; border:none; border-radius:7px; padding:11px 18px;
+    font-size:14px; font-weight:600; cursor:pointer; margin-top:14px; margin-right:8px;
+  }
+  .btn-primary{background:var(--accent); color:#fff;}
+  .btn-primary:disabled{background:#9BB5A8; cursor:not-allowed;}
+  .btn-danger{background:var(--danger); color:#fff;}
+  .btn-danger:disabled{background:#C99; cursor:not-allowed;}
+  .btn-ghost{background:#fff; border:1px solid var(--line); color:var(--ink);}
+  #log{
+    background:#0F1214; color:#D7DBDE; font-family:ui-monospace,monospace;
+    font-size:12.5px; padding:14px; border-radius:8px; height:260px; overflow-y:auto;
+    white-space:pre-wrap;
+  }
+  .row-ok{color:#3E8E63;}
+  .row-fail{color:#C97A7A;}
+  .banner{
+    border:1px solid var(--warn); background:#FBF4E4; color:#6E5620;
+    padding:12px 14px; border-radius:8px; font-size:13px; margin-bottom:16px;
+  }
+  table{width:100%; border-collapse:collapse; font-size:13px; margin-top:10px;}
+  th,td{text-align:left; padding:6px 8px; border-bottom:1px solid var(--line);}
+  th{color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase;}
+  .pill{display:inline-block; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:600;}
+  .pill-ok{background:#E4F0E9; color:#1F5138;}
+  .pill-fail{background:#F5E4E4; color:#A13A3A;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Pemulihan Transaksi Terkunci (enc_payload)</h1>
+  <p class="sub">
+    Alat sekali-pakai untuk mendekripsi transaksi lama yang gagal dibuka karena kunci enkripsi
+    sudah berubah (lihat riwayat perbaikan di <code>js/account.js</code>). Jalankan file ini
+    langsung dari folder aplikasi (buka di browser), lalu hapus setelah selesai dipakai.
+  </p>
+
+  <div class="banner">
+    ⚠️ Alat ini akan <b>membaca</b> dan, kalau kamu tekan tombol tahap 2, <b>menulis ulang</b>
+    data ke tabel <code>transactions</code> di Supabase kamu. Tahap 1 (pindai) sepenuhnya aman
+    dan tidak mengubah apa pun — hasilnya ditampilkan dulu sebelum kamu memutuskan lanjut ke
+    tahap 2. Disarankan membuat backup cloud/manual dulu sebelum menekan tombol tahap 2
+    (menu Cadangkan Data di aplikasi utama).
+  </div>
+
+  <div class="card">
+    <h2>1. Koneksi Supabase</h2>
+    <label>Password saat ini (untuk auto-isi URL &amp; Anon Key dari perangkat ini)</label>
+    <input type="password" id="curPwd" placeholder="Password akun SinarKeu yang sedang aktif di perangkat ini">
+    <button class="btn-ghost" id="autofillBtn" type="button">Isi otomatis dari perangkat ini</button>
+    <p class="hint">Atau isi manual di bawah kalau kamu jalankan file ini bukan dari perangkat yang sudah login.</p>
+
+    <label>Supabase Project URL</label>
+    <input type="text" id="sbUrl" placeholder="https://xxxxxxxx.supabase.co">
+    <label>Anon Key</label>
+    <input type="text" id="sbKey" placeholder="eyJhbGciOi...">
+  </div>
+
+  <div class="card">
+    <h2>2. Kandidat Password Lama</h2>
+    <label>Satu password per baris — masukkan semua kemungkinan password yang pernah kamu ketik
+      di form "Edit Akun" (termasuk typo yang kamu curigai)</label>
+    <textarea id="candList" placeholder="password_lama_1&#10;password_lama_2&#10;kemungkinan_typo"></textarea>
+    <p class="hint">Salt diambil otomatis dari <code>localStorage</code> perangkat ini (<code>sk_crypto_salt</code>) — sama untuk semua kandidat password.</p>
+  </div>
+
+  <div class="card">
+    <h2>3. Jalankan</h2>
+    <button class="btn-primary" id="scanBtn" type="button">Tahap 1 — Pindai &amp; Coba Semua Password</button>
+    <button class="btn-danger" id="applyBtn" type="button" disabled>Tahap 2 — Terapkan Perbaikan ke Transaksi yang Berhasil</button>
+    <div id="log"></div>
+    <div id="resultTableWrap"></div>
+  </div>
+</div>
+
+<script>
+// ==================== Crypto helpers (identik dengan js/crypto.js) ====================
+async function deriveKey(password, saltBuf) {
+  const enc = new TextEncoder();
+  const baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: saltBuf, iterations: 300000, hash: 'SHA-256' }, baseKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function decryptStr(cryptoKey, b64) {
+  const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  const iv = bytes.slice(0, 12);
+  const ct = bytes.slice(12);
+  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, ct);
+  return new TextDecoder().decode(plain);
+}
+
+function log(msg, cls) {
+  const el = document.getElementById('log');
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+function clearLog() { document.getElementById('log').innerHTML = ''; }
+
+// ==================== Auto-fill dari localStorage perangkat ini ====================
+document.getElementById('autofillBtn').addEventListener('click', async () => {
+  const pwd = document.getElementById('curPwd').value;
+  const saltB64 = localStorage.getItem('sk_crypto_salt');
+  const encUrl = localStorage.getItem('sk_enc_supabase_url');
+  const encKey = localStorage.getItem('sk_enc_supabase_key');
+  if (!saltB64 || !encUrl || !encKey) {
+    log('Tidak ditemukan kredensial tersimpan di localStorage perangkat ini. Isi URL & Anon Key manual.', 'row-fail');
+    return;
+  }
+  try {
+    const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+    const key = await deriveKey(pwd, salt);
+    const url = await decryptStr(key, encUrl);
+    const akey = await decryptStr(key, encKey);
+    document.getElementById('sbUrl').value = url;
+    document.getElementById('sbKey').value = akey;
+    log('Berhasil auto-isi URL & Anon Key dari perangkat ini.', 'row-ok');
+  } catch (e) {
+    log('Password saat ini salah, atau data lokal tidak cocok. Isi URL & Anon Key manual.', 'row-fail');
+  }
+});
+
+// ==================== Fetch helper ====================
+async function sbFetch(baseUrl, apiKey, method, path, body) {
+  const headers = { apikey: apiKey, Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
+  const config = { method, headers };
+  if (body) config.body = JSON.stringify(body);
+  const res = await fetch(`${baseUrl}/rest/v1/${path}`, config);
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`HTTP ${res.status}: ${t}`);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : true;
+}
+
+let scanResults = []; // { row, recoveredData, viaPasswordIndex }
+
+document.getElementById('scanBtn').addEventListener('click', async () => {
+  clearLog();
+  document.getElementById('resultTableWrap').innerHTML = '';
+  document.getElementById('applyBtn').disabled = true;
+  scanResults = [];
+
+  const baseUrl = document.getElementById('sbUrl').value.trim().replace(/\/+$/, '');
+  const apiKey = document.getElementById('sbKey').value.trim();
+  const saltB64 = localStorage.getItem('sk_crypto_salt');
+  const candidates = document.getElementById('candList').value.split('\n').map(s => s.trim()).filter(Boolean);
+
+  if (!baseUrl || !apiKey) { log('Isi Supabase URL & Anon Key dulu.', 'row-fail'); return; }
+  if (!saltB64) { log('Tidak ada sk_crypto_salt di localStorage perangkat ini — alat ini harus dijalankan dari perangkat yang sama dengan aplikasi SinarKeu.', 'row-fail'); return; }
+  if (candidates.length === 0) { log('Masukkan minimal satu kandidat password lama.', 'row-fail'); return; }
+
+  log(`Menyiapkan ${candidates.length} kandidat key dari salt lokal...`);
+  const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+  const keys = [];
+  for (const pwd of candidates) {
+    keys.push({ pwd, key: await deriveKey(pwd, salt) });
+  }
+
+  log('Mengambil semua baris transaksi yang masih terenkripsi (enc_payload) dari Supabase...');
+  let allRows = [];
+  let offset = 0;
+  const PAGE = 500;
+  try {
+    while (true) {
+      const page = await sbFetch(baseUrl, apiKey, 'GET',
+        `transactions?enc_payload=not.is.null&select=id,book_id,date,enc_payload,updated_at&order=id&limit=${PAGE}&offset=${offset}`);
+      allRows = allRows.concat(page);
+      if (page.length < PAGE) break;
+      offset += PAGE;
+    }
+  } catch (e) {
+    log('Gagal mengambil data dari Supabase: ' + e.message, 'row-fail');
+    return;
+  }
+  log(`Ditemukan ${allRows.length} baris dengan enc_payload terisi.`);
+
+  let recovered = 0, failed = 0;
+  for (const row of allRows) {
+    let done = false;
+    for (const cand of keys) {
+      try {
+        const plain = await decryptStr(cand.key, row.enc_payload);
+        const d = JSON.parse(plain);
+        scanResults.push({ row, recoveredData: d, pwd: cand.pwd });
+        recovered++;
+        done = true;
+        break;
+      } catch (e) { /* coba kandidat berikutnya */ }
+    }
+    if (!done) failed++;
+  }
+  log(`Selesai. Berhasil dipulihkan: ${recovered}. Masih terkunci (tidak cocok kandidat manapun): ${failed}.`,
+      recovered > 0 ? 'row-ok' : 'row-fail');
+
+  renderResultTable(allRows.length);
+  if (recovered > 0) document.getElementById('applyBtn').disabled = false;
+});
+
+function renderResultTable(total) {
+  if (scanResults.length === 0) return;
+  let html = `<table><thead><tr><th>ID</th><th>Tanggal</th><th>Tipe</th><th>Jumlah</th><th>Kategori</th><th>Password Cocok</th></tr></thead><tbody>`;
+  scanResults.slice(0, 200).forEach(r => {
+    html += `<tr>
+      <td>${r.row.id}</td>
+      <td>${r.row.date || ''}</td>
+      <td>${r.recoveredData.type || ''}</td>
+      <td>${Number(r.recoveredData.amount) || 0}</td>
+      <td>${r.recoveredData.category || ''}</td>
+      <td><span class="pill pill-ok">${escapeHtml(r.pwd)}</span></td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  if (scanResults.length > 200) html += `<p class="hint">Menampilkan 200 dari ${scanResults.length} baris yang berhasil dipulihkan.</p>`;
+  document.getElementById('resultTableWrap').innerHTML = html;
+}
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+document.getElementById('applyBtn').addEventListener('click', async () => {
+  if (scanResults.length === 0) return;
+  if (!confirm(`Akan menulis ulang ${scanResults.length} transaksi ke Supabase (kolom plaintext diisi, enc_payload dikosongkan). Lanjutkan?`)) return;
+
+  const baseUrl = document.getElementById('sbUrl').value.trim().replace(/\/+$/, '');
+  const apiKey = document.getElementById('sbKey').value.trim();
+  document.getElementById('applyBtn').disabled = true;
+
+  let ok = 0, fail = 0;
+  for (const r of scanResults) {
+    const d = r.recoveredData;
+    const patchBody = {
+      type: d.type,
+      amount: Number(d.amount) || 0,
+      category: d.category || (d.type === 'income' ? 'Pemasukan' : ''),
+      description: d.description || null,
+      attachment: d.attachment || null,
+      enc_payload: null
+    };
+    try {
+      await sbFetch(baseUrl, apiKey, 'PATCH', `transactions?id=eq.${encodeURIComponent(r.row.id)}`, patchBody);
+      ok++;
+      log(`OK  ${r.row.id}`, 'row-ok');
+    } catch (e) {
+      fail++;
+      log(`GAGAL ${r.row.id}: ${e.message}`, 'row-fail');
+    }
+  }
+  log(`Selesai menerapkan perbaikan. Berhasil: ${ok}. Gagal: ${fail}.`, fail === 0 ? 'row-ok' : 'row-fail');
+  log('Buka ulang aplikasi SinarKeu utama dan lakukan sinkronisasi manual untuk melihat transaksi yang sudah pulih.');
+});
+</script>
+</body>
+</html>
