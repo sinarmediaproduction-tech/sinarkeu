@@ -354,8 +354,91 @@ window.pushSetting = async function(key, value, bookId) {
     return result;
 };
 
+// [FIX RACE STALE-DEVICE RESURRECTION] Dipanggil di awal pushSettingBooks.
+// Masalah yang ditutup: device A menghapus Buku Bersama dengan benar
+// (deleteBook() sudah menghapus baris sk_books + book_members di server).
+// Device B (device lain/sesi lain milik akun yang sama) sempat lama
+// offline/tidak dibuka sejak sebelum penghapusan itu -- window.books
+// lokalnya MASIH membawa buku itu dengan _isShared=true (dari sesi terakhir
+// dia refresh). Begitu device B online lagi dan melakukan aksi apa pun yang
+// memicu pushSettingBooks() (banyak sekali titik pemicunya), ia mem-push
+// blob 'books' PENUH miliknya sendiri -- termasuk buku yang sudah dihapus
+// itu -- menimpa cloud. Device A (atau device lain mana pun) yang pull
+// setelahnya akan melihat buku itu "hidup lagi", padahal baris sk_books-nya
+// sendiri sudah tidak ada -- device B tidak tahu ini karena pendingDeletes
+// (localStorage) itu cuma diketahui device yang benar-benar menjalankan
+// penghapusannya, bukan device B.
+//
+// Perbaikan: sebelum push apa pun, verifikasi ke server (query sk_books
+// sekali, batch) buku mana saja yang device INI percaya masih Buku Bersama
+// (_isShared true di window.books saat ini, atau tercatat di
+// window._skSharedRoles dari refresh sesi ini) yang ternyata SUDAH TIDAK
+// ADA lagi di sk_books. Buku begitu langsung dibuang dari window.books +
+// cache lokalnya + payload push -- jadi device basi ikut "sembuh" sendiri
+// alih-alih menulari device lain lewat push berikutnya.
+async function _skDropDeadSharedBooksBeforePush() {
+    if (!Array.isArray(window.books) || window.books.length === 0) return;
+    const authClient = window.getSupabaseAuthClient ? window.getSupabaseAuthClient() : null;
+    if (!authClient) return; // tidak pernah login Buku Bersama di sesi ini -- tidak ada yang perlu dicek
+    const candidateIds = window.books
+        .filter(function(b) {
+            return b._isShared || (window._skSharedRoles && Object.prototype.hasOwnProperty.call(window._skSharedRoles, b.id));
+        })
+        .map(function(b) { return b.id; });
+    if (candidateIds.length === 0) return;
+
+    let existingIds;
+    try {
+        const res = await authClient.from('sk_books').select('id').in('id', candidateIds);
+        if (res.error) {
+            console.warn('[Sync] Gagal verifikasi sk_books sebelum push, lewati pengecekan kali ini:', res.error);
+            return;
+        }
+        existingIds = new Set((res.data || []).map(function(r) { return r.id; }));
+    } catch (e) {
+        console.warn('[Sync] Gagal verifikasi sk_books sebelum push, lewati pengecekan kali ini:', e);
+        return;
+    }
+
+    const deadIds = candidateIds.filter(function(id) { return !existingIds.has(id); });
+    if (deadIds.length === 0) return;
+    console.warn('[Sync] Buku bersama berikut sudah tidak ada lagi di server (dihapus lewat device/admin lain), dibuang dari device ini sebelum push:', deadIds);
+
+    const deadSet = new Set(deadIds);
+    deadIds.forEach(function(id) {
+        if (window._skSharedRoles) delete window._skSharedRoles[id];
+        localStorage.removeItem('sk_txs_' + id);
+        localStorage.removeItem('sk_budgets_' + id);
+        localStorage.removeItem('sk_logs_' + id);
+        localStorage.removeItem('sk_manual_backups_' + id);
+        localStorage.removeItem('sk_last_auto_backup_' + id);
+        localStorage.removeItem('sk_last_cloud_backup_' + id);
+        localStorage.removeItem('sk_default_budget_' + id);
+        localStorage.removeItem('sk_shopping_list_' + id);
+        localStorage.removeItem('sk_balance_offset_' + id);
+        localStorage.removeItem('sk_payment_reminders_' + id);
+    });
+    const wasCurrent = deadSet.has(window.currentBookId);
+    window.books = window.books.filter(function(b) { return !deadSet.has(b.id); });
+    localStorage.setItem('sk_books', JSON.stringify(window.books));
+    if (wasCurrent && window.books.length > 0 && typeof window.switchBook === 'function') {
+        window.switchBook(window.books[0].id);
+    }
+    if (window.showToast) {
+        window.showToast(
+            deadIds.length === 1
+                ? 'Buku bersama sudah dihapus di server, dibuang dari device ini.'
+                : deadIds.length + ' buku bersama sudah dihapus di server, dibuang dari device ini.',
+            'warning'
+        );
+    }
+    if (typeof window.renderBookList === 'function') window.renderBookList();
+    if (typeof window.updateBookSelectDropdown === 'function') window.updateBookSelectDropdown();
+}
+
 window.pushSettingBooks = async function() {
     if (!window.isOnline()) return false;
+    await _skDropDeadSharedBooksBeforePush();
     // [FIX BOOKS LOST-UPDATE] Dulu fungsi ini tidak pernah `return` apa pun,
     // jadi pemanggil (mis. deleteBook di book.js) tidak pernah tahu pasti
     // apakah push-nya sungguhan berhasil -- penting sekarang karena
