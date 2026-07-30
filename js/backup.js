@@ -30,13 +30,52 @@ window.renderBackupList = function() {
     });
 };
 window.createBackup = function() {
-    let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + window.currentBookId) || '[]');
-    localBackups.unshift({ timestamp: new Date().toISOString(), count: window.txs.length, data: window.txs });
-    if (localBackups.length > 5) localBackups.pop();
-    localStorage.setItem('sk_manual_backups_' + window.currentBookId, JSON.stringify(localBackups));
-    localStorage.setItem('sk_last_auto_backup_' + window.currentBookId, new Date().toISOString());
-    window.renderBackupList();
-    window.showToast("Snapshot cadangan berhasil dibuat");
+    // [FIX QUOTA] Sebelumnya localStorage.setItem() di sini bisa lempar
+    // QuotaExceededError kalau localStorage device penuh (buku dengan
+    // riwayat transaksi besar). Exception yang tidak ditangkap ini
+    // menghentikan seluruh window.createFullBackup() di tengah jalan --
+    // cadangan cloud & Google Sheets yang seharusnya tetap jalan pun ikut
+    // batal, padahal keduanya tidak bergantung pada localStorage sama
+    // sekali. Sekarang kegagalan lokal ditangani di sini saja (coba
+    // persempit dulu, baru kalau tetap tidak muat, dilewati dengan toast
+    // peringatan) dan TIDAK PERNAH melempar ke pemanggil -- supaya
+    // createFullBackup() bisa lanjut ke langkah berikutnya apa pun yang
+    // terjadi di sini. Return true/false menandakan berhasil/tidaknya,
+    // untuk pemanggil yang mau tahu (opsional, tidak wajib dicek).
+    try {
+        let localBackups = JSON.parse(localStorage.getItem('sk_manual_backups_' + window.currentBookId) || '[]');
+        localBackups.unshift({ timestamp: new Date().toISOString(), count: window.txs.length, data: window.txs });
+        if (localBackups.length > 5) localBackups.pop();
+        let saved = false;
+        while (!saved) {
+            try {
+                localStorage.setItem('sk_manual_backups_' + window.currentBookId, JSON.stringify(localBackups));
+                saved = true;
+            } catch (e) {
+                if (e && e.name === 'QuotaExceededError' && localBackups.length > 1) {
+                    // Buang snapshot lokal PALING LAMA dulu (bukan yang baru
+                    // saja dibuat) supaya masih muat, sebelum menyerah total.
+                    localBackups.pop();
+                } else {
+                    throw e;
+                }
+            }
+        }
+        localStorage.setItem('sk_last_auto_backup_' + window.currentBookId, new Date().toISOString());
+        window.renderBackupList();
+        window.showToast("Snapshot cadangan berhasil dibuat");
+        return true;
+    } catch (e) {
+        console.error('[Backup] createBackup (lokal) gagal:', e);
+        const isQuota = e && e.name === 'QuotaExceededError';
+        window.showToast(
+            isQuota
+                ? 'Penyimpanan lokal device ini penuh -- cadangan lokal dilewati (cadangan cloud tetap lanjut).'
+                : 'Gagal membuat cadangan lokal: ' + (e && e.message ? e.message : 'error'),
+            'warning'
+        );
+        return false;
+    }
 };
 // [BUG FIX - SALDO SALAH SETELAH RESTORE BACKUP] Snapshot backup (baik manual
 // lokal via createBackup(), maupun cloud via pushBackupToSupabaseForBook())
