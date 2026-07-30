@@ -30,6 +30,10 @@ Selain fallback, semua request tulis dan baca cadangan kini meneruskan ID
 buku secara eksplisit ke lapisan autentikasi. Ini mencegah request buku
 bersama salah memakai anon key karena konteks buku gagal diinfer dari payload.
 
+Pemulihan otomatis setting lama juga dibatasi ke buku pribadi yang sedang
+aktif. Ini mencegah cache buku lama yang telah berubah menjadi Buku Bersama
+memicu percobaan tulis anon dan spam error RLS.
+
 Setelah dijalankan, policy lama seperti `anon_full_access`,
 `authenticated_full_access`, dan `shared_settings_admin_*` tidak boleh lagi
 muncul pada tabel `settings` atau `backups`; policy tersebut permissive dan

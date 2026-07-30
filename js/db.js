@@ -391,6 +391,14 @@ window.reEncryptAllCloudSettings = async function() {
         await window.pushSettingBooks();
         const books = Array.isArray(window.books) ? window.books : [];
         for (const b of books) {
+            // Pemulihan ini dipicu otomatis oleh baris setting lama. Batasi
+            // ke buku yang sedang aktif: buku lain yang tersisa di cache
+            // lokal bisa sudah menjadi Buku Bersama di server, sementara
+            // role-nya belum/tidak lagi dimuat pada sesi ini. Menulisnya
+            // lewat anon key akan ditolak RLS dan hanya menghasilkan spam.
+            // Setting baru sudah plaintext, jadi buku lain akan tersinkron
+            // saat dibuka dan disunting secara normal.
+            if (b.id !== window.currentBookId) continue;
             // [FIX SETTINGS BUKU BERSAMA] Baris settings buku bersama SUDAH
             // dikonversi SEKALI ke plaintext tepat di titik "Jadikan Bersama"
             // (window._skConvertBookSettingsToPlaintext, js/auth.js), pakai
