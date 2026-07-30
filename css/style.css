@@ -2919,6 +2919,10 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 .slist-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .slist-actions .btn { flex: 1; min-width: 140px; }
 
+/* Anggaran Tahunan hanya memiliki satu kartu ringkasan; buat kartu tersebut
+   memakai seluruh lebar grid agar tidak meninggalkan dua kolom kosong. */
+.annual-budget-summary-grid { grid-template-columns: minmax(0, 1fr); }
+
 /* ── Belanja Bulanan: sedikit lebih lega di layar lebar (desktop/tablet)
    supaya 6 kolom (checkbox, nama, qty, kategori, harga, aksi) tidak
    berdesakan -- .slist-modal khusus dipakai di modal ini saja, jadi tidak
