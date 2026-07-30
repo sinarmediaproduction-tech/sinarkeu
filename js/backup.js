@@ -246,6 +246,22 @@ window.createFullBackup = async function() {
 
 window.checkAndRunDailyAutoBackup = async function() {
     if (!window.isOnline()) return;
+    // [FIX RACE/JARINGAN FLAKY] Self-heal yang SAMA seperti di
+    // window.startAutoSync (js/app.js) -- tapi dipasang di sini juga karena
+    // auto-backup harian ini jalan lebih DULU (3 detik setelah unlock, lewat
+    // continueAppInit) daripada tick pertama startAutoSync (30 detik).
+    // Tanpa ini, percobaan auto-backup PERTAMA di tiap sesi selalu rentan
+    // kena race: skRefreshSharedAccess() di continueAppInit sempat belum
+    // benar-benar selesai/gagal jaringan sesaat, window._skSharedRoles jadi
+    // belum lengkap tepat saat fungsi ini jalan, sehingga buku yang
+    // sebenarnya shared jatuh ke jalur anon key -> 401/42501 (lihat log
+    // toast-error 29-30 Juli 2026 untuk kasus nyata). Cek & perbaiki dulu di
+    // sini sebelum loop di bawah membaca role per buku.
+    const hasUnrefreshedSharedBook = window._skAuthUser && Array.isArray(window.books) &&
+        window.books.some(function(b) { return b._isShared && !window.skIsSharedBookId(b.id); });
+    if (hasUnrefreshedSharedBook && typeof window.skRefreshSharedAccess === 'function') {
+        try { await window.skRefreshSharedAccess(); } catch (e) { console.warn('[AutoBackup] Self-heal skRefreshSharedAccess gagal:', e); }
+    }
     let now = new Date();
     let backedUpBooks = 0;
     for (const book of window.books) {
