@@ -1056,48 +1056,42 @@ button:disabled, .btn:disabled,
   box-shadow: var(--shadow-sm);
   padding: 12px 14px;
 }
-.hk-card-top {
+.hk-card-name { font-weight: 700; font-size: .82rem; color: var(--ink); margin-bottom: 6px; display: block; }
+.hk-card-bottom-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-.hk-card-name { font-weight: 700; font-size: .82rem; color: var(--ink); }
-.hk-card-price-row {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  margin-bottom: 5px;
+  gap: 7px;
   flex-wrap: wrap;
+  row-gap: 4px;
 }
-.hk-card-price { font-family: var(--font-mono); font-weight: 700; font-size: 1rem; color: var(--ink); }
-.hk-card-unit { font-size: .65rem; color: var(--ink-faint); }
-.hk-card-change { font-size: .74rem; font-weight: 600; }
+.hk-card-price { font-family: var(--font-mono); font-weight: 700; font-size: 1rem; color: var(--ink); white-space: nowrap; }
+.hk-card-unit { font-size: .65rem; color: var(--ink-faint); white-space: nowrap; }
+.hk-card-change { font-size: .74rem; font-weight: 600; white-space: nowrap; }
 .hk-card-meta { font-size: .65rem; color: var(--ink-faint); }
 .hk-card-trend-btn { padding: 4px 12px !important; font-size: .68rem !important; white-space: nowrap; flex-shrink: 0; }
 
-/* Sparkline tren 30-hari yang tertanam langsung di kartu (tap untuk buka
-   grafik lengkap di modal) -- pengganti tombol "Tren" terpisah supaya
-   bentuk tren langsung kelihatan tanpa perlu klik dulu. */
+/* Sparkline tren 30-hari mini, ditaruh sebaris di ujung kanan (setelah
+   nama, harga, dan indikator naik/turun) -- tap untuk buka grafik lengkap
+   di modal. Kecil & sejajar supaya kartu tetap ringkas, bukan lagi
+   selebar penuh di bawah. */
 .hk-card-spark-btn {
   display: block;
-  width: 100%;
+  margin-left: auto;
   padding: 0;
-  margin-top: 6px;
   border: none;
   background: none;
   cursor: pointer;
   line-height: 0;
+  flex-shrink: 0;
 }
 .hk-card-spark-btn:active { opacity: 0.6; }
-.hk-card-spark { display: block; width: 100%; height: 40px; }
+.hk-card-spark { display: block; width: 60px; height: 26px; }
 .hk-card-spark-empty {
-  font-size: .65rem;
+  font-size: .62rem;
   color: var(--ink-faint);
-  margin-top: 8px;
-  padding-top: 6px;
-  border-top: 1px dashed var(--rule);
+  margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 table {
@@ -2528,8 +2522,14 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   background: var(--accent-lt);
   border: 1px solid var(--accent);
   padding: 5px 11px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   white-space: nowrap;
+}
+.hk-label-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 /* Tombol "+ Tambah Barang" -- membuka pop up #addShoppingListItemModal
