@@ -451,6 +451,10 @@ alter table public.settings
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M8 7h8"></path><path d="M8 12l2 2 4-4"></path><path d="M8 17h5"></path></svg>
             <span>Belanja Bulanan</span>
         </button>
+        <button type="button" class="app-nav-item" id="navAnnualBudgetBtn" onclick="window.closeMobileDrawer(); window.openAnnualBudgetModal()" title="Anggaran Tahunan">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path><path d="M8 15h3M13 15h3"></path></svg>
+            <span>Anggaran Tahunan</span>
+        </button>
         <button type="button" class="app-nav-item" id="navHargaKomoditasBtn" onclick="window.closeMobileDrawer(); window.openHargaKomoditasModal()" title="Harga Komoditas">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
             <span>Harga Komoditas</span>
@@ -1489,18 +1493,24 @@ alter table public.settings
 </div>
 
 <!-- Modal Anggaran Tahunan -->
-<div id="annualBudgetModal" class="modal">
-    <div class="modal-content wide">
+<div id="annualBudgetModal" class="modal fullview-modal">
+    <div class="modal-content wide slist-modal">
         <div class="modal-header"><h3>Anggaran Tahunan</h3><button class="modal-close" onclick="closeModal('annualBudgetModal')">×</button></div>
         <div style="background:var(--purple-lt); border:1px solid color-mix(in srgb, var(--purple) 35%, var(--purple-lt)); border-radius: var(--radius-sm); padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:var(--purple);">
             <b>Anggaran Tahunan</b> adalah rencana biaya yang terjadi <b>tidak setiap bulan</b> — seperti hari raya, pajak, servis kendaraan, liburan, dll. Total anggaran ini membantu menghitung kebutuhan cadangan dana Anda.
         </div>
-        <div id="annualBudgetItemsContainer"></div>
-        <div style="margin:10px 0;">
+        <div class="slist-add-wrap" style="display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:8px; margin-bottom:12px;">
+            <input id="annualNewName" type="text" class="form-control" placeholder="Nama kebutuhan (mis. Pajak kendaraan)">
+            <select id="annualNewCategory" class="form-control"></select>
+            <input id="annualNewAmount" type="text" class="form-control" inputmode="numeric" placeholder="Rp 0" oninput="window.formatRupiah(this)">
+            <button class="btn btn-primary" type="button" onclick="window.addAnnualBudgetRow()">Tambah</button>
+        </div>
+        <div id="annualBudgetItemsContainer" class="slist-list"></div>
+        <div style="display:none; margin:10px 0;">
             <button class="btn btn-secondary" style="width:100%;" onclick="addAnnualBudgetRow()">＋ Tambah Item</button>
         </div>
         <div id="annualBudgetSummary" class="budget-summary-row"></div>
-        <div class="modal-footer">
+        <div class="modal-footer" style="display:none;">
             <button class="btn btn-secondary" onclick="closeModal('annualBudgetModal')">Tutup</button>
             <button class="btn btn-primary" onclick="saveAnnualBudget()">Simpan</button>
         </div>

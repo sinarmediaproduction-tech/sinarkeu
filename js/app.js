@@ -322,6 +322,9 @@ window.continueAppInit = async function() {
     if (typeof window.ensureShoppingListMonthlyCycle === 'function') {
         window.ensureShoppingListMonthlyCycle(window.currentBookId);
     }
+    if (typeof window.ensureAnnualBudgetYearlyCycle === 'function') {
+        window.ensureAnnualBudgetYearlyCycle(window.currentBookId);
+    }
     window.updateUIForOnlineStatus();
     // Snapshot Keamanan harian: tidak perlu online (murni localStorage), jadi
     // dipanggil di sini -- di luar percabangan online/offline di atas -- supaya

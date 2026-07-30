@@ -620,6 +620,74 @@ window.saveAnnualBudget = async function() {
     );
 };
 
+// ── DAFTAR ANGGARAN TAHUNAN ──────────────────────────────────────────────
+// Item tahunan juga merupakan daftar pengeluaran berulang. Struktur lama
+// {name, amount} tetap didukung; properti baru ditambahkan saat item dipakai.
+window.getAnnualBudgetYearKey = function(date) { return String((date || new Date()).getFullYear()); };
+window.ensureAnnualBudgetYearlyCycle = function(bookId) {
+    const target = bookId || window.currentBookId;
+    const items = window.getAnnualBudget(target);
+    const year = window.getAnnualBudgetYearKey(); let changed = false;
+    items.forEach(function(item) {
+        if (!item.checklistYear) { item.checklistYear = year; changed = true; }
+        else if (item.checklistYear !== year) { item.done = false; item.checklistYear = year; changed = true; }
+    });
+    if (changed) window.saveAnnualBudgetToLocal(target, items);
+    return changed;
+};
+window.saveAnnualBudgetList = function(bookId, items) {
+    const target = bookId || window.currentBookId;
+    window.saveAnnualBudgetToLocal(target, items);
+    if (window.isOnline && window.isOnline() && window.pushSetting) window.pushSetting('annual_budget', items, target).catch(function() {});
+    if (typeof window.updateFinancialCards === 'function') window.updateFinancialCards();
+};
+window._populateAnnualBudgetCategory = function() {
+    const sel = document.getElementById('annualNewCategory'); if (!sel) return;
+    sel.innerHTML = '<option value="">Belanja Harian</option>' + (window.EXPENSE_CATEGORIES || []).map(c => `<option value="${window.escapeHtml(c)}">${window.escapeHtml(c)}</option>`).join('');
+};
+window.openAnnualBudgetModal = function() {
+    window.ensureAnnualBudgetYearlyCycle(window.currentBookId);
+    window._populateAnnualBudgetCategory(); window.renderAnnualBudgetForm(); window.openModal('annualBudgetModal');
+};
+window.renderAnnualBudgetForm = function() {
+    window.ensureAnnualBudgetYearlyCycle(window.currentBookId);
+    const box = document.getElementById('annualBudgetItemsContainer'); if (!box) return;
+    const items = window.getAnnualBudget(window.currentBookId);
+    const total = items.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+    const summary = document.getElementById('annualBudgetSummary'); if (summary) summary.innerText = 'Total Anggaran Tahunan: ' + window.rp(total);
+    if (!items.length) { box.innerHTML = '<div class="slist-empty">Belum ada kebutuhan tahunan. Tambahkan THR, pajak, servis, atau kebutuhan lainnya.</div>'; return; }
+    box.innerHTML = items.map(i => `<div class="slist-item${i.done ? ' done' : ''}">
+        <input type="checkbox" class="slist-checkbox" ${i.done ? 'checked' : ''} onchange="window.toggleAnnualBudgetItem('${window.escapeHtml(i.id)}')">
+        <span class="slist-name">${window.escapeHtml(i.name || '')}</span><span class="slist-qty"></span>
+        <span class="slist-cat-badge">${window.escapeHtml(i.category || 'Belanja Harian')}</span><span class="slist-unit-price"></span>
+        <span class="slist-price">${window.rp(Number(i.amount) || 0)}</span>
+        <div class="slist-trail"><button type="button" class="slist-del-btn" title="Hapus" onclick="window.deleteAnnualBudgetItem('${window.escapeHtml(i.id)}')">×</button></div>
+    </div>`).join('');
+};
+window.addAnnualBudgetRow = function() {
+    const nameEl = document.getElementById('annualNewName'), amountEl = document.getElementById('annualNewAmount'), catEl = document.getElementById('annualNewCategory');
+    const name = nameEl && nameEl.value.trim(), amount = amountEl ? window.unRp(amountEl.value) : 0;
+    if (!name || amount <= 0) { window.showToast('Isi nama dan nominal kebutuhan tahunan.', 'warning'); return; }
+    const items = window.getAnnualBudget(window.currentBookId);
+    items.push({ id:'ab_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), name, amount, category:catEl ? catEl.value : '', done:false, checklistYear:window.getAnnualBudgetYearKey() });
+    window.saveAnnualBudgetList(window.currentBookId, items); nameEl.value = ''; amountEl.value = ''; window.renderAnnualBudgetForm();
+};
+window.toggleAnnualBudgetItem = async function(id) {
+    window.ensureAnnualBudgetYearlyCycle(window.currentBookId); const items = window.getAnnualBudget(window.currentBookId), item = items.find(i => i.id === id); if (!item) return;
+    const done = !item.done, year = window.getAnnualBudgetYearKey();
+    if (done && item.lastExpenseYear !== year) {
+        const now = new Date(), pad=n=>String(n).padStart(2,'0'), tx = { id:'tx_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), type:'expense', date:`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`, category:item.category || 'Belanja Harian', description:`[Anggaran Tahunan] ${item.name}`, amount:Number(item.amount)||0, attachment:null, annualBudgetItemId:item.id, annualBudgetYear:year, updated_at:now.toISOString() };
+        window.txs.unshift(tx); window.markTxDirty(tx.id); window.saveTransactions(); item.lastExpenseYear=year; item.lastExpenseTransactionId=tx.id; window.showToast('Pengeluaran tahunan otomatis ditambahkan ke dashboard.', 'success');
+    } else if (!done && item.lastExpenseYear === year && item.lastExpenseTransactionId) {
+        const txId=item.lastExpenseTransactionId; if (window.clearTxDirty) window.clearTxDirty([txId]); window.txs=window.txs.filter(t=>t.id!==txId); window.saveTransactions();
+        if (window.markTxPendingDelete) { window.markTxPendingDelete(txId, window.currentBookId); if (window.isOnline && window.isOnline() && window.pushDeleteToCloud) { const ok=await window.pushDeleteToCloud(txId,window.currentBookId); if(ok&&window.clearTxPendingDelete) window.clearTxPendingDelete(txId); } }
+        item.lastExpenseYear=null; item.lastExpenseTransactionId=null; window.showToast('Centang dibatalkan dan pengeluaran tahunan dihapus.', 'success');
+    }
+    item.done=done; item.checklistYear=year; window.saveAnnualBudgetList(window.currentBookId, items); window.renderAnnualBudgetForm();
+};
+window.deleteAnnualBudgetItem = function(id) { const items=window.getAnnualBudget(window.currentBookId).filter(i=>i.id!==id); window.saveAnnualBudgetList(window.currentBookId,items); window.renderAnnualBudgetForm(); };
+window.resetAnnualBudgetChecks = function() { const items=window.getAnnualBudget(window.currentBookId); items.forEach(i=>{i.done=false;}); window.saveAnnualBudgetList(window.currentBookId,items); window.renderAnnualBudgetForm(); };
+
 // ============================================================
 // BUDGET.JS - FUNGSI CLOUD UNTUK SINKRONISASI
 // ============================================================
