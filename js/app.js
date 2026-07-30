@@ -306,7 +306,10 @@ window.continueAppInit = async function() {
             window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
             window._lastSyncTime = new Date();
             window.updateSyncTimeBadge();
-            setTimeout(window.checkAndRunDailyAutoBackup, 3000);
+            // [FITUR DIHAPUS] Auto-backup harian ke cloud (checkAndRunDailyAutoBackup,
+            // dulu di sini) sudah dihapus -- lihat catatan di js/backup.js. Pemulihan
+            // data sekarang sepenuhnya lewat Snapshot Keamanan harian (lihat
+            // window.checkAndRunDailySafetySnapshot, dijadwalkan di bawah fungsi ini).
             setTimeout(window.scheduleDailySummary, 5000);
         } else {
             window.loadTransactions();

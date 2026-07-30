@@ -124,8 +124,8 @@ window.showSetelanView = function(initialTab) {
 // maupun dari fungsi lama seperti openBackupManager()/
 // openSafetySnapshotManager().
 window.openDataBackupView = function(initialTab) {
-    if (typeof window.renderBackupList === 'function') window.renderBackupList();
-    if (typeof window.loadCloudBackupList === 'function') window.loadCloudBackupList();
+    // [FITUR DIHAPUS] renderBackupList() & loadCloudBackupList() (cadangan
+    // lokal/cloud manual+auto) sudah dihapus -- lihat catatan di js/backup.js.
     if (typeof window.renderSafetySnapshotList === 'function') window.renderSafetySnapshotList();
 
     var gsUrl = document.getElementById('googleSheetsUrlInput');
