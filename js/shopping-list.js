@@ -209,18 +209,34 @@ window._populateShoppingListCategorySelect = function() {
     sel.dataset.filled = '1';
 };
 
-// Urutan tampil = urutan kategori di window.EXPENSE_CATEGORIES (js/config.js),
-// supaya konsisten dengan urutan anggaran. Barang "Tanpa kategori" atau
-// dengan nama kategori yang sudah tidak ada di daftar anggaran (mis. sisa
-// data lama sebelum rename) ditaruh paling akhir. Di dalam kategori yang
-// sama, urutan asli (urutan input) dipertahankan (stable sort) -- hanya
-// urutan TAMPILAN yang diubah, array tersimpan di localStorage/cloud tidak
-// diubah urutannya, jadi id-based lookup (edit/hapus/toggle) tetap aman.
+// [URUTKAN PER ANGGARAN] Urutan tampil = kategori dengan Anggaran Bulanan
+// efektif (custom bulan ini, atau jatuh balik ke Anggaran Dasar -- sama
+// seperti window.getEffectiveBudget yang dipakai di
+// _renderShoppingListBudgetWarnings/_renderShoppingListCategoryBreakdown)
+// PALING BESAR ditaruh paling atas. Kategori dengan anggaran sama besar
+// (termasuk sama-sama tidak punya anggaran/0) mempertahankan urutannya di
+// window.EXPENSE_CATEGORIES (js/config.js) supaya tetap stabil & mudah
+// diprediksi. Barang "Tanpa kategori" atau dengan nama kategori yang sudah
+// tidak ada di daftar anggaran (mis. sisa data lama sebelum rename) tetap
+// ditaruh paling akhir. Di dalam kategori yang sama, urutan asli (urutan
+// input) dipertahankan (stable sort) -- hanya urutan TAMPILAN yang diubah,
+// array tersimpan di localStorage/cloud tidak diubah urutannya, jadi
+// id-based lookup (edit/hapus/toggle) tetap aman.
 window._sortShoppingListForDisplay = function(items) {
     const cats = window.EXPENSE_CATEGORIES || [];
+    let budgetMap = {};
+    if (cats.length && typeof window.getEffectiveBudget === 'function') {
+        const now = new Date();
+        const effective = window.getEffectiveBudget(now.getFullYear(), now.getMonth() + 1, window.currentBookId);
+        budgetMap = effective.budget || {};
+    }
+    const orderedCats = cats.slice().sort((a, b) => {
+        const budgetDiff = (budgetMap[b] || 0) - (budgetMap[a] || 0);
+        return budgetDiff !== 0 ? budgetDiff : cats.indexOf(a) - cats.indexOf(b);
+    });
     const rank = function(item) {
-        const idx = item.category ? cats.indexOf(item.category) : -1;
-        return idx === -1 ? cats.length : idx;
+        const idx = item.category ? orderedCats.indexOf(item.category) : -1;
+        return idx === -1 ? orderedCats.length : idx;
     };
     return items
         .map((item, i) => ({ item, i }))
@@ -262,7 +278,19 @@ window.renderShoppingList = function() {
     // termasuk saat qty/kategori kosong (span dibiarkan kosong, bukan
     // dihilangkan, biar kolom tidak geser). Di hp, kolom yang sama disusun
     // ulang jadi kartu 1-3 baris lewat flex + `order` (lihat media query).
+    // Nomor urut per kategori: dimulai dari 1 lagi tiap kali kategori
+    // barang berganti dari baris sebelumnya. Karena daftar sudah
+    // dikelompokkan per kategori (lihat _sortShoppingListForDisplay di
+    // atas), ini otomatis menghasilkan nomor 1..n di dalam tiap kategori.
+    let _slistNoCounter = 0;
+    let _slistNoPrevCat = undefined;
     container.innerHTML = headerHtml + items.map(item => {
+        if (item.category !== _slistNoPrevCat) {
+            _slistNoCounter = 0;
+            _slistNoPrevCat = item.category;
+        }
+        _slistNoCounter++;
+        const itemNo = _slistNoCounter;
         const qtyText = (item.qty && Number(item.qty) > 1) ? `x${window.escapeHtml(String(item.qty))}` : '';
         const catText = item.category ? window.escapeHtml(item.category) : '';
         const catColor = item.category ? window.getCategoryColor(item.category) : null;
@@ -284,7 +312,7 @@ window.renderShoppingList = function() {
         return `
         <div class="slist-item${item.done ? ' done' : ''}" data-id="${window.escapeHtml(item.id)}">
             <input type="checkbox" class="slist-checkbox" ${item.done ? 'checked' : ''} ${isViewer ? 'disabled' : ''} onchange="window.toggleShoppingListItem('${window.escapeHtml(item.id)}')">
-            <span class="slist-name">${window.escapeHtml(item.name)}</span>
+            <span class="slist-name"><span class="slist-item-no">${itemNo}.</span>${window.escapeHtml(item.name)}</span>
             <span class="slist-qty">${qtyText}</span>
             <span class="slist-cat-badge"${catStyleAttr}>${catText}</span>
             <span class="${unitPriceClass}"${unitPriceTitle}>${unitPriceText}</span>

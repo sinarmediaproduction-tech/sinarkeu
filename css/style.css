@@ -2842,6 +2842,10 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 }
 .slist-checkbox { flex: 0 0 auto; width: 17px; height: 17px; accent-color: var(--success); cursor: pointer; }
 .slist-name { font-size: .8rem; color: var(--ink); overflow-wrap: anywhere; min-width: 0; }
+/* Nomor urut barang di dalam kategorinya (1, 2, 3, ... -- direset tiap
+   kategori baru, lihat _slistNoCounter di js/shopping-list.js). Kategori
+   dengan Anggaran Bulanan terbesar ditaruh paling atas daftar. */
+.slist-item-no { color: var(--ink-faint); font-weight: 700; margin-right: 3px; }
 .slist-item.done .slist-name { text-decoration: line-through; color: var(--ink-faint); }
 .slist-qty {
   justify-self: end;
