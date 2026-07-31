@@ -1528,7 +1528,7 @@ alter table public.settings
         <form id="addAnnualBudgetItemForm" onsubmit="window.handleAddAnnualBudgetItemSubmit(event)">
             <div class="form-group"><label>Nama kebutuhan</label><input id="annualNewName" type="text" class="form-control" placeholder="mis. Pajak kendaraan" required></div>
             <div class="form-group"><label>Qty</label><input id="annualNewQty" type="number" min="1" step="1" class="form-control" inputmode="numeric" value="1"></div>
-            <div class="form-group"><label>Harga satuan</label><input id="annualNewAmount" type="text" class="form-control" inputmode="numeric" placeholder="Rp 0" oninput="window.formatRupiah(this)" required></div>
+            <div class="form-group"><label>Harga satuan</label><input id="annualNewAmount" type="text" class="form-control" inputmode="numeric" placeholder="Rp 0 (kosongkan utk ambil harga referensi BI otomatis)" oninput="window.formatRupiah(this)"></div>
             <div class="form-group"><label>Kategori</label><select id="annualNewCategory" class="form-control"></select></div>
             <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('addAnnualBudgetItemModal')">Batal</button><button type="submit" class="btn btn-primary">Tambah</button></div>
         </form>
@@ -1543,7 +1543,7 @@ alter table public.settings
             <input type="hidden" id="annualEditId">
             <div class="form-group"><label>Nama kebutuhan</label><input type="text" id="annualEditName" class="form-control" required></div>
             <div class="form-group"><label>Qty</label><input type="number" id="annualEditQty" class="form-control" min="1" step="1" inputmode="numeric"></div>
-            <div class="form-group"><label>Harga satuan</label><input type="text" id="annualEditAmount" class="form-control" inputmode="numeric" oninput="window.formatRupiah(this)" required></div>
+            <div class="form-group"><label>Harga satuan</label><input type="text" id="annualEditAmount" class="form-control" inputmode="numeric" placeholder="Kosongkan utk ambil harga referensi BI otomatis" oninput="window.formatRupiah(this)"></div>
             <div class="form-group"><label>Kategori</label><select id="annualEditCategory" class="form-control"></select></div>
             <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('editAnnualBudgetItemModal')">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div>
         </form>
