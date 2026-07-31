@@ -1730,42 +1730,24 @@ window.skBuildMemberManagementHtml = function(bookId, prefix) {
             '<div id="' + prefix + 'MemberPanelBody" class="um-member-panel-body" style="display:' + (expanded ? '' : 'none') + ';">' +
                 '<div id="' + prefix + 'MemberListContent" class="um-member-list">Memuat anggota...</div>' +
 
-                '<div class="um-invite-tabs" role="tablist">' +
-                    '<button type="button" class="um-invite-tab active" data-um-panel="invite" onclick="window._umSwitchInviteTab(this,\'' + prefix + '\')">Undang (sudah punya akun)</button>' +
-                    '<button type="button" class="um-invite-tab" data-um-panel="create" onclick="window._umSwitchInviteTab(this,\'' + prefix + '\')">Buat Akun Baru</button>' +
-                '</div>' +
-
-                '<div id="' + prefix + 'InviteTabPanel" data-um-tab-panel="invite">' +
-                    '<input type="text" id="' + prefix + 'InviteFilter" class="form-control" placeholder="Cari pengguna terdaftar..." autocomplete="off" oninput="window._umFilterInviteCandidates(this,\'' + prefix + '\')" style="margin-bottom:8px;">' +
-                    '<div id="' + prefix + 'InvitePickerList" class="um-invite-picker-list">Memuat daftar pengguna terdaftar...</div>' +
-                    '<button type="button" class="um-invite-manual-toggle" onclick="window._umToggleManualInvite(this,\'' + prefix + '\')">+ Undang lewat email manual (kalau tidak muncul di daftar)</button>' +
-                    '<div id="' + prefix + 'ManualInviteWrap" style="display:none; margin-top:8px;">' +
-                        '<form onsubmit="window._skHandleInviteSubmit(event,\'' + esc(bookId) + '\',\'' + prefix + '\')">' +
-                            '<input type="email" id="' + prefix + 'InviteEmail" class="form-control" placeholder="Email anggota (harus sudah punya akun)" required autocomplete="off" style="margin-bottom:6px;">' +
-                            '<select id="' + prefix + 'InviteRole" class="form-control" style="margin-bottom:8px;">' + roleOptions + '</select>' +
-                            '<button type="submit" class="btn btn-secondary" style="width:100%;">Undang lewat Email</button>' +
-                        '</form>' +
-                    '</div>' +
-                '</div>' +
-
-                '<div id="' + prefix + 'CreateTabPanel" data-um-tab-panel="create" style="display:none;">' +
+                '<div id="' + prefix + 'CreateTabPanel" data-um-tab-panel="create">' +
                     '<form onsubmit="window._skHandleCreateMemberSubmit(event,\'' + esc(bookId) + '\',\'' + prefix + '\')">' +
                         '<input type="email" id="' + prefix + 'NewMemberEmail" class="form-control" placeholder="Email untuk akun baru anggota" required autocomplete="off" style="margin-bottom:6px;">' +
                         '<input type="password" id="' + prefix + 'NewMemberPassword" class="form-control" placeholder="Password untuk anggota (min. 6 karakter)" required minlength="6" autocomplete="new-password" style="margin-bottom:6px;">' +
                         '<select id="' + prefix + 'NewMemberRole" class="form-control" style="margin-bottom:8px;">' + roleOptions + '</select>' +
                         '<button type="submit" class="btn btn-primary" style="width:100%;">Buatkan Akun Baru untuk Anggota</button>' +
                     '</form>' +
-                    '<div class="um-invite-tab-panel-note">Anggota belum punya akun? Buatkan langsung di sini, lalu kasih tahu email &amp; password ini ke orangnya untuk login di device mereka.</div>' +
+                    '<div class="um-invite-tab-panel-note">Buatkan akun baru untuk anggota di sini, lalu kasih tahu email &amp; password ini ke orangnya untuk login di device mereka.</div>' +
                 '</div>' +
             '</div>' +
         '</div>'
     );
 };
 
-// Toggle tombol "Lihat & Kelola Anggota" -- baru fetch daftar anggota +
-// picker undang begitu pertama kali dibuka (lazy-load), bukan otomatis
-// tiap panel dirender. Menutup panel cukup sembunyikan (tidak fetch ulang
-// atau buang data yang sudah dimuat) supaya buka-tutup berikutnya instan.
+// Toggle tombol "Lihat & Kelola Anggota" -- baru fetch daftar anggota
+// begitu pertama kali dibuka (lazy-load), bukan otomatis tiap panel
+// dirender. Menutup panel cukup sembunyikan (tidak fetch ulang atau buang
+// data yang sudah dimuat) supaya buka-tutup berikutnya instan.
 window._umToggleMemberPanel = function(btnEl, bookId, prefix) {
     const body = document.getElementById(prefix + 'MemberPanelBody');
     if (!body) return;
@@ -1777,24 +1759,7 @@ window._umToggleMemberPanel = function(btnEl, bookId, prefix) {
     btnEl.classList.toggle('is-open', willShow);
     if (willShow) {
         window.skRenderMemberList(bookId, prefix === 'um' ? 'umMemberListContent' : undefined);
-        window.skRenderInviteMemberPicker(bookId, prefix);
     }
-};
-
-// Toggle sederhana antara panel "Undang" & "Buat Akun Baru" di dalam satu
-// wrapper .um-panel -- discope pakai `prefix` supaya aman kalau panel 'sk'
-// (modal Kelola Buku) dan 'um' (halaman Manajemen User) sama-sama ada di
-// DOM bersamaan.
-window._umSwitchInviteTab = function(btnEl, prefix) {
-    const wrap = btnEl.closest('.um-panel');
-    if (!wrap) return;
-    wrap.querySelectorAll('.um-invite-tab').forEach(function(b) { b.classList.remove('active'); });
-    btnEl.classList.add('active');
-    const target = btnEl.getAttribute('data-um-panel');
-    const invitePanel = document.getElementById(prefix + 'InviteTabPanel');
-    const createPanel = document.getElementById(prefix + 'CreateTabPanel');
-    if (invitePanel) invitePanel.style.display = (target === 'invite') ? '' : 'none';
-    if (createPanel) createPanel.style.display = (target === 'create') ? '' : 'none';
 };
 
 // [MENU PER PERAN] Panel "Atur Tampilan Menu per Peran" -- checkbox
@@ -1982,7 +1947,6 @@ window.skRenderUserManagerPage = function(selectedBookId) {
     // Kelola Anggota", bukan otomatis tiap ganti buku di dropdown.
     if (window._umPanelExpanded['um']) {
         window.skRenderMemberList(selectedBookId, 'umMemberListContent');
-        window.skRenderInviteMemberPicker(selectedBookId, 'um');
     }
 };
 
@@ -2160,14 +2124,13 @@ window.skRenderAuthPanel = function() {
                 roleBadge +
             '</div>' +
             memberPanel;
-        // [OPTIMASI TAMPILAN] Daftar anggota & picker undang sekarang
-        // disembunyikan di balik tombol "Lihat & Kelola Anggota" (lihat
+        // [OPTIMASI TAMPILAN] Daftar anggota sekarang disembunyikan di
+        // balik tombol "Lihat & Kelola Anggota" (lihat
         // skBuildMemberManagementHtml) -- jangan fetch di sini kalau
         // panelnya memang belum dibuka usernya, supaya modal "Kelola Buku
-        // Kas" tidak selalu kena 2 query Supabase tiap dibuka.
+        // Kas" tidak selalu kena query Supabase tiap dibuka.
         if (role === 'admin' && window._umPanelExpanded['sk']) {
             window.skRenderMemberList(bookId);
-            window.skRenderInviteMemberPicker(bookId, 'sk');
         }
     } else {
         // [MENU DAFTAR MANUAL DIHAPUS] Tidak ada lagi opsi self-signup di
