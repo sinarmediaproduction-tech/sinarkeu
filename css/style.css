@@ -4457,6 +4457,22 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   padding: 1px 8px;
 }
 
+/* [OPTIMASI TAMPILAN] Tombol "Lihat & Kelola Anggota" -- daftar anggota +
+   form undang disembunyikan di balik tombol ini secara default (lihat
+   skBuildMemberManagementHtml/js/auth.js), baru dimuat & ditampilkan
+   begitu diklik. Ikon panah ikut berputar 180deg saat panel terbuka. */
+.um-member-toggle-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: .72rem;
+}
+.um-member-toggle-btn svg { flex-shrink: 0; transition: transform .18s ease; }
+.um-member-toggle-btn.is-open svg { transform: rotate(180deg); }
+.um-member-panel-body { margin-top: 12px; }
+
 .um-member-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .um-member-empty { font-size: .72rem; color: var(--ink-faint); padding: 10px 2px; }
 
