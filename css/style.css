@@ -4512,6 +4512,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 }
 .um-member-meta { display: flex; align-items: center; gap: 6px; margin-top: 2px; flex-wrap: wrap; }
 .um-member-you { font-size: .6rem; color: var(--ink-faint); font-style: italic; }
+.um-member-lastlogin { font-size: .62rem; color: var(--ink-faint); margin-top: 3px; }
 
 .um-role-badge {
   font-size: .58rem;

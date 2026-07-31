@@ -212,6 +212,33 @@ window.skGetEffectiveRoleForBook = function(bookId) {
     return perBookRole || window.skComputeGlobalRole();
 };
 
+// [LOG LOGIN ANGGOTA] Catat "terakhir login" user yang sedang aktif ke
+// public.profiles.last_login_at lewat RPC sk_touch_last_login (lihat
+// sql/last_login_tracking.sql -- RPC dipakai, bukan update langsung, karena
+// profiles sengaja tidak punya policy UPDATE untuk client biasa).
+// Di-guard dengan window._skLastLoginTouched supaya HANYA dipanggil sekali
+// per sesi tab (dipanggil ulang tiap skRefreshSharedAccess akan jadi
+// spam -- fungsi itu juga jalan tiap self-heal autosync, bukan cuma saat
+// login sungguhan). Guard direset di skSignOut supaya login berikutnya
+// (di tab yang sama) tetap tercatat sebagai login baru.
+window._skLastLoginTouched = false;
+window.skTouchLastLogin = async function() {
+    if (window._skLastLoginTouched) return;
+    if (!window._skAuthUser) return;
+    const client = getSupabaseAuthClient();
+    if (!client) return;
+    window._skLastLoginTouched = true; // set duluan -- gagal pun tidak retry terus tiap refresh
+    try {
+        const res = await client.rpc('sk_touch_last_login');
+        if (res.error) throw res.error;
+    } catch (e) {
+        // Non-fatal: kalau RPC belum di-setup (sql/last_login_tracking.sql
+        // belum dijalankan) atau lagi offline, cukup log -- jangan ganggu
+        // alur login/refresh akses yang jauh lebih penting.
+        console.warn('[auth.js] Gagal mencatat last_login_at (cek sql/last_login_tracking.sql sudah dijalankan?):', e);
+    }
+};
+
 window.skSignIn = async function(email, password) {
     const client = getSupabaseAuthClient();
     if (!client) {
@@ -225,6 +252,7 @@ window.skSignIn = async function(email, password) {
     }
     window._skAuthUser = data.user ? { id: data.user.id, email: data.user.email } : null;
     await window.skRefreshSharedAccess();
+    window.skTouchLastLogin();
     window.showToast && window.showToast('Berhasil login: ' + (window._skAuthUser ? window._skAuthUser.email : ''));
     if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
     return true;
@@ -236,6 +264,7 @@ window.skSignOut = async function() {
     window._skAuthUser = null;
     window._skSharedRoles = {};
     window._skAuthMode = 'login';
+    window._skLastLoginTouched = false; // supaya login berikutnya (tab yg sama) tercatat lagi
     if (window.books) {
         // Kalau sedang aktif di buku shared yang baru saja hilang aksesnya,
         // pindah ke buku pribadi pertama supaya app tidak nyangkut.
@@ -369,6 +398,13 @@ window.skRefreshSharedAccess = async function() {
     const session = await window.skGetSession();
     if (!session) { window._skAuthUser = null; window._skSharedRoles = {}; return; }
     window._skAuthUser = { id: session.user.id, email: session.user.email };
+    // Sesi Supabase Auth lama berhasil dipulihkan (mis. buka app lagi
+    // setelah sebelumnya login) -- ini juga terhitung "login ke aplikasi"
+    // dari sudut pandang fitur log terakhir login, walau tidak lewat
+    // skSignIn. Guard di dalam skTouchLastLogin mencegah ini jadi spam
+    // tiap skRefreshSharedAccess dipanggil ulang (mis. autosync self-heal).
+    window.skTouchLastLogin();
+
 
     // [FIX RACE/JARINGAN FLAKY] Sebelumnya: SATU kegagalan jaringan di sini
     // (fetch book_members gagal, mis. wifi sempat putus sebentar) membuat
@@ -1439,11 +1475,21 @@ window.skListBookMembers = async function(bookId) {
         const rows = res.data || [];
         if (rows.length === 0) return [];
         const ids = rows.map(function(r) { return r.user_id; });
-        const profRes = await client.from('profiles').select('id, email').in('id', ids);
+        // [LOG LOGIN ANGGOTA] last_login_at ikut ditarik dari profiles (lihat
+        // sql/last_login_tracking.sql) supaya panel Kelola Anggota bisa
+        // menampilkan kapan terakhir tiap anggota (editor/viewer/admin lain)
+        // login ke aplikasi.
+        const profRes = await client.from('profiles').select('id, email, last_login_at').in('id', ids);
         const emailById = {};
-        (profRes.data || []).forEach(function(p) { emailById[p.id] = p.email; });
+        const lastLoginById = {};
+        (profRes.data || []).forEach(function(p) { emailById[p.id] = p.email; lastLoginById[p.id] = p.last_login_at || null; });
         return rows.map(function(r) {
-            return { user_id: r.user_id, role: r.role, email: emailById[r.user_id] || '(email tidak diketahui)' };
+            return {
+                user_id: r.user_id,
+                role: r.role,
+                email: emailById[r.user_id] || '(email tidak diketahui)',
+                last_login_at: Object.prototype.hasOwnProperty.call(lastLoginById, r.user_id) ? lastLoginById[r.user_id] : null
+            };
         });
     } catch (e) {
         console.error('[auth.js] Gagal ambil daftar anggota:', e);
@@ -1637,6 +1683,29 @@ window.skRemoveMember = async function(bookId, userId) {
 // "Manajemen User" pakai #umMemberListContent lewat parameter kedua supaya
 // dua tempat ini bisa aktif berbarengan di DOM tanpa bentrok id). Dipanggil
 // setelah kerangka HTML panelnya ditaruh, karena ini perlu fetch async.
+// [LOG LOGIN ANGGOTA] Format public.profiles.last_login_at (ISO string dari
+// Supabase) jadi teks relatif ringkas ala "5 menit lalu" / "3 hari lalu",
+// jatuh ke tanggal+jam lengkap kalau sudah lebih dari seminggu supaya tidak
+// berubah-ubah tanpa makna ("2 minggu lalu" vs "3 minggu lalu" kurang
+// berguna dibanding tanggal pastinya). null/tidak valid -> "Belum pernah
+// login" (anggota dibuatkan akun via skAdminCreateMemberAccount tapi belum
+// pernah login sendiri, atau baris ini terisi sebelum migrasi
+// sql/last_login_tracking.sql dijalankan).
+window._skFormatLastLogin = function(iso) {
+    if (!iso) return 'Belum pernah login';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return 'Belum pernah login';
+    const diffMs = Date.now() - d.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'Baru saja';
+    if (diffMin < 60) return diffMin + ' menit lalu';
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) return diffHour + ' jam lalu';
+    const diffDay = Math.floor(diffHour / 24);
+    if (diffDay < 7) return diffDay + ' hari lalu';
+    return d.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
 window.skRenderMemberList = async function(bookId, containerId) {
     containerId = containerId || 'skMemberListContent';
     const wrap = document.getElementById(containerId);
@@ -1676,6 +1745,10 @@ window.skRenderMemberList = async function(bookId, containerId) {
             '</select>';
         const removeBtn = isMe ? '' :
             '<button type="button" class="btn-mini btn-mini-danger" onclick="window.skRemoveMember(\'' + bookId + '\',\'' + m.user_id + '\')">Hapus</button>';
+        // [LOG LOGIN ANGGOTA] Ditampilkan untuk SEMUA anggota termasuk diri
+        // sendiri -- admin yang mengelola juga perlu lihat kapan dirinya
+        // sendiri terakhir tercatat login, bukan cuma anggota lain.
+        const lastLoginText = window._skFormatLastLogin(m.last_login_at);
         return (
             '<div class="um-member-card">' +
                 '<div class="um-member-avatar role-' + roleClass + '">' + esc(initial) + '</div>' +
@@ -1685,6 +1758,7 @@ window.skRenderMemberList = async function(bookId, containerId) {
                         roleControl +
                         (isMe ? '<span class="um-member-you">kamu</span>' : '') +
                     '</div>' +
+                    '<div class="um-member-lastlogin">Terakhir login: ' + esc(lastLoginText) + '</div>' +
                 '</div>' +
                 removeBtn +
             '</div>'
