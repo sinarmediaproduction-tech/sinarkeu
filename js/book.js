@@ -148,6 +148,14 @@ window.renderBookParentOptions = function() {
 window.renderBookList = function() {
     let container = document.getElementById('bookListContainer');
     container.innerHTML = '';
+    // [UI] Tidak ada mekanisme "wajib minimal 1 buku utama" di aplikasi ini
+    // -- kalau daftar buku benar-benar kosong (mis. semua buku dihapus, atau
+    // akun baru yang belum pernah punya buku), tampilkan pesan ramah supaya
+    // jelas ini kondisi valid, bukan error/loading macet.
+    if (!Array.isArray(window.books) || window.books.length === 0) {
+        container.innerHTML = '<div style="padding:1.25rem 1rem; text-align:center; color:#9AA2AC; font-size:.8rem;">Belum ada buku kas sama sekali.<br>Buat buku pertama Anda lewat form di atas.</div>';
+        return;
+    }
     window.books.forEach(b => {
         let div = document.createElement('div');
         div.className = 'book-list-item';
@@ -380,6 +388,13 @@ window.deleteBook = async function(id) {
     // dikonfirmasi berhasil (lihat window.clearBookPendingDelete di bawah
     // dan window.flushPendingBookDeletesOnStart di app.js untuk retry-nya).
     if (window.markBookPendingDelete) window.markBookPendingDelete(id);
+    // [FIX BUKU HANTU LINTAS DEVICE] Tombstone permanen, beda dari
+    // markBookPendingDelete di atas (yang cuma device ini & dibersihkan
+    // setelah push terkonfirmasi) -- ini disinkronkan ke cloud lewat
+    // pushSettingBooks() dan berlaku untuk SEMUA device/akun yang membaca
+    // backend yang sama, supaya buku ini tidak bisa dihidupkan lagi walau
+    // ada device lain yang masih membawa cache lama berisi buku ini.
+    if (window.addBookTombstone) window.addBookTombstone(id);
     window.books = window.books.filter(x => x.id !== id);
     localStorage.setItem('sk_books', JSON.stringify(window.books));
     window.renderBookList();

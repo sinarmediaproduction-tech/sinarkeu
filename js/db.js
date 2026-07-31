@@ -423,6 +423,8 @@ async function _skDropDeadSharedBooksBeforePush() {
     localStorage.setItem('sk_books', JSON.stringify(window.books));
     if (wasCurrent && window.books.length > 0 && typeof window.switchBook === 'function') {
         window.switchBook(window.books[0].id);
+    } else if (window.books.length === 0 && typeof window._promptCreateFirstBookIfEmpty === 'function') {
+        window._promptCreateFirstBookIfEmpty();
     }
     if (window.showToast) {
         window.showToast(
@@ -439,6 +441,20 @@ async function _skDropDeadSharedBooksBeforePush() {
 window.pushSettingBooks = async function() {
     if (!window.isOnline()) return false;
     await _skDropDeadSharedBooksBeforePush();
+    // [FIX BUKU HANTU LINTAS DEVICE] Buang dulu buku yang sudah pernah
+    // ditandai terhapus permanen (lihat window.addBookTombstone) dari
+    // window.books SEBELUM push apa pun -- mencegah device dengan cache
+    // window.books basi menghidupkan kembali buku yang sudah dihapus device
+    // lain, walau device ini sendiri tidak pernah menjalankan penghapusannya.
+    const _tombstones = window._loadBookTombstones ? window._loadBookTombstones() : new Set();
+    if (_tombstones.size > 0 && Array.isArray(window.books)) {
+        const _beforeLen = window.books.length;
+        window.books = window.books.filter(function(b) { return !_tombstones.has(b.id); });
+        if (window.books.length !== _beforeLen) {
+            console.log('[Sync] Buku ber-tombstone dibuang dari payload push:', _beforeLen - window.books.length);
+            localStorage.setItem('sk_books', JSON.stringify(window.books));
+        }
+    }
     // [FIX BOOKS LOST-UPDATE] Dulu fungsi ini tidak pernah `return` apa pun,
     // jadi pemanggil (mis. deleteBook di book.js) tidak pernah tahu pasti
     // apakah push-nya sungguhan berhasil -- penting sekarang karena
@@ -466,6 +482,15 @@ window.pushSettingBooks = async function() {
     });
     const result = await window.pushSetting('books', sanitizedBooks, 'global');
     console.log('[Sync] Books saved to cloud:', window.books.length);
+    // Sinkronkan tombstone ke cloud juga, best-effort -- kegagalan di sini
+    // TIDAK boleh membuat pushSettingBooks dianggap gagal (daftar buku
+    // utamanya sendiri sudah berhasil di atas); device lain masih akan
+    // menerima tombstone ini di kesempatan push berikutnya.
+    if (_tombstones.size > 0) {
+        window.pushBookTombstones().catch(function(e) {
+            console.warn('[Sync] Gagal push tombstone buku (akan dicoba lagi push berikutnya):', e);
+        });
+    }
     return !!result;
 };
 
@@ -717,10 +742,33 @@ window.pullAllSettings = async function() {
         const decryptedValues = await Promise.all(
             rowsToDecrypt.map(row => window._decryptSettingValue(row.value))
         );
+        // [FIX BUKU HANTU LINTAS DEVICE] Proses 'deleted_book_ids' LEBIH DULU
+        // (union ke tombstone lokal) sebelum blok 'books' di bawah dijalankan,
+        // supaya union-merge daftar buku bisa langsung memakai tombstone
+        // gabungan terbaru saat memutuskan buku mana yang boleh/tidak boleh
+        // dihidupkan kembali dari cloud maupun dipertahankan dari cache lokal.
+        for (let _t = 0; _t < rowsToDecrypt.length; _t++) {
+            if (rowsToDecrypt[_t].key !== 'deleted_book_ids') continue;
+            const _dv = decryptedValues[_t];
+            if (_dv === null) continue;
+            try {
+                const _parsedTomb = JSON.parse(_dv);
+                if (Array.isArray(_parsedTomb) && window._loadBookTombstones) {
+                    const _localTomb = window._loadBookTombstones();
+                    let _tChanged = false;
+                    _parsedTomb.forEach(function(id) {
+                        if (id && !_localTomb.has(id)) { _localTomb.add(id); _tChanged = true; }
+                    });
+                    if (_tChanged) window._saveBookTombstones(_localTomb);
+                }
+            } catch (e) { /* baris rusak, lewati */ }
+        }
+
         for (let _i = 0; _i < rowsToDecrypt.length; _i++) {
             const row = rowsToDecrypt[_i];
             const decryptedValue = decryptedValues[_i];
             let parsed;
+            if (row.key === 'deleted_book_ids') continue; // sudah diproses di atas
             if (decryptedValue === null) {
                 // Baris ini terenkripsi kunci lama — tandai untuk heal setelah loop.
                 hasStaleRows = true;
@@ -762,6 +810,13 @@ window.pullAllSettings = async function() {
                 const localById = {};
                 window.books.forEach(b => { localById[b.id] = b; });
                 const pendingDeletes = window._loadBooksPendingDeletes ? window._loadBooksPendingDeletes() : new Set();
+                // [FIX BUKU HANTU LINTAS DEVICE] Beda dari pendingDeletes (cuma
+                // dikenal device yang menghapus, dibersihkan setelah push
+                // terkonfirmasi), tombstones ini permanen & union dari cloud
+                // (lihat blok 'deleted_book_ids' di atas) -- berlaku untuk
+                // SEMUA device begitu tersinkron, tidak peduli device mana yang
+                // menghapusnya.
+                const tombstones = window._loadBookTombstones ? window._loadBookTombstones() : new Set();
                 // b_default adalah placeholder yang dibuat versi lama saat
                 // perangkat baru belum sempat menarik daftar buku cloud.
                 // Jika cloud sudah punya buku lain namun b_default tidak ada
@@ -807,17 +862,26 @@ window.pullAllSettings = async function() {
                         cb._role = lb._role;
                     }
                     if (!lb) {
-                        if (pendingDeletes.has(cb.id)) {
-                            // Kita sendiri baru saja menghapus buku ini
-                            // secara lokal; cloud belum sempat ter-update
-                            // (push delete-nya masih pending/gagal) --
-                            // jangan hidupkan lagi di sini.
+                        if (pendingDeletes.has(cb.id) || tombstones.has(cb.id)) {
+                            // Kita sendiri baru saja menghapus buku ini secara
+                            // lokal (pendingDeletes), ATAU buku ini pernah
+                            // ditombstone permanen -- device manapun yang
+                            // menghapusnya (tombstones) -- baik cloud belum
+                            // sempat ter-update maupun baris 'books' cloud ini
+                            // kebetulan snapshot basi: jangan hidupkan lagi.
                             changed = true;
                             needsHealPush = true;
                         } else {
                             merged.push(cb);
                             changed = true;
                         }
+                    } else if (tombstones.has(cb.id)) {
+                        // Buku ini ada di cloud & cache lokal, TAPI ternyata
+                        // sudah ditombstone permanen (mis. tombstone-nya baru
+                        // saja diterima di pull ini, dari device lain yang
+                        // menghapusnya) -- jangan pertahankan, biarkan hilang.
+                        changed = true;
+                        needsHealPush = true;
                     } else {
                         if (lb.name !== cb.name || lb.parentId !== cb.parentId) changed = true;
                         merged.push(cb);
@@ -831,7 +895,7 @@ window.pullAllSettings = async function() {
                         changed = true;
                         return;
                     }
-                    if (pendingDeletes.has(lb.id)) {
+                    if (pendingDeletes.has(lb.id) || tombstones.has(lb.id)) {
                         // Penghapusan buku ini sekarang terkonfirmasi juga
                         // hilang di cloud -- baru di sini aman membersihkan
                         // cache lokal terkait buku itu.
@@ -860,6 +924,8 @@ window.pullAllSettings = async function() {
                     if (!window.books.find(b => b.id === window.currentBookId) && window.books.length > 0) {
                         window.currentBookId = window.books[0].id;
                         localStorage.setItem('sk_current_book_id', window.currentBookId);
+                    } else if (window.books.length === 0 && typeof window._promptCreateFirstBookIfEmpty === 'function') {
+                        window._promptCreateFirstBookIfEmpty();
                     }
                     if (needsHealPush && window.isOnline()) {
                         console.log('[Sync] Menyembuhkan daftar buku di cloud (union-merge lokal vs cloud)...');
@@ -1016,6 +1082,80 @@ window.pullAllSettings = async function() {
 
     }
     window.updateSettingsSyncStatus('pull');
+};
+
+// ==================== BOOKS: PERMANENT DELETE TOMBSTONE (LINTAS DEVICE) ====================
+// [FIX BUKU HANTU LINTAS DEVICE] window._loadBooksPendingDeletes di bawah
+// cuma mencegah buku yang baru dihapus "hidup lagi" gara-gara PULL di device
+// YANG SAMA yang menghapusnya -- begitu marker itu dibersihkan (push delete
+// sudah dikonfirmasi), device LAIN yang kebetulan masih membawa cache
+// window.books versi lama (mis. device yang lama tidak dibuka/sempat offline
+// sejak sebelum penghapusan) tetap bisa menimpa balik daftar buku di cloud
+// dan menghidupkan lagi buku yang sudah dihapus -- karena pushSettingBooks()
+// selama ini SELALU mengirim window.books milik device itu apa adanya, tanpa
+// tahu buku mana yang sudah "resmi" dihapus oleh device lain. Ini penyebab
+// utama laporan "buku yang sudah dihapus muncul lagi, kadang jadi double"
+// tiap login di perangkat/akun baru.
+//
+// Fix: simpan daftar ID buku yang PERNAH dihapus permanen -- TIDAK PERNAH
+// dibersihkan/expired (beda dari pending-delete di atas) -- dan sinkronkan
+// ke cloud lewat setting 'deleted_book_ids' (union-merge, cuma bertambah).
+// Dipakai di 2 titik:
+//   1. pushSettingBooks() MEMBUANG dulu id mana pun yang ada di tombstone
+//      SEBELUM mengirim window.books ke cloud -- device manapun yang masih
+//      membawa cache lama buku yang sudah dihapus tidak akan pernah bisa
+//      menghidupkannya lagi lewat push-nya sendiri.
+//   2. Union-merge saat pull (blok row.key === 'books' di bawah) -- id yang
+//      ada di tombstone tidak akan pernah di-revive dari cloud maupun
+//      dipertahankan dari cache lokal.
+window._booksTombstoneKey = 'sk_books_tombstone';
+
+// [UI] Tidak ada aturan "setiap akun wajib minimal 1 buku utama" di
+// aplikasi ini -- window.books memang boleh kosong (mis. semua buku dihapus,
+// akses buku bersama terakhir dicabut, atau akun baru yang belum pernah
+// membuat buku). Beberapa alur (switchBook otomatis ke buku lain saat buku
+// aktif hilang) sengaja hanya jalan kalau window.books.length > 0; kalau
+// sampai 0, currentBookId bisa menggantung menunjuk buku yang sudah tidak
+// ada. Dashboard (render()) tetap aman dipanggil dalam kondisi ini (tidak
+// crash, cuma menampilkan 0/kosong), tapi user tidak diberi tahu KENAPA --
+// helper ini memberi penjelasan eksplisit & mengarahkan ke form buat buku.
+window._promptCreateFirstBookIfEmpty = function() {
+    if (Array.isArray(window.books) && window.books.length > 0) return;
+    if (window.showToast) {
+        window.showToast('Semua buku sudah tidak ada. Buat buku baru untuk melanjutkan.', 'warning');
+    }
+    if (typeof window.openBookManager === 'function') {
+        window.openBookManager();
+    }
+};
+
+window._loadBookTombstones = function() {
+    try { return new Set(JSON.parse(localStorage.getItem(window._booksTombstoneKey) || '[]')); }
+    catch (e) { return new Set(); }
+};
+window._saveBookTombstones = function(idSet) {
+    try { localStorage.setItem(window._booksTombstoneKey, JSON.stringify(Array.from(idSet))); }
+    catch (e) { /* localStorage penuh/nonaktif -- tetap dicoba lagi sesi ini */ }
+};
+// Dipanggil window.deleteBook (book.js) begitu sebuah buku resmi dihapus.
+window.addBookTombstone = function(id) {
+    const s = window._loadBookTombstones();
+    if (!s.has(id)) {
+        s.add(id);
+        window._saveBookTombstones(s);
+    }
+};
+// Push tombstone lokal ke cloud. Best-effort & idempotent -- aman dipanggil
+// berkali-kali, tidak pernah menghapus entri tombstone milik device lain
+// karena Supabase-side ini cuma satu array JSON yang di-UNION dulu di sisi
+// klien sebelum dikirim (lihat pemrosesan row.key === 'deleted_book_ids' di
+// pullAllSettings), bukan overwrite buta.
+window.pushBookTombstones = async function() {
+    if (!window.isOnline()) return false;
+    const local = window._loadBookTombstones();
+    if (local.size === 0) return true;
+    const result = await window.pushSetting('deleted_book_ids', Array.from(local), 'global');
+    return !!result;
 };
 
 // ==================== BOOKS: PENDING-DELETE TRACKING ====================

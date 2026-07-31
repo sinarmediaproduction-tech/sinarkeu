@@ -243,6 +243,8 @@ window.skSignOut = async function() {
         window.books = window.books.filter(function(b) { return !b._isShared; });
         if (!stillHasCurrent && window.books.length > 0 && typeof window.switchBook === 'function') {
             window.switchBook(window.books[0].id);
+        } else if (window.books.length === 0 && typeof window._promptCreateFirstBookIfEmpty === 'function') {
+            window._promptCreateFirstBookIfEmpty();
         }
         if (typeof window.renderBookSelector === 'function') window.renderBookSelector();
     }
@@ -333,6 +335,8 @@ async function _skRevokeStaleSharedBooks(stillAccessibleIds) {
     // tidak bisa diakses lagi.
     if (revokedIds.has(window.currentBookId) && window.books.length > 0 && typeof window.switchBook === 'function') {
         window.switchBook(window.books[0].id);
+    } else if (window.books.length === 0 && typeof window._promptCreateFirstBookIfEmpty === 'function') {
+        window._promptCreateFirstBookIfEmpty();
     }
     if (typeof window.renderBookList === 'function' && document.getElementById('bookManagerModal') && document.getElementById('bookManagerModal').classList.contains('show')) {
         window.renderBookList();
