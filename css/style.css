@@ -4679,3 +4679,169 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   max-width: 340px;
   margin: 0 auto;
 }
+
+/* ===================================================================
+   ROMBAK TAMPILAN — Modal "Kelola Buku Kas" (#bookManagerModal)
+   Murni CSS + markup statis (index.html). TIDAK menyentuh js/book.js —
+   markup dinamis (.book-list-item, .book-list-name, .book-list-actions,
+   .btn-mini, .btn-mini-danger) tetap dihasilkan JS apa adanya, di sini
+   cuma di-restyle lewat class yang sudah ada. Beberapa tombol aksi
+   (Nama/Card/Duplikat/Jadikan Bersama/dst.) punya inline style warna dari
+   JS yang sengaja DIPERTAHANKAN (kode warna beda = jenis aksi beda) --
+   yang diubah di sini cuma bentuk/spacing/hover, bukan warnanya.
+   =================================================================== */
+
+/* ── Kerangka modal & header ── */
+#bookManagerModal .book-manager-content {
+  max-width: 620px;
+}
+#bookManagerModal .book-manager-header {
+  align-items: flex-start;
+}
+#bookManagerModal .book-manager-header-text h3 {
+  font-family: var(--font-display);
+}
+#bookManagerModal .book-manager-subtitle {
+  margin-top: 4px;
+  font-size: .72rem;
+  color: var(--ink-faint);
+  font-weight: 400;
+  line-height: 1.5;
+}
+#bookManagerModal .modal-close { flex-shrink: 0; margin-left: 12px; }
+
+/* ── Judul mini tiap seksi (Buku Bersama / Daftar Buku / Buat Buku Baru) ── */
+#bookManagerModal .book-manager-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 10px;
+}
+#bookManagerModal .book-manager-panel-title svg { color: var(--accent); flex-shrink: 0; }
+#bookManagerModal .book-manager-list-title { margin: 18px 0 10px; }
+
+/* ── Panel "Buku Bersama" & "Buat Buku Baru" — kartu senada, dibedakan
+   dari daftar buku supaya hierarki tampilan jelas ── */
+#bookManagerModal .book-manager-panel {
+  border-radius: var(--radius);
+}
+#bookManagerModal .book-manager-panel--shared {
+  border-left: 3px solid var(--purple);
+}
+#bookManagerModal .book-manager-panel--new {
+  background: var(--paper-warm);
+  border: 1.5px solid var(--rule);
+  border-left: 3px solid var(--success);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-top: 18px;
+}
+#bookManagerModal .book-manager-new-form { display: flex; flex-direction: column; gap: 10px; }
+#bookManagerModal .book-manager-parent-field label {
+  display: block;
+  font-size: .66rem;
+  font-weight: 600;
+  color: var(--purple);
+  margin-bottom: 4px;
+}
+#bookManagerModal .book-manager-parent-field select { font-size: .75rem; }
+#bookManagerModal .book-manager-hint {
+  font-size: .62rem;
+  color: var(--ink-faint);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+#bookManagerModal .book-manager-submit { width: 100%; font-weight: 700; }
+
+/* ── Daftar buku: kartu dengan aksen kiri, lebih lega & jelas per-baris ── */
+#bookManagerModal .book-manager-list { margin-bottom: 4px; }
+
+#bookManagerModal .book-list-item {
+  position: relative;
+  padding: 12px 14px 12px 16px;
+  border-radius: var(--radius);
+  border-color: var(--rule);
+  border-left: 3px solid var(--accent-lt);
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+#bookManagerModal .book-list-item:hover {
+  box-shadow: var(--shadow-md);
+  border-left-color: var(--accent);
+}
+/* Kartu buku yang sedang aktif (badge "SEDANG AKTIF" ada di dalamnya)
+   ditandai lebih tegas lewat aksen emas, konsisten dengan aksen highlight
+   utama tema ini. */
+#bookManagerModal .book-list-item:has(.book-manager-active-badge) {
+  border-left-color: var(--warning);
+  background: var(--warning-lt);
+}
+
+#bookManagerModal .book-list-name {
+  font-size: .82rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+#bookManagerModal .book-list-actions {
+  gap: 7px;
+}
+#bookManagerModal .book-list-actions .btn-mini {
+  border-radius: var(--radius-pill);
+  padding: 5px 12px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  box-shadow: none;
+}
+#bookManagerModal .book-list-actions .btn-mini:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+/* Badge status "SEDANG AKTIF" (bukan tombol) -- jadikan pill emas kecil
+   dengan titik indikator, bukan teks polos. */
+#bookManagerModal .book-list-actions > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .64rem !important;
+  font-weight: 700 !important;
+  color: var(--warning) !important;
+  background: var(--warning-lt);
+  border: 1.5px solid var(--warning);
+  border-radius: var(--radius-pill);
+  padding: 4px 11px;
+}
+#bookManagerModal .book-list-actions > span::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--warning);
+  flex-shrink: 0;
+}
+
+/* ── Empty state (dari js/book.js: satu <div> teks di dalam
+   #bookListContainer saat window.books kosong) -- diberi bingkai putus-putus
+   supaya jelas ini kondisi kosong yang valid, bukan area kosong tanpa
+   penjelasan. Selector menyasar div langsung di bawah container yang TIDAK
+   punya class .book-list-item, jadi tidak ikut mengubah kartu buku biasa. ── */
+#bookManagerModal #bookListContainer > div:not(.book-list-item) {
+  border: 1.5px dashed var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-warm);
+}
+
+@media (max-width: 640px) {
+  #bookManagerModal .book-manager-header { align-items: center; }
+  #bookManagerModal .book-manager-subtitle { display: none; }
+}
+
+[data-theme="dark"] #bookManagerModal .book-manager-panel--new,
+[data-theme="dark"] #bookManagerModal #bookListContainer > div:not(.book-list-item) {
+  background: var(--paper);
+}

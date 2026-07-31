@@ -879,24 +879,46 @@ alter table public.settings
 
 <!-- Book Manager Modal -->
 <div id="bookManagerModal" class="modal fullview-modal">
-    <div class="modal-content">
-        <div class="modal-header"><h3>Kelola Buku Kas</h3><button class="modal-close" onclick="window.openMobileDrawer()" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button></div>
-        <div id="skAuthPanel" class="data-management-panel" style="margin-top:0;">
-            <div style="font-size:.75rem; font-weight:700; color:var(--ink-muted); margin-bottom:8px;">Buku Bersama (Shared)</div>
+    <div class="modal-content book-manager-content">
+        <div class="modal-header book-manager-header">
+            <div class="book-manager-header-text">
+                <h3>Kelola Buku Kas</h3>
+                <p class="book-manager-subtitle">Buat, buka, ganti nama, atau hapus buku kas Anda di sini.</p>
+            </div>
+            <button class="modal-close" onclick="window.openMobileDrawer()" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
+        </div>
+
+        <div id="skAuthPanel" class="data-management-panel book-manager-panel book-manager-panel--shared" style="margin-top:0;">
+            <div class="book-manager-panel-title">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <span>Buku Bersama (Shared)</span>
+            </div>
             <div id="skAuthPanelContent"></div>
         </div>
-        <div id="bookListContainer"></div>
-        <form onsubmit="addNewBook(event)" style="border-top:1px solid var(--rule); padding-top:16px; margin-bottom:16px">
-            <input type="text" id="newBookName" class="form-control" placeholder="Nama buku baru..." required>
-            <div style="margin-top:8px;">
-                <label style="font-size:.7rem; color:var(--purple); font-weight:600;">Jadikan anak dari buku (opsional)</label>
-                <select id="newBookParent" class="form-control" style="font-size:.75rem; margin-top:4px;">
-                    <option value="">— Buku mandiri (tidak ada induk) —</option>
-                </select>
-                <div style="font-size:.62rem; color:var(--ink-faint); margin-top:3px; line-height:1.5;">Anak buku bisa ditutup dan ringkasannya dikirim ke buku induk.</div>
+
+        <div class="book-manager-panel-title book-manager-list-title">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+            <span>Daftar Buku</span>
+        </div>
+        <div id="bookListContainer" class="book-manager-list"></div>
+
+        <div class="book-manager-panel book-manager-panel--new">
+            <div class="book-manager-panel-title">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Buat Buku Baru</span>
             </div>
-            <button type="submit" class="btn btn-primary" style="width:100%; margin-top:10px">Buat Buku Baru</button>
-        </form>
+            <form onsubmit="addNewBook(event)" class="book-manager-new-form">
+                <input type="text" id="newBookName" class="form-control" placeholder="Nama buku baru..." required>
+                <div class="book-manager-parent-field">
+                    <label>Jadikan anak dari buku (opsional)</label>
+                    <select id="newBookParent" class="form-control">
+                        <option value="">— Buku mandiri (tidak ada induk) —</option>
+                    </select>
+                    <div class="book-manager-hint">Anak buku bisa ditutup dan ringkasannya dikirim ke buku induk.</div>
+                </div>
+                <button type="submit" class="btn btn-primary book-manager-submit">Buat Buku Baru</button>
+            </form>
+        </div>
     </div>
 </div>
 
