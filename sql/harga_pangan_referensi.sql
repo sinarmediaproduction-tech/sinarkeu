@@ -43,6 +43,23 @@ create index if not exists harga_pangan_referensi_date_idx
 
 alter table public.harga_pangan_referensi enable row level security;
 
+-- [FIX RLS "GAGAL SINKRON ... AKSES DITOLAK"] Policy select/insert di bawah
+-- sudah permisif (`using (true)` / `with check (true)`, tanpa `TO <role>`
+-- artinya berlaku untuk role APA PUN termasuk anon & authenticated) --
+-- tapi RLS itu default-deny di LAPISAN PRIVILEGE dasar juga: tanpa GRANT
+-- eksplisit, role anon/authenticated tidak pernah sampai dicek policy-nya
+-- sama sekali, PostgREST langsung balas "permission denied for table" /
+-- 42501 duluan. Skrip lain di app ini (fix_rls_sync_42501.sql) sudah GRANT
+-- eksplisit untuk tabel settings & backups, tapi skrip INI (dibuat
+-- terpisah, lebih dulu) lupa menyertakan baris GRANT yang sama untuk
+-- harga_pangan_referensi -- itulah sebabnya toast error "Gagal sinkron
+-- tabel 'harga_pangan_referensi': akses ditolak oleh aturan RLS database"
+-- tetap muncul terus walau fix_rls_sync_42501.sql sudah pernah dijalankan
+-- (skrip itu tidak menyentuh tabel ini sama sekali). GRANT di bawah aman
+-- dijalankan ulang kapan pun (idempotent, bukan bikin baris/objek baru).
+grant usage on schema public to anon, authenticated;
+grant select, insert on public.harga_pangan_referensi to anon, authenticated;
+
 drop policy if exists "anon read harga pangan" on public.harga_pangan_referensi;
 create policy "anon read harga pangan"
   on public.harga_pangan_referensi
