@@ -660,7 +660,50 @@ window.openAnnualBudgetModal = function() {
         const modal = document.getElementById('annualBudgetModal');
         if (modal && modal.classList.contains('show')) window.renderAnnualBudgetForm();
     });
+
+    // [AUTO HARGA PANGAN] Sama seperti window.openShoppingListModal
+    // (js/shopping-list.js) -- tarik harga referensi BI tiap kali modal
+    // dibuka, lalu isi otomatis kebutuhan yang belum ada nominalnya (atau
+    // sebelumnya juga terisi otomatis lewat fitur ini) kalau namanya cocok
+    // salah satu komoditas yang ditrack (window.HARGA_PANGAN_COMMODITIES,
+    // js/harga-pangan.js). Nominal yang sudah diisi MANUAL oleh user tidak
+    // pernah ditimpa.
+    if (window.isOnline && window.isOnline() && typeof window.prefetchHargaPanganReferensi === 'function') {
+        const bookAtOpen = window.currentBookId;
+        window.prefetchHargaPanganReferensi().then(function() {
+            const modal = document.getElementById('annualBudgetModal');
+            if (!modal || !modal.classList.contains('show') || window.currentBookId !== bookAtOpen) return;
+            window._applyHargaPanganReferensiToAnnualBudget();
+        }).catch(function(e) {
+            console.warn('[AnggaranTahunan] Gagal ambil harga referensi pangan:', e.message);
+        });
+    }
 };
+
+// Isi otomatis nominal kebutuhan tahunan yang BELUM punya nominal (atau
+// sebelumnya juga terisi otomatis lewat fitur ini -- ditandai
+// item.priceSource==='ref') dengan harga referensi PIHPS BI terbaru, kalau
+// nama kebutuhannya cocok salah satu komoditas yang ditrack. Nominal yang
+// sudah diisi MANUAL oleh user tidak pernah ditimpa -- persis pola
+// window._applyHargaPanganReferensiToShoppingList di js/shopping-list.js.
+window._applyHargaPanganReferensiToAnnualBudget = function() {
+    const items = window.getAnnualBudget(window.currentBookId);
+    let changed = false;
+    items.forEach(function(item) {
+        const isEmptyOrRef = !item.amount || item.priceSource === 'ref';
+        if (!isEmptyOrRef) return;
+        const ref = window.getHargaPanganUntukItem(item.name);
+        if (!ref) return;
+        if (item.amount === ref.price && item.priceSource === 'ref' && item.priceRefDate === ref.date) return;
+        item.amount = ref.price;
+        item.priceSource = 'ref';
+        item.priceRefDate = ref.date;
+        changed = true;
+    });
+    if (changed) window.saveAnnualBudgetList(window.currentBookId, items);
+    window.renderAnnualBudgetForm();
+};
+
 window.renderAnnualBudgetForm = function() {
     window.ensureAnnualBudgetYearlyCycle(window.currentBookId);
     const box = document.getElementById('annualBudgetItemsContainer'); if (!box) return;
@@ -671,22 +714,48 @@ window.renderAnnualBudgetForm = function() {
     const progressCard = document.getElementById('annualBudgetProgressCard');
     if (progressCard) progressCard.innerText = `${items.filter(i => i.done).length} dari ${items.length} kebutuhan direalisasikan`;
     if (!items.length) { box.innerHTML = '<div class="slist-empty">Belum ada kebutuhan tahunan. Tambahkan THR, pajak, servis, atau kebutuhan lainnya.</div>'; return; }
-    box.innerHTML = items.map(i => `<div class="slist-item${i.done ? ' done' : ''}">
+    box.innerHTML = items.map(i => {
+        // [AUTO HARGA PANGAN] i.priceSource==='ref' -> nominal ini diisi
+        // otomatis dari referensi BI, bukan diketik manual -- ditandai "≈"
+        // + title penjelasan, sama seperti badge di Daftar Belanja.
+        const isRefPrice = i.priceSource === 'ref' && i.amount;
+        const unitPriceText = i.amount ? (isRefPrice ? '≈ ' : '') + window.rp(i.amount) : '';
+        const unitPriceClass = isRefPrice ? 'slist-unit-price is-ref-price' : 'slist-unit-price';
+        const unitPriceTitle = isRefPrice
+            ? ` title="Nominal referensi otomatis dari PIHPS Bank Indonesia (${window.escapeHtml(i.priceRefDate || '')}). Ubah manual lewat ✎ kalau harga sebenarnya beda."`
+            : '';
+        return `<div class="slist-item${i.done ? ' done' : ''}">
         <input type="checkbox" class="slist-checkbox" ${i.done ? 'checked' : ''} onchange="window.toggleAnnualBudgetItem('${window.escapeHtml(i.id)}')">
         <span class="slist-name">${window.escapeHtml(i.name || '')}</span><span class="slist-qty">${(Number(i.qty) || 1) > 1 ? 'x' + window.escapeHtml(String(i.qty)) : ''}</span>
-        <span class="slist-cat-badge">${window.escapeHtml(i.category || 'Belanja Harian')}</span><span class="slist-unit-price"></span>
+        <span class="slist-cat-badge">${window.escapeHtml(i.category || 'Belanja Harian')}</span><span class="${unitPriceClass}"${unitPriceTitle}>${unitPriceText}</span>
         <span class="slist-price">${window.rp(window._annualBudgetItemSubtotal(i))}</span>
         <button type="button" class="slist-edit-btn" title="Ubah kebutuhan" aria-label="Ubah kebutuhan" onclick="window.openEditAnnualBudgetItemModal('${window.escapeHtml(i.id)}')">✎</button>
         <div class="slist-trail"><button type="button" class="slist-del-btn" title="Hapus" onclick="window.deleteAnnualBudgetItem('${window.escapeHtml(i.id)}')">×</button></div>
-    </div>`).join('');
+    </div>`;
+    }).join('');
 };
 window.addAnnualBudgetRow = function() {
     const nameEl = document.getElementById('annualNewName'), qtyEl = document.getElementById('annualNewQty'), amountEl = document.getElementById('annualNewAmount'), catEl = document.getElementById('annualNewCategory');
-    const name = nameEl && nameEl.value.trim(), amount = amountEl ? window.unRp(amountEl.value) : 0;
+    const name = nameEl && nameEl.value.trim();
+    const rawAmount = amountEl ? window.unRp(amountEl.value) : 0;
+    // [AUTO HARGA PANGAN] Sama seperti window.addShoppingListItem: kalau
+    // field nominal sengaja dikosongkan, coba isi dari harga referensi BI
+    // dulu (kalau nama kebutuhannya cocok salah satu komoditas yang
+    // ditrack) sebelum minta user isi manual. Kalau user memang mengisi
+    // nominal sendiri, itu yang dipakai apa adanya.
+    const ref = (!rawAmount && typeof window.getHargaPanganUntukItem === 'function')
+        ? window.getHargaPanganUntukItem(name) : null;
+    const amount = rawAmount || (ref ? ref.price : 0);
     if (!name || amount <= 0) { window.showToast('Isi nama dan nominal kebutuhan tahunan.', 'warning'); return; }
     const items = window.getAnnualBudget(window.currentBookId);
     const qty = qtyEl && Number(qtyEl.value) > 0 ? Number(qtyEl.value) : 1;
-    items.push({ id:'ab_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), name, qty, amount, category:catEl ? catEl.value : '', done:false, checklistYear:window.getAnnualBudgetYearKey() });
+    items.push({
+        id: 'ab_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        name, qty, amount,
+        priceSource: rawAmount ? 'manual' : (ref ? 'ref' : undefined),
+        priceRefDate: ref ? ref.date : undefined,
+        category: catEl ? catEl.value : '', done: false, checklistYear: window.getAnnualBudgetYearKey()
+    });
     window.saveAnnualBudgetList(window.currentBookId, items); nameEl.value = ''; qtyEl.value = ''; amountEl.value = ''; window.renderAnnualBudgetForm();
 };
 window.openAddAnnualBudgetItemModal = function() {
@@ -737,14 +806,24 @@ window.handleEditAnnualBudgetItemSubmit = function(event) {
     event.preventDefault();
     const id = document.getElementById('annualEditId').value;
     const name = document.getElementById('annualEditName').value.trim();
-    const amount = window.unRp(document.getElementById('annualEditAmount').value);
+    const rawAmount = window.unRp(document.getElementById('annualEditAmount').value);
     const qtyParsed = Number(document.getElementById('annualEditQty').value);
+    // [AUTO HARGA PANGAN] Sama seperti window.handleEditShoppingListItemSubmit:
+    // kalau field nominal sengaja dikosongkan, coba isi dari referensi BI
+    // dulu sebelum jatuh ke 0. Kalau user isi angka sendiri (termasuk
+    // sengaja menimpa nominal referensi sebelumnya), itu jadi nominal
+    // manual & tidak akan ditimpa lagi oleh auto-update berikutnya.
+    const ref = (!rawAmount && typeof window.getHargaPanganUntukItem === 'function')
+        ? window.getHargaPanganUntukItem(name) : null;
+    const amount = rawAmount || (ref ? ref.price : 0);
     if (!name || amount <= 0) { window.showToast('Isi nama dan nominal kebutuhan tahunan.', 'warning'); return; }
     const item = window.getAnnualBudget(window.currentBookId).find(i => i.id === id);
     if (!item) return;
     item.name = name;
     item.qty = qtyParsed > 0 ? qtyParsed : 1;
     item.amount = amount;
+    item.priceSource = rawAmount ? 'manual' : (ref ? 'ref' : undefined);
+    item.priceRefDate = ref ? ref.date : undefined;
     item.category = document.getElementById('annualEditCategory').value;
     window.saveAnnualBudgetList(window.currentBookId, window.getAnnualBudget(window.currentBookId));
     window.closeModal('editAnnualBudgetItemModal');
