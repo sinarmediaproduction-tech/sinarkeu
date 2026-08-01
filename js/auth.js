@@ -2080,7 +2080,23 @@ window.skApplyRoleUI = function() {
     // [PERMINTAAN] Sembunyikan dari user selain admin -- ikut skema
     // menu_visibility yang sama supaya admin tetap bisa menyalakannya lagi
     // per-role kalau perlu (lihat SK_MENU_DEFAULTS).
-    setVisible('navBookBtn', window.skGetMenuVisible(bookId, 'bukuKas'));
+    // [BUG FIX - EDITOR/VIEWER TERKUNCI PERMANEN DI DEVICE BARU] Modal yang
+    // dibuka tombol ini (bookManagerModal) adalah SATU-SATUNYA tempat panel
+    // login Buku Bersama (skRenderAuthPanel) berada -- sementara role
+    // 'editor'/'viewer' sendiri baru didapat SETELAH berhasil login lewat
+    // panel itu. Device yang BELUM PERNAH login sama sekali jatuh ke role
+    // default 'editor' (lihat skComputeGlobalRole), yang mana default di
+    // atas MENYEMBUNYIKAN tombol ini juga -- akibatnya user itu tidak
+    // pernah punya cara membuka panel login di device tsb sama sekali.
+    // Gejalanya persis "buku sudah di-share tapi transaksi/anggaran selalu
+    // Rp 0 di device editor": request-nya lewat anon key (RLS menolak
+    // baca/tulis), dan tidak ada jalan UI untuk login supaya lewat JWT.
+    // Fix: kalau device ini belum pernah login (window._skAuthUser null),
+    // SELALU tampilkan tombolnya terlepas dari menu_visibility -- begitu
+    // user berhasil login, render berikutnya (skApplyRoleUI dipanggil lagi
+    // dari skRefreshSharedAccess) kembali menghormati setelan admin seperti
+    // biasa.
+    setVisible('navBookBtn', !window._skAuthUser || window.skGetMenuVisible(bookId, 'bukuKas'));
     setVisible('setelanBtnAkun', window.skGetMenuVisible(bookId, 'akun'));
     setVisible('setelanBtnTelegram', window.skGetMenuVisible(bookId, 'telegram'));
     setVisible('setelanBtnSnapshot', window.skGetMenuVisible(bookId, 'snapshot'));
