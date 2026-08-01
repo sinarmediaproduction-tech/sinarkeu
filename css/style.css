@@ -3817,59 +3817,65 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 
 /* ======================================================
    DARK MODE — [data-theme="dark"]
+   Palette: GitHub "Dark dimmed" (soft dark) -- canvas abu-biru
+   lembut #22272E/#2D333B, border #444C56, teks #ADBAC7, aksen
+   biru #539BF5. Sidebar/topbar/hero yang tadinya navy formal
+   konstan ikut diubah ke skema ini juga (bukan lagi dipertahankan
+   navy di dark mode -- lihat catatan lama di docs/STYLE_GUIDE.md,
+   sekarang sudah tidak berlaku untuk dark mode).
 ====================================================== */
 [data-theme="dark"] {
-  --ink:        #E6E9EE;
-  --ink-muted:  #A3ABB8;
-  --ink-faint:  #6C7684;
-  --paper:      #16213A;
-  --paper-warm: #0D1526;
-  --rule:       #29354E;
-  --accent:     #7C93BC;
-  --accent-lt:  #212D48;
-  --success:    #4F9C79;
-  --success-lt: #17332A;
-  --danger:     #D2726B;
-  --danger-lt:  #3A2320;
-  --warning:    #C9A159;
-  --warning-lt: #332A16;
-  --purple:     #8B98C4;
-  --purple-lt:  #232B45;
-  /* Brand (tombol utama) — sedikit lebih terang dari mode terang supaya
-     tetap kontras & mudah dibaca di atas permukaan gelap */
-  --brand:      #4A6FA5;
-  --brand-dark: #2E4970;
-  /* Sidebar & title bar — navy formal yang sama persis dengan mode terang,
-     jadi identitas brand tetap konsisten di kedua tema */
-  --topbar-bg:          linear-gradient(160deg, #16233F 0%, #0A1220 100%);
-  --topbar-text:        #F2F4F7;
-  --topbar-text-muted:  rgba(242,244,247,0.66);
-  --topbar-border:      rgba(242,244,247,0.12);
-  --topbar-btn-bg:      rgba(242,244,247,0.08);
-  --topbar-btn-hover-bg: rgba(242,244,247,0.16);
-  --topbar-item-color:  rgba(242,244,247,.78);
-  --topbar-item-hover-bg: rgba(242,244,247,.12);
-  --topbar-item-active-bg: #FFFFFF;
-  --topbar-item-active-color: #16233F;
-  --topbar-footer-border: rgba(242,244,247,.12);
-  --topbar-active-shadow: 0 4px 14px rgba(0,0,0,0.40);
-  /* Balance Hero — versi gelap dari gradasi navy formal di atas */
-  --hero-bg-from:  #1B2C4D;
-  --hero-bg-to:    #060A14;
-  --hero-text:       #F2F4F7;
-  --hero-text-muted: rgba(242,244,247,0.72);
+  --ink:        #ADBAC7;
+  --ink-muted:  #768390;
+  --ink-faint:  #636E7B;
+  --paper:      #2D333B;
+  --paper-warm: #22272E;
+  --rule:       #444C56;
+  --accent:     #539BF5;
+  --accent-lt:  #1C3A5E;
+  --success:    #57AB5A;
+  --success-lt: #1C2E1C;
+  --danger:     #E5534B;
+  --danger-lt:  #3B211E;
+  --warning:    #C69026;
+  --warning-lt: #3A2E14;
+  --purple:     #B083F0;
+  --purple-lt:  #2B2340;
+  /* Brand (tombol utama) -- pakai biru aksen GitHub, bukan navy lagi */
+  --brand:      #539BF5;
+  --brand-dark: #316DCA;
+  /* Sidebar & title bar -- ikut skema abu gelap GitHub (bukan navy
+     konstan lagi seperti sebelumnya) supaya seluruh app terasa
+     "soft dark" yang konsisten. */
+  --topbar-bg:          linear-gradient(160deg, #2D333B 0%, #1C2128 100%);
+  --topbar-text:        #CDD9E5;
+  --topbar-text-muted:  rgba(205,217,229,0.66);
+  --topbar-border:      rgba(205,217,229,0.12);
+  --topbar-btn-bg:      rgba(205,217,229,0.08);
+  --topbar-btn-hover-bg: rgba(205,217,229,0.16);
+  --topbar-item-color:  rgba(205,217,229,.78);
+  --topbar-item-hover-bg: rgba(205,217,229,.12);
+  --topbar-item-active-bg: #539BF5;
+  --topbar-item-active-color: #0B1520;
+  --topbar-footer-border: rgba(205,217,229,.12);
+  --topbar-active-shadow: 0 4px 14px rgba(0,0,0,0.45);
+  /* Balance Hero -- gradasi abu gelap senada topbar (bukan navy lagi) */
+  --hero-bg-from:  #2D333B;
+  --hero-bg-to:    #1C2128;
+  --hero-text:       #CDD9E5;
+  --hero-text-muted: rgba(205,217,229,0.72);
   /* Extended palette — dark overrides */
-  --fase:       #8B98C4;
-  --fase-lt:    #232B45;
-  --info:       #6FA0C9;
-  --info-lt:    #1B2B36;
-  --chat-user:  #4F9C93;
-  --ink-inv:    #F2F4F7;
-  --paper-inv:  #E6E9EE;
-  --row-alt:    #111A2C;
-  --shadow-sm:  0 1px 2px rgba(0,0,0,0.28);
-  --shadow-md:  0 4px 12px rgba(0,0,0,0.34);
-  --shadow-lg:  0 14px 32px rgba(0,0,0,0.42);
+  --fase:       #B083F0;
+  --fase-lt:    #2B2340;
+  --info:       #6CB6FF;
+  --info-lt:    #17293D;
+  --chat-user:  #39C5CF;
+  --ink-inv:    #F0F6FC;
+  --paper-inv:  #ADBAC7;
+  --row-alt:    #1C2128;
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.32);
+  --shadow-md:  0 4px 12px rgba(0,0,0,0.40);
+  --shadow-lg:  0 14px 32px rgba(0,0,0,0.50);
 }
 
 [data-theme="dark"] body {
@@ -3879,7 +3885,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 
 /* Account bar stays dark — slightly deeper in dark mode */
 [data-theme="dark"] .account-bar {
-  background: #0A101D;
+  background: #1C2128;
   border-bottom-color: rgba(255,255,255,0.05);
 }
 [data-theme="dark"] .account-tab { border-right-color: rgba(255,255,255,0.05); }
@@ -3998,7 +4004,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 [data-theme="dark"] select.form-control {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239A9A96' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 }
-[data-theme="dark"] select.form-control option { background: #16213A; color: #E6E9EE; }
+[data-theme="dark"] select.form-control option { background: #2D333B; color: #ADBAC7; }
 
 /* Fase dropdown */
 [data-theme="dark"] .fase-dropdown-trigger { background: var(--paper); border-color: var(--rule); }

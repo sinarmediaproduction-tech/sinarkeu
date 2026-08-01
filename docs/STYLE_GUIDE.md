@@ -62,15 +62,69 @@ contoh di `index.html`) daripada hex baru — biar otomatis ikut berubah
 kalau token warning diganti nanti.
 
 ### Sidebar / Topbar & Hero Saldo
-Sidebar & hero saldo sengaja **konsisten navy di light maupun dark
-mode** (tidak ikut toggle terang/gelap seperti komponen lain) supaya
-identitas brand tetap terlihat:
+**[DIUBAH]** Sebelumnya sidebar & hero saldo sengaja **konsisten navy di
+light maupun dark mode** supaya identitas brand tetap terlihat. Sekarang
+itu **hanya berlaku di light mode** — di dark mode, sidebar/topbar/hero
+ikut skema abu gelap "GitHub Dark Dimmed" (lihat bagian "Dark Mode ala
+GitHub Dark Dimmed" di bawah), bukan navy lagi. Kalau menambah elemen UI
+baru yang perlu senada sidebar: pakai token `--topbar-*`/`--hero-*` yang
+sudah otomatis benar di kedua tema, jangan hardcode `#16233F` dkk.
 
+Light mode (tidak berubah):
 ```
 --topbar-bg: linear-gradient(160deg, #16233F 0%, #0A1220 100%);
 --hero-bg-from: #22335A;   --hero-bg-to: #0C1424;
---topbar-item-active-bg: #A9832E;   /* satu-satunya gold di sistem */
 ```
+
+### Dark Mode ala GitHub Dark Dimmed
+**[BARU]** Sejak dark mode dirombak ulang, seluruh token warna dark mode
+(`[data-theme="dark"]` di `css/style.css`) mengikuti palet resmi GitHub
+**"Dark dimmed"** (bukan "Dark" biasa yang hitam pekat `#0d1117` —
+"dimmed" lebih abu-biru lembut, makanya di grep exclude list section 4.7
+ada `#0d1117`/`#c9d1d9` untuk brand pihak-3, JANGAN dipakai sebagai token
+dasar SinarKeu sendiri). Token intinya:
+
+| Token | Nilai | Asal (Primer/GitHub) |
+|---|---|---|
+| `--paper-warm` | `#22272E` | canvas.default |
+| `--paper` | `#2D333B` | canvas.overlay/subtle |
+| `--row-alt` | `#1C2128` | canvas.inset |
+| `--rule` | `#444C56` | border.default |
+| `--ink` | `#ADBAC7` | fg.default |
+| `--ink-muted` | `#768390` | fg.muted |
+| `--ink-faint` | `#636E7B` | fg.subtle |
+| `--accent`/`--brand` | `#539BF5` | accent.fg |
+| `--brand-dark` | `#316DCA` | accent.emphasis |
+| `--success` | `#57AB5A` | success.fg |
+| `--danger` | `#E5534B` | danger.fg |
+| `--warning` | `#C69026` | attention.fg |
+| `--purple`/`--fase` | `#B083F0` | done.fg |
+| `--info` | `#6CB6FF` | accent.fg (variant lebih terang) |
+
+Sidebar/topbar/hero di dark mode SEKARANG ikut skema abu gelap ini juga
+(bukan navy konstan seperti sebelumnya, lihat catatan [DIUBAH] di atas):
+```
+--topbar-bg: linear-gradient(160deg, #2D333B 0%, #1C2128 100%);
+--topbar-item-active-bg: #539BF5; --topbar-item-active-color: #0B1520;
+--hero-bg-from: #2D333B;   --hero-bg-to: #1C2128;
+```
+
+File lain yang ikut disinkronkan manual (tidak baca CSS variable, lihat
+aturan #3 di bagian "Aturan Praktis" bawah):
+- `js/report.js` — objek `C` (preview laporan di app) & `CPDF` (export
+  PDF) sudah disamakan ke hex literal yang sama persis dengan tabel di
+  atas.
+- `js/app.js` — `window.applyTheme()`, meta `theme-color` (title bar
+  browser/PWA) sekarang **ikut beda per tema** (`#16233F` di light,
+  `#1C2128` di dark) — sebelumnya selalu `#16233F` konstan karena sidebar
+  dulu navy di kedua tema.
+
+**Yang SENGAJA TIDAK ikut berubah** (bukan bagian sistem toggle
+terang/gelap, hardcode navy independen dari tema): `.doc-header` di
+`js/report.js` (kop PDF selalu navy, PDF adalah dokumen cetak statis)
+dan `.dbudget-summary-card`/kartu ringkasan Anggaran Tahunan sejenis di
+`css/style.css` (dekorasi navy tetap yang sama di kedua tema, bukan
+`--hero-bg-*`).
 
 ### Radius
 | Token | Nilai | Dipakai untuk |
@@ -152,3 +206,9 @@ window._EXPENSE_CHART_COLORS = [
 - **Sekarang**: "Institutional Formal" — Navy Formal, Abu Netral, Ink,
   Aksen Emas tipis, Deep Green, Brick. Font IBM Plex Sans + Inter, tanpa
   serif. Radius & shadow diperkecil untuk kesan lebih tegas/formal.
+- **[BARU] Dark mode**: tidak lagi navy-tinted (turunan dari palet light
+  mode Institutional Formal) — sekarang mengikuti palet resmi GitHub
+  "Dark dimmed" apa adanya (abu-biru lembut `#22272E`/`#2D333B`, aksen
+  biru `#539BF5`), termasuk sidebar/topbar/hero yang sebelumnya sengaja
+  dipertahankan navy konstan di kedua tema. Light mode TIDAK berubah,
+  tetap Institutional Formal navy seperti di atas.

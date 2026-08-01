@@ -90,26 +90,26 @@ async function generateMonthlyReport() {
   // ── Token warna sesuai tema ──
   const dk = document.documentElement.getAttribute('data-theme') === 'dark';
   const C = {
-    bg:         dk ? '#16213A' : '#FFFFFF',
-    ink:        dk ? '#E6E9EE' : '#1C2430',
-    inkMuted:   dk ? '#A3ABB8' : '#5B6472',
-    inkFaint:   dk ? '#6C7684' : '#9AA2AC',
-    rule:       dk ? '#29354E' : '#DCE0E6',
-    rowAlt:     dk ? '#111A2C' : '#F7F8FA',
-    thead:      dk ? '#0D1526' : '#F4F5F7',
-    barBg:      dk ? '#29354E' : '#E7E9ED',
-    incBg:      dk ? '#17332A' : '#E3F0E9',
-    incBd:      dk ? '#2E6B4F' : '#7DAF93',
-    incTxt:     dk ? '#4F9C79' : '#1F5138',
-    expBg:      dk ? '#3A2320' : '#F5E6E6',
-    expBd:      dk ? '#7E2E2E' : '#C77A73',
-    expTxt:     dk ? '#D2726B' : '#7E2E2E',
-    balPosBg:   dk ? '#1B2B36' : '#E3ECF3',
-    balPosBd:   dk ? '#2E5C82' : '#7FA6C4',
-    balPosTxt:  dk ? '#6FA0C9' : '#2E5C82',
-    budgetBg:   dk ? '#332A16' : '#F1EBDA',
-    budgetBd:   dk ? '#6B5320' : '#B99A4E',
-    budgetTxt:  dk ? '#C9A159' : '#6B5320',
+    bg:         dk ? '#2D333B' : '#FFFFFF',
+    ink:        dk ? '#ADBAC7' : '#1C2430',
+    inkMuted:   dk ? '#768390' : '#5B6472',
+    inkFaint:   dk ? '#636E7B' : '#9AA2AC',
+    rule:       dk ? '#444C56' : '#DCE0E6',
+    rowAlt:     dk ? '#1C2128' : '#F7F8FA',
+    thead:      dk ? '#22272E' : '#F4F5F7',
+    barBg:      dk ? '#444C56' : '#E7E9ED',
+    incBg:      dk ? '#1C2E1C' : '#E3F0E9',
+    incBd:      dk ? '#57AB5A' : '#7DAF93',
+    incTxt:     dk ? '#57AB5A' : '#1F5138',
+    expBg:      dk ? '#3B211E' : '#F5E6E6',
+    expBd:      dk ? '#E5534B' : '#C77A73',
+    expTxt:     dk ? '#E5534B' : '#7E2E2E',
+    balPosBg:   dk ? '#17293D' : '#E3ECF3',
+    balPosBd:   dk ? '#6CB6FF' : '#7FA6C4',
+    balPosTxt:  dk ? '#6CB6FF' : '#2E5C82',
+    budgetBg:   dk ? '#3A2E14' : '#F1EBDA',
+    budgetBd:   dk ? '#C69026' : '#B99A4E',
+    budgetTxt:  dk ? '#C69026' : '#6B5320',
   };
   const FM = "'JetBrains Mono', monospace"; // font angka
 
@@ -119,7 +119,7 @@ async function generateMonthlyReport() {
         const pct    = budget > 0 ? Math.min(100, Math.round(v / budget * 100)) : null;
         const bar    = budget > 0
           ? `<div style="height:6px;border-radius: var(--radius-sm);background:${C.barBg};margin-top:3px;">
-               <div style="height:6px;border-radius: var(--radius-sm);background:${pct >= 100 ? C.expTxt : pct >= 80 ? (dk ? '#D9A857' : '#C4922D') : C.incTxt};width:${pct}%;"></div>
+               <div style="height:6px;border-radius: var(--radius-sm);background:${pct >= 100 ? C.expTxt : pct >= 80 ? (dk ? '#DAAA3F' : '#C4922D') : C.incTxt};width:${pct}%;"></div>
              </div>` : '';
         return `<tr>
           <td style="padding:8px 10px; color:${C.ink};">${c}</td>
@@ -274,12 +274,12 @@ async function exportReportAsPDF() {
   // ── Token warna sesuai tema (PDF export) ──
   const dk2 = document.documentElement.getAttribute('data-theme') === 'dark';
   const CPDF = {
-    bg:     dk2 ? '#16213A' : '#FFFFFF',
-    rowAlt: dk2 ? '#111A2C' : '#F7F8FA',
-    barBg:  dk2 ? '#29354E' : '#E7E9ED',
-    incTxt: dk2 ? '#4F9C79' : '#1F5138',
-    expTxt: dk2 ? '#D2726B' : '#A13A3A',
-    warnTxt:dk2 ? '#C9A159' : '#9C7A2E',
+    bg:     dk2 ? '#2D333B' : '#FFFFFF',
+    rowAlt: dk2 ? '#1C2128' : '#F7F8FA',
+    barBg:  dk2 ? '#444C56' : '#E7E9ED',
+    incTxt: dk2 ? '#57AB5A' : '#1F5138',
+    expTxt: dk2 ? '#E5534B' : '#A13A3A',
+    warnTxt:dk2 ? '#C69026' : '#9C7A2E',
   };
 
   // ── Sorted transactions ──────────────────────────────────

@@ -511,10 +511,12 @@ window.applyTheme = function(dark) {
     } else {
         document.documentElement.removeAttribute('data-theme');
     }
-    // Samakan warna title bar (browser/PWA) dengan tema aktif
+    // Samakan warna title bar (browser/PWA) dengan tema aktif -- sidebar/
+    // topbar TIDAK lagi navy konstan di dark mode (sekarang ikut skema
+    // GitHub Dark Dimmed), jadi meta ini harus ikut berbeda per tema.
     var themeColorMeta = document.querySelector('meta[name="theme-color"]');
     if (themeColorMeta) {
-        themeColorMeta.setAttribute('content', '#16233F');
+        themeColorMeta.setAttribute('content', dark ? '#1C2128' : '#16233F');
     }
     var icon = document.getElementById('darkModeIcon');
     var iconMobile = document.getElementById('darkModeIconMobile');
