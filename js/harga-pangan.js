@@ -1,11 +1,10 @@
 // ==================== HARGA PANGAN REFERENSI ====================
 // Auto-isi kolom harga di Daftar Belanja (js/shopping-list.js) pakai harga
-// pasar acuan dari Bank Indonesia PIHPS untuk Kabupaten Magetan, Jawa
-// Timur (fallback berjenjang ke rata-rata Provinsi Jawa Timur lalu
-// Nasional kalau data level kabupaten belum tersedia -- lihat
-// fetchLatestRegionalPrice di api/harga-pangan.js), lewat proxy
-// api/harga-pangan.js (menghindari CORS -- lihat file itu untuk alasannya,
-// sama seperti pola api/emas.js untuk harga emas).
+// pasar acuan dari Bank Indonesia PIHPS untuk rata-rata Provinsi Jawa
+// Timur (fallback ke rata-rata Nasional kalau data level provinsi belum
+// tersedia -- lihat fetchLatestRegionalPrice di api/harga-pangan.js),
+// lewat proxy api/harga-pangan.js (menghindari CORS -- lihat file itu
+// untuk alasannya, sama seperti pola api/emas.js untuk harga emas).
 //
 // Disimpan di Supabase project MILIK USER SENDIRI (tabel
 // harga_pangan_referensi, lihat sql/harga_pangan_referensi.sql) supaya
@@ -253,8 +252,8 @@ window.prefetchHargaPanganReferensi = async function() {
                     const meta = window.HARGA_PANGAN_COMMODITIES.find(function(c) { return c.slug === slug; });
                     if (!meta) return;
                     // [WILAYAH] hit.region diisi proxy (api/harga-pangan.js) sesuai level
-                    // data yang berhasil didapat: 'Kabupaten Magetan' -> fallback
-                    // 'Provinsi Jawa Timur' -> fallback 'Nasional'. Cuma disimpan di
+                    // data yang berhasil didapat: 'Provinsi Jawa Timur' -> fallback
+                    // 'Nasional'. Cuma disimpan di
                     // cache lokal untuk ditampilkan di UI, TIDAK ditulis ke kolom
                     // Supabase (tabel itu dipakai bersama, skemanya sengaja tidak
                     // diubah supaya tidak perlu migrasi SQL manual di semua akun).

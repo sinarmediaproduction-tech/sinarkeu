@@ -31,14 +31,12 @@ const SLUG_TO_BI_ID = {
 };
 
 // [WILAYAH] Kode wilayah Kemendagri/BPS -- konvensi standar yang dipakai
-// hampir semua sistem data pemerintah RI (province_id 2 digit, regency_id
-// 4 digit). BI PIHPS TIDAK menyediakan cara resmi untuk memverifikasi kode
-// internalnya dari luar (endpoint dropdown provinsi/kabupaten butuh sesi
-// browser penuh), jadi ini best-effort berdasarkan konvensi tsb -- kalau
-// ternyata meleset, fallback berjenjang di bawah tetap membuat fitur ini
-// tidak pernah gagal total, cuma "turun" ke cakupan yang lebih luas.
+// hampir semua sistem data pemerintah RI (province_id 2 digit). BI PIHPS
+// TIDAK menyediakan cara resmi untuk memverifikasi kode internalnya dari
+// luar (endpoint dropdown provinsi butuh sesi browser penuh), jadi ini
+// best-effort berdasarkan konvensi tsb -- kalau ternyata meleset, fallback
+// ke Nasional di bawah tetap membuat fitur ini tidak pernah gagal total.
 const JATIM_PROVINCE_ID = '35';
-const MAGETAN_REGENCY_ID = '3520';
 
 function parsePrice(value) {
   if (value === null || value === undefined) return null;
@@ -78,9 +76,10 @@ function _latestFromRow(row) {
 }
 
 // Ambil harga terbaru untuk 1 komoditas, dengan fallback berjenjang:
-// Kabupaten Magetan -> rata-rata Provinsi Jawa Timur -> rata-rata Nasional.
+// rata-rata Provinsi Jawa Timur -> rata-rata Nasional.
 // Fallback dicek berurutan (bukan sekali request semua level) supaya kalau
-// Magetan sudah ketemu, tidak perlu apa-apa lagi -- hemat request ke BI.
+// level Jawa Timur sudah ketemu, tidak perlu apa-apa lagi -- hemat request
+// ke BI.
 async function fetchLatestRegionalPrice(biId) {
   const end = new Date();
   const start = new Date(end);
@@ -119,19 +118,7 @@ async function fetchLatestRegionalPrice(biId) {
     return payload.data || [];
   }
 
-  // 1) Coba tingkat Kabupaten Magetan (province_id + regency_id spesifik).
-  try {
-    const rows = await fetchRows(JATIM_PROVINCE_ID, MAGETAN_REGENCY_ID);
-    const magetanRow = rows.find((r) => r.name && String(r.name).toLowerCase().includes('magetan'));
-    if (magetanRow) {
-      const hit = _latestFromRow(magetanRow);
-      if (hit) return { ...hit, region: 'Kabupaten Magetan' };
-    }
-  } catch (e) {
-    console.warn('[harga-pangan] Gagal ambil level Magetan:', e.message);
-  }
-
-  // 2) Fallback: rata-rata Provinsi Jawa Timur (regency_id kosong).
+  // 1) Rata-rata Provinsi Jawa Timur (regency_id kosong).
   try {
     const rows = await fetchRows(JATIM_PROVINCE_ID, '');
     const jatimRow = rows.find((r) => r.name && String(r.name).toLowerCase().includes('jawa timur'));
@@ -143,7 +130,7 @@ async function fetchLatestRegionalPrice(biId) {
     console.warn('[harga-pangan] Gagal ambil level Jawa Timur:', e.message);
   }
 
-  // 3) Fallback terakhir: rata-rata Nasional (province_id & regency_id kosong).
+  // 2) Fallback terakhir: rata-rata Nasional (province_id & regency_id kosong).
   try {
     const rows = await fetchRows('', '');
     const nationalRow = rows.find((r) => r.level === 0 || r.name === 'Semua Provinsi');
