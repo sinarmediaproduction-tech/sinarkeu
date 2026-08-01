@@ -338,10 +338,15 @@ function _latestFromRow(row) {
 }
 
 // Ambil harga terbaru untuk 1 komoditas, dengan fallback berjenjang:
-// rata-rata Provinsi Jawa Timur -> rata-rata Nasional.
-// Fallback dicek berurutan (bukan sekali request semua level) supaya kalau
-// level Jawa Timur sudah ketemu, tidak perlu apa-apa lagi -- hemat request
-// ke BI.
+// Kabupaten Magetan -> Madiun (Kabupaten/Kota, mana yang ketemu duluan di
+// data BI) -> rata-rata Provinsi Jawa Timur -> rata-rata Nasional.
+// [SATU REQUEST UNTUK 3 LEVEL PERTAMA] showKota:'true' di baseParams bikin
+// 1 request ke province_id Jatim SEKALIGUS balikin baris per-kabupaten/kota
+// (termasuk Magetan & Madiun kalau ada) DAN baris rata-rata provinsi --
+// jadi cek Magetan/Madiun/Jatim dilakukan dari 1 response yang sama, tidak
+// perlu request terpisah per level (hemat request & tidak perlu tahu kode
+// internal regency_id BI, cukup cocokkan nama baris). Request ke-2 (Nasional)
+// baru dilakukan kalau ketiganya kosong.
 async function fetchLatestRegionalPrice(biId) {
   const end = new Date();
   const start = new Date(end);
@@ -380,19 +385,41 @@ async function fetchLatestRegionalPrice(biId) {
     return payload.data || [];
   }
 
-  // 1) Rata-rata Provinsi Jawa Timur (regency_id kosong).
+  // 1-3) Kabupaten Magetan -> Madiun (Kab/Kota) -> rata-rata Provinsi Jawa
+  // Timur, dari 1 response yang sama (regency_id kosong, tapi showKota:
+  // 'true' tetap membawa baris per-kabupaten/kota).
   try {
     const rows = await fetchRows(JATIM_PROVINCE_ID, '');
+
+    // 1) Kabupaten Magetan.
+    const magetanRow = rows.find((r) => r.name && String(r.name).toLowerCase().includes('magetan'));
+    if (magetanRow) {
+      const hit = _latestFromRow(magetanRow);
+      if (hit) return { ...hit, region: String(magetanRow.name).trim() };
+    }
+
+    // 2) Madiun -- [KAB/KOTA] BI biasa balikin "Kabupaten Madiun" dan "Kota
+    // Madiun" sebagai 2 baris terpisah. Ambil yang duluan ketemu di array
+    // (urutan dari BI, bukan preferensi kita) daripada memaksa salah satu --
+    // yang penting region-nya jelas dilabeli sesuai nama baris aslinya,
+    // bukan di-generalisir jadi "Madiun" saja.
+    const madiunRow = rows.find((r) => r.name && String(r.name).toLowerCase().includes('madiun'));
+    if (madiunRow) {
+      const hit = _latestFromRow(madiunRow);
+      if (hit) return { ...hit, region: String(madiunRow.name).trim() };
+    }
+
+    // 3) Rata-rata Provinsi Jawa Timur.
     const jatimRow = rows.find((r) => r.name && String(r.name).toLowerCase().includes('jawa timur'));
     if (jatimRow) {
       const hit = _latestFromRow(jatimRow);
       if (hit) return { ...hit, region: 'Provinsi Jawa Timur' };
     }
   } catch (e) {
-    console.warn('[harga-pangan] Gagal ambil level Jawa Timur (BI):', e.message);
+    console.warn('[harga-pangan] Gagal ambil level Magetan/Madiun/Jawa Timur (BI):', e.message);
   }
 
-  // 2) Fallback terakhir: rata-rata Nasional (province_id & regency_id kosong).
+  // 4) Fallback terakhir: rata-rata Nasional (province_id & regency_id kosong).
   try {
     const rows = await fetchRows('', '');
     const nationalRow = rows.find((r) => r.level === 0 || r.name === 'Semua Provinsi');
