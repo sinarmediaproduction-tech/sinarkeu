@@ -77,12 +77,12 @@ Light mode (tidak berubah):
 ```
 
 ### Dark Mode ala GitHub Dark Dimmed
-**[BARU]** Sejak dark mode dirombak ulang, seluruh token warna dark mode
+**[BARU]** Sejak dark mode dirombak ulang, permukaan netral dark mode
 (`[data-theme="dark"]` di `css/style.css`) mengikuti palet resmi GitHub
 **"Dark dimmed"** (bukan "Dark" biasa yang hitam pekat `#0d1117` —
 "dimmed" lebih abu-biru lembut, makanya di grep exclude list section 4.7
 ada `#0d1117`/`#c9d1d9` untuk brand pihak-3, JANGAN dipakai sebagai token
-dasar SinarKeu sendiri). Token intinya:
+dasar SinarKeu sendiri). Token permukaan (tidak berwarna, abu-biru netral):
 
 | Token | Nilai | Asal (Primer/GitHub) |
 |---|---|---|
@@ -93,19 +93,36 @@ dasar SinarKeu sendiri). Token intinya:
 | `--ink` | `#ADBAC7` | fg.default |
 | `--ink-muted` | `#768390` | fg.muted |
 | `--ink-faint` | `#636E7B` | fg.subtle |
-| `--accent`/`--brand` | `#539BF5` | accent.fg |
-| `--brand-dark` | `#316DCA` | accent.emphasis |
-| `--success` | `#57AB5A` | success.fg |
-| `--danger` | `#E5534B` | danger.fg |
-| `--warning` | `#C69026` | attention.fg |
-| `--purple`/`--fase` | `#B083F0` | done.fg |
-| `--info` | `#6CB6FF` | accent.fg (variant lebih terang) |
 
-Sidebar/topbar/hero di dark mode SEKARANG ikut skema abu gelap ini juga
-(bukan navy konstan seperti sebelumnya, lihat catatan [DIUBAH] di atas):
+**[DIUBAH] Aksen/semantik disempitkan jadi cuma nuansa hijau lembut** —
+awalnya dark mode ikut warna semantik GitHub apa adanya (biru/kuning/
+ungu berbeda-beda), tapi sekarang SENGAJA diseragamkan ke satu keluarga
+hijau (beda shade, bukan satu hijau rata) supaya dark mode terasa lebih
+tenang & minim variasi warna. **Satu-satunya pengecualian: `--danger`
+tetap merah** (soft, bukan merah terang) karena itu pembeda visual
+penting pemasukan vs pengeluaran di aplikasi keuangan ini.
+
+| Token | Nilai | Catatan |
+|---|---|---|
+| `--accent` / `--brand` / `--success` / `--chat-user` | `#57AB5A` | Hijau utama (aksen, tombol, badge sukses, chat AI) |
+| `--brand-dark` | `#3E7F41` | Hover/active tombol brand |
+| `--warning` | `#8FBF62` | Varian hijau lebih terang/kekuningan (tetap hijau, bukan gold) |
+| `--purple` / `--fase` | `#4FA66C` | Varian hijau lebih gelap/tealish (dulu ungu) |
+| `--info` | `#7BC97E` | Varian hijau paling terang (dulu biru) |
+| `--danger` | `#C9726B` | **Pengecualian** — merah soft, TIDAK ikut hijau |
+
+Kalau butuh varian warna baru di dark mode ke depan: turunkan dari salah
+satu hijau di atas (ubah lightness/saturasi), jangan tambah hue baru
+(biru/ungu/kuning solid) — kecuali memang butuh pembeda semantik sekuat
+danger vs success seperti kasus merah di atas.
+
+Sidebar/topbar/hero di dark mode ikut permukaan abu gelap netral (bukan
+navy konstan seperti sebelumnya, lihat catatan [DIUBAH] di atas) —
+HANYA state aktif topbar yang ikut hijau, supaya konsisten dengan aksen
+di tempat lain:
 ```
 --topbar-bg: linear-gradient(160deg, #2D333B 0%, #1C2128 100%);
---topbar-item-active-bg: #539BF5; --topbar-item-active-color: #0B1520;
+--topbar-item-active-bg: #57AB5A; --topbar-item-active-color: #0E1F0F;
 --hero-bg-from: #2D333B;   --hero-bg-to: #1C2128;
 ```
 
@@ -208,7 +225,12 @@ window._EXPENSE_CHART_COLORS = [
   serif. Radius & shadow diperkecil untuk kesan lebih tegas/formal.
 - **[BARU] Dark mode**: tidak lagi navy-tinted (turunan dari palet light
   mode Institutional Formal) — sekarang mengikuti palet resmi GitHub
-  "Dark dimmed" apa adanya (abu-biru lembut `#22272E`/`#2D333B`, aksen
-  biru `#539BF5`), termasuk sidebar/topbar/hero yang sebelumnya sengaja
-  dipertahankan navy konstan di kedua tema. Light mode TIDAK berubah,
-  tetap Institutional Formal navy seperti di atas.
+  "Dark dimmed" untuk permukaan netral (abu-biru lembut `#22272E`/
+  `#2D333B`), termasuk sidebar/topbar/hero yang sebelumnya sengaja
+  dipertahankan navy konstan di kedua tema. **[DIUBAH LAGI]** Warna
+  aksen/semantiknya sendiri (yang tadinya biru/kuning/ungu ala GitHub)
+  selanjutnya diseragamkan jadi satu keluarga hijau lembut saja, dengan
+  danger/pengeluaran sebagai satu-satunya pengecualian tetap merah soft
+  — lihat tabel di bagian "Dark Mode ala GitHub Dark Dimmed" di atas.
+  Light mode TIDAK berubah, tetap Institutional Formal navy seperti di
+  atas.

@@ -101,15 +101,15 @@ async function generateMonthlyReport() {
     incBg:      dk ? '#1C2E1C' : '#E3F0E9',
     incBd:      dk ? '#57AB5A' : '#7DAF93',
     incTxt:     dk ? '#57AB5A' : '#1F5138',
-    expBg:      dk ? '#3B211E' : '#F5E6E6',
-    expBd:      dk ? '#E5534B' : '#C77A73',
-    expTxt:     dk ? '#E5534B' : '#7E2E2E',
-    balPosBg:   dk ? '#17293D' : '#E3ECF3',
-    balPosBd:   dk ? '#6CB6FF' : '#7FA6C4',
-    balPosTxt:  dk ? '#6CB6FF' : '#2E5C82',
-    budgetBg:   dk ? '#3A2E14' : '#F1EBDA',
-    budgetBd:   dk ? '#C69026' : '#B99A4E',
-    budgetTxt:  dk ? '#C69026' : '#6B5320',
+    expBg:      dk ? '#2E201F' : '#F5E6E6',
+    expBd:      dk ? '#C9726B' : '#C77A73',
+    expTxt:     dk ? '#C9726B' : '#7E2E2E',
+    balPosBg:   dk ? '#1B2E1C' : '#E3ECF3',
+    balPosBd:   dk ? '#7BC97E' : '#7FA6C4',
+    balPosTxt:  dk ? '#7BC97E' : '#2E5C82',
+    budgetBg:   dk ? '#263019' : '#F1EBDA',
+    budgetBd:   dk ? '#8FBF62' : '#B99A4E',
+    budgetTxt:  dk ? '#8FBF62' : '#6B5320',
   };
   const FM = "'JetBrains Mono', monospace"; // font angka
 
@@ -119,7 +119,7 @@ async function generateMonthlyReport() {
         const pct    = budget > 0 ? Math.min(100, Math.round(v / budget * 100)) : null;
         const bar    = budget > 0
           ? `<div style="height:6px;border-radius: var(--radius-sm);background:${C.barBg};margin-top:3px;">
-               <div style="height:6px;border-radius: var(--radius-sm);background:${pct >= 100 ? C.expTxt : pct >= 80 ? (dk ? '#DAAA3F' : '#C4922D') : C.incTxt};width:${pct}%;"></div>
+               <div style="height:6px;border-radius: var(--radius-sm);background:${pct >= 100 ? C.expTxt : pct >= 80 ? (dk ? '#8FBF62' : '#C4922D') : C.incTxt};width:${pct}%;"></div>
              </div>` : '';
         return `<tr>
           <td style="padding:8px 10px; color:${C.ink};">${c}</td>
@@ -278,8 +278,8 @@ async function exportReportAsPDF() {
     rowAlt: dk2 ? '#1C2128' : '#F7F8FA',
     barBg:  dk2 ? '#444C56' : '#E7E9ED',
     incTxt: dk2 ? '#57AB5A' : '#1F5138',
-    expTxt: dk2 ? '#E5534B' : '#A13A3A',
-    warnTxt:dk2 ? '#C69026' : '#9C7A2E',
+    expTxt: dk2 ? '#C9726B' : '#A13A3A',
+    warnTxt:dk2 ? '#8FBF62' : '#9C7A2E',
   };
 
   // ── Sorted transactions ──────────────────────────────────

@@ -3817,12 +3817,16 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 
 /* ======================================================
    DARK MODE — [data-theme="dark"]
-   Palette: GitHub "Dark dimmed" (soft dark) -- canvas abu-biru
-   lembut #22272E/#2D333B, border #444C56, teks #ADBAC7, aksen
-   biru #539BF5. Sidebar/topbar/hero yang tadinya navy formal
-   konstan ikut diubah ke skema ini juga (bukan lagi dipertahankan
-   navy di dark mode -- lihat catatan lama di docs/STYLE_GUIDE.md,
-   sekarang sudah tidak berlaku untuk dark mode).
+   Palette: GitHub "Dark dimmed" (soft dark) untuk permukaan netral --
+   canvas abu-biru lembut #22272E/#2D333B, border #444C56, teks #ADBAC7.
+   [DIUBAH] Variasi warna aksen/semantik SENGAJA disempitkan jadi cuma
+   nuansa hijau lembut (beberapa shade, bukan satu hijau rata) supaya
+   dark mode terasa lebih tenang/minim warna -- SATU pengecualian:
+   danger/pengeluaran tetap merah (soft, bukan merah terang) karena itu
+   pembeda visual penting pemasukan vs pengeluaran di aplikasi keuangan
+   ini. Jangan tambah hue baru (biru/ungu/kuning) di token dark mode --
+   kalau butuh varian baru, turunkan dari salah satu hijau di bawah
+   (beda lightness/saturasi), bukan hue baru.
 ====================================================== */
 [data-theme="dark"] {
   --ink:        #ADBAC7;
@@ -3831,22 +3835,22 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   --paper:      #2D333B;
   --paper-warm: #22272E;
   --rule:       #444C56;
-  --accent:     #539BF5;
-  --accent-lt:  #1C3A5E;
+  --accent:     #57AB5A;
+  --accent-lt:  #1C2E1C;
   --success:    #57AB5A;
   --success-lt: #1C2E1C;
-  --danger:     #E5534B;
-  --danger-lt:  #3B211E;
-  --warning:    #C69026;
-  --warning-lt: #3A2E14;
-  --purple:     #B083F0;
-  --purple-lt:  #2B2340;
-  /* Brand (tombol utama) -- pakai biru aksen GitHub, bukan navy lagi */
-  --brand:      #539BF5;
-  --brand-dark: #316DCA;
-  /* Sidebar & title bar -- ikut skema abu gelap GitHub (bukan navy
-     konstan lagi seperti sebelumnya) supaya seluruh app terasa
-     "soft dark" yang konsisten. */
+  --danger:     #C9726B;
+  --danger-lt:  #2E201F;
+  --warning:    #8FBF62;
+  --warning-lt: #263019;
+  --purple:     #4FA66C;
+  --purple-lt:  #17291C;
+  /* Brand (tombol utama) -- hijau lembut, bukan biru lagi */
+  --brand:      #57AB5A;
+  --brand-dark: #3E7F41;
+  /* Sidebar & title bar -- permukaan tetap abu gelap netral (bukan
+     ikut hijau -- itu domain warna aksen/semantik), hanya state aktif
+     yang pakai hijau supaya konsisten dengan aksen di tempat lain. */
   --topbar-bg:          linear-gradient(160deg, #2D333B 0%, #1C2128 100%);
   --topbar-text:        #CDD9E5;
   --topbar-text-muted:  rgba(205,217,229,0.66);
@@ -3855,8 +3859,8 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   --topbar-btn-hover-bg: rgba(205,217,229,0.16);
   --topbar-item-color:  rgba(205,217,229,.78);
   --topbar-item-hover-bg: rgba(205,217,229,.12);
-  --topbar-item-active-bg: #539BF5;
-  --topbar-item-active-color: #0B1520;
+  --topbar-item-active-bg: #57AB5A;
+  --topbar-item-active-color: #0E1F0F;
   --topbar-footer-border: rgba(205,217,229,.12);
   --topbar-active-shadow: 0 4px 14px rgba(0,0,0,0.45);
   /* Balance Hero -- gradasi abu gelap senada topbar (bukan navy lagi) */
@@ -3864,12 +3868,12 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   --hero-bg-to:    #1C2128;
   --hero-text:       #CDD9E5;
   --hero-text-muted: rgba(205,217,229,0.72);
-  /* Extended palette — dark overrides */
-  --fase:       #B083F0;
-  --fase-lt:    #2B2340;
-  --info:       #6CB6FF;
-  --info-lt:    #17293D;
-  --chat-user:  #39C5CF;
+  /* Extended palette — dark overrides (ikut hijau, lihat catatan atas) */
+  --fase:       #4FA66C;
+  --fase-lt:    #17291C;
+  --info:       #7BC97E;
+  --info-lt:    #1B2E1C;
+  --chat-user:  #57AB5A;
   --ink-inv:    #F0F6FC;
   --paper-inv:  #ADBAC7;
   --row-alt:    #1C2128;
