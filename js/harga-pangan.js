@@ -94,6 +94,65 @@ function fmtDateID(d) {
   return d.toISOString().split('T')[0]; // YYYY-MM-DD, sama seperti field "tanggal" di payload
 }
 
+const SISKAPERBAPO_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36';
+
+// [SESI PHP] Browser asli bawa Cookie PHPSESSID saat POST ke endpoint AJAX
+// -- sesi itu didapat dari GET halaman /harga/tabel/ lebih dulu. Percobaan
+// awal proxy ini langsung POST tanpa sesi sama sekali dan dapat 403 --
+// dugaan: aplikasi PHP-nya menolak POST AJAX tanpa sesi valid (beda dari
+// soal Cloudflare/IP reputation). Sesi di-cache di module scope (bertahan
+// selama Vercel function instance masih "warm", biasanya beberapa menit
+// sampai berjam-jam) supaya tidak GET ulang di setiap request kalau tidak
+// perlu -- TTL pendek (10 menit) dipilih hati-hati: sesi PHP bisa
+// kedaluwarsa di server, lebih baik agak sering refresh daripada dapat 403
+// gara-gara sesi basi.
+let _cachedSessionCookie = null;
+let _cachedSessionAt = 0;
+const SESSION_TTL_MS = 10 * 60 * 1000;
+
+async function getSiskaperbapoSessionCookie() {
+  const now = Date.now();
+  if (_cachedSessionCookie && now - _cachedSessionAt < SESSION_TTL_MS) {
+    return _cachedSessionCookie;
+  }
+
+  const res = await fetch(SISKAPERBAPO_REFERER, {
+    headers: {
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'User-Agent': SISKAPERBAPO_USER_AGENT,
+    },
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!res.ok) {
+    throw new Error(`SISKAPERBAPO gagal ambil sesi (GET /harga/tabel/): ${res.status}`);
+  }
+
+  // getSetCookie() -- API khusus undici/Node 18+ untuk baca SEMUA header
+  // Set-Cookie sebagai array (Headers.get('set-cookie') biasa akan
+  // menggabungkan semua jadi 1 string dengan koma, salah parse). Fallback
+  // ke .get() untuk runtime yang belum dukung getSetCookie.
+  const rawCookies =
+    typeof res.headers.getSetCookie === 'function'
+      ? res.headers.getSetCookie()
+      : [res.headers.get('set-cookie')].filter(Boolean);
+
+  const phpSessId = rawCookies
+    .map((c) => c.match(/^PHPSESSID=([^;]+)/))
+    .find(Boolean);
+
+  if (!phpSessId) {
+    console.warn('[harga-pangan] SISKAPERBAPO: GET /harga/tabel/ tidak balas Set-Cookie PHPSESSID. Header Set-Cookie mentah:', JSON.stringify(rawCookies));
+    throw new Error('SISKAPERBAPO tidak mengembalikan PHPSESSID');
+  }
+
+  const cookie = `PHPSESSID=${phpSessId[1]}`;
+  _cachedSessionCookie = cookie;
+  _cachedSessionAt = now;
+  return cookie;
+}
+
 // Body request persis meniru payload asli dari DevTools: cuma 2 field,
 // "tanggal" dan "kabkota". kabkota dikosongkan supaya dapat baris
 // RATA-RATA PROVINSI (bukan per kabupaten/kota) -- konsisten dengan
@@ -105,7 +164,7 @@ function buildSiskaperbapoBody(dateStr) {
 // Ambil & parse 1 hari data SISKAPERBAPO -> Map(commodityId -> { price, date }).
 // null kalau request gagal total (network/blocked/bukan HTML tabel yang
 // dikenali) -- caller lalu retry tanggal lain atau menyerah ke fallback BI.
-async function fetchSiskaperbapoDay(dateStr) {
+async function fetchSiskaperbapoDay(dateStr, sessionCookie) {
   const res = await fetch(SISKAPERBAPO_URL, {
     method: 'POST',
     headers: {
@@ -114,11 +173,11 @@ async function fetchSiskaperbapoDay(dateStr) {
       Origin: 'https://siskaperbapo.jatimprov.go.id',
       Referer: SISKAPERBAPO_REFERER,
       'X-Requested-With': 'XMLHttpRequest',
+      Cookie: sessionCookie,
       // User-Agent browser asli -- header standar Node/undici sebelumnya
       // ("SinarKeu/1.0") kemungkinan yang bikin situs ini menolak fetch
       // langsung (beda dari BI PIHPS yang ternyata tidak sepicky itu).
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
+      'User-Agent': SISKAPERBAPO_USER_AGENT,
     },
     body: buildSiskaperbapoBody(dateStr),
     signal: AbortSignal.timeout(10000),
@@ -175,6 +234,14 @@ async function fetchSiskaperbapoPrices(slugs) {
   const result = new Map();
   const today = new Date();
 
+  let sessionCookie;
+  try {
+    sessionCookie = await getSiskaperbapoSessionCookie();
+  } catch (e) {
+    console.warn('[harga-pangan] SISKAPERBAPO gagal ambil sesi:', e.message);
+    return result; // tanpa sesi, POST pasti gagal juga -- langsung menyerah ke fallback BI
+  }
+
   for (let daysBack = 0; daysBack <= 1; daysBack++) {
     const d = new Date(today);
     d.setDate(d.getDate() - daysBack);
@@ -182,7 +249,7 @@ async function fetchSiskaperbapoPrices(slugs) {
 
     let rowMap;
     try {
-      rowMap = await fetchSiskaperbapoDay(dateStr);
+      rowMap = await fetchSiskaperbapoDay(dateStr, sessionCookie);
     } catch (e) {
       console.warn(`[harga-pangan] SISKAPERBAPO gagal (${dateStr}):`, e.message);
       rowMap = null;
