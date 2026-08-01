@@ -2275,8 +2275,16 @@ window.skRenderAuthPanel = function() {
         const roleBadge = role
             ? '<span class="setelan-badge setelan-badge--success">Peran: ' + role + '</span>'
             : '<span class="setelan-badge setelan-badge--neutral">Bukan buku bersama</span>';
+        // Nama buku aktif -- panel ini ("Kelola Buku Kas") selalu mengelola
+        // window.currentBookId, jadi perlu ditampilkan eksplisit supaya user
+        // tidak salah kira sedang mengelola buku lain (mis. setelah pindah
+        // buku lewat dropdown Buku Kas tapi modal ini masih terbuka dari
+        // sebelumnya).
+        const activeBook = (window.books || []).find(function(b) { return b.id === bookId; });
+        const bookName = activeBook ? activeBook.name : bookId;
         el.innerHTML =
             '<div style="margin-bottom:10px;">' +
+                '<div class="setelan-info-row" style="margin-bottom:6px;">Buku aktif: <b>' + window.escapeHtml(bookName) + '</b></div>' +
                 '<div class="setelan-info-row" style="margin-bottom:6px;">Login sebagai <b>' + window._skAuthUser.email + '</b></div>' +
                 roleBadge +
             '</div>' +
