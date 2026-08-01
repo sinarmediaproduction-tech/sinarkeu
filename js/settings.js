@@ -591,16 +591,25 @@ window.loadConnectedDevices = async function() {
         // ditampilkan lagi di daftar -- daftar ini untuk memantau perangkat
         // yang masih dipakai, bukan arsip semua perangkat yang pernah pernah
         // terhubung sejak awal.
-        var devices = allDevices.filter(function(d) {
+        var activeDevices = allDevices.filter(function(d) {
             var diffDays = Math.floor((now - new Date(d.last_seen)) / 86400000);
             return diffDays <= 30;
         });
-        var hiddenCount = allDevices.length - devices.length;
+        var hiddenCount = allDevices.length - activeDevices.length;
+
+        // [FIX] Daftar hanya menampilkan maksimal 6 perangkat paling baru
+        // (berdasarkan waktu aktif terakhir) supaya panel tidak kepanjangan
+        // -- activeDevices sudah terurut terbaru dulu (lihat allDevices.sort
+        // di atas), jadi cukup potong 6 teratas.
+        var MAX_DEVICES = 6;
+        var devices = activeDevices.slice(0, MAX_DEVICES);
+        var extraCount = activeDevices.length - devices.length;
 
         var myId = window.deviceId || localStorage.getItem('sk_device_id') || '';
 
         if (statusEl) {
             statusEl.innerText = devices.length + ' perangkat aktif dari ' + logs.length + ' log' +
+                (extraCount > 0 ? ' (menampilkan ' + MAX_DEVICES + ' terbaru, ' + extraCount + ' lainnya disembunyikan)' : '') +
                 (hiddenCount > 0 ? ' (' + hiddenCount + ' perangkat tidak aktif >30 hari disembunyikan).' : '.');
         }
 

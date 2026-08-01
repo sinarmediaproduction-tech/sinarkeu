@@ -592,12 +592,47 @@ window.deleteAccount = async function(accId) {
 // kali layar kunci ditampilkan (bukan cuma sekali saat load pertama), tanpa
 // perlu diubah manual satu-satu di semua tempat yang men-set
 // passwordLockScreen jadi display:flex.
+// Beberapa variasi per waktu supaya sambutan tidak itu-itu saja -- salah
+// satu dipilih secara acak tiap kali layar kunci dirender.
+window.LOCK_GREETINGS = {
+    pagi: [
+        'Selamat Pagi, Kak!',
+        'Pagi, Kak! Semangat ya hari ini.',
+        'Halo Kak, siap mulai hari?',
+        'Selamat Pagi! Yuk cek keuanganmu.',
+        'Pagi Kak! Semoga harimu lancar.'
+    ],
+    siang: [
+        'Selamat Siang, Kak!',
+        'Siang, Kak! Sudah makan siang?',
+        'Halo Kak, tetap semangat ya.',
+        'Selamat Siang! Waktunya cek transaksi.',
+        'Siang Kak, jangan lupa istirahat.'
+    ],
+    sore: [
+        'Selamat Sore, Kak!',
+        'Sore, Kak! Hari ini gimana?',
+        'Halo Kak, sudah sore nih.',
+        'Selamat Sore! Yuk rapikan catatanmu.',
+        'Sore Kak, sebentar lagi istirahat.'
+    ],
+    malam: [
+        'Selamat Malam, Kak!',
+        'Malam, Kak! Waktunya rekap harian.',
+        'Halo Kak, sudah larut nih.',
+        'Selamat Malam! Jangan lupa istirahat.',
+        'Malam Kak, cek dulu keuanganmu.'
+    ]
+};
 window.getLockGreeting = function() {
     const hour = new Date().getHours();
-    if (hour >= 4 && hour < 11) return 'Selamat Pagi, Kak!';
-    if (hour >= 11 && hour < 15) return 'Selamat Siang, Kak!';
-    if (hour >= 15 && hour < 19) return 'Selamat Sore, Kak!';
-    return 'Selamat Malam, Kak!';
+    let periode;
+    if (hour >= 4 && hour < 11) periode = 'pagi';
+    else if (hour >= 11 && hour < 15) periode = 'siang';
+    else if (hour >= 15 && hour < 19) periode = 'sore';
+    else periode = 'malam';
+    const opsi = window.LOCK_GREETINGS[periode];
+    return opsi[Math.floor(Math.random() * opsi.length)];
 };
 window.updateLockGreeting = function() {
     const el = document.getElementById('lockGreetingTitle');
