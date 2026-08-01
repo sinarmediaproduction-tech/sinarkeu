@@ -2261,13 +2261,11 @@ window.skRenderAuthPanel = function() {
     if (window._skAuthUser) {
         const bookId = window.currentBookId;
         const role = window.skGetRoleForBook(bookId);
-        // [MENU MANAJEMEN USER] HTML blok ini sekarang juga dipakai halaman
-        // sidebar "Manajemen User" (window.skRenderUserManagerPage) --
-        // diekstrak ke window.skBuildMemberManagementHtml supaya tidak
-        // duplikat. Panel di sini tetap ada (bukan dihapus) karena tetap
-        // berguna sebagai jalan pintas cepat untuk buku yang sedang aktif,
-        // tanpa perlu pindah halaman.
-        const memberPanel = (role === 'admin') ? window.skBuildMemberManagementHtml(bookId, 'sk') : '';
+        // [MENU MANAJEMEN USER] Panel kelola anggota TIDAK lagi ditampilkan
+        // di sini -- sekarang cuma ada satu tempat untuk kelola anggota &
+        // peran, yaitu halaman sidebar "Manajemen User"
+        // (window.skRenderUserManagerPage, prefix 'um'). Modal "Kelola
+        // Buku Kas" ini murni untuk buat/buka/ganti nama/hapus buku.
         // [UI] Restyle: pakai class setelan-info-row/setelan-badge yang
         // sudah dipakai konsisten di panel Setelan lain (bukan lagi teks
         // polos tumpuk manual). Catatan "Tombol logout ada di footer
@@ -2287,17 +2285,8 @@ window.skRenderAuthPanel = function() {
                 '<div class="setelan-info-row" style="margin-bottom:6px;">Buku aktif: <b>' + window.escapeHtml(bookName) + '</b></div>' +
                 '<div class="setelan-info-row" style="margin-bottom:6px;">Login sebagai <b>' + window._skAuthUser.email + '</b></div>' +
                 roleBadge +
-            '</div>' +
-            memberPanel;
-        // [OPTIMASI TAMPILAN] Daftar anggota sekarang disembunyikan di
-        // balik tombol "Lihat & Kelola Anggota" (lihat
-        // skBuildMemberManagementHtml) -- jangan fetch di sini kalau
-        // panelnya memang belum dibuka usernya, supaya modal "Kelola Buku
-        // Kas" tidak selalu kena query Supabase tiap dibuka.
-        if (role === 'admin' && window._umPanelExpanded['sk']) {
-            window.skRenderMemberList(bookId);
-            window._umMaybeLoadInvitePicker(bookId, 'sk');
-        }
+                (role === 'admin' ? '<div class="setelan-info-row" style="margin-top:6px;">Untuk kelola anggota &amp; peran buku ini, buka menu <b>Manajemen User</b>.</div>' : '') +
+            '</div>';
     } else {
         // [MENU DAFTAR MANUAL DIHAPUS] Tidak ada lagi opsi self-signup di
         // sini -- akun anggota baru sekarang HARUS dibuatkan admin lewat
