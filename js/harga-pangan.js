@@ -38,11 +38,48 @@ window.HARGA_PANGAN_COMMODITIES = [
     { slug: 'minyak-goreng-kemasan', name: 'Minyak Goreng Kemasan', unit: 'liter', keywords: ['minyak goreng kemasan', 'minyak kemasan'] },
     { slug: 'minyak-goreng-curah', name: 'Minyak Goreng Curah', unit: 'liter', keywords: ['minyak goreng', 'minyak curah'] },
     { slug: 'gula-pasir', name: 'Gula Pasir', unit: 'kg', keywords: ['gula'] },
-    // [MANUAL] Bukan data pangan -> tidak ada di PIHPS/BI, jadi TIDAK
-    // ditarik dari proxy api/harga-pangan.js. Harganya diinput sendiri oleh
-    // user lewat menu sidebar "Harga Komoditas" dan disimpan lokal (lihat
-    // window.setManualHargaKomoditas di bawah), bukan lewat prefetch BI.
-    { slug: 'gas-melon', name: 'Gas Melon (LPG 3kg)', unit: 'tabung', keywords: ['gas melon', 'gas 3kg', 'elpiji 3kg', 'lpg 3kg'], manual: true },
+
+    // [BARU] Sayur mayur -- sumber SISKAPERBAPO saja, tidak ada padanan
+    // komoditas ini di PIHPS BI (comcat_id-nya cuma untuk 21 komoditas
+    // pokok nasional).
+    { slug: 'kol-kubis', name: 'Kol/Kubis', unit: 'kg', keywords: ['kol', 'kubis'] },
+    { slug: 'kentang', name: 'Kentang', unit: 'kg', keywords: ['kentang'] },
+    { slug: 'tomat', name: 'Tomat', unit: 'kg', keywords: ['tomat'] },
+    { slug: 'wortel', name: 'Wortel', unit: 'kg', keywords: ['wortel'] },
+    { slug: 'buncis', name: 'Buncis', unit: 'kg', keywords: ['buncis'] },
+
+    // [BARU] Ikan segar
+    { slug: 'ikan-bandeng', name: 'Ikan Bandeng', unit: 'kg', keywords: ['bandeng'] },
+    { slug: 'ikan-kembung', name: 'Ikan Kembung', unit: 'kg', keywords: ['kembung'] },
+    { slug: 'ikan-tuna', name: 'Ikan Tuna', unit: 'kg', keywords: ['tuna'] },
+    { slug: 'ikan-tongkol', name: 'Ikan Tongkol', unit: 'kg', keywords: ['tongkol'] },
+    { slug: 'ikan-cakalang', name: 'Ikan Cakalang', unit: 'kg', keywords: ['cakalang'] },
+    { slug: 'ikan-asin-teri', name: 'Ikan Asin Teri', unit: 'kg', keywords: ['ikan asin', 'teri'] },
+
+    // [BARU] Sembako tambahan
+    { slug: 'susu-kental-manis', name: 'Susu Kental Manis', unit: 'kaleng', keywords: ['kental manis', 'skm'] },
+    { slug: 'susu-bubuk', name: 'Susu Bubuk', unit: 'dus', keywords: ['susu bubuk'] },
+    { slug: 'jagung-pipilan', name: 'Jagung Pipilan Kering', unit: 'kg', keywords: ['jagung'] },
+    { slug: 'garam-beryodium', name: 'Garam Beryodium', unit: 'kg', keywords: ['garam'] },
+    { slug: 'tepung-terigu', name: 'Tepung Terigu', unit: 'kg', keywords: ['tepung terigu', 'terigu'] },
+    { slug: 'kedelai', name: 'Kedelai', unit: 'kg', keywords: ['kedelai', 'kedelei'] },
+    { slug: 'mie-instan', name: 'Mie Instan', unit: 'bungkus', keywords: ['indomie', 'mie instan', 'mi instan'] },
+    { slug: 'kacang-hijau', name: 'Kacang Hijau', unit: 'kg', keywords: ['kacang hijau'] },
+    { slug: 'kacang-tanah', name: 'Kacang Tanah', unit: 'kg', keywords: ['kacang tanah'] },
+    { slug: 'ketela-pohon', name: 'Ketela Pohon', unit: 'kg', keywords: ['ketela', 'singkong'] },
+
+    // [OTOMATIS] Sebelumnya manual -- ternyata SISKAPERBAPO juga melacak
+    // Gas Elpiji 3kg (commodity-id 82), jadi dipindah ke grup auto (tidak
+    // ada lagi flag `manual: true`). Harga manual yang sudah pernah
+    // diinput user tetap tidak apa-apa (akan ditimpa oleh hasil live
+    // begitu prefetch berikutnya berhasil).
+    { slug: 'gas-melon', name: 'Gas Melon (LPG 3kg)', unit: 'tabung', keywords: ['gas melon', 'gas 3kg', 'elpiji 3kg', 'lpg 3kg'] },
+
+    // [MANUAL] Bukan data pangan -> tidak ada di PIHPS/BI maupun
+    // SISKAPERBAPO, jadi TIDAK ditarik dari proxy api/harga-pangan.js.
+    // Harganya diinput sendiri oleh user lewat menu sidebar "Harga
+    // Komoditas" dan disimpan lokal (lihat window.setManualHargaKomoditas
+    // di bawah), bukan lewat prefetch otomatis.
     { slug: 'token-listrik', name: 'Token Listrik', unit: 'kWh', keywords: ['token listrik', 'token pln', 'pulsa listrik'], manual: true },
 ];
 // [CATATAN] Kategori "Kosmetik" sengaja TIDAK ditambahkan ke sini: harga
