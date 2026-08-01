@@ -90,16 +90,18 @@ window._skAuthMode = 'login';   // selalu 'login' -- menu daftar manual (signup)
 // adminnya tetap berperilaku sama seperti sebelumnya.
 window._skBookMenuVisibility = {};
 
+// [DISEDERHANAKAN] Cuma menu yang memang masuk akal untuk digilirkan ke
+// Editor/Viewer yang muncul di panel ini. Setelan, Cadangan Data, Kelola
+// Device, Akun, Notifikasi Telegram, dan Snapshot Keamanan tetap ada di
+// aplikasi seperti biasa, tapi TIDAK lagi bisa diatur per-peran di sini --
+// key & nilai defaultnya di SK_MENU_DEFAULTS (di bawah) tetap dipakai apa
+// adanya oleh skGetMenuVisible/skApplyRoleUI, jadi menu-menu itu SELALU
+// tersembunyi dari Editor & Viewer (hanya admin yang bisa lihat), tidak
+// bisa dinyalakan admin lewat panel ini lagi.
 window.SK_MENU_ITEMS = [
-    { key: 'setelan', label: 'Setelan' },
-    { key: 'backup', label: 'Cadangan Data' },
-    { key: 'device', label: 'Kelola Device' },
     { key: 'budget', label: 'Anggaran (Budget)' },
     { key: 'tambahTransaksi', label: 'Tambah Transaksi' },
-    { key: 'bukuKas', label: 'Buku Kas' },
-    { key: 'akun', label: 'Akun' },
-    { key: 'telegram', label: 'Notifikasi Telegram' },
-    { key: 'snapshot', label: 'Snapshot Keamanan' }
+    { key: 'bukuKas', label: 'Kelola Buku Kas' }
 ];
 
 window.SK_MENU_DEFAULTS = {
