@@ -426,7 +426,16 @@ window.renderHargaKomoditasModal = function() {
     if (!autoBody || !manualBody) return;
     const cache = window._hargaPanganCache || new Map();
 
-    const autoRows = window.HARGA_PANGAN_COMMODITIES.filter(function(c) { return !c.manual; });
+    // [SEMBUNYIKAN KOSONG] Komoditas auto yang belum berhasil ditarik dari
+    // SISKAPERBAPO maupun BI (mis. lagi 403/diblokir Cloudflare, atau
+    // memang tidak ada padanan di BI -- lihat SLUG_TO_BI_ID) disembunyikan
+    // dari tabel/kartu daripada tampil sebagai baris "Belum ada data" yang
+    // membingungkan. Filter ini jalan tiap render, jadi begitu cache-nya
+    // terisi (prefetch berikutnya berhasil), barisnya otomatis muncul lagi
+    // tanpa perlu logic tambahan. Baris manual TIDAK ikut disembunyikan --
+    // itu tempat user input harga pertama kali lewat tombol "Ubah", jadi
+    // harus tetap terlihat walau belum ada data.
+    const autoRows = window.HARGA_PANGAN_COMMODITIES.filter(function(c) { return !c.manual && cache.has(c.slug); });
     const manualRows = window.HARGA_PANGAN_COMMODITIES.filter(function(c) { return c.manual; });
 
     // Baris auto (BI) semuanya ditarik dalam 1 batch yang sama, jadi
