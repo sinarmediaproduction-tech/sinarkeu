@@ -430,6 +430,18 @@ alter table public.settings
 <!-- ===== APP SIDEBAR (Desktop) ===== -->
 <div id="appSidebar">
 
+    <!-- [SIDEBAR-BOOK] Nama buku kas yang sedang aktif, ditampilkan paling atas
+         sidebar (di atas Dashboard). Diisi & disinkronkan oleh
+         window.updateSidebarActiveBook() (js/book.js), dipanggil setiap kali
+         window.updateBookSelectDropdown() jalan supaya selalu ikut buku yang
+         sedang aktif. Saat sidebar diciutkan ke mode icon-only
+         (body.sidebar-collapsed), teks nama lengkap disembunyikan dan
+         diganti inisial (lihat .sidebar-collapsed di style.css). -->
+    <div class="app-sidebar-brand" id="sidebarActiveBook" title="">
+        <span class="app-sidebar-brand-full" id="sidebarActiveBookFull"></span>
+        <span class="app-sidebar-brand-initial" id="sidebarActiveBookInitial" aria-hidden="true"></span>
+    </div>
+
     <div class="app-nav-group">
         <button type="button" class="app-nav-item active" id="navDashboardBtn" onclick="window.showDashboardView()" title="Dashboard">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>

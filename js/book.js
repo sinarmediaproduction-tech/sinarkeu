@@ -21,9 +21,39 @@ window.getBookBalanceLabel = function(bookId) {
     }
 };
 
+// [SIDEBAR-BOOK] Isi nama buku aktif di elemen paling atas sidebar
+// (#sidebarActiveBook). Nama lengkap dipakai saat sidebar normal; inisialnya
+// (maks. 2 huruf, dari 2 kata pertama nama buku) dipakai saat sidebar
+// diciutkan ke mode icon-only lewat CSS body.sidebar-collapsed. Dipanggil
+// dari window.updateBookSelectDropdown() supaya selalu ikut sinkron setiap
+// kali daftar buku / buku aktif berubah, tanpa perlu dipanggil manual di
+// tempat lain.
+window.updateSidebarActiveBook = function() {
+    const fullEl = document.getElementById('sidebarActiveBookFull');
+    const initialEl = document.getElementById('sidebarActiveBookInitial');
+    const wrapEl = document.getElementById('sidebarActiveBook');
+    if (!fullEl || !initialEl || !wrapEl) return;
+
+    const book = (window.books || []).find(b => b.id === window.currentBookId);
+    const name = book ? book.name : '';
+
+    fullEl.textContent = name;
+    wrapEl.title = name;
+
+    const words = name.trim().split(/\s+/).filter(Boolean);
+    let initials = '';
+    if (words.length >= 2) {
+        initials = (words[0][0] || '') + (words[1][0] || '');
+    } else if (words.length === 1) {
+        initials = words[0].slice(0, 2);
+    }
+    initialEl.textContent = initials.toUpperCase();
+};
+
 window.updateBookSelectDropdown = function() {
     let sel = document.getElementById('currentBookSelect');
     sel.innerHTML = '';
+    window.updateSidebarActiveBook();
 
     // Ikuti setelan privasi "Sembunyikan Saldo" (sk_balance_hidden) yang sama
     // dipakai oleh saldo hero di dashboard -- kalau user sedang menyembunyikan
