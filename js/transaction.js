@@ -52,10 +52,75 @@ window._maxUpdatedAt = function(rows, fallback) {
 // transaksi angkanya jauh lebih kecil dari kenyataan walau "Saldo Akhir" di
 // sebelahnya sudah benar. Sekarang simpan juga incomeOffset & expenseOffset
 // terpisah (bukan cuma net-nya) supaya render.js bisa mengoreksi kedua kartu itu.
+// [BUG FIX - QuotaExceededError saat simpan cache transaksi] localStorage
+// per-origin biasanya dibatasi ~5-10MB oleh browser. Field `attachment` pada
+// transaksi BISA berisi data URL base64 UTUH (fallback saat upload foto nota
+// ke Supabase Storage gagal -- lihat window.resolveAttachment/
+// uploadAttachmentToStorage di render.js), yang untuk satu foto saja bisa
+// beberapa ratus KB, dan field itu ikut plaintext ke kolom `attachment` di
+// cloud (lihat window.decodeCloudTxRow di crypto.js) -- jadi bisa balik lagi
+// ke device manapun yang pull. Kalau banyak transaksi dalam satu buku punya
+// attachment base64 seperti itu, JSON satu array transaksi (sampai
+// MAX_LOCAL_TXS baris) gampang menabrak kuota localStorage sekaligus,
+// melempar QuotaExceededError yang sebelumnya TIDAK ditangani sama sekali --
+// menghentikan alur pull/sync di tengah jalan (lihat window.pullFromCloudSilently)
+// dan sebelumnya dilempar dari banyak titik berbeda karena tiap pemanggil
+// menulis langsung lewat localStorage.setItem('sk_txs_'+bookId, ...).
+//
+// window.saveTxsLocal() memusatkan SEMUA penulisan cache lokal transaksi ke
+// satu titik, dengan fallback bertingkat kalau kena QuotaExceededError:
+//   1) coba simpan apa adanya.
+//   2) kalau gagal, buang attachment yang berupa data URL base64 dari array
+//      (attachment yang sudah berupa URL Supabase Storage TETAP dipakai --
+//      itu cuma string pendek, bukan sumber masalah), lalu coba lagi. Ini
+//      cuma menghapus CACHE lampiran untuk tampilan offline; jumlah/kategori/
+//      tanggal transaksinya sendiri tidak hilang, dan data nota aslinya tetap
+//      aman di cloud (atau di Storage kalau upload-nya berhasil).
+//   3) kalau MASIH gagal (kuota sudah penuh oleh data lain / device sangat
+//      terbatas), potong array jadi separuh berulang kali sampai muat atau
+//      kosong -- supaya app tetap jalan, bukannya rusak total karena
+//      exception yang tidak tertangani di tengah proses sinkron.
+// Selalu mengembalikan array yang BENAR-BENAR berhasil tersimpan (bisa lebih
+// pendek/berbeda dari input), supaya pemanggil yang mengandalkan nilai balik
+// (mis. trimAndSaveLocal, forceFullSync) tetap konsisten dengan isi
+// localStorage yang sebenarnya -- bukan berasumsi semuanya tersimpan padahal
+// tidak.
+window.saveTxsLocal = function(bookId, arr) {
+    const key = 'sk_txs_' + bookId;
+    const isQuotaError = e => e && (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014);
+    try {
+        localStorage.setItem(key, JSON.stringify(arr));
+        return arr;
+    } catch (e) {
+        if (!isQuotaError(e)) throw e;
+        console.warn('[Storage] Kuota localStorage penuh saat menyimpan cache transaksi buku', bookId, '-- membuang lampiran base64 dari cache.');
+        const stripped = arr.map(t => (t && typeof t.attachment === 'string' && t.attachment.startsWith('data:'))
+            ? { ...t, attachment: null } : t);
+        try {
+            localStorage.setItem(key, JSON.stringify(stripped));
+            return stripped;
+        } catch (e2) {
+            if (!isQuotaError(e2)) throw e2;
+            let cur = stripped;
+            while (cur.length > 0) {
+                cur = cur.slice(0, Math.ceil(cur.length / 2));
+                try {
+                    localStorage.setItem(key, JSON.stringify(cur));
+                    console.warn('[Storage] Cache lokal buku', bookId, 'dipotong jadi', cur.length, 'transaksi karena kuota localStorage tetap penuh.');
+                    return cur;
+                } catch (e3) { if (!isQuotaError(e3)) throw e3; /* coba potong lagi */ }
+            }
+            try { localStorage.removeItem(key); } catch (e4) { /* biarkan, tidak fatal */ }
+            console.error('[Storage] Tidak bisa menyimpan cache transaksi lokal sama sekali untuk buku', bookId, '-- kuota localStorage penuh. Data tetap aman di cloud.');
+            return [];
+        }
+    }
+};
+
 window.trimAndSaveLocal = function(bookId, data) {
     const sorted = [...data].sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date) || String(b.id).localeCompare(String(a.id)));
-    const trimmed = sorted.slice(0, window.MAX_LOCAL_TXS);
-    localStorage.setItem('sk_txs_' + bookId, JSON.stringify(trimmed));
+    let trimmed = sorted.slice(0, window.MAX_LOCAL_TXS);
+    trimmed = window.saveTxsLocal(bookId, trimmed);
     const remainder = sorted.slice(window.MAX_LOCAL_TXS);
     let balanceOffset = 0, incomeOffset = 0, expenseOffset = 0;
     remainder.forEach(t => {
@@ -611,13 +676,13 @@ window.pushToCloud = async function(bookId, txs, dirtyIds) {
         res.forEach(r => { byId[r.id] = r.updated_at; });
         if (bookId === window.currentBookId) {
             window.txs = window.txs.map(t => byId[t.id] ? { ...t, updated_at: byId[t.id] } : t);
-            localStorage.setItem('sk_txs_' + bookId, JSON.stringify(window.txs));
+            window.saveTxsLocal(bookId, window.txs);
         } else {
             const cacheRaw = localStorage.getItem('sk_txs_' + bookId);
             if (cacheRaw) {
                 try {
                     const cache = JSON.parse(cacheRaw).map(t => byId[t.id] ? { ...t, updated_at: byId[t.id] } : t);
-                    localStorage.setItem('sk_txs_' + bookId, JSON.stringify(cache));
+                    window.saveTxsLocal(bookId, cache);
                 } catch (e) { /* cache buku lain tidak valid, biarkan apa adanya */ }
             }
         }

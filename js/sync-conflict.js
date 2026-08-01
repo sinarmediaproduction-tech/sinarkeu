@@ -226,13 +226,13 @@ window.pushToCloud = async function(bookId, txs, dirtyIds) {
             const newUpdatedAt = result.updatedAt;
             if (bookId === window.currentBookId) {
                 window.txs = window.txs.map(t => t.id === id ? { ...t, updated_at: newUpdatedAt } : t);
-                localStorage.setItem('sk_txs_' + bookId, JSON.stringify(window.txs));
+                window.saveTxsLocal(bookId, window.txs);
             } else {
                 const cacheRaw = localStorage.getItem('sk_txs_' + bookId);
                 if (cacheRaw) {
                     try {
                         const cache = JSON.parse(cacheRaw).map(t => t.id === id ? { ...t, updated_at: newUpdatedAt } : t);
-                        localStorage.setItem('sk_txs_' + bookId, JSON.stringify(cache));
+                        window.saveTxsLocal(bookId, cache);
                     } catch (e) { /* cache buku lain tidak valid, biarkan apa adanya */ }
                 }
             }
@@ -326,7 +326,7 @@ window.resolveConflictKeepCloud = async function() {
         } else if (c.serverTx) {
             window.txs = window.txs.map(t => t.id === c.id ? { ...t, ...c.serverTx, id: c.id } : t);
         }
-        localStorage.setItem('sk_txs_' + c.bookId, JSON.stringify(window.txs));
+        window.saveTxsLocal(c.bookId, window.txs);
         window.render();
     } else {
         const cacheRaw = localStorage.getItem('sk_txs_' + c.bookId);
@@ -336,7 +336,7 @@ window.resolveConflictKeepCloud = async function() {
                 cache = c.serverDeleted
                     ? cache.filter(t => t.id !== c.id)
                     : cache.map(t => t.id === c.id ? { ...t, ...c.serverTx, id: c.id } : t);
-                localStorage.setItem('sk_txs_' + c.bookId, JSON.stringify(cache));
+                window.saveTxsLocal(c.bookId, cache);
             } catch (e) { /* cache buku lain tidak valid, biarkan apa adanya */ }
         }
     }
