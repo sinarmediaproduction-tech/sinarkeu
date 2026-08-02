@@ -1062,6 +1062,24 @@ alter table public.settings
             </div>
         </div>
 
+        
+        <!-- URL Proxy Harga Komoditas (Cloudflare Worker) -->
+        <div class="data-management-panel setelan-tab-panel" data-tab-panel="hargaPanganWorker">
+            <div class="panel-title setelan-title--green">
+                <span data-i18n="harga_pangan_worker_section">Proxy Harga Komoditas (Cloudflare Worker)</span>
+                <span id="hargaPanganWorkerBadge" class="setelan-badge"></span>
+            </div>
+            <p class="panel-hint" data-i18n="harga_pangan_worker_hint">App di-host di GitHub Pages tidak menjalankan serverless function, jadi proxy harga diambil dari Cloudflare Worker. Isi URL Worker yang sudah Anda deploy, lalu klik Segarkan dari BI di menu Harga Komoditas.</p>
+            <label class="form-label" data-i18n="harga_pangan_worker_url_label">URL Worker Harga Komoditas</label>
+            <input type="text" id="hargaPanganWorkerUrlInput" class="form-control" placeholder="https://sinarkeu-harga-pangan.nama-subdomain.workers.dev" oninput="updateHargaPanganWorkerBadge()">
+            <div id="hargaPanganWorkerStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
+            <div class="setelan-actions-row">
+                <button class="btn btn-secondary" style="flex:1;" onclick="testHargaPanganWorkerUrl()" data-i18n="test_connection">Tes Koneksi</button>
+                <button class="btn btn-danger" style="flex:1;" onclick="clearHargaPanganWorkerUrl()">Hapus</button>
+                <button class="btn btn-primary" style="flex:2;" onclick="saveHargaPanganWorkerUrl()" data-i18n="save">Simpan</button>
+            </div>
+        </div>
+
         <!-- Harga Emas Antam -->
         <div class="data-management-panel setelan-tab-panel" data-tab-panel="gold">
             <div class="panel-title setelan-title--amber">

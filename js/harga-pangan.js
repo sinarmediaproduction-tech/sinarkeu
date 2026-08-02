@@ -284,7 +284,15 @@ window.prefetchHargaPanganReferensi = async function(forceProxy) {
     const missingSlugs = forceProxy ? allSlugs : allSlugs.filter(function(s) { return !cache.has(s); });
     if (missingSlugs.length && window.isOnline && window.isOnline()) {
         try {
-            const res = await fetch('/api/harga-pangan?slugs=' + missingSlugs.join(','), { signal: AbortSignal.timeout(10000) });
+            // [CF WORKER] App di-host di GitHub Pages (tidak jalanin api/ Vercel),
+// jadi proxy diambil dari Cloudflare Worker. URL disimpan di Setelan
+// -> 'URL Proxy Harga Komoditas' (key localStorage sk_harga_pangan_worker_url).
+// Fallback: kalau belum diisi, coba path /api/harga-pangan (Vercel/CF Pages).
+const _workerUrl = (localStorage.getItem('sk_harga_pangan_worker_url') || '').trim();
+const _proxyUrl = _workerUrl
+  ? (_workerUrl + (_workerUrl.includes('?') ? '&' : '?') + 'slugs=' + missingSlugs.join(','))
+  : ('/api/harga-pangan?slugs=' + missingSlugs.join(','));
+const res = await fetch(_proxyUrl, { signal: AbortSignal.timeout(10000) });
             if (res.ok) {
                 const json = await res.json();
                 const prices = json.prices || {};

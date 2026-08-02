@@ -53,6 +53,14 @@ window.openSetelanModal = function(initialTab) {
         window.updateEmasGramPreview();
     }
     
+
+    // [URL PROXY HARGA KOMODITAS] Load URL Cloudflare Worker ke input Setelan.
+    var hpwInp = document.getElementById('hargaPanganWorkerUrlInput');
+    var hpwSt = document.getElementById('hargaPanganWorkerStatus');
+    if (hpwInp) hpwInp.value = localStorage.getItem('sk_harga_pangan_worker_url') || '';
+    if (hpwSt) hpwSt.innerText = '';
+    if (typeof window.updateHargaPanganWorkerBadge === 'function') window.updateHargaPanganWorkerBadge();
+
     var gsUrl = document.getElementById('googleSheetsUrlInput');
     if (gsUrl) gsUrl.value = localStorage.getItem('sk_google_sheets_url') || '';
     
@@ -694,3 +702,61 @@ window._refreshToastErrorLogPanel = function() {
     }
     preview.innerHTML = html;
 };
+
+
+// ── URL PROXY HARGA KOMODITAS (Cloudflare Worker) ──
+window.updateHargaPanganWorkerBadge = function() {
+    var inp = document.getElementById('hargaPanganWorkerUrlInput');
+    var badge = document.getElementById('hargaPanganWorkerBadge');
+    if (!badge) return;
+    var v = (inp && inp.value || '').trim();
+    if (!v) { badge.className = 'setelan-badge'; badge.innerText = ''; return; }
+    var ok = /^https:\/\/.+\.workers\.dev/.test(v) || /^https:\/\/.+\.pages\.dev/.test(v) || /^https:\/\/.+\//.test(v);
+    badge.className = 'setelan-badge ' + (ok ? 'badge-ok' : 'badge-warn');
+    badge.innerText = ok ? 'URL terlihat valid' : 'URL harus https://';
+};
+
+window.saveHargaPanganWorkerUrl = function() {
+    var inp = document.getElementById('hargaPanganWorkerUrlInput');
+    var st = document.getElementById('hargaPanganWorkerStatus');
+    var v = (inp && inp.value || '').trim();
+    if (v && !/^https:\/\//.test(v)) {
+        if (st) { st.style.color = '#A13A3A'; st.innerText = 'URL harus diawali https://'; }
+        return;
+    }
+    try { localStorage.setItem('sk_harga_pangan_worker_url', v); } catch (e) {}
+    if (st) { st.style.color = '#2E6B4F'; st.innerText = v ? 'Tersimpan. Klik Segarkan dari BI di menu Harga Komoditas.' : 'URL dikosongkan (pakai fallback /api/harga-pangan).'; }
+    if (typeof window.updateHargaPanganWorkerBadge === 'function') window.updateHargaPanganWorkerBadge();
+    window.showToast('URL proxy harga komoditas tersimpan', 'success');
+};
+
+window.clearHargaPanganWorkerUrl = function() {
+    var inp = document.getElementById('hargaPanganWorkerUrlInput');
+    var st = document.getElementById('hargaPanganWorkerStatus');
+    if (inp) inp.value = '';
+    try { localStorage.removeItem('sk_harga_pangan_worker_url'); } catch (e) {}
+    if (st) { st.style.color = '#666'; st.innerText = 'URL dihapus.'; }
+    if (typeof window.updateHargaPanganWorkerBadge === 'function') window.updateHargaPanganWorkerBadge();
+};
+
+window.testHargaPanganWorkerUrl = async function() {
+    var inp = document.getElementById('hargaPanganWorkerUrlInput');
+    var st = document.getElementById('hargaPanganWorkerStatus');
+    var v = (inp && inp.value || '').trim();
+    if (!v) { if (st) { st.style.color = '#A13A3A'; st.innerText = 'Isi URL Worker dulu.'; } return; }
+    if (st) { st.style.color = '#9C7A2E'; st.innerText = 'Mengetes...'; }
+    try {
+        var res = await fetch(v + (v.includes('?') ? '&' : '?') + 'slugs=beras-medium', { signal: AbortSignal.timeout(10000) });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var json = await res.json();
+        var p = json && json.prices && json.prices['beras-medium'];
+        if (p && p.price) {
+            if (st) { st.style.color = '#2E6B4F'; st.innerText = 'OK! ' + (p.region || '') + ' Rp' + Number(p.price).toLocaleString('id-ID') + ' (' + (p.source || '') + ')'; }
+        } else {
+            if (st) { st.style.color = '#A13A3A'; st.innerText = 'Worker merespons tapi tidak ada harga beras-medium.'; }
+        }
+    } catch (e) {
+        if (st) { st.style.color = '#A13A3A'; st.innerText = 'Gagal: ' + e.message; }
+    }
+};
+
