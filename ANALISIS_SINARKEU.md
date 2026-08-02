@@ -1,46 +1,127 @@
--- ============================================================
--- FITUR: Atur Tampilan Menu per Peran (Setelan/Cadangan Data/Kelola
--- Device/Anggaran/Tambah Transaksi) -- per buku bersama, bisa diubah
--- admin lewat panel baru di halaman "Manajemen User" (js/auth.js:
--- window.skBuildMenuVisibilityHtml / window.skSaveMenuVisibility).
--- Jalankan SETELAH sql/shared_books_roles.sql.
--- ============================================================
---
--- KONTEKS:
--- Sebelumnya, 5 menu ini (Setelan/Backup/Device/Budget/Tambah Transaksi)
--- visible-tidaknya untuk role editor/viewer FIX di kode (window.skApplyRoleUI
--- di js/auth.js). Kolom ini menyimpan OVERRIDE per buku bersama supaya admin
--- bisa mengatur sendiri lewat UI, tanpa perlu ubah kode.
---
--- BENTUK DATA (JSONB), contoh:
---   {
---     "editor": { "setelan": false, "backup": false, "device": false, "budget": true,  "tambahTransaksi": true },
---     "viewer": { "setelan": false, "backup": false, "device": false, "budget": false, "tambahTransaksi": false }
---   }
--- Key yang tidak ada di JSON ini jatuh ke default bawaan (SK_MENU_DEFAULTS
--- di js/auth.js -- sama persis dengan perilaku hardcode sebelumnya), jadi
--- kolom '{}' (default) TIDAK mengubah perilaku buku bersama yang sudah ada.
--- Role 'admin' TIDAK disimpan di sini -- admin selalu full akses semua
--- menu, tidak bisa dikunci lewat panel ini (mencegah admin mengunci diri
--- sendiri sampai tidak bisa buka Setelan lagi).
---
--- PENTING (baca sebelum pakai panel "Tambah Transaksi"/"Setelan" untuk
--- Viewer): kolom ini HANYA mengatur tampilan menu di client. Kalau
--- sql/harden_shared_book_data_rls.sql sudah dijalankan, Viewer tetap
--- ditolak database saat mencoba INSERT/UPDATE/DELETE walau menunya
--- dimunculkan di sini (RLS memang mengunci viewer read-only, terpisah
--- dari kolom ini). Kalau file RLS itu BELUM dijalankan, memunculkan menu
--- tulis untuk Viewer di sini BENAR-BENAR memberi mereka akses tulis --
--- jadi hati-hati kalau proteksi RLS-nya belum aktif.
--- ============================================================
+# Analisis SinarKeu — PWA Buku Kas Digital
 
-ALTER TABLE public.sk_books
-    ADD COLUMN IF NOT EXISTS menu_visibility JSONB NOT NULL DEFAULT '{}'::jsonb;
+> Dianalisis dari `sinarkeu-main (100).zip` — ekstrak & baca: CLAUDE.md,
+> SECURITY_AUDIT.md, PERBAIKAN_42501.md, crypto.js, ai.js, forex.js,
+> sw.js, _headers, api/, sql/*, dan sebagian modul js/*.
 
--- Tidak perlu policy RLS baru -- kolom ini ikut policy sk_books yang sudah
--- ada di sql/shared_books_roles.sql:
---   - SELECT: sk_books_select_member (semua anggota buku boleh baca, perlu
---     supaya app tahu menu apa yang boleh ditampilkan ke dirinya sendiri).
---   - UPDATE: sk_books_update_admin (hanya admin buku itu yang boleh ubah,
---     jadi window.skSaveMenuVisibility otomatis ditolak database kalau
---     dipanggil bukan oleh admin -- sama seperti rename buku).
+## 1. Apa ini sebenarnya
+
+**SinarKeu** adalah aplikasi pencatatan keuangan pribadi berbasis **PWA**
+(Progressive Web App), berbahasa Indonesia, berjalan murni di browser tanpa
+build step. Ditulis dengan **vanilla JS/HTML/CSS** — tidak ada framework,
+tidak ada bundler. Di-deploy sebagai static site (Vercel/Cloudflare
+Pages/GitHub Pages). Skala: **~17.000 baris JS** (29 modul), **~4.900 baris
+CSS**, **18 migrasi SQL**.
+
+Fitur inti:
+- Multi-akun + multi-buku kas (buku induk/anak, duplikasi buku)
+- CRUD transaksi, anggaran bulanan/tahunan/dasar, laporan PDF
+- Buku Bersama (shared book, multi-user via Supabase Auth + role
+  admin/editor/viewer)
+- Sinkronisasi cloud Supabase + mode offline + deteksi konflik
+- AI analysis & Tanya-AI (via Cloudflare Worker milik user sendiri, Groq LLM)
+- Notifikasi Telegram, pengingat pembayaran, daftar belanja
+- Harga emas Antam + kurs USD/IDR, forecast/proyeksi
+- Backup lokal/cloud, snapshot keamanan, migrasi data
+- PWA installable, service worker, dark mode, i18n
+
+## 2. Arsitektur
+
+- **Tanpa module system.** Semua `js/*.js` di-load sebagai `<script>` biasa
+  dan berbagi state lewat `window.*` (global mutables: `window.txs`,
+  `window.books`, `window.currentBookId`, dll).
+- **Data lokal:** localStorage (namespaced per akun). **Cloud opsional:**
+  Supabase (REST API).
+- **PWA:** `manifest.json` + `sw.js` (cache-first app shell, network-first
+  untuk navigasi).
+- **Deploy:** `vercel.json` no-op (anti auto-detect), `_headers` untuk
+  security header di Cloudflare.
+
+**Kekuatan arsitektur:** dokumentasi `CLAUDE.md` sangat rapi (glosarium
+domain, konvensi kode, catatan incident, checklist selesai).
+
+## 3. Analisis Keamanan (paling penting)
+
+### ⚠️ Temuan Utama: Enkripsi transaksi DIMATIKAN
+`js/crypto.js` & `SECURITY_AUDIT.md` mencatat **enkripsi kolom finansial
+transaksi sudah dinonaktifkan**. Alasan: "Catatan Insiden: Transaksi Terkunci
+akibat Rotasi Password" (Juli 2026) — saat password dirotasi, anggota buku
+bersama lain kehilangan akses dekripsi → 48 transaksi terkunci permanen.
+Fix: **transaksi BARU ditulis plaintext ke kolom asli**.
+
+**Implikasi:** untuk buku non-shared, garis pertahanan data finansial
+(enkripsi AES-256-GCM client-side) **sudah tidak berlaku untuk transaksi
+baru**. Siapa pun yang punya URL + anon key Supabase bisa membaca seluruh
+riwayat keuangan secara plaintext lewat REST API. Sisa enkripsi hanya
+menyentuh `settings` & `backups` (sebagian sudah di-plaintext-kan untuk
+Telegram config).
+
+### ⚠️ Model RLS lemah (diakui sendiri)
+App pakai **satu anon key untuk semua user**, tanpa Supabase Auth untuk buku
+non-shared. `SECURITY_AUDIT.md`: *"Postgres tidak bisa membedakan siapa yang
+meminta lewat anon key — RLS berbasis account_tag adalah kesepakatan
+aplikasi, bukan pagar keamanan sungguhan."* Isolasi antar-user mengandalkan
+filter sisi client (bisa dilewati via akses API langsung).
+
+### 🟡 RLS legacy pernah bocor
+Pernah ditemukan **17 policy legacy duplikat** dengan `qual = true` tanpa
+syarat (beberapa `roles = {public}`). Sudah dibersihkan via
+`cleanup_legacy_open_policies.sql`, tapi catatan mengingatkan: *"jangan
+asumsikan migrasi di repo = state DB aktual."*
+
+### 🟢 Yang sudah baik
+- **Password hashing:** PBKDF2 300.000 iterasi + AES-256-GCM — standar kuat.
+- **Anti brute-force lock screen:** exponential backoff sampai 5 menit.
+- **CSP via meta + `_headers`** (frame-ancestors DENY, HSTS, X-Frame-Options,
+  nosniff) — dipisah dengan benar.
+- **AI prompt:** data dikirim ke Worker user sendiri; Tanya-AI diwajibkan
+  menampilkan rincian transaksi (anti halusinasi angka).
+- **Session password** di sessionStorage dengan XOR-obfuscation.
+- **`recovery-enc-payload.html`** — alat pemulihan baris terkunci.
+
+## 4. Kualitas Kode & "Karantina" Bug
+
+| Issue | Status |
+|---|---|
+| RangeError stack overflow saat enkripsi backup besar | ✅ Diperbaiki (chunk 32KB) |
+| 17 policy RLS legacy terbuka | ✅ Dibersihkan |
+| Settings tumpuk historis (insert-only) | ✅ Diperbaiki (constraint + parallel decrypt) |
+| Modal tertutup di belakang fullview (mobile) | ✅ Diperbaiki (z-index generik) |
+| Toast RLS 42501 akibat data yatim `sk_books` | ✅ Data-fix + defense-in-depth |
+| 48 transaksi terkunci (rotasi password) | ⚠️ Workaround: enkripsi dimatikan |
+| Sync shared book salah filter `account_tag` | ✅ Diperbaiki |
+
+Ada `js/db.js.bak` (file sisa, tidak di-load — aman diabaikan, sebaiknya
+dihapus).
+
+## 5. Kekuatan vs Kekurangan
+
+**✅ Kekuatan**
+- Fitur sangat lengkap & matang
+- Dokumentasi (CLAUDE.md, SECURITY_AUDIT, panduan SQL) luar biasa
+- Keamanan dasar solid: PBKDF2 kuat, CSP, HSTS, anti-bruteforce
+- Offline-first, PWA, sinkronisasi lintas device
+- AI terintegrasi dengan guard anti-halusinasi
+
+**⚠️ Kekurangan / Risiko**
+1. Transaksi plaintext di cloud (enkripsi dimatikan) — risiko privasi besar
+2. RLS tidak mengisolasi user untuk buku non-shared
+3. Tanpa automated test sama sekali
+4. Global `window.*` — sulit di-maintain saat skala bertambah
+5. Beban setup manual (18 migrasi SQL) — tinggi untuk user awam
+
+## 6. Rekomendasi
+1. Kembalikan enkripsi transaksi dengan skema aman dari rotasi password
+   (mis. kunci per-book, atau Supabase Auth + RLS `auth.uid()` sungguhan).
+2. Aktifkan RLS berbasis `auth.uid()` untuk isolasi nyata.
+3. Tambahkan minimal smoke test (Playwright) untuk alur transaksi & sync.
+4. Hapus `js/db.js.bak` & bersihkan redudansi (`reEncryptCredentials`).
+5. Validasi `_headers` benar-benar ter-deploy (pernah ketahuan kosong).
+
+## 7. Verdict
+Proyek **sangat kompeten & dirawat dengan disiplin** untuk aplikasi keuangan
+pribadi. Satu-satunya "lubang" strategis: **keputusan menonaktifkan enkripsi
+transaksi** akibat insiden rotasi password, membuat data finansial di cloud
+bergantung sepenuhnya pada kerahasiaan anon key Supabase. Untuk pemakaian
+pribadi dengan anon key tidak tersebar, risiko masih bisa diterima; untuk
+skala lebih luas, enkripsi & RLS perlu dikembalikan.

@@ -154,11 +154,18 @@ async function getSiskaperbapoSessionCookie() {
 }
 
 // Body request persis meniru payload asli dari DevTools: cuma 2 field,
-// "tanggal" dan "kabkota". kabkota dikosongkan supaya dapat baris
-// RATA-RATA PROVINSI (bukan per kabupaten/kota) -- konsisten dengan
-// perilaku proxy BI sebelumnya yang juga level provinsi.
+// "tanggal" dan "kabkota".
+// [WILAYAH] Di-hardcode ke "magetankab" (Kabupaten Magetan) supaya harga
+// acuan yang tampil di app adalah level KABUPATEN MAGETAN, bukan rata-rata
+// Provinsi Jawa Timur. Nilai ini terbukti valid lewat endpoint
+// SISKAPERBAPO (lihat komentar di fetchSiskaperbapoDay). Kalau suatu saat
+// mau ganti wilayah, cukup ubah string di sini (mis. "madiunkab" untuk
+// Kabupaten Madiun, "madiunkota" untuk Kota Madiun, "" untuk rata-rata
+// Provinsi Jatim).
+const WILAYAH_ACUAN = 'magetankab';
+const WILAYAH_ACUAN_LABEL = 'Kabupaten Magetan';
 function buildSiskaperbapoBody(dateStr) {
-  return new URLSearchParams({ tanggal: dateStr, kabkota: '' }).toString();
+  return new URLSearchParams({ tanggal: dateStr, kabkota: WILAYAH_ACUAN }).toString();
 }
 
 // Ambil & parse 1 hari data SISKAPERBAPO -> Map(commodityId -> { price, date }).
@@ -338,8 +345,10 @@ function _latestFromRow(row) {
 }
 
 // Ambil harga terbaru untuk 1 komoditas, dengan fallback berjenjang:
-// Kabupaten Magetan -> Madiun (Kabupaten/Kota, mana yang ketemu duluan di
-// data BI) -> rata-rata Provinsi Jawa Timur -> rata-rata Nasional.
+// Kabupaten Madiun -> rata-rata Provinsi Jawa Timur -> rata-rata Nasional.
+// [WILAYAH] Diubah dari preferensi Magetan dulu menjadi MADIUN dulu, supaya
+// selaras dengan sumber utama SISKAPERBAPO yang sudah di-hardcode ke
+// Kabupaten Madiun (lihat WILAYAH_ACUAN di atas).
 // [SATU REQUEST UNTUK 3 LEVEL PERTAMA] showKota:'true' di baseParams bikin
 // 1 request ke province_id Jatim SEKALIGUS balikin baris per-kabupaten/kota
 // (termasuk Magetan & Madiun kalau ada) DAN baris rata-rata provinsi --
@@ -385,28 +394,30 @@ async function fetchLatestRegionalPrice(biId) {
     return payload.data || [];
   }
 
-  // 1-3) Kabupaten Magetan -> Madiun (Kab/Kota) -> rata-rata Provinsi Jawa
-  // Timur, dari 1 response yang sama (regency_id kosong, tapi showKota:
-  // 'true' tetap membawa baris per-kabupaten/kota).
+  // 1-4) Kabupaten Madiun -> Kabupaten Magetan -> rata-rata Provinsi Jawa
+  // Timur -> rata-rata Nasional, dari 1 response yang sama (regency_id
+  // kosong, tapi showKota: 'true' tetap membawa baris per-kabupaten/kota).
+  // [WILAYAH] Urutan ini dipilih supaya kalau sumber utama SISKAPERBAPO
+  // (yang sudah di-hardcode ke Kabupaten Magetan, lihat WILAYAH_ACUAN)
+  // gagal, fallback BI mengambil wilayah terdekat dengan Magetan (Madiun
+  // dulu, lalu Magetan sendiri) sebelum jatuh ke rata-rata provinsi/nasional.
   try {
     const rows = await fetchRows(JATIM_PROVINCE_ID, '');
 
-    // 1) Kabupaten Magetan.
-    const magetanRow = rows.find((r) => r.name && String(r.name).toLowerCase().includes('magetan'));
-    if (magetanRow) {
-      const hit = _latestFromRow(magetanRow);
-      if (hit) return { ...hit, region: String(magetanRow.name).trim() };
-    }
-
-    // 2) Madiun -- [KAB/KOTA] BI biasa balikin "Kabupaten Madiun" dan "Kota
-    // Madiun" sebagai 2 baris terpisah. Ambil yang duluan ketemu di array
-    // (urutan dari BI, bukan preferensi kita) daripada memaksa salah satu --
-    // yang penting region-nya jelas dilabeli sesuai nama baris aslinya,
-    // bukan di-generalisir jadi "Madiun" saja.
+    // 1) Kabupaten Madiun -- [KAB/KOTA] BI biasa balikin "Kabupaten Madiun"
+    // dan "Kota Madiun" sebagai 2 baris terpisah. Ambil yang duluan ketemu
+    // di array (urutan dari BI, bukan preferensi kita).
     const madiunRow = rows.find((r) => r.name && String(r.name).toLowerCase().includes('madiun'));
     if (madiunRow) {
       const hit = _latestFromRow(madiunRow);
       if (hit) return { ...hit, region: String(madiunRow.name).trim() };
+    }
+
+    // 2) Kabupaten Magetan.
+    const magetanRow = rows.find((r) => r.name && String(r.name).toLowerCase().includes('magetan'));
+    if (magetanRow) {
+      const hit = _latestFromRow(magetanRow);
+      if (hit) return { ...hit, region: String(magetanRow.name).trim() };
     }
 
     // 3) Rata-rata Provinsi Jawa Timur.
@@ -416,7 +427,7 @@ async function fetchLatestRegionalPrice(biId) {
       if (hit) return { ...hit, region: 'Provinsi Jawa Timur' };
     }
   } catch (e) {
-    console.warn('[harga-pangan] Gagal ambil level Magetan/Madiun/Jawa Timur (BI):', e.message);
+    console.warn('[harga-pangan] Gagal ambil level Madiun/Magetan/Jawa Timur (BI):', e.message);
   }
 
   // 4) Fallback terakhir: rata-rata Nasional (province_id & regency_id kosong).
@@ -478,7 +489,7 @@ export default async function handler(req, res) {
     try {
       const hits = await fetchSiskaperbapoPrices(siskaperbapoSlugs);
       hits.forEach((hit, slug) => {
-        prices[slug] = { ...hit, region: 'Provinsi Jawa Timur', source: 'siskaperbapo' };
+        prices[slug] = { ...hit, region: WILAYAH_ACUAN_LABEL, source: 'siskaperbapo' };
       });
     } catch (e) {
       console.error('[harga-pangan] SISKAPERBAPO gagal total:', e.message);

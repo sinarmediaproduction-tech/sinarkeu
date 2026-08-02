@@ -1,127 +1,87 @@
-# Analisis SinarKeu — PWA Buku Kas Digital
+# Security Audit — SinarKeu
 
-> Dianalisis dari `sinarkeu-main (100).zip` — ekstrak & baca: CLAUDE.md,
-> SECURITY_AUDIT.md, PERBAIKAN_42501.md, crypto.js, ai.js, forex.js,
-> sw.js, _headers, api/, sql/*, dan sebagian modul js/*.
+Catatan status keamanan yang sudah diverifikasi & diperbaiki. Update file ini
+setiap kali ada temuan/fix keamanan baru — jangan hanya catat di riwayat
+percakapan, supaya tetap ada jejaknya di repo.
 
-## 1. Apa ini sebenarnya
+## Model ancaman dasar
 
-**SinarKeu** adalah aplikasi pencatatan keuangan pribadi berbasis **PWA**
-(Progressive Web App), berbahasa Indonesia, berjalan murni di browser tanpa
-build step. Ditulis dengan **vanilla JS/HTML/CSS** — tidak ada framework,
-tidak ada bundler. Di-deploy sebagai static site (Vercel/Cloudflare
-Pages/GitHub Pages). Skala: **~17.000 baris JS** (29 modul), **~4.900 baris
-CSS**, **18 migrasi SQL**.
+Aplikasi ini pakai **satu anon key Supabase** untuk semua request tanpa
+Supabase Auth (kecuali untuk shared book, lihat di bawah). Konsekuensinya:
+Postgres tidak bisa membedakan "siapa" yang meminta lewat anon key — RLS
+berbasis `account_tag`/`book_id` di level ini adalah **kesepakatan aplikasi**,
+bukan pagar keamanan sungguhan. Siapa pun yang punya URL project + anon key
+bisa membaca/menulis lewat REST API langsung, terlepas dari filter
+`account_tag` di sisi client.
 
-Fitur inti:
-- Multi-akun + multi-buku kas (buku induk/anak, duplikasi buku)
-- CRUD transaksi, anggaran bulanan/tahunan/dasar, laporan PDF
-- Buku Bersama (shared book, multi-user via Supabase Auth + role
-  admin/editor/viewer)
-- Sinkronisasi cloud Supabase + mode offline + deteksi konflik
-- AI analysis & Tanya-AI (via Cloudflare Worker milik user sendiri, Groq LLM)
-- Notifikasi Telegram, pengingat pembayaran, daftar belanja
-- Harga emas Antam + kurs USD/IDR, forecast/proyeksi
-- Backup lokal/cloud, snapshot keamanan, migrasi data
-- PWA installable, service worker, dark mode, i18n
+**Garis pertahanan sesungguhnya untuk data finansial adalah enkripsi
+client-side** (AES-256-GCM + PBKDF2, `js/crypto.js`), bukan RLS, untuk buku
+non-shared. Untuk shared book, isolasi sesungguhnya ADA di level database
+karena memakai Supabase Auth + RLS berbasis `auth.uid()`/role
+(`sk_role_for_book`, dll — lihat `sql/shared_books_roles.sql`).
 
-## 2. Arsitektur
+## Status enkripsi data finansial
 
-- **Tanpa module system.** Semua `js/*.js` di-load sebagai `<script>` biasa
-  dan berbagi state lewat `window.*` (global mutables: `window.txs`,
-  `window.books`, `window.currentBookId`, dll).
-- **Data lokal:** localStorage (namespaced per akun). **Cloud opsional:**
-  Supabase (REST API).
-- **PWA:** `manifest.json` + `sw.js` (cache-first app shell, network-first
-  untuk navigasi).
-- **Deploy:** `vercel.json` no-op (anti auto-detect), `_headers` untuk
-  security header di Cloudflare.
+- Kolom sensitif (`amount`, `category`, `description`, `attachment`, `type`)
+  di `transactions` dienkripsi jadi satu kolom `enc_payload` sebelum dikirim
+  ke server. Baris lama (pra-migrasi) tetap punya fallback baca plaintext.
+  Lihat `sql/harden_transactions_encryption.sql`.
+- Kolom `data` di `backups` juga ciphertext (bukan JSON plaintext) untuk
+  backup baru.
+- **JANGAN** kembalikan ke plaintext di kolom lama `transactions`/`backups`
+  — ini fix yang disengaja, bukan legacy yang boleh "dirapikan".
 
-**Kekuatan arsitektur:** dokumentasi `CLAUDE.md` sangat rapi (glosarium
-domain, konvensi kode, catatan incident, checklist selesai).
+## RLS — status per tabel (terakhir diverifikasi 27 Juli 2026)
 
-## 3. Analisis Keamanan (paling penting)
+Ditemukan & dibersihkan: 17 policy legacy/duplikat di 4 tabel
+(`transactions`, `settings`, `payment_reminders`, `backups`) dengan
+`qual`/`with_check = true` tanpa syarat — beberapa bahkan `roles = {public}`,
+lebih parah dari `{anon}` karena juga menembus pembatasan role
+`authenticated` (admin/editor) pada shared book. Root cause: setup RLS awal
+dilakukan berkali-kali langsung lewat Supabase dashboard UI dengan nama
+berbeda-beda (`Allow all`, `allow_all`, `Izinkan anon ...`, `anon_all_*`,
+`Enable all for authenticated users`), tidak pernah masuk migrasi terversi.
+Fix ada di `sql/cleanup_legacy_open_policies.sql`.
 
-### ⚠️ Temuan Utama: Enkripsi transaksi DIMATIKAN
-`js/crypto.js` & `SECURITY_AUDIT.md` mencatat **enkripsi kolom finansial
-transaksi sudah dinonaktifkan**. Alasan: "Catatan Insiden: Transaksi Terkunci
-akibat Rotasi Password" (Juli 2026) — saat password dirotasi, anggota buku
-bersama lain kehilangan akses dekripsi → 48 transaksi terkunci permanen.
-Fix: **transaksi BARU ditulis plaintext ke kolom asli**.
+Policy yang **sengaja** tetap terbuka (bukan bug):
+- `anon_full_access` pada `backups` — `qual = true` tanpa syarat, karena
+  dilindungi enkripsi ciphertext, bukan RLS scoping per `book_id`.
 
-**Implikasi:** untuk buku non-shared, garis pertahanan data finansial
-(enkripsi AES-256-GCM client-side) **sudah tidak berlaku untuk transaksi
-baru**. Siapa pun yang punya URL + anon key Supabase bisa membaca seluruh
-riwayat keuangan secara plaintext lewat REST API. Sisa enkripsi hanya
-menyentuh `settings` & `backups` (sebagian sudah di-plaintext-kan untuk
-Telegram config).
+Kalau audit ulang, jalankan per tabel:
+```sql
+select policyname, cmd, roles, qual, with_check
+from pg_policies
+where schemaname = 'public' and tablename = '<nama_tabel>'
+order by policyname;
+```
+dan bandingkan jumlah/pola dengan yang didokumentasikan di
+`sql/cleanup_legacy_open_policies.sql`. RLS Postgres bersifat
+**permissive-OR** — satu policy longgar yang lolos cek membuat semua policy
+ketat lain di tabel yang sama jadi percuma, jadi jangan asumsikan state DB
+sama dengan yang tertulis di file migrasi; selalu cek `pg_policies` langsung.
 
-### ⚠️ Model RLS lemah (diakui sendiri)
-App pakai **satu anon key untuk semua user**, tanpa Supabase Auth untuk buku
-non-shared. `SECURITY_AUDIT.md`: *"Postgres tidak bisa membedakan siapa yang
-meminta lewat anon key — RLS berbasis account_tag adalah kesepakatan
-aplikasi, bukan pagar keamanan sungguhan."* Isolasi antar-user mengandalkan
-filter sisi client (bisa dilewati via akses API langsung).
+## Header HTTP (Cloudflare Pages)
 
-### 🟡 RLS legacy pernah bocor
-Pernah ditemukan **17 policy legacy duplikat** dengan `qual = true` tanpa
-syarat (beberapa `roles = {public}`). Sudah dibersihkan via
-`cleanup_legacy_open_policies.sql`, tapi catatan mengingatkan: *"jangan
-asumsikan migrasi di repo = state DB aktual."*
+`_headers` di root dibaca otomatis oleh Cloudflare Pages untuk header yang
+TIDAK bisa (atau tidak berfungsi) lewat `<meta>` tag di `index.html`:
+- `frame-ancestors` — diabaikan CSP kalau dikirim lewat meta.
+- `X-Frame-Options` / `Strict-Transport-Security` / `X-Content-Type-Options`
+  — tidak didukung `meta http-equiv` sama sekali.
 
-### 🟢 Yang sudah baik
-- **Password hashing:** PBKDF2 300.000 iterasi + AES-256-GCM — standar kuat.
-- **Anti brute-force lock screen:** exponential backoff sampai 5 menit.
-- **CSP via meta + `_headers`** (frame-ancestors DENY, HSTS, X-Frame-Options,
-  nosniff) — dipisah dengan benar.
-- **AI prompt:** data dikirim ke Worker user sendiri; Tanya-AI diwajibkan
-  menampilkan rincian transaksi (anti halusinasi angka).
-- **Session password** di sessionStorage dengan XOR-obfuscation.
-- **`recovery-enc-payload.html`** — alat pemulihan baris terkunci.
+CSP lengkap (`script-src`, `connect-src`, dst) tetap di meta tag
+`index.html` — itu bagian yang memang berfungsi lewat meta.
 
-## 4. Kualitas Kode & "Karantina" Bug
+**Penting:** file `_headers` sempat ketahuan kosong (isinya tanpa sengaja
+tertimpa/kepindah ke file ini) sehingga header di atas tidak aktif di
+production untuk sementara waktu. Sudah diperbaiki — cek isi `_headers`
+benar-benar ada isinya setiap kali menyentuh konfigurasi deploy Cloudflare
+Pages.
 
-| Issue | Status |
-|---|---|
-| RangeError stack overflow saat enkripsi backup besar | ✅ Diperbaiki (chunk 32KB) |
-| 17 policy RLS legacy terbuka | ✅ Dibersihkan |
-| Settings tumpuk historis (insert-only) | ✅ Diperbaiki (constraint + parallel decrypt) |
-| Modal tertutup di belakang fullview (mobile) | ✅ Diperbaiki (z-index generik) |
-| Toast RLS 42501 akibat data yatim `sk_books` | ✅ Data-fix + defense-in-depth |
-| 48 transaksi terkunci (rotasi password) | ⚠️ Workaround: enkripsi dimatikan |
-| Sync shared book salah filter `account_tag` | ✅ Diperbaiki |
+## Item yang belum/tidak diverifikasi di audit ini
 
-Ada `js/db.js.bak` (file sisa, tidak di-load — aman diabaikan, sebaiknya
-dihapus).
-
-## 5. Kekuatan vs Kekurangan
-
-**✅ Kekuatan**
-- Fitur sangat lengkap & matang
-- Dokumentasi (CLAUDE.md, SECURITY_AUDIT, panduan SQL) luar biasa
-- Keamanan dasar solid: PBKDF2 kuat, CSP, HSTS, anti-bruteforce
-- Offline-first, PWA, sinkronisasi lintas device
-- AI terintegrasi dengan guard anti-halusinasi
-
-**⚠️ Kekurangan / Risiko**
-1. Transaksi plaintext di cloud (enkripsi dimatikan) — risiko privasi besar
-2. RLS tidak mengisolasi user untuk buku non-shared
-3. Tanpa automated test sama sekali
-4. Global `window.*` — sulit di-maintain saat skala bertambah
-5. Beban setup manual (18 migrasi SQL) — tinggi untuk user awam
-
-## 6. Rekomendasi
-1. Kembalikan enkripsi transaksi dengan skema aman dari rotasi password
-   (mis. kunci per-book, atau Supabase Auth + RLS `auth.uid()` sungguhan).
-2. Aktifkan RLS berbasis `auth.uid()` untuk isolasi nyata.
-3. Tambahkan minimal smoke test (Playwright) untuk alur transaksi & sync.
-4. Hapus `js/db.js.bak` & bersihkan redudansi (`reEncryptCredentials`).
-5. Validasi `_headers` benar-benar ter-deploy (pernah ketahuan kosong).
-
-## 7. Verdict
-Proyek **sangat kompeten & dirawat dengan disiplin** untuk aplikasi keuangan
-pribadi. Satu-satunya "lubang" strategis: **keputusan menonaktifkan enkripsi
-transaksi** akibat insiden rotasi password, membuat data finansial di cloud
-bergantung sepenuhnya pada kerahasiaan anon key Supabase. Untuk pemakaian
-pribadi dengan anon key tidak tersebar, risiko masih bisa diterima; untuk
-skala lebih luas, enkripsi & RLS perlu dikembalikan.
+- `payment_reminders`, `settings`, `transactions`, `backups` sudah dicek
+  `pg_policies` langsung (lihat di atas). Tabel lain di luar 4 yang disebut
+  belum dicek — kalau menambah tabel baru dengan RLS, tambahkan ke daftar
+  audit ini.
+- Belum ada penetration test / audit eksternal formal — ini catatan hasil
+  self-review, bukan sertifikasi keamanan.

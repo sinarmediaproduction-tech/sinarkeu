@@ -260,12 +260,16 @@ window.prefetchHargaPanganReferensi = async function() {
                 'harga_pangan_referensi',
                 'GET',
                 null,
-                '?select=commodity_slug,commodity_name,unit,price,price_date&price_date=eq.' + today + '&commodity_slug=in.(' + allSlugs.join(',') + ')'
+                '?select=commodity_slug,commodity_name,unit,price,price_date,region&price_date=eq.' + today + '&commodity_slug=in.(' + allSlugs.join(',') + ')'
             );
             (rows || []).forEach(function(r) {
                 cache.set(r.commodity_slug, {
                     slug: r.commodity_slug, name: r.commodity_name, unit: r.unit,
-                    price: Number(r.price), date: r.price_date
+                    price: Number(r.price), date: r.price_date,
+                    // [WILAYAH] region dari Supabase (boleh null untuk baris
+                    // historis pra-migrasi) -- label wilayah jadi konsisten
+                    // walau data diambil dari cache cloud, bukan live proxy.
+                    region: r.region || null
                 });
             });
         } catch (e) {
@@ -289,18 +293,20 @@ window.prefetchHargaPanganReferensi = async function() {
                     const meta = window.HARGA_PANGAN_COMMODITIES.find(function(c) { return c.slug === slug; });
                     if (!meta) return;
                     // [WILAYAH] hit.region diisi proxy (api/harga-pangan.js) sesuai level
-                    // data yang berhasil didapat: 'Provinsi Jawa Timur' -> fallback
-                    // 'Nasional'. Cuma disimpan di
-                    // cache lokal untuk ditampilkan di UI, TIDAK ditulis ke kolom
-                    // Supabase (tabel itu dipakai bersama, skemanya sengaja tidak
-                    // diubah supaya tidak perlu migrasi SQL manual di semua akun).
+                    // data yang berhasil didapat: 'Kabupaten Magetan' -> fallback
+                    // 'Nasional'. Disimpan di cache lokal (untuk UI) DAN ditulis ke
+                    // kolom `region` di Supabase (lihat sql/add_region_to_harga_pangan.sql)
+                    // supaya label wilayah konsisten juga di histori/tren yang dibaca
+                    // langsung dari tabel itu. Kolom region boleh null untuk baris
+                    // historis pra-migrasi.
                     cache.set(slug, { slug: slug, name: meta.name, unit: meta.unit, price: hit.price, date: hit.date, region: hit.region || null });
                     rowsToUpsert.push({
                         commodity_slug: slug,
                         commodity_name: meta.name,
                         unit: meta.unit,
                         price: hit.price,
-                        price_date: hit.date
+                        price_date: hit.date,
+                        region: hit.region || null
                     });
                 });
 
