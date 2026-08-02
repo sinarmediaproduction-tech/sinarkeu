@@ -124,6 +124,12 @@ window.saveAiWorkerUrl = function() {
     st.innerText = 'Worker URL berhasil disimpan!';
     window.updateAiWorkerBadge();
     window.showToast('Worker URL AI disimpan!', 'success');
+    // [SYNC MULTI-DEVICE] Simpan juga ke cloud (tabel `settings`, book_id
+    // 'global') supaya URL worker AI ini otomatis muncul di perangkat lain
+    // yang login ke backend Supabase yang sama -- konsisten dengan pola
+    // google_sheets_url/telegram_config, lihat window.pullAllSettings di
+    // js/db.js untuk sisi penerimaannya.
+    if (window.pushSetting) window.pushSetting('ai_worker_url', url, 'global').catch(function() {});
 };
 window.clearAiWorkerUrl = function() {
     if (!confirm('Hapus Worker URL? Fitur Analisis AI akan dinonaktifkan.')) return;
@@ -134,6 +140,9 @@ window.clearAiWorkerUrl = function() {
     if (st) { st.style.color = '#5B6472'; st.innerText = 'Worker URL dihapus.'; }
     window.updateAiWorkerBadge();
     window.showToast('Worker URL dihapus.', 'info');
+    // [SYNC MULTI-DEVICE] Push string kosong supaya penghapusan ini ikut
+    // tersinkron ke perangkat lain (lihat catatan di saveAiWorkerUrl di atas).
+    if (window.pushSetting) window.pushSetting('ai_worker_url', '', 'global').catch(function() {});
 };
 window.testAiWorkerUrl = async function() {
     const url = (document.getElementById('aiWorkerUrlInput')?.value || '').trim();

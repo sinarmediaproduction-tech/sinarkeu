@@ -162,6 +162,15 @@ window.saveEmasApiKey = function() {
     // fetchGoldPrice (lihat cek cache.apiKey di dalamnya) -- tidak perlu
     // parameter apa pun di sini untuk memaksa itu terjadi.
     window.fetchGoldPrice();
+    // [SYNC MULTI-DEVICE] Simpan juga ke cloud (tabel `settings`, book_id
+    // 'global') supaya API key & jumlah gram emas ini otomatis tersedia di
+    // perangkat lain yang login ke backend Supabase yang sama -- konsisten
+    // dengan pola google_sheets_url/telegram_config, lihat
+    // window.pullAllSettings di js/db.js untuk sisi penerimaannya.
+    if (window.pushSetting) {
+        window.pushSetting('emas_api_key', key, 'global').catch(function() {});
+        window.pushSetting('emas_gram', gram > 0 ? gram : '', 'global').catch(function() {});
+    }
 };
 window.clearEmasApiKey = function() {
     if (!confirm('Hapus API key emas? Widget harga Antam akan menggunakan estimasi spot.')) return;
@@ -175,6 +184,9 @@ window.clearEmasApiKey = function() {
     window.updateEmasQuotaDisplay();
     window.showToast('API key emas dihapus.', 'info');
     window.fetchGoldPrice();
+    // [SYNC MULTI-DEVICE] Push string kosong supaya penghapusan ini ikut
+    // tersinkron ke perangkat lain (lihat catatan di saveEmasApiKey di atas).
+    if (window.pushSetting) window.pushSetting('emas_api_key', '', 'global').catch(function() {});
 };
 window.fetchGoldPrice = async function() {
     const priceEl = document.getElementById('goldPrice');

@@ -728,6 +728,12 @@ window.saveHargaPanganWorkerUrl = function() {
     if (st) { st.style.color = '#2E6B4F'; st.innerText = v ? 'Tersimpan. Klik Segarkan dari BI di menu Harga Komoditas.' : 'URL dikosongkan (pakai fallback /api/harga-pangan).'; }
     if (typeof window.updateHargaPanganWorkerBadge === 'function') window.updateHargaPanganWorkerBadge();
     window.showToast('URL proxy harga komoditas tersimpan', 'success');
+    // [SYNC MULTI-DEVICE] Simpan juga ke cloud (tabel `settings`, book_id
+    // 'global') supaya URL worker harga pangan ini otomatis muncul di
+    // perangkat lain yang login ke backend Supabase yang sama -- konsisten
+    // dengan pola google_sheets_url/telegram_config, lihat
+    // window.pullAllSettings di js/db.js untuk sisi penerimaannya.
+    if (window.pushSetting) window.pushSetting('harga_pangan_worker_url', v, 'global').catch(function() {});
 };
 
 window.clearHargaPanganWorkerUrl = function() {
@@ -737,6 +743,10 @@ window.clearHargaPanganWorkerUrl = function() {
     try { localStorage.removeItem('sk_harga_pangan_worker_url'); } catch (e) {}
     if (st) { st.style.color = '#666'; st.innerText = 'URL dihapus.'; }
     if (typeof window.updateHargaPanganWorkerBadge === 'function') window.updateHargaPanganWorkerBadge();
+    // [SYNC MULTI-DEVICE] Push string kosong supaya penghapusan ini ikut
+    // tersinkron ke perangkat lain (lihat catatan di saveHargaPanganWorkerUrl
+    // di atas).
+    if (window.pushSetting) window.pushSetting('harga_pangan_worker_url', '', 'global').catch(function() {});
 };
 
 window.testHargaPanganWorkerUrl = async function() {

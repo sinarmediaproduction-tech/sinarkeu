@@ -1055,6 +1055,56 @@ window.pullAllSettings = async function() {
                     localStorage.removeItem('sk_google_sheets_url');
                 }
             }
+            // [SYNC MULTI-DEVICE] Alamat API/worker berikut sebelumnya cuma
+            // tersimpan di localStorage per perangkat (harus diketik ulang
+            // manual tiap ganti/tambah device) -- lihat pasangan push-nya di
+            // window.saveAiWorkerUrl (js/ai.js), window.saveEmasApiKey
+            // (js/forex.js), dan window.saveHargaPanganWorkerUrl
+            // (js/settings.js). Sama seperti google_sheets_url di atas:
+            // string kosong dari cloud berarti "sudah dihapus di device
+            // lain" -> ikut dihapus juga di sini.
+            if (row.key === 'ai_worker_url') {
+                if (typeof parsed === 'string' && parsed) {
+                    localStorage.setItem('sk_ai_worker_url', parsed);
+                } else {
+                    localStorage.removeItem('sk_ai_worker_url');
+                }
+                const workerInp = document.getElementById('aiWorkerUrlInput');
+                if (workerInp) workerInp.value = localStorage.getItem('sk_ai_worker_url') || '';
+                if (typeof window.updateAiWorkerBadge === 'function') window.updateAiWorkerBadge();
+            }
+            if (row.key === 'emas_api_key') {
+                if (typeof parsed === 'string' && parsed) {
+                    localStorage.setItem('sk_emas_api_key', parsed);
+                } else {
+                    localStorage.removeItem('sk_emas_api_key');
+                }
+                const emasInp = document.getElementById('emasApiKeyInput');
+                if (emasInp) emasInp.value = localStorage.getItem('sk_emas_api_key') || '';
+                if (typeof window.updateEmasApiBadge === 'function') window.updateEmasApiBadge();
+                if (typeof window.fetchGoldPrice === 'function') window.fetchGoldPrice();
+            }
+            if (row.key === 'emas_gram') {
+                const gramNum = parseFloat(parsed);
+                if (!isNaN(gramNum) && gramNum > 0) {
+                    localStorage.setItem('sk_emas_gram', String(gramNum));
+                } else {
+                    localStorage.removeItem('sk_emas_gram');
+                }
+                const emasGramInp = document.getElementById('emasGramInput');
+                if (emasGramInp) emasGramInp.value = localStorage.getItem('sk_emas_gram') || '';
+                if (typeof window.updateEmasGramPreview === 'function') window.updateEmasGramPreview();
+            }
+            if (row.key === 'harga_pangan_worker_url') {
+                if (typeof parsed === 'string' && parsed) {
+                    localStorage.setItem('sk_harga_pangan_worker_url', parsed);
+                } else {
+                    localStorage.removeItem('sk_harga_pangan_worker_url');
+                }
+                const hpwInp = document.getElementById('hargaPanganWorkerUrlInput');
+                if (hpwInp) hpwInp.value = localStorage.getItem('sk_harga_pangan_worker_url') || '';
+                if (typeof window.updateHargaPanganWorkerBadge === 'function') window.updateHargaPanganWorkerBadge();
+            }
         }
         if (booksUpdated) {
             window.updateBookSelectDropdown();
