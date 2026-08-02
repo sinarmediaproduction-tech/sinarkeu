@@ -229,7 +229,7 @@ function _hpWriteLocalCache(rows) {
 // Aman dipanggil berkali-kali (mis. tiap buka modal Daftar Belanja) --
 // request ke Supabase/BI cuma benar-benar terjadi kalau cache lokal sudah
 // kadaluarsa.
-window.prefetchHargaPanganReferensi = async function() {
+window.prefetchHargaPanganReferensi = async function(forceProxy) {
     const manualMap = _hkReadManual();
     const mergeManual = function(cache) {
         window.HARGA_PANGAN_COMMODITIES.filter(function(c) { return c.manual; }).forEach(function(c) {
@@ -240,7 +240,7 @@ window.prefetchHargaPanganReferensi = async function() {
     };
 
     const local = _hpReadLocalCache();
-    if (local) {
+    if (local && !forceProxy) {
         window._hargaPanganCache = mergeManual(new Map(local.map(function(r) { return [r.slug, r]; })));
         return window._hargaPanganCache;
     }
@@ -253,8 +253,12 @@ window.prefetchHargaPanganReferensi = async function() {
     const allSlugs = window.HARGA_PANGAN_COMMODITIES.filter(function(c) { return !c.manual; }).map(function(c) { return c.slug; });
     const hasSupabase = typeof window.callSupabaseAPI === 'function' && window.getCloudUrl && window.getCloudUrl();
 
-    // 1) Cek cache Supabase (mungkin sudah ditulis device lain hari ini)
-    if (window.isOnline && window.isOnline() && hasSupabase) {
+    // 1) Cek cache Supabase (mungkin sudah ditulis device lain hari ini).
+    // [FIX SEGARKAN] Kalau forceProxy (tombol "Segarkan dari BI"), LEWATI
+    // cache Supabase ini -- kita mau data SEJATI dari proxy, bukan baris
+    // lama yang mungkin ditulis device lain (atau bertanggal berbeda) dan
+    // membuat missingSlugs kosong sehingga proxy tidak pernah dipanggil.
+    if (!forceProxy && window.isOnline && window.isOnline() && hasSupabase) {
         try {
             const rows = await window.callSupabaseAPI(
                 'harga_pangan_referensi',
@@ -266,9 +270,6 @@ window.prefetchHargaPanganReferensi = async function() {
                 cache.set(r.commodity_slug, {
                     slug: r.commodity_slug, name: r.commodity_name, unit: r.unit,
                     price: Number(r.price), date: r.price_date,
-                    // [WILAYAH] region dari Supabase (boleh null untuk baris
-                    // historis pra-migrasi) -- label wilayah jadi konsisten
-                    // walau data diambil dari cache cloud, bukan live proxy.
                     region: r.region || null
                 });
             });
@@ -277,8 +278,10 @@ window.prefetchHargaPanganReferensi = async function() {
         }
     }
 
-    // 2) Ambil live dari BI (lewat proxy) untuk yang belum ada di cache
-    const missingSlugs = allSlugs.filter(function(s) { return !cache.has(s); });
+    // 2) Ambil live dari proxy (lewat /api/harga-pangan) untuk yang belum ada
+    // di cache. Saat forceProxy, semua slug dianggap "missing" supaya proxy
+    // dipanggil penuh dan menimpa data lama.
+    const missingSlugs = forceProxy ? allSlugs : allSlugs.filter(function(s) { return !cache.has(s); });
     if (missingSlugs.length && window.isOnline && window.isOnline()) {
         try {
             const res = await fetch('/api/harga-pangan?slugs=' + missingSlugs.join(','), { signal: AbortSignal.timeout(10000) });
@@ -292,13 +295,6 @@ window.prefetchHargaPanganReferensi = async function() {
                     if (!hit) return;
                     const meta = window.HARGA_PANGAN_COMMODITIES.find(function(c) { return c.slug === slug; });
                     if (!meta) return;
-                    // [WILAYAH] hit.region diisi proxy (api/harga-pangan.js) sesuai level
-                    // data yang berhasil didapat: 'Kabupaten Magetan' -> fallback
-                    // 'Nasional'. Disimpan di cache lokal (untuk UI) DAN ditulis ke
-                    // kolom `region` di Supabase (lihat sql/add_region_to_harga_pangan.sql)
-                    // supaya label wilayah konsisten juga di histori/tren yang dibaca
-                    // langsung dari tabel itu. Kolom region boleh null untuk baris
-                    // historis pra-migrasi.
                     cache.set(slug, { slug: slug, name: meta.name, unit: meta.unit, price: hit.price, date: hit.date, region: hit.region || null });
                     rowsToUpsert.push({
                         commodity_slug: slug,
@@ -311,7 +307,7 @@ window.prefetchHargaPanganReferensi = async function() {
                 });
 
                 // Tulis balik ke Supabase (fire-and-forget) supaya device lain &
-                // buka lagi nanti hari ini tidak perlu hit BI ulang.
+                // buka lagi nanti hari ini tidak perlu hit proxy ulang.
                 if (rowsToUpsert.length && hasSupabase) {
                     window.callSupabaseAPI(
                         'harga_pangan_referensi', 'POST', rowsToUpsert,
@@ -322,7 +318,7 @@ window.prefetchHargaPanganReferensi = async function() {
                 }
             }
         } catch (e) {
-            console.warn('[HargaPangan] Gagal ambil harga live dari BI:', e.message);
+            console.warn('[HargaPangan] Gagal ambil harga live dari proxy:', e.message);
         }
     }
 
@@ -412,14 +408,18 @@ window.openHargaKomoditasModal = async function() {
     window.openModal('hargaKomoditasModal');
 };
 
-// Paksa tarik ulang harga BI walau cache lokal (6 jam) belum kadaluarsa --
-// dipicu tombol "Segarkan dari BI". Harga manual TIDAK ikut ke-reset di
-// sini (dibaca ulang dari HK_MANUAL_KEY, bukan HP_CACHE_KEY).
+// Paksa tarik ulang harga dari proxy walau cache lokal (6 jam) belum
+// kadaluarsa -- dipicu tombol "Segarkan dari BI". Harga manual TIDAK ikut
+// ke-reset di sini (dibaca ulang dari HK_MANUAL_KEY, bukan HP_CACHE_KEY).
+// [FIX SEGARKAN] prefetch dipanggil dengan forceProxy=true supaya LEWATI
+// cache Supabase (yang mungkin berisi baris lama dari device lain / tanggal
+// beda) dan BENAR-BENAR memanggil proxy untuk menimpa data dengan harga
+// segar level Kabupaten Magetan.
 window.refreshHargaKomoditas = async function() {
     try { localStorage.removeItem(HP_CACHE_KEY); } catch { /* tidak fatal */ }
     window._hargaPanganCache = null;
     await Promise.all([
-        window.prefetchHargaPanganReferensi(),
+        window.prefetchHargaPanganReferensi(true),
         window.fetchHargaPanganHistory(30)
     ]);
     window.renderHargaKomoditasModal();
