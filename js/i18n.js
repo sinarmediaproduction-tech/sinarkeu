@@ -267,6 +267,11 @@
             ai_worker_not_configured: 'Worker URL belum dikonfigurasi.',
             ai_open_settings: 'Setelan → Analisis AI',
 
+            // === HARGA PANGAN WORKER ===
+            harga_pangan_worker_section: 'Proxy Harga Komoditas (Cloudflare Worker)',
+            harga_pangan_worker_hint: 'App di-host di GitHub Pages tidak menjalankan serverless function, jadi proxy harga diambil dari Cloudflare Worker. Isi URL Worker yang sudah Anda deploy, lalu klik Segarkan dari BI di menu Harga Komoditas.',
+            harga_pangan_worker_url_label: 'URL Worker Harga Komoditas',
+
             // === OFFLINE ===
             offline_mode: 'Mode Baca Saja',
             offline_desc: 'Anda sedang offline. Untuk menambah/mengedit/menghapus data, sambungkan ke internet.',
