@@ -4894,3 +4894,196 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 [data-theme="dark"] #bookManagerModal #bookListContainer > div:not(.book-list-item) {
   background: var(--paper);
 }
+
+/* ==================== DAFTAR MENU (jadwal menu masak mingguan) ==================== */
+/* Mengikuti pola visual Belanja Bulanan (.slist-*) supaya konsisten --
+   lihat js/menu-plan.js untuk logikanya. */
+.mplan-intro {
+  font-size: .74rem;
+  color: var(--ink-muted);
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+.mplan-days {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.mplan-day-card {
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper);
+  padding: 12px 14px;
+}
+.mplan-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.mplan-day-label {
+  font-family: var(--font-display);
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.mplan-add-meal-btn {
+  flex: 0 0 auto;
+  border: 1.5px dashed var(--rule);
+  background: none;
+  color: var(--accent);
+  font-size: .68rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+.mplan-add-meal-btn:hover { border-style: solid; background: var(--accent-lt); }
+.mplan-meal-list { display: flex; flex-direction: column; gap: 6px; }
+.mplan-day-empty { font-size: .72rem; color: var(--ink-faint); padding: 4px 0; margin: 0; }
+.mplan-meal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper-warm);
+}
+.mplan-meal-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+  min-width: 0;
+}
+.mplan-meal-waktu {
+  flex: 0 0 auto;
+  font-size: .62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: color-mix(in srgb, var(--accent) 70%, var(--ink));
+  background: var(--accent-lt);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+}
+.mplan-meal-nama { font-size: .8rem; font-weight: 600; color: var(--ink); }
+.mplan-meal-bahan {
+  font-size: .68rem;
+  color: var(--ink-faint);
+  overflow-wrap: anywhere;
+}
+.mplan-meal-trail { flex: 0 0 auto; display: flex; gap: 6px; }
+
+/* ── Kartu Estimasi Belanja Mingguan (di bawah jadwal 7 hari) ── */
+.mplan-estimate-card {
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper);
+  padding: 14px 16px;
+}
+.mplan-estimate-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.mplan-estimate-total {
+  font-size: 1.05rem;
+  color: var(--accent);
+}
+.mplan-estimate-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+.mplan-estimate-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 100px 110px;
+  column-gap: 10px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  font-size: .76rem;
+}
+.mplan-estimate-row:nth-child(odd) { background: var(--row-alt); }
+.mplan-estimate-name { color: var(--ink); overflow-wrap: anywhere; }
+.mplan-estimate-qty {
+  justify-self: end;
+  font-size: .66rem;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+.mplan-estimate-price {
+  justify-self: end;
+  font-family: var(--font-mono);
+  font-size: .74rem;
+  white-space: nowrap;
+  color: var(--ink-muted);
+}
+.mplan-estimate-price.is-ref-price { color: var(--accent); font-style: italic; }
+.mplan-estimate-price.is-unknown { color: var(--ink-faint); font-size: .64rem; font-style: italic; }
+.mplan-estimate-note {
+  font-size: .66rem;
+  color: var(--warning);
+  margin: 6px 0 0;
+}
+
+/* ── Form Tambah/Ubah Menu (modal biasa, menuPlanMealModal) ── */
+.mplan-bahan-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.mplan-bahan-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 74px 96px 26px;
+  gap: 6px;
+  align-items: center;
+}
+.mplan-bahan-row .form-control { margin: 0; }
+.mplan-add-bahan-btn {
+  border: 1.5px dashed var(--rule);
+  background: none;
+  color: var(--accent);
+  font-size: .7rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  width: 100%;
+  transition: border-color .15s ease, background .15s ease;
+}
+.mplan-add-bahan-btn:hover { border-style: solid; background: var(--accent-lt); }
+
+@media (min-width: 641px) {
+  .modal-content.wide.mplan-modal { max-width: 860px; }
+}
+
+/* ── Daftar Menu: optimasi layar hp ── */
+@media (max-width: 640px) {
+  .mplan-day-card { padding: 10px 11px; }
+  .mplan-meal { flex-direction: column; align-items: stretch; }
+  .mplan-meal-trail { justify-content: flex-end; }
+  .mplan-estimate-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 2px;
+  }
+  .mplan-estimate-qty { grid-column: 2; grid-row: 1; }
+  .mplan-estimate-price { grid-column: 2; grid-row: 2; }
+  .mplan-bahan-row {
+    grid-template-columns: minmax(0, 1fr) 64px 26px;
+    grid-template-areas:
+      "name qty del"
+      "unit unit unit";
+    row-gap: 4px;
+  }
+  .mplan-bahan-row .mplan-bahan-name { grid-area: name; }
+  .mplan-bahan-row .mplan-bahan-qty { grid-area: qty; }
+  .mplan-bahan-row .slist-del-btn { grid-area: del; }
+  .mplan-bahan-row .mplan-bahan-unit { grid-area: unit; }
+}

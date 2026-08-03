@@ -1046,6 +1046,17 @@ window.pullAllSettings = async function() {
                     }
                 }
             }
+            if (row.key === 'menu_plan') {
+                if (parsed && typeof parsed === 'object') {
+                    localStorage.setItem('sk_menu_plan_' + row.book_id, JSON.stringify(parsed));
+                    if (row.book_id === window.currentBookId) {
+                        const modalEl = document.getElementById('menuPlanModal');
+                        if (modalEl && modalEl.classList.contains('show') && typeof window.renderMenuPlan === 'function') {
+                            window.renderMenuPlan();
+                        }
+                    }
+                }
+            }
             if (row.key === 'fase_kehidupan') {
                 if (parsed && typeof parsed === 'object') {
                     // [FIX CLOCK SKEW] Sebelumnya perbandingan "versi mana yang

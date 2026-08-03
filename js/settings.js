@@ -172,6 +172,7 @@ window.APP_NAV_BTN_MAP = {
     laporan:   'navReportBtn',
     anggaran:  'navBudgetBtn',
     belanja:   'navShoppingListBtn',
+    menuPlan:  'navMenuPlanBtn',
     anggaranTahunan: 'navAnnualBudgetBtn',
     hargaKomoditas: 'navHargaKomoditasBtn',
     reminder:  'navReminderBtn',

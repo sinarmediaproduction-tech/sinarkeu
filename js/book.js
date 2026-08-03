@@ -442,7 +442,8 @@ window.deleteBook = async function(id) {
 // DUPLICATE_BOOK_SETTINGS_MAP di bawah -- sinkron dengan yang dipakai
 // window.reEncryptAllCloudSettings di js/db.js) -- yaitu Anggaran Bulanan,
 // Anggaran Dasar, Anggaran Tahunan, visibilitas card, Daftar Belanja +
-// pemasukan bulanannya, Fase Kehidupan, dan target bulan Dana Darurat.
+// pemasukan bulanannya, Daftar Menu (jadwal masak mingguan), Fase
+// Kehidupan, dan target bulan Dana Darurat.
 // Transaksi (bisa banyak & makan waktu) BUKAN otomatis disalin -- user
 // ditanya dulu lewat customConfirm.
 //
@@ -464,6 +465,7 @@ window.DUPLICATE_BOOK_SETTINGS_MAP = [
     ['sk_hidden_cards_', 'hidden_cards'],
     ['sk_shopping_list_', 'shopping_list'],
     ['sk_shopping_list_income_', 'shopping_list_income'],
+    ['sk_menu_plan_', 'menu_plan'],
     ['sk_fase_kehidupan_', 'fase_kehidupan'],
     ['sk_emergency_fund_months_', 'emergency_fund_months'],
 ];
