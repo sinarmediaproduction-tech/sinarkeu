@@ -5067,37 +5067,13 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   overflow-wrap: anywhere;
 }
 .mplan-meal-trail { flex: 0 0 auto; display: flex; gap: 6px; }
-/* Tombol Ubah/Hapus per-menu: dibuat class sendiri (bukan .slist-edit-btn/
-   .slist-del-btn generik) supaya bisa dirapikan khusus untuk kartu menu --
-   ikon SVG (bukan karakter teks ✎/✕ yang render-nya beda-beda antar
-   font/OS), border tipis + radius biar terlihat sebagai tombol yang jelas,
-   dan feedback hover/active yang lebih hidup. */
-.mplan-meal-edit-btn,
-.mplan-meal-del-btn {
-  flex: 0 0 auto;
-  width: 26px; height: 26px;
-  border: 1.5px solid var(--rule);
-  background: var(--paper);
-  color: var(--ink-faint);
-  border-radius: var(--radius-sm);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: background .15s ease, color .15s ease, border-color .15s ease, transform .1s ease;
-}
-.mplan-meal-edit-btn svg,
-.mplan-meal-del-btn svg { pointer-events: none; }
-.mplan-meal-edit-btn:hover {
-  background: var(--accent-lt, var(--paper-warm));
-  color: var(--accent, var(--ink));
-  border-color: var(--accent, var(--rule));
-}
-.mplan-meal-del-btn:hover {
-  background: var(--danger-lt);
-  color: var(--danger);
-  border-color: var(--danger);
-}
-.mplan-meal-edit-btn:active,
-.mplan-meal-del-btn:active { transform: scale(.92); }
+/* Isi tombol Ubah/Hapus di kartu menu memakai ikon SVG pensil & tempat
+   sampah (bukan karakter teks ✎/✕) supaya render-nya konsisten di semua
+   font/OS -- style kotaknya sendiri tetap pakai .slist-edit-btn/
+   .slist-del-btn generik (sama seperti Daftar Belanja, dll). */
+.mplan-meal-trail .slist-edit-btn svg,
+.mplan-meal-trail .slist-del-btn svg { pointer-events: none; }
+
 
 /* ── Kartu Estimasi Belanja Mingguan (di bawah jadwal 7 hari) ── */
 .mplan-estimate-card {
@@ -5201,11 +5177,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   .mplan-add-meal-btn-short { display: inline; }
   .mplan-meal-list { gap: 5px; }
   .mplan-meal { flex-direction: column; align-items: stretch; padding: 7px 9px; gap: 6px; }
-  .mplan-meal-trail { justify-content: flex-end; gap: 8px; }
-  /* Sama seperti .slist-edit-btn/.slist-del-btn: target ketuk diperbesar
-     khusus hp (jempol > kursor mouse), ukuran ikon di dalamnya tetap. */
-  .mplan-meal-edit-btn,
-  .mplan-meal-del-btn { width: 30px; height: 30px; }
+  .mplan-meal-trail { justify-content: flex-end; }
   .mplan-estimate-row {
     grid-template-columns: minmax(0, 1fr) auto;
     row-gap: 2px;
