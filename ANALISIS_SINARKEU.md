@@ -1,4 +1,4 @@
-# Analisis SinarKeu — PWA Buku Kas Digital
+# Analisis SinarKeu — PWA Asisten Keuangan & Rumah Tangga
 
 > Dianalisis dari `sinarkeu-main (100).zip` — ekstrak & baca: CLAUDE.md,
 > SECURITY_AUDIT.md, PERBAIKAN_42501.md, crypto.js, ai.js, forex.js,
@@ -6,9 +6,13 @@
 
 ## 1. Apa ini sebenarnya
 
-**SinarKeu** adalah aplikasi pencatatan keuangan pribadi berbasis **PWA**
-(Progressive Web App), berbahasa Indonesia, berjalan murni di browser tanpa
-build step. Ditulis dengan **vanilla JS/HTML/CSS** — tidak ada framework,
+**SinarKeu** adalah aplikasi asisten keuangan & rumah tangga pribadi berbasis
+**PWA** (Progressive Web App), berbahasa Indonesia, berjalan murni di
+browser tanpa build step. Awalnya murni "buku kas digital", tapi cakupannya
+sengaja diperluas ke sisi rumah tangga yang lebih luas (Daftar Belanja +
+Harga Komoditas, Daftar Menu/jadwal masak, pengingat stok bahan pokok) --
+semua tetap terhubung ke keuangan lewat estimasi budget & auto-catat
+pengeluaran. Ditulis dengan **vanilla JS/HTML/CSS** — tidak ada framework,
 tidak ada bundler. Di-deploy sebagai static site (Vercel/Cloudflare
 Pages/GitHub Pages). Skala: **~17.000 baris JS** (29 modul), **~4.900 baris
 CSS**, **18 migrasi SQL**.
@@ -20,7 +24,14 @@ Fitur inti:
   admin/editor/viewer)
 - Sinkronisasi cloud Supabase + mode offline + deteksi konflik
 - AI analysis & Tanya-AI (via Cloudflare Worker milik user sendiri, Groq LLM)
-- Notifikasi Telegram, pengingat pembayaran, daftar belanja
+- Notifikasi Telegram, pengingat pembayaran
+- Daftar Belanja bulanan (checklist + auto-catat pengeluaran saat dicentang)
+  dengan Harga Komoditas referensi otomatis (PIHPS Bank Indonesia)
+- Daftar Menu (jadwal masak mingguan) dengan estimasi belanja yang bisa
+  didorong langsung ke Daftar Belanja
+- Pengingat stok bahan pokok pada Daftar Belanja — interval "beli lagi"
+  dipelajari dari histori pembelian per barang, atau perkiraan umum per
+  jenis barang kalau histori belum cukup
 - Harga emas Antam + kurs USD/IDR, forecast/proyeksi
 - Backup lokal/cloud, snapshot keamanan, migrasi data
 - PWA installable, service worker, dark mode, i18n

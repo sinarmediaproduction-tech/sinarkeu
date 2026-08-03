@@ -4,10 +4,17 @@ Panduan untuk Claude (atau AI assistant lain) saat bekerja di repo ini.
 
 ## Apa ini
 
-**SinarKeu** — PWA pencatatan keuangan pribadi (buku kas digital), single-account
+**SinarKeu** — PWA asisten keuangan & rumah tangga pribadi, single-account
 maupun multi-akun, dengan sinkronisasi cloud opsional ke Supabase. Vanilla
 JS/HTML/CSS, tanpa build step, tanpa framework. Dideploy sebagai static site
 (Vercel/Cloudflare Pages/GitHub Pages).
+
+Cakupan sengaja diperluas dari "buku kas digital" murni ke arah household
+management: selain pencatatan keuangan (transaksi, anggaran, laporan), ada
+Daftar Belanja + Harga Komoditas, Daftar Menu (jadwal masak), dan pengingat
+stok bahan pokok — semuanya masih terhubung ke keuangan lewat estimasi
+budget & auto-catat pengeluaran. Fitur baru yang searah (household
+assistant) boleh diteruskan; bukan penyimpangan dari arah produk.
 
 Bahasa UI: Indonesia (default), dengan dukungan i18n (`js/i18n.js`).
 Bahasa komunikasi dengan user: Indonesia, singkat, langsung ke implementasi.
