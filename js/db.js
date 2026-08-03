@@ -297,6 +297,13 @@ window.pullCryptoSaltCheckStrict = async function(tagOverride) {
 // hasilnya gagal (`undefined` -> falsy) walau push-nya sebenarnya sukses.
 // Pemanggil yang melakukan `await window.pushSetting(...)` sekarang bisa
 // mempercayai nilai return-nya untuk menampilkan status yang akurat ke user.
+// [FIX SYNC KONFIGURASI DEVICE LINTAS-TAG] Key `settings` (book_id='global')
+// yang isinya konfigurasi backend/device -- bukan data pribadi per-identitas
+// -- supaya otomatis tersinkron ke SEMUA device yang connect ke backend
+// Supabase yang sama, terlepas dari beda-tidaknya password lokal/account_tag
+// tiap device. Lihat catatan lengkap di window.pushSetting di bawah.
+window.DEVICE_AGNOSTIC_SETTING_KEYS = new Set(['ai_worker_url', 'harga_pangan_worker_url', 'emas_api_key']);
+
 window.pushSetting = async function(key, value, bookId) {
     if (!window.isOnline()) return false;
     const resolvedBookId = bookId || window.currentBookId;
@@ -324,7 +331,27 @@ window.pushSetting = async function(key, value, bookId) {
     // buku shared, kirim account_tag = null (konsisten dengan baris lama
     // sebelum fitur ini ada) supaya cocok dengan filter OR-null di SEMUA
     // device, siapa pun akun yang pull.
-    const tag = isSharedBook ? null : window.getAccountTag();
+    //
+    // [FIX SYNC KONFIGURASI DEVICE LINTAS-TAG] Beberapa key di tabel
+    // `settings` (lihat DEVICE_AGNOSTIC_SETTING_KEYS) adalah konfigurasi
+    // backend/device -- URL Cloudflare Worker untuk Analisis AI & Harga
+    // Pangan, API key emas pihak ketiga -- BUKAN data pribadi yang perlu
+    // dipisah per-identitas seperti budget/buku. Kalau key-key ini tetap
+    // di-tag dengan account_tag (diturunkan dari salt password lokal
+    // perangkat), device lain yang login ke backend Supabase SAMA tapi
+    // punya salt/password lokal BERBEDA (skenario umum: gabung lewat login
+    // Buku Bersama/Supabase Auth di HP baru, bukan mewarisi salt yang
+    // sama persis) tidak akan pernah melihat baris ini -- filter OR-null
+    // di window.tagOrFilter cuma cocok untuk tag SAMA atau tag NULL, dan
+    // baris ber-tag device A tidak NULL dan tidak sama dengan tag device B.
+    // Gejalanya: "sudah login akun yang sama, tapi setelan AI/Harga Pangan
+    // tetap kosong di HP baru" walau data buku/transaksi (yang jalur
+    // bacanya beda) muncul normal. Solusi sama seperti buku bersama di
+    // atas: kirim account_tag = null supaya key-key ini otomatis kebaca
+    // semua device yang connect ke backend yang sama, siapa pun/apa pun
+    // password lokalnya.
+    const tag = (isSharedBook || window.DEVICE_AGNOSTIC_SETTING_KEYS.has(key)) ? null : window.getAccountTag();
+
     const payload = [{
         book_id: resolvedBookId,
         key: key,
