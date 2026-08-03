@@ -269,8 +269,6 @@
 
             // === HARGA PANGAN WORKER ===
             harga_pangan_worker_section: 'Proxy Harga Komoditas (Cloudflare Worker)',
-            harga_pangan_worker_hint: 'App di-host di GitHub Pages tidak menjalankan serverless function, jadi proxy harga diambil dari Cloudflare Worker. Isi URL Worker yang sudah Anda deploy, lalu klik Segarkan dari BI di menu Harga Komoditas.',
-            harga_pangan_worker_url_label: 'URL Worker Harga Komoditas',
 
             // === OFFLINE ===
             offline_mode: 'Mode Baca Saja',

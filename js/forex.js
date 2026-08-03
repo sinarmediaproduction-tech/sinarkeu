@@ -1,16 +1,23 @@
 // ==================== FOREX & GOLD ====================
-// Free tier emas.maulanar.my.id = 20 hit/bulan.
+// Free tier emas.maulanar.my.id = 20 hit/bulan, TAPI dibatasi sendiri
+// (EMAS_QUOTA_LIMIT) ke 10/bulan sebagai buffer keamanan supaya tidak
+// pernah mepet/kehabisan kuota upstream -- lihat pengecekan quota SEBELUM
+// fetch di window.fetchGoldPrice di bawah (bukan cuma dicatat/ditampilkan
+// setelah request jalan, tapi benar-benar MEMBLOKIR request begitu limit
+// lokal tercapai).
 // EMAS_CACHE_HOURS=44 -> maksimal 17 panggilan/bulan (floor(31*24/44)+1=17
 // di bulan 31 hari, kasus terburuk -- bulan lebih pendek otomatis lebih
 // sedikit lagi). Sengaja pas di 17, bukan cuma "sekitar", karena refresh
 // manual sudah dihapus (lihat goldRefreshBtn di bawah) jadi ini sekarang
 // SATU-SATUNYA sumber hit ke API, tidak ada lagi buffer kuota yang perlu
-// disisakan untuk tombol refresh.
+// disisakan untuk tombol refresh. Batas lokal 10/bulan di bawah cache-limit
+// 17/bulan ini, jadi cache 44 jam tetap efektif sebagai pengurang jumlah
+// hit sebelum limit 10 itu sendiri yang menghentikan permintaan lebih lanjut.
 // Harga Antam sendiri biasanya cuma update 1x/hari, jadi cache ~44 jam masih relevan.
 const EMAS_CACHE_HOURS = 44;
 const EMAS_CACHE_KEY   = 'sk_emas_price_cache';
 const EMAS_QUOTA_KEY   = 'sk_emas_quota';
-const EMAS_QUOTA_LIMIT = 20;
+const EMAS_QUOTA_LIMIT = 10;
 
 function _emasCurrentMonthKey() {
     const now = new Date();
@@ -213,6 +220,24 @@ window.fetchGoldPrice = async function() {
             return;
         }
 
+        // [BATAS KUOTA LOKAL] Sebelum request ini cuma dicatat SETELAH jalan
+        // (lewat _emasQuotaTrack di masing-masing cabang respons di bawah) --
+        // tidak pernah benar-benar MENCEGAH request baru begitu limit lokal
+        // (EMAS_QUOTA_LIMIT, sekarang 10/bulan) tercapai, cuma menunggu
+        // upstream menolak lewat 429. Cek dulu di sini SEBELUM fetch supaya
+        // begitu kuota bulan ini habis, tidak ada lagi hit baru ke server --
+        // langsung pakai cache lama (walau kadaluarsa) kalau ada, atau jatuh
+        // ke estimasi spot di bawah kalau tidak ada cache sama sekali.
+        if (_emasQuotaGet() >= EMAS_QUOTA_LIMIT) {
+            window.updateEmasQuotaDisplay();
+            srcEl.textContent = `Kuota ${EMAS_QUOTA_LIMIT}x/bulan sudah tercapai, beralih ke ${cache ? 'cache lama' : 'estimasi spot'}`;
+            srcEl.style.color = '#A13A3A';
+            if (cache) {
+                priceEl.textContent = 'Rp ' + Math.round(cache.pricePerGram).toLocaleString('id-ID');
+                window.updateGoldValueDisplay(cache.pricePerGram);
+                return;
+            }
+        } else {
         try {
             const res = await fetch('/api/emas', {
                 headers: { 'X-API-Key': emasApiKey },
@@ -274,6 +299,7 @@ window.fetchGoldPrice = async function() {
         } catch (e) {
             srcEl.textContent = 'Gagal hubungi API harga emas, beralih ke estimasi spot';
             srcEl.style.color = '#9C7A2E';
+        }
         }
     }
     const apis = [
