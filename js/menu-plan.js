@@ -3,7 +3,11 @@
 // menu punya daftar bahan (nama, qty, satuan). Semua bahan dari seluruh
 // menu minggu itu otomatis dikumpulkan jadi satu "Estimasi Belanja
 // Mingguan" yang dicocokkan ke harga referensi komoditas (js/harga-pangan.js,
-// sama seperti Daftar Belanja) untuk memperkirakan total belanja.
+// sama seperti Daftar Belanja) untuk memperkirakan total belanja. Tiap
+// kartu hari juga menampilkan estimasi belanja HARIAN-nya sendiri (badge
+// "≈ Rp ..." di sebelah nama hari) -- dihitung dengan cara yang sama,
+// tapi dibatasi ke bahan menu hari itu saja (lihat
+// window.aggregateMenuPlanBahanForDay & window._mplanEstimateDayTotal).
 //
 // Tersimpan lokal (localStorage) untuk akses instan/offline, DAN
 // disinkronkan ke Supabase (tabel `settings`, key 'menu_plan', per book_id)
@@ -139,8 +143,16 @@ window.renderMenuPlan = function() {
         container.innerHTML = window.MENU_PLAN_DAYS.map(function(d) {
             const meals = data[d.key] || [];
             const isToday = d.key === todayKey;
+            const isEmpty = meals.length === 0;
+            // Hari tanpa menu TIDAK lagi menampilkan paragraf "Belum ada
+            // menu." + wrapper .mplan-meal-list kosong -- di layar hp,
+            // kartu-kartu kosong ini (biasanya mayoritas di awal minggu)
+            // paling banyak makan ruang vertikal tanpa info baru (tombol
+            // "+ Tambah Menu" di header sudah cukup menjelaskan kartu ini
+            // masih kosong). Class `is-empty` dipakai CSS mobile untuk
+            // memangkas padding bawah kartu kosong lebih jauh.
             const mealsHtml = meals.length
-                ? meals.map(function(m) {
+                ? `<div class="mplan-meal-list">${meals.map(function(m) {
                     const bahanSummary = (m.bahan || []).map(function(b) {
                         return window.escapeHtml(b.name) + (b.qty ? ` (${window._mplanFormatQty(b.qty)} ${window.escapeHtml(b.unit || '')})` : '');
                     }).join(', ');
@@ -157,15 +169,23 @@ window.renderMenuPlan = function() {
                                 <button type="button" class="slist-del-btn" title="Hapus" onclick="window.deleteMenuPlanMeal('${d.key}','${m.id}')">✕</button>
                             </div>`}
                         </div>`;
-                }).join('')
-                : '<p class="mplan-day-empty">Belum ada menu.</p>';
+                }).join('')}</div>`
+                : '';
+            const dayEstimate = window._mplanEstimateDayTotal(data, d.key);
+            let dayEstimateHtml = '';
+            if (dayEstimate.hasIngredients) {
+                const title = dayEstimate.unmatchedCount
+                    ? `${dayEstimate.unmatchedCount} bahan hari ini belum punya harga acuan komoditas -- belum termasuk di angka ini.`
+                    : 'Perkiraan belanja hari ini berdasarkan harga referensi komoditas.';
+                dayEstimateHtml = `<span class="mplan-day-estimate" title="${window.escapeHtml(title)}">≈ ${window.rp(dayEstimate.total)}${dayEstimate.unmatchedCount ? '*' : ''}</span>`;
+            }
             return `
-                <div class="mplan-day-card${isToday ? ' is-today' : ''}"${isToday ? ' id="mplanTodayCard"' : ''}>
+                <div class="mplan-day-card${isToday ? ' is-today' : ''}${isEmpty ? ' is-empty' : ''}"${isToday ? ' id="mplanTodayCard"' : ''}>
                     <div class="mplan-day-header">
-                        <span class="mplan-day-label">${d.label}${isToday ? '<span class="mplan-today-badge">Hari Ini</span>' : ''}</span>
-                        ${isViewer ? '' : `<button type="button" class="mplan-add-meal-btn" onclick="window.openAddMenuPlanMealModal('${d.key}')">+ Tambah Menu</button>`}
+                        <span class="mplan-day-label">${d.label}${isToday ? '<span class="mplan-today-badge">Hari Ini</span>' : ''}${dayEstimateHtml}</span>
+                        ${isViewer ? '' : `<button type="button" class="mplan-add-meal-btn" title="Tambah Menu" onclick="window.openAddMenuPlanMealModal('${d.key}')">+ <span class="mplan-add-meal-btn-full">Tambah Menu</span><span class="mplan-add-meal-btn-short">Menu</span></button>`}
                     </div>
-                    <div class="mplan-meal-list">${mealsHtml}</div>
+                    ${mealsHtml}
                 </div>`;
         }).join('');
     }
@@ -224,6 +244,49 @@ window._mplanEstimateIngredient = function(name, qty, unit) {
     }
     if (normQty === null) return { matched: true, ref: ref, subtotal: null, unitMismatch: true };
     return { matched: true, ref: ref, subtotal: normQty * ref.price, unitMismatch: false };
+};
+
+// Sama seperti aggregateMenuPlanBahan, tapi dibatasi ke SATU hari saja --
+// dipakai untuk estimasi belanja per hari (lihat window._mplanEstimateDayTotal
+// & badge di kartu hari, renderMenuPlan). Menjumlahkan qty bahan yang sama
+// dalam hari itu (mis. dipakai di menu sarapan & makan malam sekaligus).
+window.aggregateMenuPlanBahanForDay = function(data, dayKey) {
+    const map = new Map();
+    (data[dayKey] || []).forEach(function(meal) {
+        (meal.bahan || []).forEach(function(b) {
+            const name = (b.name || '').trim();
+            if (!name) return;
+            const unit = (b.unit || '').trim();
+            const qty = Number(b.qty) || 0;
+            const key = name.toLowerCase() + '|' + unit.toLowerCase();
+            if (map.has(key)) {
+                map.get(key).qty += qty;
+            } else {
+                map.set(key, { name: name, unit: unit, qty: qty });
+            }
+        });
+    });
+    return Array.from(map.values()).sort(function(a, b) { return a.name.localeCompare(b.name); });
+};
+
+// Total estimasi belanja untuk satu hari, pakai harga referensi komoditas
+// yang sama dengan estimasi mingguan (window._mplanEstimateIngredient).
+// unmatchedCount = jumlah bahan hari itu yang belum bisa dihitung otomatis
+// (belum ada harga acuan, atau satuannya beda) -- dipakai untuk tooltip
+// supaya user tahu angka yang ditampilkan belum tentu lengkap.
+window._mplanEstimateDayTotal = function(data, dayKey) {
+    const aggregated = window.aggregateMenuPlanBahanForDay(data, dayKey);
+    let total = 0;
+    let unmatchedCount = 0;
+    aggregated.forEach(function(item) {
+        const est = window._mplanEstimateIngredient(item.name, item.qty, item.unit);
+        if (est.matched && est.subtotal !== null) {
+            total += est.subtotal;
+        } else {
+            unmatchedCount++;
+        }
+    });
+    return { total: total, unmatchedCount: unmatchedCount, hasIngredients: aggregated.length > 0 };
 };
 
 window.renderMenuPlanEstimate = function(data) {

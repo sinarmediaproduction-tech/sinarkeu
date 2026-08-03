@@ -4992,6 +4992,16 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   padding: 2px 8px;
   vertical-align: middle;
 }
+.mplan-day-estimate {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: .64rem;
+  font-weight: 600;
+  font-style: italic;
+  color: var(--ink-faint);
+  vertical-align: middle;
+  cursor: help;
+}
 .mplan-day-header {
   display: flex;
   align-items: center;
@@ -5020,8 +5030,8 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   transition: border-color .15s ease, background .15s ease;
 }
 .mplan-add-meal-btn:hover { border-style: solid; background: var(--accent-lt); }
+.mplan-add-meal-btn-short { display: none; }
 .mplan-meal-list { display: flex; flex-direction: column; gap: 6px; }
-.mplan-day-empty { font-size: .72rem; color: var(--ink-faint); padding: 4px 0; margin: 0; }
 .mplan-meal {
   display: flex;
   align-items: center;
@@ -5142,8 +5152,24 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 
 /* ── Daftar Menu: optimasi layar hp ── */
 @media (max-width: 640px) {
-  .mplan-day-card { padding: 10px 11px; }
-  .mplan-meal { flex-direction: column; align-items: stretch; }
+  /* Jarak antar kartu hari & padding dalam kartu dipadatkan -- di layar
+     sempit, 7 kartu berturutan jadi berat kalau tiap kartu masih pakai
+     jarak versi desktop. */
+  .mplan-days { gap: 7px; }
+  .mplan-day-card { padding: 9px 10px; }
+  .mplan-day-header { margin-bottom: 6px; flex-wrap: wrap; }
+  /* Kartu hari yang belum ada menunya (class `is-empty`, lihat
+     js/menu-plan.js) tidak lagi punya konten di bawah header -- hilangkan
+     margin-bottom header supaya tinggi kartu kosong menyusut ke ukuran
+     minimal, bukan tetap menyisakan jarak untuk konten yang tidak ada. */
+  .mplan-day-card.is-empty .mplan-day-header { margin-bottom: 0; }
+  /* Tombol "+ Tambah Menu" jadi "+ Menu" di layar sempit supaya muat
+     sebaris dengan label hari + badge tanpa household ke baris baru. */
+  .mplan-add-meal-btn { padding: 4px 9px; font-size: .64rem; }
+  .mplan-add-meal-btn-full { display: none; }
+  .mplan-add-meal-btn-short { display: inline; }
+  .mplan-meal-list { gap: 5px; }
+  .mplan-meal { flex-direction: column; align-items: stretch; padding: 7px 9px; gap: 6px; }
   .mplan-meal-trail { justify-content: flex-end; }
   .mplan-estimate-row {
     grid-template-columns: minmax(0, 1fr) auto;
