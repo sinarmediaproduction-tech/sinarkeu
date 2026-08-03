@@ -4916,6 +4916,26 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   background: var(--paper);
   padding: 12px 14px;
 }
+/* Kartu hari ini disorot -- border & sedikit tint aksen supaya langsung
+   kelihatan mana yang perlu dimasak hari ini di antara 7 kartu. */
+.mplan-day-card.is-today {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 4%, var(--paper));
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.mplan-today-badge {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: var(--accent);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  vertical-align: middle;
+}
 .mplan-day-header {
   display: flex;
   align-items: center;

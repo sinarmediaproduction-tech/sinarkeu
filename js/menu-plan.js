@@ -28,6 +28,14 @@ window.MENU_PLAN_WAKTU = ['Sarapan', 'Makan Siang', 'Makan Malam', 'Camilan'];
 // komoditas acuan (mis. 'bungkus' utk Mie Instan, 'tabung' utk Gas Melon).
 window.MENU_PLAN_UNITS = ['kg', 'gram', 'liter', 'ml', 'butir', 'buah', 'ikat', 'siung', 'bungkus', 'kaleng', 'dus', 'sdm', 'sdt', 'secukupnya'];
 
+// Date.getDay(): 0=Minggu, 1=Senin, ..., 6=Sabtu -- dipetakan ke key hari
+// yang dipakai window.MENU_PLAN_DAYS supaya kartu hari ini bisa disorot
+// di renderMenuPlan().
+window._mplanTodayKey = function() {
+    const map = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+    return map[new Date().getDay()];
+};
+
 window.getMenuPlan = function(bookId) {
     const raw = localStorage.getItem('sk_menu_plan_' + (bookId || window.currentBookId));
     let data = null;
@@ -80,6 +88,14 @@ window.openMenuPlanView = function() {
     window.runAfterNextPaint(function() {
         const modal = document.getElementById('menuPlanModal');
         if (modal && modal.classList.contains('show')) window.renderMenuPlan();
+        // Langsung scroll ke kartu hari ini supaya jawaban "harus masak apa
+        // hari ini" kelihatan tanpa perlu cari-cari manual di antara 7 hari.
+        // setTimeout kecil supaya menunggu layout halaman full-page selesai
+        // (transisi buka halaman + render kartu) sebelum scrollIntoView.
+        setTimeout(function() {
+            const todayCard = document.getElementById('mplanTodayCard');
+            if (todayCard) todayCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
     });
 
     // Sama seperti Daftar Belanja: tarik data terbaru dari cloud diam-diam
@@ -119,8 +135,10 @@ window.renderMenuPlan = function() {
     const container = document.getElementById('mplanDaysContainer');
     if (container) {
         const isViewer = window._mplanIsViewer();
+        const todayKey = window._mplanTodayKey();
         container.innerHTML = window.MENU_PLAN_DAYS.map(function(d) {
             const meals = data[d.key] || [];
+            const isToday = d.key === todayKey;
             const mealsHtml = meals.length
                 ? meals.map(function(m) {
                     const bahanSummary = (m.bahan || []).map(function(b) {
@@ -142,9 +160,9 @@ window.renderMenuPlan = function() {
                 }).join('')
                 : '<p class="mplan-day-empty">Belum ada menu.</p>';
             return `
-                <div class="mplan-day-card">
+                <div class="mplan-day-card${isToday ? ' is-today' : ''}"${isToday ? ' id="mplanTodayCard"' : ''}>
                     <div class="mplan-day-header">
-                        <span class="mplan-day-label">${d.label}</span>
+                        <span class="mplan-day-label">${d.label}${isToday ? '<span class="mplan-today-badge">Hari Ini</span>' : ''}</span>
                         ${isViewer ? '' : `<button type="button" class="mplan-add-meal-btn" onclick="window.openAddMenuPlanMealModal('${d.key}')">+ Tambah Menu</button>`}
                     </div>
                     <div class="mplan-meal-list">${mealsHtml}</div>

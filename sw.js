@@ -14,7 +14,7 @@
      kepakai duluan, dengan fallback ke cache saat offline.
    ============================================================ */
 
-const CACHE_VERSION = 'v30';
+const CACHE_VERSION = 'v31';
 const CACHE_NAME = `sinarkeu-shell-${CACHE_VERSION}`;
 
 const APP_SHELL = [
