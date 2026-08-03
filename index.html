@@ -1345,6 +1345,7 @@ alter table public.settings
 <div id="shoppingListModal" class="modal fullview-modal">
     <div class="modal-content wide slist-modal">
         <div class="modal-header"><h3>Daftar Belanja</h3><button class="modal-close" onclick="window.openMobileDrawer()" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button></div>
+        <div id="slistStapleReminders" class="slist-staple-reminders-wrap" style="display:none;"></div>
         <div class="slist-summary-grid">
             <div class="slist-summary-card">
                 <span class="slist-summary-label">Anggaran Bulanan</span>
@@ -1512,6 +1513,7 @@ alter table public.settings
             <div class="form-group"><label>Qty</label><input type="number" id="slistEditQty" class="form-control" min="1" step="1" inputmode="numeric"></div>
             <div class="form-group"><label>Harga satuan</label><input type="text" id="slistEditPrice" class="form-control" oninput="window.formatRupiah(this)"></div>
             <div class="form-group"><label>Kategori</label><select id="slistEditCategory" class="form-control"></select></div>
+            <div class="form-group form-group-checkbox"><label class="checkbox-label"><input type="checkbox" id="slistEditIsStaple"> Bahan pokok (ingatkan kalau sudah waktunya beli lagi)</label></div>
             <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('editShoppingListItemModal')">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div>
         </form>
     </div>
@@ -1526,6 +1528,7 @@ alter table public.settings
             <div class="form-group"><label>Qty</label><input type="number" id="slistNewQty" class="form-control" placeholder="Qty" min="1" step="1" inputmode="numeric"></div>
             <div class="form-group"><label>Harga satuan</label><input type="text" id="slistNewPrice" class="form-control" placeholder="Harga satuan" oninput="window.formatRupiah(this)"></div>
             <div class="form-group"><label>Kategori</label><select id="slistNewCategory" class="form-control"></select></div>
+            <div class="form-group form-group-checkbox"><label class="checkbox-label"><input type="checkbox" id="slistNewIsStaple"> Bahan pokok (ingatkan kalau sudah waktunya beli lagi)</label></div>
             <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('addShoppingListItemModal')">Tutup</button><button type="submit" class="btn btn-primary">Tambah Barang</button></div>
         </form>
     </div>

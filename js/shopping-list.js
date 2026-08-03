@@ -128,10 +128,12 @@ window.openAddShoppingListItemModal = function() {
     const qtyInput = document.getElementById('slistNewQty');
     const priceInput = document.getElementById('slistNewPrice');
     const categorySelect = document.getElementById('slistNewCategory');
+    const staleCheckbox = document.getElementById('slistNewIsStaple');
     if (nameInput) nameInput.value = '';
     if (qtyInput) qtyInput.value = '';
     if (priceInput) priceInput.value = '';
     if (categorySelect) categorySelect.value = '';
+    if (staleCheckbox) staleCheckbox.checked = false;
     window.openModal('addShoppingListItemModal');
     // Fokus ke field nama begitu pop up terbuka supaya user bisa langsung
     // ketik tanpa ketuk lagi -- tunda dikit supaya tidak bentrok dengan
@@ -300,6 +302,7 @@ window.renderShoppingList = function() {
         window._updateShoppingListSummary(items);
         window._renderShoppingListCategoryBreakdown(items);
         window._renderShoppingListForecast(items);
+        window._renderShoppingListStapleReminders(items);
         return;
     }
 
@@ -354,7 +357,7 @@ window.renderShoppingList = function() {
         return `
         <div class="slist-item${item.done ? ' done' : ''}" data-id="${window.escapeHtml(item.id)}">
             <input type="checkbox" class="slist-checkbox" ${item.done ? 'checked' : ''} ${isViewer ? 'disabled' : ''} onchange="window.toggleShoppingListItem('${window.escapeHtml(item.id)}')">
-            <span class="slist-name"><span class="slist-item-no">${itemNo}.</span>${window.escapeHtml(item.name)}</span>
+            <span class="slist-name"><span class="slist-item-no">${itemNo}.</span>${window.escapeHtml(item.name)}${window._slistStapleBadgeHtml(item)}</span>
             <span class="slist-qty">${qtyText}</span>
             <span class="slist-cat-badge"${catStyleAttr}>${catText}</span>
             <span class="${unitPriceClass}"${unitPriceTitle}>${unitPriceText}</span>
@@ -368,6 +371,7 @@ window.renderShoppingList = function() {
     window._renderShoppingListCategoryBreakdown(items);
     window._renderShoppingListBudgetWarnings(items);
     window._renderShoppingListForecast(items);
+    window._renderShoppingListStapleReminders(items);
 };
 
 // ==================== PROYEKSI KEUANGAN ====================
@@ -464,6 +468,127 @@ window._renderShoppingListForecast = function(items) {
             noteEl.innerText = 'Perkiraan dana terkumpul dalam 12 bulan ke depan kalau pemasukan & belanja bulanan ini konsisten, sebagai acuan kasar untuk menutup kebutuhan tahunan.';
         }
     }
+};
+
+// ==================== PENGINGAT STOK BAHAN POKOK ====================
+// Barang yang ditandai `isStaple` (checkbox "Bahan pokok" di form tambah/
+// ubah) diingatkan otomatis kalau sudah waktunya beli lagi -- TANPA tabel
+// atau key sync baru: cukup satu field tambahan pada item yang sudah
+// tersinkron lewat key 'shopping_list' yang ada (lihat window.saveShoppingList
+// di atas), dan histori pembelian diambil dari window.txs yang sudah ada
+// (setiap centang barang bikin transaksi dengan `shoppingListItemId` --
+// lihat window.toggleShoppingListItem di bawah).
+//
+// Interval "beli lagi" dihitung dua cara:
+// 1. Kalau item sudah punya >=2 transaksi tercatat, interval dipelajari
+//    dari rata-rata jarak antar pembelian sungguhan (learned=true).
+// 2. Kalau belum, jatuh balik ke tabel perkiraan umum per jenis barang
+//    (mis. beras/gas ~30 hari, telur/susu ~14 hari) lewat pencocokan kata
+//    kunci nama barang -- fallback generik 30 hari kalau tidak cocok satupun.
+window.SK_STAPLE_DEFAULT_INTERVALS = [
+    { keywords: ['beras'], days: 30 },
+    { keywords: ['minyak goreng', 'minyak'], days: 30 },
+    { keywords: ['gas', 'lpg', 'elpiji'], days: 30 },
+    { keywords: ['gula'], days: 30 },
+    { keywords: ['garam'], days: 60 },
+    { keywords: ['telur'], days: 14 },
+    { keywords: ['susu'], days: 14 },
+    { keywords: ['galon', 'air minum', 'aqua'], days: 14 },
+    { keywords: ['kopi'], days: 21 },
+    { keywords: ['teh'], days: 30 },
+    { keywords: ['sabun', 'shampo', 'sampo'], days: 30 },
+    { keywords: ['deterjen', 'cucian'], days: 30 },
+    { keywords: ['pasta gigi', 'odol'], days: 45 },
+    { keywords: ['tisu'], days: 21 },
+];
+
+window._slistDefaultIntervalForName = function(name) {
+    const n = (name || '').toLowerCase();
+    for (const rule of window.SK_STAPLE_DEFAULT_INTERVALS) {
+        if (rule.keywords.some(k => n.includes(k))) return rule.days;
+    }
+    return 30; // fallback generik kalau nama barang tidak cocok kata kunci manapun
+};
+
+// Ambil tanggal-tanggal pembelian sungguhan untuk satu barang, dari
+// transaksi yang dibuat otomatis oleh toggleShoppingListItem (ditandai
+// shoppingListItemId). Diurutkan lama -> baru.
+window._slistGetPurchaseHistory = function(itemId) {
+    if (!Array.isArray(window.txs)) return [];
+    return window.txs
+        .filter(t => t.shoppingListItemId === itemId && t.type === 'expense')
+        .map(t => new Date(t.date))
+        .filter(d => !isNaN(d))
+        .sort((a, b) => a - b);
+};
+
+// Hitung status pengingat untuk satu item staple. Return null kalau item
+// bukan bahan pokok (tidak perlu dihitung sama sekali).
+window._slistComputeRestockInfo = function(item) {
+    if (!item || !item.isStaple) return null;
+    const history = window._slistGetPurchaseHistory(item.id);
+    let intervalDays = window._slistDefaultIntervalForName(item.name);
+    let learned = false;
+
+    if (history.length >= 2) {
+        const gaps = [];
+        for (let i = 1; i < history.length; i++) {
+            gaps.push((history[i] - history[i - 1]) / 86400000);
+        }
+        const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+        // Jarak rata-rata < 1 hari (mis. data uji/dobel input) diabaikan --
+        // tidak masuk akal jadi interval, tetap pakai perkiraan umum.
+        if (avgGap >= 1) { intervalDays = Math.round(avgGap); learned = true; }
+    }
+
+    if (!history.length) {
+        return { hasHistory: false, intervalDays, learned: false, daysSinceLast: null, dueInDays: null, isDue: false };
+    }
+
+    const lastDate = history[history.length - 1];
+    const daysSinceLast = Math.floor((new Date() - lastDate) / 86400000);
+    const dueInDays = intervalDays - daysSinceLast;
+    return { hasHistory: true, intervalDays, learned, daysSinceLast, dueInDays, isDue: dueInDays <= 0, lastDate };
+};
+
+// Badge kecil di baris barang (dipanggil dari renderShoppingList).
+window._slistStapleBadgeHtml = function(item) {
+    if (!item.isStaple) return '';
+    const info = window._slistComputeRestockInfo(item);
+    if (!info) return '';
+    if (!info.hasHistory) {
+        return `<span class="slist-staple-badge is-pending" title="Bahan pokok -- pengingat aktif otomatis setelah pembelian pertama tercatat (centang barang ini saat dibeli).">📦</span>`;
+    }
+    const basis = info.learned ? 'histori pembelian barang ini' : 'perkiraan umum untuk jenis barang ini';
+    if (info.isDue) {
+        const lewat = Math.abs(info.dueInDays);
+        const lewatText = lewat > 0 ? ` (${lewat} hari lewat dari perkiraan)` : '';
+        return `<span class="slist-staple-badge is-due" title="Berdasarkan ${basis}: diperkirakan tiap ${info.intervalDays} hari sekali beli${lewatText}.">🔔 Beli lagi</span>`;
+    }
+    if (info.dueInDays <= 5) {
+        return `<span class="slist-staple-badge is-soon" title="Berdasarkan ${basis}: diperkirakan tiap ${info.intervalDays} hari sekali beli.">⏳ ${info.dueInDays} hari lagi</span>`;
+    }
+    return `<span class="slist-staple-badge is-ok" title="Stok diperkirakan masih cukup ~${info.dueInDays} hari lagi (berdasarkan ${basis}).">📦</span>`;
+};
+
+// Banner ringkasan di atas daftar -- supaya bahan pokok yang sudah waktunya
+// dibeli lagi tidak cuma kelihatan kalau user kebetulan scroll ke barisnya.
+window._renderShoppingListStapleReminders = function(items) {
+    const el = document.getElementById('slistStapleReminders');
+    if (!el) return;
+    const due = (items || [])
+        .filter(i => i.isStaple)
+        .map(i => ({ item: i, info: window._slistComputeRestockInfo(i) }))
+        .filter(x => x.info && x.info.isDue);
+
+    if (!due.length) {
+        el.style.display = 'none';
+        el.innerHTML = '';
+        return;
+    }
+    const names = due.map(x => window.escapeHtml(x.item.name)).join(', ');
+    el.style.display = '';
+    el.innerHTML = `<div class="slist-staple-banner">🔔 Bahan pokok sudah waktunya dibeli lagi: <strong>${names}</strong></div>`;
 };
 
 // ==================== PERINGATAN ANGGARAN ====================
@@ -694,7 +819,8 @@ window.addShoppingListItem = function(e) {
         priceSource: rawPrice ? 'manual' : (ref ? 'ref' : undefined),
         priceRefDate: ref ? ref.date : undefined,
         category: categorySelect ? categorySelect.value : '',
-        done: false
+        done: false,
+        isStaple: !!(document.getElementById('slistNewIsStaple') && document.getElementById('slistNewIsStaple').checked)
     });
     const addedCategory = categorySelect ? categorySelect.value : '';
     window.saveShoppingList(window.currentBookId, items);
@@ -813,9 +939,15 @@ window.toggleShoppingListItem = async function(id) {
 
 window.deleteShoppingListItem = function(id) {
     if (window._slistBlockIfViewer()) return;
-    const items = window.getShoppingList(window.currentBookId).filter(i => i.id !== id);
+    const all = window.getShoppingList(window.currentBookId);
+    const target = all.find(i => i.id === id);
+    const wasStaple = !!(target && target.isStaple);
+    const items = all.filter(i => i.id !== id);
     window.saveShoppingList(window.currentBookId, items);
     window.renderShoppingList();
+    if (wasStaple) {
+        window.showToast && window.showToast('Barang bahan pokok dihapus -- pengingat stoknya juga tidak berlaku lagi untuk barang ini.', 'warning');
+    }
 };
 
 // Buka modal edit, isi form dengan data barang yang sudah ada. Dropdown
@@ -838,6 +970,8 @@ window.openEditShoppingListItemModal = function(id) {
     document.getElementById('slistEditQty').value = (Number(item.qty) > 0) ? item.qty : '';
     const priceInput = document.getElementById('slistEditPrice');
     priceInput.value = item.price ? window.rp(item.price).replace('Rp', '').trim() : '';
+    const staleCheckbox = document.getElementById('slistEditIsStaple');
+    if (staleCheckbox) staleCheckbox.checked = !!item.isStaple;
 
     window.openModal('editShoppingListItemModal');
 };
@@ -869,6 +1003,8 @@ window.handleEditShoppingListItemSubmit = function(e) {
     item.priceSource = rawPrice ? 'manual' : (ref ? 'ref' : undefined);
     item.priceRefDate = ref ? ref.date : undefined;
     item.category = category;
+    const staleCheckboxEl = document.getElementById('slistEditIsStaple');
+    item.isStaple = !!(staleCheckboxEl && staleCheckboxEl.checked);
 
     window.saveShoppingList(window.currentBookId, items);
     window.closeModal('editShoppingListItemModal');
@@ -889,7 +1025,13 @@ window.resetShoppingListChecks = function() {
 window.clearBoughtShoppingListItems = function() {
     if (window._slistBlockIfViewer()) return;
     const items = window.getShoppingList(window.currentBookId);
-    const remaining = items.filter(i => !i.done);
+    // Barang bahan pokok (isStaple) sengaja TIDAK ikut dihapus di sini
+    // meskipun sudah dicentang -- kalau ikut terhapus, histori pembeliannya
+    // (dilacak lewat shoppingListItemId di window.txs) putus dan pengingat
+    // "waktunya beli lagi" jadi tidak berguna karena baris pengingatnya
+    // sendiri lenyap. Barang non-staple yang sudah dibeli tetap dihapus
+    // seperti sebelumnya.
+    const remaining = items.filter(i => !i.done || i.isStaple);
     if (remaining.length === items.length) {
         window.showToast('Belum ada barang yang dicentang sebagai sudah dibeli.', 'warning');
         return;

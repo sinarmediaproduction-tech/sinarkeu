@@ -2714,6 +2714,62 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   padding: 1px 7px;
   border-radius: var(--radius-pill);
 }
+.form-group-checkbox { display: flex; align-items: center; }
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .82rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.checkbox-label input[type="checkbox"] { flex-shrink: 0; }
+
+.slist-staple-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: .62rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  margin-left: 6px;
+  vertical-align: middle;
+  white-space: nowrap;
+  cursor: help;
+}
+.slist-staple-badge.is-pending,
+.slist-staple-badge.is-ok {
+  color: color-mix(in srgb, var(--info) 70%, var(--ink));
+  background: color-mix(in srgb, var(--info) 14%, var(--paper));
+  border: 1px solid color-mix(in srgb, var(--info) 35%, var(--rule));
+}
+.slist-staple-badge.is-soon {
+  color: var(--warning);
+  background: var(--warning-lt);
+  border: 1px solid color-mix(in srgb, var(--warning) 35%, var(--warning-lt));
+}
+.slist-staple-badge.is-due {
+  color: var(--danger);
+  background: var(--danger-lt);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--danger-lt));
+}
+
+.slist-staple-reminders-wrap { margin-bottom: 12px; }
+.slist-staple-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: .74rem;
+  border-radius: var(--radius-sm);
+  padding: 9px 13px;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--danger-lt));
+  background: var(--danger-lt);
+  color: var(--danger);
+}
+.slist-staple-banner strong { font-weight: 700; }
+
 .slist-budget-warnings { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
 .slist-budget-warning {
   display: flex;
