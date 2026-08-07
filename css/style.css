@@ -5076,6 +5076,46 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   margin: 0 0 14px;
   line-height: 1.5;
 }
+/* Tab pemilih minggu (Minggu 1 / Minggu 2) -- segmented control 2 tombol
+   di atas kartu-kartu hari. Titik kecil menandai minggu yang cocok dengan
+   minggu kalender berjalan (lihat window._mplanCurrentWeekKey). */
+.mplan-week-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.mplan-week-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1.5px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink-muted);
+  font-family: var(--font-display);
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  padding: 8px 10px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+.mplan-week-tab:hover { border-color: var(--accent); color: var(--ink); }
+.mplan-week-tab.is-active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--paper);
+}
+.mplan-week-tab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 auto;
+}
 .mplan-days {
   display: flex;
   flex-direction: column;

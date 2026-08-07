@@ -1,13 +1,21 @@
-// ==================== DAFTAR MENU (JADWAL MASAK MINGGUAN) ====================
-// Menu sidebar baru: jadwal menu masak untuk 1 minggu (Senin-Minggu), tiap
-// menu punya daftar bahan (nama, qty, satuan). Semua bahan dari seluruh
-// menu minggu itu otomatis dikumpulkan jadi satu "Estimasi Belanja
-// Mingguan" yang dicocokkan ke harga referensi komoditas (js/harga-pangan.js,
-// sama seperti Daftar Belanja) untuk memperkirakan total belanja. Tiap
-// kartu hari juga menampilkan estimasi belanja HARIAN-nya sendiri (badge
-// "≈ Rp ..." di sebelah nama hari) -- dihitung dengan cara yang sama,
-// tapi dibatasi ke bahan menu hari itu saja (lihat
-// window.aggregateMenuPlanBahanForDay & window._mplanEstimateDayTotal).
+// ==================== DAFTAR MENU (JADWAL MASAK 2 MINGGUAN) ====================
+// Menu sidebar baru: jadwal menu masak untuk 2 minggu (Minggu 1 & Minggu 2,
+// masing-masing Senin-Minggu), tiap menu punya daftar bahan (nama, qty,
+// satuan). Data disimpan per-minggu: { w1: {senin:[],...}, w2: {senin:[],...} }
+// -- lihat window.MENU_PLAN_WEEKS & window.getMenuPlan. User berpindah
+// minggu lewat tab (window.switchMenuPlanWeek); tab yang cocok dengan
+// minggu kalender berjalan ditentukan otomatis & konsisten lewat
+// window._mplanCurrentWeekKey() (paritas nomor minggu sejak epoch), supaya
+// badge "Hari Ini" & tab default saat buka halaman selalu pas.
+//
+// Semua bahan dari seluruh menu DALAM SATU MINGGU YANG SAMA otomatis
+// dikumpulkan jadi satu "Estimasi Belanja Mingguan" yang dicocokkan ke
+// harga referensi komoditas (js/harga-pangan.js, sama seperti Daftar
+// Belanja) untuk memperkirakan total belanja minggu itu. Tiap kartu hari
+// juga menampilkan estimasi belanja HARIAN-nya sendiri (badge "≈ Rp ..."
+// di sebelah nama hari) -- dihitung dengan cara yang sama, tapi dibatasi
+// ke bahan menu hari itu saja (lihat window.aggregateMenuPlanBahanForDay &
+// window._mplanEstimateDayTotal).
 //
 // Tersimpan lokal (localStorage) untuk akses instan/offline, DAN
 // disinkronkan ke Supabase (tabel `settings`, key 'menu_plan', per book_id)
@@ -15,7 +23,14 @@
 // Nilai dienkripsi otomatis oleh pushSetting() sebelum dikirim ke cloud
 // (kecuali buku bersama). Pull-nya ditangani terpusat di
 // window.pullAllSettings (js/db.js).
+//
+// Data lama (format 1 minggu, day-key langsung di root) dimigrasi otomatis
+// jadi isi Minggu 1 pertama kali dibuka -- lihat window.getMenuPlan.
 
+window.MENU_PLAN_WEEKS = [
+    { key: 'w1', label: 'Minggu 1' },
+    { key: 'w2', label: 'Minggu 2' }
+];
 window.MENU_PLAN_DAYS = [
     { key: 'senin', label: 'Senin' },
     { key: 'selasa', label: 'Selasa' },
@@ -40,6 +55,19 @@ window._mplanTodayKey = function() {
     return map[new Date().getDay()];
 };
 
+// Menentukan tab minggu ('w1'/'w2') yang cocok dengan minggu kalender
+// berjalan, berdasarkan paritas nomor minggu sejak epoch -- fungsi murni
+// dari tanggal hari ini saja (tidak perlu state tersimpan), jadi hasilnya
+// otomatis bergantian tiap minggu & konsisten di semua perangkat. Dipakai
+// untuk badge "Hari Ini" dan tab default saat halaman dibuka.
+window._mplanCurrentWeekKey = function() {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const daysSinceEpoch = Math.floor(startOfDay.getTime() / 86400000);
+    const weekIndex = Math.floor(daysSinceEpoch / 7);
+    return (weekIndex % 2 === 0) ? 'w1' : 'w2';
+};
+
 window.getMenuPlan = function(bookId) {
     const raw = localStorage.getItem('sk_menu_plan_' + (bookId || window.currentBookId));
     let data = null;
@@ -47,10 +75,28 @@ window.getMenuPlan = function(bookId) {
         try { data = JSON.parse(raw); } catch { data = null; }
     }
     if (!data || typeof data !== 'object') data = {};
-    // Pastikan semua 7 hari selalu ada (kalau belum pernah diisi) supaya
-    // renderMenuPlan tidak perlu cek keberadaan tiap kali.
-    window.MENU_PLAN_DAYS.forEach(function(d) {
-        if (!Array.isArray(data[d.key])) data[d.key] = [];
+
+    // Migrasi data lama (format 1 minggu, day-key langsung di root, mis.
+    // {senin:[...], selasa:[...]}) ke format 2 minggu {w1:{...}, w2:{...}}
+    // -- supaya jadwal yang sudah pernah diisi user tidak hilang, otomatis
+    // jadi isi Minggu 1 saat pertama kali dibuka setelah update ini.
+    const looksLikeOldFormat = !data.w1 && !data.w2 && window.MENU_PLAN_DAYS.some(function(d) {
+        return Array.isArray(data[d.key]);
+    });
+    if (looksLikeOldFormat) {
+        const migrated = {};
+        window.MENU_PLAN_DAYS.forEach(function(d) { migrated[d.key] = data[d.key] || []; });
+        data = { w1: migrated, w2: {} };
+    }
+
+    // Pastikan kedua minggu & semua 7 hari di tiap minggu selalu ada
+    // (kalau belum pernah diisi) supaya renderMenuPlan tidak perlu cek
+    // keberadaan tiap kali.
+    window.MENU_PLAN_WEEKS.forEach(function(w) {
+        if (!data[w.key] || typeof data[w.key] !== 'object') data[w.key] = {};
+        window.MENU_PLAN_DAYS.forEach(function(d) {
+            if (!Array.isArray(data[w.key][d.key])) data[w.key][d.key] = [];
+        });
     });
     return data;
 };
@@ -87,6 +133,11 @@ window._mplanBlockIfViewer = function() {
 };
 
 window.openMenuPlanView = function() {
+    // Setiap kali halaman dibuka, defaultkan tab ke minggu yang cocok
+    // dengan minggu kalender berjalan -- supaya "harus masak apa hari ini"
+    // langsung kelihatan tanpa perlu pindah tab dulu. User tetap bisa
+    // pindah manual ke minggu lain lewat tab selama halaman ini terbuka.
+    window._mplanActiveWeek = window._mplanCurrentWeekKey();
     window.openModal('menuPlanModal');
 
     window.runAfterNextPaint(function() {
@@ -134,15 +185,32 @@ window.openMenuPlanView = function() {
 
 // ==================== RENDER ====================
 
+window.switchMenuPlanWeek = function(weekKey) {
+    window._mplanActiveWeek = weekKey;
+    window.renderMenuPlan();
+};
+
 window.renderMenuPlan = function() {
     const data = window.getMenuPlan(window.currentBookId);
+    const activeWeek = window._mplanActiveWeek || (window._mplanActiveWeek = window._mplanCurrentWeekKey());
+    const weekData = data[activeWeek];
+    const currentWeekKey = window._mplanCurrentWeekKey();
+
+    const tabsContainer = document.getElementById('mplanWeekTabs');
+    if (tabsContainer) {
+        tabsContainer.innerHTML = window.MENU_PLAN_WEEKS.map(function(w) {
+            const isCurrentCalendarWeek = w.key === currentWeekKey;
+            return `<button type="button" class="mplan-week-tab${w.key === activeWeek ? ' is-active' : ''}" onclick="window.switchMenuPlanWeek('${w.key}')">${w.label}${isCurrentCalendarWeek ? '<span class="mplan-week-tab-dot" title="Minggu kalender berjalan"></span>' : ''}</button>`;
+        }).join('');
+    }
+
     const container = document.getElementById('mplanDaysContainer');
     if (container) {
         const isViewer = window._mplanIsViewer();
         const todayKey = window._mplanTodayKey();
         container.innerHTML = window.MENU_PLAN_DAYS.map(function(d) {
-            const meals = data[d.key] || [];
-            const isToday = d.key === todayKey;
+            const meals = weekData[d.key] || [];
+            const isToday = activeWeek === currentWeekKey && d.key === todayKey;
             const isEmpty = meals.length === 0;
             // Hari tanpa menu TIDAK lagi menampilkan paragraf "Belum ada
             // menu." + wrapper .mplan-meal-list kosong -- di layar hp,
@@ -165,13 +233,13 @@ window.renderMenuPlan = function() {
                             </div>
                             ${isViewer ? '' : `
                             <div class="mplan-meal-trail">
-                                <button type="button" class="slist-edit-btn" title="Ubah" onclick="window.openEditMenuPlanMealModal('${d.key}','${m.id}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg></button>
-                                <button type="button" class="slist-del-btn" title="Hapus" onclick="window.deleteMenuPlanMeal('${d.key}','${m.id}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                                <button type="button" class="slist-edit-btn" title="Ubah" onclick="window.openEditMenuPlanMealModal('${activeWeek}','${d.key}','${m.id}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg></button>
+                                <button type="button" class="slist-del-btn" title="Hapus" onclick="window.deleteMenuPlanMeal('${activeWeek}','${d.key}','${m.id}')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                             </div>`}
                         </div>`;
                 }).join('')}</div>`
                 : '';
-            const dayEstimate = window._mplanEstimateDayTotal(data, d.key);
+            const dayEstimate = window._mplanEstimateDayTotal(weekData, d.key);
             let dayEstimateHtml = '';
             if (dayEstimate.hasIngredients) {
                 const title = dayEstimate.unmatchedCount
@@ -183,13 +251,13 @@ window.renderMenuPlan = function() {
                 <div class="mplan-day-card${isToday ? ' is-today' : ''}${isEmpty ? ' is-empty' : ''}"${isToday ? ' id="mplanTodayCard"' : ''}>
                     <div class="mplan-day-header">
                         <span class="mplan-day-label">${d.label}${isToday ? '<span class="mplan-today-badge">Hari Ini</span>' : ''}${dayEstimateHtml}</span>
-                        ${isViewer ? '' : `<button type="button" class="mplan-add-meal-btn" title="Tambah Menu" onclick="window.openAddMenuPlanMealModal('${d.key}')">+ <span class="mplan-add-meal-btn-full">Tambah Menu</span><span class="mplan-add-meal-btn-short">Menu</span></button>`}
+                        ${isViewer ? '' : `<button type="button" class="mplan-add-meal-btn" title="Tambah Menu" onclick="window.openAddMenuPlanMealModal('${activeWeek}','${d.key}')">+ <span class="mplan-add-meal-btn-full">Tambah Menu</span><span class="mplan-add-meal-btn-short">Menu</span></button>`}
                     </div>
                     ${mealsHtml}
                 </div>`;
         }).join('');
     }
-    window.renderMenuPlanEstimate(data);
+    window.renderMenuPlanEstimate(weekData, activeWeek);
 };
 
 window._mplanFormatQty = function(qty) {
@@ -289,12 +357,18 @@ window._mplanEstimateDayTotal = function(data, dayKey) {
     return { total: total, unmatchedCount: unmatchedCount, hasIngredients: aggregated.length > 0 };
 };
 
-window.renderMenuPlanEstimate = function(data) {
-    data = data || window.getMenuPlan(window.currentBookId);
-    const aggregated = window.aggregateMenuPlanBahan(data);
+window.renderMenuPlanEstimate = function(weekData, weekKey) {
+    const activeWeek = weekKey || window._mplanActiveWeek || 'w1';
+    weekData = weekData || window.getMenuPlan(window.currentBookId)[activeWeek];
+    const aggregated = window.aggregateMenuPlanBahan(weekData);
     const listEl = document.getElementById('mplanEstimateList');
     const emptyEl = document.getElementById('mplanEstimateEmpty');
     const totalEl = document.getElementById('mplanEstimateTotal');
+    const labelEl = document.getElementById('mplanEstimateHeaderLabel');
+    if (labelEl) {
+        const weekMeta = window.MENU_PLAN_WEEKS.find(function(w) { return w.key === activeWeek; });
+        labelEl.innerText = `Estimasi Belanja ${weekMeta ? weekMeta.label : 'Mingguan'}`;
+    }
     window._mplanLastAggregated = aggregated;
 
     if (!aggregated.length) {
@@ -341,10 +415,11 @@ window.renderMenuPlanEstimate = function(data) {
 
 window._mplanBahanRows = []; // draft baris bahan yang sedang diedit di form
 
-window.openAddMenuPlanMealModal = function(dayKey) {
+window.openAddMenuPlanMealModal = function(weekKey, dayKey) {
     if (window._mplanBlockIfViewer()) return;
     document.getElementById('mplanMealModalTitle').innerText = 'Tambah Menu';
     document.getElementById('mplanMealId').value = '';
+    document.getElementById('mplanMealWeek').value = weekKey;
     document.getElementById('mplanMealDay').value = dayKey;
     document.getElementById('mplanMealNama').value = '';
     window._mplanPopulateWaktuSelect();
@@ -354,13 +429,15 @@ window.openAddMenuPlanMealModal = function(dayKey) {
     window.openModal('menuPlanMealModal');
 };
 
-window.openEditMenuPlanMealModal = function(dayKey, mealId) {
+window.openEditMenuPlanMealModal = function(weekKey, dayKey, mealId) {
     if (window._mplanBlockIfViewer()) return;
     const data = window.getMenuPlan(window.currentBookId);
-    const meal = (data[dayKey] || []).find(function(m) { return m.id === mealId; });
+    const weekData = data[weekKey] || {};
+    const meal = (weekData[dayKey] || []).find(function(m) { return m.id === mealId; });
     if (!meal) return;
     document.getElementById('mplanMealModalTitle').innerText = 'Ubah Menu';
     document.getElementById('mplanMealId').value = meal.id;
+    document.getElementById('mplanMealWeek').value = weekKey;
     document.getElementById('mplanMealDay').value = dayKey;
     document.getElementById('mplanMealNama').value = meal.nama || '';
     window._mplanPopulateWaktuSelect();
@@ -423,6 +500,7 @@ window.saveMenuPlanMeal = function(e) {
     e.preventDefault();
     if (window._mplanBlockIfViewer()) return;
     const id = document.getElementById('mplanMealId').value;
+    const weekKey = document.getElementById('mplanMealWeek').value || 'w1';
     const dayKey = document.getElementById('mplanMealDay').value;
     const waktu = document.getElementById('mplanMealWaktu').value;
     const nama = document.getElementById('mplanMealNama').value.trim();
@@ -440,17 +518,18 @@ window.saveMenuPlanMeal = function(e) {
         });
 
     const data = window.getMenuPlan(window.currentBookId);
-    if (!Array.isArray(data[dayKey])) data[dayKey] = [];
+    if (!data[weekKey] || typeof data[weekKey] !== 'object') data[weekKey] = {};
+    if (!Array.isArray(data[weekKey][dayKey])) data[weekKey][dayKey] = [];
 
     if (id) {
-        const meal = data[dayKey].find(function(m) { return m.id === id; });
+        const meal = data[weekKey][dayKey].find(function(m) { return m.id === id; });
         if (meal) {
             meal.waktu = waktu;
             meal.nama = nama;
             meal.bahan = bahan;
         }
     } else {
-        data[dayKey].push({
+        data[weekKey][dayKey].push({
             id: 'mp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
             waktu: waktu,
             nama: nama,
@@ -464,16 +543,17 @@ window.saveMenuPlanMeal = function(e) {
     window.showToast && window.showToast(id ? 'Menu diperbarui.' : 'Menu ditambahkan.', 'success');
 };
 
-window.deleteMenuPlanMeal = async function(dayKey, mealId) {
+window.deleteMenuPlanMeal = async function(weekKey, dayKey, mealId) {
     if (window._mplanBlockIfViewer()) return;
     const confirmed = await window.customConfirm({
         title: 'Hapus Menu',
-        message: 'Hapus menu ini dari jadwal? Bahan-bahannya juga akan hilang dari estimasi belanja mingguan.',
+        message: 'Hapus menu ini dari jadwal? Bahan-bahannya juga akan hilang dari estimasi belanja minggu itu.',
         confirmLabel: 'Hapus'
     });
     if (!confirmed) return;
     const data = window.getMenuPlan(window.currentBookId);
-    data[dayKey] = (data[dayKey] || []).filter(function(m) { return m.id !== mealId; });
+    if (!data[weekKey]) return;
+    data[weekKey][dayKey] = (data[weekKey][dayKey] || []).filter(function(m) { return m.id !== mealId; });
     window.saveMenuPlan(window.currentBookId, data);
     window.renderMenuPlan();
     window.showToast && window.showToast('Menu dihapus.', 'success');
@@ -486,9 +566,12 @@ window.deleteMenuPlanMeal = async function(dayKey, mealId) {
 // perlu ketik ulang satu-satu bahan yang sama persis di Daftar Belanja.
 window.pushMenuPlanEstimateToShoppingList = function() {
     if (window._mplanBlockIfViewer()) return;
-    const aggregated = window._mplanLastAggregated || window.aggregateMenuPlanBahan(window.getMenuPlan(window.currentBookId));
+    const activeWeek = window._mplanActiveWeek || 'w1';
+    const weekMeta = window.MENU_PLAN_WEEKS.find(function(w) { return w.key === activeWeek; });
+    const weekLabel = weekMeta ? weekMeta.label : 'ini';
+    const aggregated = window._mplanLastAggregated || window.aggregateMenuPlanBahan(window.getMenuPlan(window.currentBookId)[activeWeek]);
     if (!aggregated.length) {
-        window.showToast && window.showToast('Belum ada bahan di jadwal menu minggu ini.', 'warning');
+        window.showToast && window.showToast(`Belum ada bahan di jadwal menu ${weekLabel}.`, 'warning');
         return;
     }
     const items = window.getShoppingList(window.currentBookId);
@@ -517,5 +600,5 @@ window.pushMenuPlanEstimateToShoppingList = function() {
         return;
     }
     window.saveShoppingList(window.currentBookId, items);
-    window.showToast && window.showToast(`${added} bahan ditambahkan ke Daftar Belanja Bulanan.`, 'success');
+    window.showToast && window.showToast(`${added} bahan dari ${weekLabel} ditambahkan ke Daftar Belanja Bulanan.`, 'success');
 };
