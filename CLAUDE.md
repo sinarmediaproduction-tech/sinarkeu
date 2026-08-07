@@ -145,6 +145,7 @@ di repo ini SAMA PERSIS dengan yang disajikan ke browser.
 | `account.js` | Multi-akun, lock/unlock |
 | `auth.js` | Supabase Auth (login shared book), role per book (admin/editor/viewer via `window._skSharedRoles`), invite/hapus member, visibility menu per role, halaman "Manajemen User" |
 | `budget.js` | Anggaran bulanan & tahunan |
+| `electricity-plan.js` | Rencana Listrik: pembagian beban perangkat antar meteran (mis. rumah dengan 2 meteran/tarif berbeda) + estimasi kWh/biaya bulanan per meteran, CRUD meteran & perangkat, viewer-guard sama seperti Daftar Belanja |
 | `expense-chart.js` | Grafik pengeluaran |
 | `forecast.js` | Proyeksi keuangan |
 | `forex.js` | Kurs mata uang asing |

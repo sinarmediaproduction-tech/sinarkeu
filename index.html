@@ -476,6 +476,10 @@ alter table public.settings
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
             <span>Harga Komoditas</span>
         </button>
+        <button type="button" class="app-nav-item" id="navElectricityPlanBtn" onclick="window.closeMobileDrawer(); window.openElectricityPlanModal()" title="Rencana Listrik">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            <span>Rencana Listrik</span>
+        </button>
         <button type="button" class="app-nav-item" id="navReminderBtn" onclick="window.closeMobileDrawer(); openPaymentReminderModal()" style="position:relative;" title="Pengingat Pembayaran">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
             <span data-i18n="payment_reminder">Pengingat Pembayaran</span>
@@ -1410,6 +1414,60 @@ alter table public.settings
     </div>
 </div>
 
+<!-- Modal Rencana Listrik (pembagian beban perangkat antar meteran + estimasi biaya bulanan) -->
+<div id="electricityPlanModal" class="modal fullview-modal">
+    <div class="modal-content wide elec-modal">
+        <div class="modal-header"><h3>Rencana Listrik</h3><button class="modal-close" onclick="window.openMobileDrawer()" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button></div>
+        <div class="slist-summary-grid">
+            <div class="slist-summary-card">
+                <span class="slist-summary-label">Jumlah Meteran</span>
+                <span class="slist-summary-value" id="elecSummaryMeterCount">0</span>
+            </div>
+            <div class="slist-summary-card">
+                <span class="slist-summary-label">Estimasi Pemakaian / Bulan</span>
+                <span class="slist-summary-value" id="elecSummaryKwh">0 kWh</span>
+            </div>
+            <div class="slist-summary-card">
+                <span class="slist-summary-label">Estimasi Total Biaya / Bulan</span>
+                <span class="slist-summary-value" id="elecSummaryCost">Rp 0</span>
+            </div>
+        </div>
+        <div id="elecViewerNotice" class="slist-viewer-notice" style="display:none;">Peran Anda di buku bersama ini adalah <b>Viewer</b> — hanya bisa melihat Rencana Listrik, tidak bisa menambah/mengubah/menghapus meteran atau perangkat.</div>
+        <button type="button" id="elecAddMeterBtn" class="slist-add-toggle" onclick="window.openAddElectricityMeterModal()">
+            <span class="slist-add-toggle-icon">+</span> Tambah Meteran
+        </button>
+        <div id="elecMetersContainer" class="elec-meters-list"></div>
+        <p class="elec-footnote">Estimasi kWh &amp; biaya bulanan dihitung dari asumsi 30 hari/bulan berdasarkan watt &amp; jam pemakaian per hari yang diisi -- pemakaian aktual bisa berbeda tergantung kebiasaan harian.</p>
+    </div>
+</div>
+
+<div id="electricityMeterModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3 id="elecMeterModalTitle">Tambah Meteran</h3><button class="modal-close" onclick="closeModal('electricityMeterModal')">×</button></div>
+        <form id="elecMeterForm" onsubmit="window.handleElectricityMeterSubmit(event)">
+            <input type="hidden" id="elecMeterId">
+            <div class="form-group"><label>Nama meteran</label><input type="text" id="elecMeterName" class="form-control" placeholder="mis. Meteran 1 — 450 VA" required></div>
+            <div class="form-group"><label>Kapasitas (VA, opsional)</label><input type="number" id="elecMeterCapacity" class="form-control" placeholder="mis. 450" min="0" step="1" inputmode="numeric"></div>
+            <div class="form-group"><label>Tarif per kWh</label><input type="text" id="elecMeterTariff" class="form-control" placeholder="mis. 1.444,70" oninput="window.formatRupiah(this)"></div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('electricityMeterModal')">Tutup</button><button type="submit" class="btn btn-primary">Simpan</button></div>
+        </form>
+    </div>
+</div>
+
+<div id="electricityDeviceModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3 id="elecDeviceModalTitle">Tambah Perangkat</h3><button class="modal-close" onclick="closeModal('electricityDeviceModal')">×</button></div>
+        <form id="elecDeviceForm" onsubmit="window.handleElectricityDeviceSubmit(event)">
+            <input type="hidden" id="elecDeviceMeterId">
+            <input type="hidden" id="elecDeviceId">
+            <div class="form-group"><label>Nama perangkat</label><input type="text" id="elecDeviceName" class="form-control" placeholder="mis. Kulkas" required></div>
+            <div class="form-group"><label>Daya (Watt)</label><input type="number" id="elecDeviceWatt" class="form-control" placeholder="mis. 120" min="0" step="0.1" inputmode="decimal"></div>
+            <div class="form-group"><label>Pemakaian (jam/hari)</label><input type="number" id="elecDeviceHours" class="form-control" placeholder="mis. 24" min="0" max="24" step="0.1" inputmode="decimal"></div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('electricityDeviceModal')">Tutup</button><button type="submit" class="btn btn-primary">Simpan</button></div>
+        </form>
+    </div>
+</div>
+
 <!-- Modal Daftar Menu (jadwal menu masak mingguan + estimasi belanja) -->
 <div id="menuPlanModal" class="modal fullview-modal">
     <div class="modal-content wide mplan-modal">
@@ -1986,12 +2044,12 @@ alter table public.settings
   statis sebelumnya, jadi urutan dependency antar file tidak berubah.
 -->
 <script>
-    var APP_JS_VERSION = 'v31'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
+    var APP_JS_VERSION = 'v32'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
     var SK_JS_FILES = [
         'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js', 'js/db.js',
         'js/telegram.js', 'js/account.js', 'js/book.js', 'js/transaction.js',
         'js/sync-conflict.js', 'js/budget.js', 'js/harga-pangan.js',
-        'js/shopping-list.js', 'js/menu-plan.js', 'js/payment-reminder.js', 'js/expense-chart.js',
+        'js/shopping-list.js', 'js/menu-plan.js', 'js/electricity-plan.js', 'js/payment-reminder.js', 'js/expense-chart.js',
         'js/render.js', 'js/report.js', 'js/forecast.js', 'js/report-shortcuts.js',
         'js/backup.js', 'js/safety-snapshot.js', 'js/forex.js', 'js/ai.js',
         'js/settings.js', 'js/auth.js', 'js/autolock.js', 'js/app.js',

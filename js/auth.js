@@ -768,7 +768,8 @@ window._skMigrateBookIdLocal = function(oldId, newId) {
         'sk_payment_reminders_', 'sk_hidden_cards_', 'sk_shopping_list_',
         'sk_shopping_list_income_', 'sk_manual_backups_', 'sk_last_auto_backup_',
         'sk_last_cloud_backup_', 'sk_last_gsheets_backup_', 'sk_fase_kehidupan_',
-        'sk_emergency_fund_months_', 'sk_pr_pending_push_', 'sk_pr_pending_delete_'
+        'sk_emergency_fund_months_', 'sk_pr_pending_push_', 'sk_pr_pending_delete_',
+        'sk_electricity_plan_'
     ];
     PER_BOOK_PREFIXES.forEach(function(prefix) {
         const val = localStorage.getItem(prefix + oldId);

@@ -442,6 +442,7 @@ async function _skDropDeadSharedBooksBeforePush() {
         localStorage.removeItem('sk_last_cloud_backup_' + id);
         localStorage.removeItem('sk_default_budget_' + id);
         localStorage.removeItem('sk_shopping_list_' + id);
+        localStorage.removeItem('sk_electricity_plan_' + id);
         localStorage.removeItem('sk_balance_offset_' + id);
         localStorage.removeItem('sk_payment_reminders_' + id);
     });
@@ -612,6 +613,8 @@ window.reEncryptAllCloudSettings = async function() {
             await window.pushSetting('shopping_list', shoppingList, b.id);
             const shoppingIncome = window.getShoppingListMonthlyIncome ? window.getShoppingListMonthlyIncome(b.id) : 0;
             await window.pushSetting('shopping_list_income', shoppingIncome, b.id);
+            const electricityPlan = window.getElectricityPlan ? window.getElectricityPlan(b.id) : { meters: [] };
+            await window.pushSetting('electricity_plan', electricityPlan, b.id);
             // Fase Kehidupan juga setting per-buku. Tanpa baris ini, data
             // fase yang masih memakai format cloud lama tidak ikut dipulihkan
             // saat proses re-enkripsi/self-heal berjalan.
@@ -1053,6 +1056,17 @@ window.pullAllSettings = async function() {
                         const modalEl = document.getElementById('menuPlanModal');
                         if (modalEl && modalEl.classList.contains('show') && typeof window.renderMenuPlan === 'function') {
                             window.renderMenuPlan();
+                        }
+                    }
+                }
+            }
+            if (row.key === 'electricity_plan') {
+                if (parsed && typeof parsed === 'object' && Array.isArray(parsed.meters)) {
+                    localStorage.setItem('sk_electricity_plan_' + row.book_id, JSON.stringify(parsed));
+                    if (row.book_id === window.currentBookId) {
+                        const modalEl = document.getElementById('electricityPlanModal');
+                        if (modalEl && modalEl.classList.contains('show') && typeof window.renderElectricityPlan === 'function') {
+                            window.renderElectricityPlan();
                         }
                     }
                 }

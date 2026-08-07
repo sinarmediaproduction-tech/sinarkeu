@@ -410,6 +410,7 @@ window.deleteBook = async function(id) {
     localStorage.removeItem('sk_last_cloud_backup_' + id);
     localStorage.removeItem('sk_default_budget_' + id);
     localStorage.removeItem('sk_shopping_list_' + id);
+    localStorage.removeItem('sk_electricity_plan_' + id);
     // [FIX BOOKS LOST-UPDATE] Tandai id ini sebagai "sengaja dihapus lokal"
     // SEBELUM difilter dari window.books, supaya union-merge di
     // pullAllSettings (js/db.js) tidak salah menghidupkannya lagi kalau
@@ -466,6 +467,7 @@ window.DUPLICATE_BOOK_SETTINGS_MAP = [
     ['sk_shopping_list_', 'shopping_list'],
     ['sk_shopping_list_income_', 'shopping_list_income'],
     ['sk_menu_plan_', 'menu_plan'],
+    ['sk_electricity_plan_', 'electricity_plan'],
     ['sk_fase_kehidupan_', 'fase_kehidupan'],
     ['sk_emergency_fund_months_', 'emergency_fund_months'],
 ];

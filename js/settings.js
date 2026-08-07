@@ -175,6 +175,7 @@ window.APP_NAV_BTN_MAP = {
     menuPlan:  'navMenuPlanBtn',
     anggaranTahunan: 'navAnnualBudgetBtn',
     hargaKomoditas: 'navHargaKomoditasBtn',
+    electricityPlan: 'navElectricityPlanBtn',
     reminder:  'navReminderBtn',
     buku:      'navBookBtn',
     // [PINDAH KE SETELAN] Halaman ini sekarang dibuka dari panel "Akun &

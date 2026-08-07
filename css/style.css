@@ -3035,6 +3035,116 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
    memakai seluruh lebar grid agar tidak meninggalkan dua kolom kosong. */
 .annual-budget-summary-grid { grid-template-columns: minmax(0, 1fr); }
 
+/* ── Rencana Listrik ── */
+.modal-content.wide.elec-modal { max-width: 780px; }
+.elec-footnote {
+  font-size: .68rem;
+  color: var(--ink-faint);
+  line-height: 1.6;
+  margin: 4px 2px 0;
+}
+.elec-empty { font-size: .74rem; color: var(--ink-faint); text-align: center; padding: 26px 0; }
+.elec-meters-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 4px; }
+.elec-meter-card {
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper);
+  padding: 14px 16px;
+}
+.elec-meter-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.elec-meter-title h4 {
+  margin: 0 0 2px;
+  font-family: var(--font-display);
+  font-size: .92rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.elec-meter-meta {
+  font-size: .68rem;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+.elec-meter-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.elec-meter-actions .btn-icon-danger:hover { background: var(--danger-lt); color: var(--danger); }
+.elec-warning {
+  font-size: .7rem;
+  line-height: 1.6;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--warning) 45%, var(--warning-lt));
+  background: var(--warning-lt);
+  color: var(--warning);
+  margin-bottom: 10px;
+}
+.elec-device-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.elec-device-empty { font-size: .72rem; color: var(--ink-faint); padding: 8px 2px; }
+.elec-device-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 70px 90px 100px 54px;
+  column-gap: 10px;
+  align-items: center;
+  padding: 7px 8px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper-warm);
+  font-size: .74rem;
+}
+.elec-device-name { color: var(--ink); overflow-wrap: anywhere; min-width: 0; }
+.elec-device-watt, .elec-device-hours, .elec-device-kwh {
+  text-align: right;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  font-size: .7rem;
+}
+.elec-device-actions { display: flex; gap: 4px; justify-content: flex-end; }
+.elec-device-actions .btn-icon { width: 20px; height: 20px; }
+.elec-add-device-btn {
+  width: 100%;
+  padding: 7px;
+  border: 1.5px dashed var(--rule);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: .72rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+.elec-add-device-btn:hover { border-color: color-mix(in srgb, var(--accent) 35%, var(--rule)); color: var(--accent); }
+.elec-meter-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+  font-size: .72rem;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+.elec-meter-foot strong { color: var(--ink); }
+
+@media (max-width: 640px) {
+  .elec-device-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "name actions" "watt watt" "hours hours" "kwh kwh";
+    row-gap: 2px;
+  }
+  .elec-device-name { grid-area: name; }
+  .elec-device-actions { grid-area: actions; }
+  .elec-device-watt { grid-area: watt; text-align: left; }
+  .elec-device-hours { grid-area: hours; text-align: left; }
+  .elec-device-kwh { grid-area: kwh; text-align: left; }
+}
+
 /* ── Belanja Bulanan: sedikit lebih lega di layar lebar (desktop/tablet)
    supaya 6 kolom (checkbox, nama, qty, kategori, harga, aksi) tidak
    berdesakan -- .slist-modal khusus dipakai di modal ini saja, jadi tidak
