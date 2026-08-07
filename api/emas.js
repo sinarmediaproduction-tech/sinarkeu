@@ -1,3 +1,5 @@
+import { applyRateLimit } from './_ratelimit.js';
+
 // api/emas.js — Vercel Serverless Function
 // Proxy untuk emas.maulanar.my.id agar terhindar dari CORS di browser
 
@@ -25,6 +27,10 @@ export default async function handler(req, res) {
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
+
+    // [RATE LIMIT] 20 req/menit/IP. Proxy ini memanggil API pihak ketiga --
+    // tanpa batas, satu loop di browser bisa bikin IP kita diblokir upstream.
+    if (applyRateLimit(req, res, { limit: 20, windowMs: 60000, scope: 'emas' })) return;
 
     const apiKey = req.headers['x-api-key'] || '';
     if (!apiKey) {

@@ -1,14 +1,61 @@
-# Cloudflare Pages membaca file ini otomatis (tanpa perlu Worker) untuk menambah
-# HTTP header ke semua response. Dipakai khusus untuk header yang TIDAK bisa
-# (atau tidak akan berfungsi) kalau dipasang lewat <meta> tag di index.html:
-# - frame-ancestors: secara eksplisit diabaikan CSP kalau dikirim lewat meta.
-# - X-Frame-Options / Strict-Transport-Security / X-Content-Type-Options: tidak
-#   didukung meta http-equiv sama sekali.
-# CSP lengkap (script-src, connect-src, dst) tetap di meta tag index.html --
-# itu bagian yang memang boleh dan sudah berfungsi lewat meta.
+# Header HTTP untuk Cloudflare Pages (dan kompatibel dengan Netlify).
+# Dibaca otomatis, tanpa perlu Worker. Dipakai untuk hal yang TIDAK bisa
+# dipasang lewat <meta> di index.html:
+#   - frame-ancestors: eksplisit diabaikan CSP kalau dikirim lewat meta.
+#   - X-Frame-Options / HSTS / X-Content-Type-Options: tidak didukung meta.
+# CSP lengkap (script-src, connect-src, dst) tetap di meta tag index.html.
+
 /*
   X-Frame-Options: DENY
   Content-Security-Policy: frame-ancestors 'none'
   X-Content-Type-Options: nosniff
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  X-DNS-Prefetch-Control: on
+
+# ---------------------------------------------------------------------------
+# CACHING & CDN
+# ---------------------------------------------------------------------------
+# Strategi: HTML & service worker JANGAN pernah di-cache lama (kalau tidak,
+# perbaikan tidak pernah sampai ke user). Aset JS/CSS sudah di-request dengan
+# query ?v=<APP_JS_VERSION> dari index.html, jadi URL-nya berubah tiap rilis
+# dan AMAN di-cache lama (immutable). Gambar/font boleh lama karena namanya
+# stabil dan jarang berubah isinya.
+
+# HTML: selalu validasi ke server. Tanpa ini, CDN bisa menyajikan shell lama
+# yang menunjuk ke versi aset yang sudah tidak ada.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Service worker: WAJIB no-cache. Kalau sw.js sendiri ter-cache, logika
+# cache-busting di dalamnya tidak akan pernah diperbarui — deadlock cache.
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  Service-Worker-Allowed: /
+
+/manifest.json
+  Cache-Control: public, max-age=3600
+
+# Aset ber-versi (dipanggil dengan ?v=...): boleh cache 1 tahun.
+/js/*
+  Cache-Control: public, max-age=31536000, immutable
+/css/*
+  Cache-Control: public, max-age=31536000, immutable
+/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/icons/*
+  Cache-Control: public, max-age=2592000
+/*.png
+  Cache-Control: public, max-age=2592000
+/favicon.ico
+  Cache-Control: public, max-age=2592000
+
+# Endpoint API tidak boleh masuk cache browser (cache edge diatur per-response
+# lewat header s-maxage di dalam handler-nya masing-masing).
+/api/*
+  Cache-Control: no-store

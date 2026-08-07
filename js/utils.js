@@ -1,6 +1,19 @@
 // ==================== UTILITY FUNCTIONS ====================
 window.rp = function(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); };
-window.unRp = function(s) { return Number(String(s).replace(/[^0-9]/g, '')) || 0; };
+// [FIX — ditemukan oleh tests/run.mjs] Versi lama membuang SEMUA karakter
+// non-digit, termasuk tanda minus, sehingga "-Rp 5.000" terbaca 5000 (nilai
+// negatif berbalik jadi positif). Ini berbahaya di animateValue() dan di mana
+// pun saldo/selisih negatif dibaca ulang dari teks yang sudah diformat.
+window.unRp = function(s) {
+    const str = String(s);
+    // Negatif jika ada '-' SEBELUM digit pertama ("-Rp 5.000" maupun
+    // "Rp -5.000", dua-duanya muncul di app ini), atau format kurung "(5.000)".
+    const firstDigit = str.search(/[0-9]/);
+    const head = firstDigit === -1 ? str : str.slice(0, firstDigit);
+    const neg = head.includes('-') || /^\s*\(.*\)\s*$/.test(str);
+    const n = Number(str.replace(/[^0-9]/g, '')) || 0;
+    return neg ? -n : n;
+};
 window.escapeHtml = function(str) {
     if (!str) return '';
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -67,6 +80,46 @@ window.showToast = function(msg, type = 'success') {
     // bawah, dan panel "Log Error" di Setelan).
     if (type === 'error') window._recordToastError(msg);
 };
+
+// ==================== GLOBAL ERROR TRACKING ====================
+// [KENAPA] Sebelumnya HANYA error yang kebetulan lewat showToast(msg,'error')
+// yang tercatat. Exception JS tak tertangkap (TypeError di render, promise
+// reject yang lupa .catch) hilang tanpa jejak -- user cuma lihat "layar tidak
+// update" dan kita tidak punya apa pun untuk didiagnosis. Dua listener di
+// bawah menyalurkan SEMUA error tak tertangkap ke log yang sama (Setelan ->
+// Log Error -> Ekspor), silent (tanpa membanjiri user dengan toast).
+(function installGlobalErrorTracking() {
+    if (window._skErrorTrackingInstalled) return;
+    window._skErrorTrackingInstalled = true;
+
+    let noisyGuard = 0;
+    const NOISY_MAX = 25; // cegah badai error mengisi localStorage
+
+    function capture(kind, message, extra) {
+        if (noisyGuard++ > NOISY_MAX) return;
+        try {
+            if (typeof window._recordToastError === 'function') {
+                window._recordToastError('[' + kind + '] ' + String(message) + (extra ? ' @ ' + extra : ''));
+            }
+        } catch (_) {}
+        try { console.error('[SinarKeu][' + kind + ']', message, extra || ''); } catch (_) {}
+    }
+
+    window.addEventListener('error', function (ev) {
+        if (ev && ev.target && ev.target !== window && ev.target.tagName) {
+            capture('resource', 'Gagal memuat ' + ev.target.tagName, ev.target.src || ev.target.href || '');
+            return;
+        }
+        const loc = ev && ev.filename ? (ev.filename + ':' + ev.lineno + ':' + ev.colno) : '';
+        capture('js-error', (ev && (ev.message || (ev.error && ev.error.message))) || 'Unknown error', loc);
+    }, true);
+
+    window.addEventListener('unhandledrejection', function (ev) {
+        const r = ev && ev.reason;
+        const stackLine = (r && r.stack) ? String(r.stack).split('\n')[1] : '';
+        capture('unhandled-promise', (r && (r.message || r)) || 'Unknown rejection', stackLine);
+    });
+})();
 
 // ==================== LOG ERROR TOAST (untuk diagnosis) ====================
 window.TOAST_ERROR_LOG_KEY = 'sk_toast_error_log';

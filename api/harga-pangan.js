@@ -1,3 +1,5 @@
+import { applyRateLimit } from './_ratelimit.js';
+
 // api/harga-pangan.js — Vercel Serverless Function
 // Proxy harga pangan acuan untuk fitur auto-update kolom harga di Daftar
 // Belanja (js/shopping-list.js, lewat js/harga-pangan.js). Pola CORS &
@@ -448,6 +450,11 @@ async function fetchLatestRegionalPrice(biId) {
 // ==================== HANDLER ====================
 
 export default async function handler(req, res) {
+  // [RATE LIMIT] 15 req/menit/IP. Scraping SISKAPERBAPO mahal & rawan
+  // pemblokiran IP; client sudah punya cache 6 jam (localStorage + Supabase),
+  // jadi traffic normal jauh di bawah batas ini.
+  if (applyRateLimit(req, res, { limit: 15, windowMs: 60000, scope: 'harga-pangan' })) return;
+
   const allowedOrigins = [
     'https://sinarkeu.vercel.app',
     'http://localhost:3000',
