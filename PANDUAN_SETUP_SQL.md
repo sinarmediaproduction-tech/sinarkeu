@@ -66,11 +66,19 @@ Urutan di bawah **penting** — beberapa file saling bergantung.
 Ini **versi terbaru & lengkap** untuk fitur auto-isi harga di Daftar
 Belanja (`js/harga-pangan.js`, proxy `api/harga-pangan.js`) — sudah
 menyertakan kolom `region` (dulu file terpisah `add_region_to_harga_
-pangan.sql`) dan GRANT eksplisit (dulu hilang di `harga_pangan_
-referensi.sql` versi awal, itulah yang bikin error 42501). Cukup jalankan
-**file ini saja**; `sql/harga_pangan_referensi.sql` dan `sql/add_region_
-to_harga_pangan.sql` sudah tidak perlu dijalankan terpisah untuk
-instalasi baru (isinya sudah tercakup di sini).
+pangan.sql`), GRANT eksplisit (dulu hilang di `harga_pangan_referensi.sql`
+versi awal), **dan policy UPDATE** (dulu hilang juga — lihat catatan di
+bawah). Cukup jalankan **file ini saja**; `sql/harga_pangan_referensi.sql`
+dan `sql/add_region_to_harga_pangan.sql` sudah tidak perlu dijalankan
+terpisah untuk instalasi baru (isinya sudah tercakup di sini).
+
+> **Sudah pernah jalankan versi lama file ini dan masih kena error 42501
+> `(USING expression)` saat sinkron harga?** Itu tandanya project Anda
+> baru punya policy SELECT + INSERT, belum UPDATE — `js/harga-pangan.js`
+> mengirim upsert (`on_conflict=commodity_slug,price_date` +
+> `Prefer: resolution=merge-duplicates`) yang berubah jadi UPDATE begitu
+> device lain sudah menulis harga hari itu duluan. **Jalankan ulang file
+> ini** (aman, idempoten) — policy UPDATE yang baru akan otomatis dibuat.
 
 ---
 
