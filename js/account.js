@@ -597,31 +597,47 @@ window.deleteAccount = async function(accId) {
 window.LOCK_GREETINGS = {
     pagi: [
         'Selamat Pagi, Kak!',
-        'Pagi, Kak! Semangat ya hari ini.',
-        'Halo Kak, siap mulai hari?',
-        'Selamat Pagi! Yuk cek keuanganmu.',
-        'Pagi Kak! Semoga harimu lancar.'
+        'Pagi! Semangat ya hari ini.',
+        'Halo, siap mulai hari?',
+        'Pagi-pagi udah rajin, mantap!',
+        'Yuk, cek dompet dulu sebelum ngopi.',
+        'Hai! Hari baru, catatan baru.',
+        'Selamat Pagi! Semoga harimu cerah.',
+        'Pagi Kak, jangan lupa sarapan ya.',
+        'Udah bangun? Waktunya intip keuangan.'
     ],
     siang: [
         'Selamat Siang, Kak!',
-        'Siang, Kak! Sudah makan siang?',
-        'Halo Kak, tetap semangat ya.',
-        'Selamat Siang! Waktunya cek transaksi.',
-        'Siang Kak, jangan lupa istirahat.'
+        'Siang! Sudah makan siang?',
+        'Halo, tetap semangat ya.',
+        'Istirahat bentar, cek dompet dulu yuk.',
+        'Siang-siang gini enaknya rapi-rapi catatan.',
+        'Hai! Setengah hari udah lewat, gimana kabarnya?',
+        'Selamat Siang, jangan lupa hidrasi ya.',
+        'Waktunya cek transaksi hari ini.',
+        'Siang Kak, semoga harimu lancar terus.'
     ],
     sore: [
         'Selamat Sore, Kak!',
-        'Sore, Kak! Hari ini gimana?',
-        'Halo Kak, sudah sore nih.',
-        'Selamat Sore! Yuk rapikan catatanmu.',
-        'Sore Kak, sebentar lagi istirahat.'
+        'Sore! Hari ini gimana?',
+        'Halo, sudah sore nih.',
+        'Yuk rapikan catatan sebelum pulang.',
+        'Sore-sore, waktunya evaluasi pengeluaran.',
+        'Hai! Sebentar lagi malam, gimana harinya?',
+        'Selamat Sore, tetap semangat sampai akhir hari.',
+        'Sore Kak, jangan lupa istirahat sejenak.',
+        'Hampir selesai harinya, cek dulu keuanganmu.'
     ],
     malam: [
         'Selamat Malam, Kak!',
-        'Malam, Kak! Waktunya rekap harian.',
-        'Halo Kak, sudah larut nih.',
-        'Selamat Malam! Jangan lupa istirahat.',
-        'Malam Kak, cek dulu keuanganmu.'
+        'Malam! Waktunya rekap harian.',
+        'Halo, sudah larut nih.',
+        'Sebelum tidur, cek dulu keuanganmu.',
+        'Malam-malam gini pas buat evaluasi pengeluaran.',
+        'Hai! Gimana harinya, semua lancar?',
+        'Selamat Malam, jangan lupa istirahat.',
+        'Malam Kak, tutup hari dengan catatan rapi.',
+        'Udah larut, mari beres-beres transaksi dulu.'
     ]
 };
 window.getLockGreeting = function() {
