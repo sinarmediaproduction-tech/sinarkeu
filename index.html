@@ -1489,6 +1489,17 @@ alter table public.settings
                 <button type="button" class="btn btn-secondary" onclick="window.pushMenuPlanEstimateToShoppingList()">Tambahkan ke Daftar Belanja Bulanan</button>
             </div>
         </div>
+
+        <div class="mplan-estimate-card mplan-gizi-card">
+            <div class="mplan-estimate-header">
+                <span>Estimasi Gizi Mingguan</span>
+                <span id="mplanGiziKalori" class="mplan-estimate-total">0 kkal</span>
+            </div>
+            <div id="mplanGiziMacros" class="mplan-gizi-macros"></div>
+            <div id="mplanGiziList" class="mplan-estimate-list"></div>
+            <p id="mplanGiziEmpty" class="slist-empty">Belum ada bahan — tambahkan menu di atas terlebih dahulu.</p>
+            <p id="mplanGiziNote" class="mplan-estimate-note"></p>
+        </div>
     </div>
 </div>
 
@@ -2049,11 +2060,11 @@ alter table public.settings
   statis sebelumnya, jadi urutan dependency antar file tidak berubah.
 -->
 <script>
-    var APP_JS_VERSION = 'v33'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
+    var APP_JS_VERSION = 'v34'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
     var SK_JS_FILES = [
         'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js', 'js/db.js',
         'js/telegram.js', 'js/account.js', 'js/book.js', 'js/transaction.js',
-        'js/sync-conflict.js', 'js/budget.js', 'js/harga-pangan.js',
+        'js/sync-conflict.js', 'js/budget.js', 'js/harga-pangan.js', 'js/nutrisi.js',
         'js/shopping-list.js', 'js/menu-plan.js', 'js/electricity-plan.js', 'js/payment-reminder.js', 'js/expense-chart.js',
         'js/render.js', 'js/report.js', 'js/forecast.js', 'js/report-shortcuts.js',
         'js/backup.js', 'js/safety-snapshot.js', 'js/forex.js', 'js/ai.js',

@@ -190,6 +190,21 @@ window.openMenuPlanView = function() {
             window.skWarn('[MenuPlan] Gagal ambil harga referensi pangan:', e.message);
         });
     }
+
+    // Tarik data gizi (basis lokal + fallback Open Food Facts, lihat
+    // js/nutrisi.js) untuk minggu yang sedang dibuka, supaya kartu Estimasi
+    // Gizi terisi tanpa perlu buka-tutup halaman dulu.
+    if (window.isOnline && window.isOnline() && typeof window.prefetchNutrisiOFFUntukMenuPlan === 'function') {
+        const bookAtOpen = window.currentBookId;
+        const weekAtOpen = window._mplanActiveWeek;
+        window.prefetchNutrisiOFFUntukMenuPlan(window.getMenuPlan(bookAtOpen)[weekAtOpen]).then(function() {
+            const modalEl = document.getElementById('menuPlanModal');
+            if (!modalEl || !modalEl.classList.contains('show') || window.currentBookId !== bookAtOpen || window._mplanActiveWeek !== weekAtOpen) return;
+            window.renderMenuPlan();
+        }).catch(function(e) {
+            window.skWarn('[MenuPlan] Gagal ambil data gizi dari Open Food Facts:', e.message);
+        });
+    }
 };
 
 // ==================== RENDER ====================
@@ -197,6 +212,17 @@ window.openMenuPlanView = function() {
 window.switchMenuPlanWeek = function(weekKey) {
     window._mplanActiveWeek = weekKey;
     window.renderMenuPlan();
+    // Bahan minggu yang baru dibuka mungkin belum pernah dicek ke Open Food
+    // Facts (lihat js/nutrisi.js) -- tarik diam-diam, lalu render ulang
+    // kartu gizi kalau user masih di minggu yang sama saat hasilnya datang.
+    if (window.isOnline && window.isOnline() && typeof window.prefetchNutrisiOFFUntukMenuPlan === 'function') {
+        const data = window.getMenuPlan(window.currentBookId);
+        window.prefetchNutrisiOFFUntukMenuPlan(data[weekKey]).then(function() {
+            if (window._mplanActiveWeek === weekKey) window.renderMenuPlan();
+        }).catch(function(e) {
+            window.skWarn('[MenuPlan] Gagal ambil data gizi dari Open Food Facts:', e.message);
+        });
+    }
 };
 
 window.renderMenuPlan = function() {
@@ -267,6 +293,7 @@ window.renderMenuPlan = function() {
         }).join('');
     }
     window.renderMenuPlanEstimate(weekData, activeWeek);
+    if (window.renderMenuPlanGizi) window.renderMenuPlanGizi(weekData, activeWeek);
 };
 
 window._mplanFormatQty = function(qty) {

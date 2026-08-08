@@ -5296,6 +5296,21 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   margin: 6px 0 0;
 }
 
+/* ── Kartu Estimasi Gizi Mingguan (di bawah kartu Estimasi Belanja) ── */
+.mplan-gizi-card { margin-top: 12px; }
+.mplan-gizi-macros { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.mplan-gizi-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-lt);
+  color: var(--ink-muted);
+  font-size: .68rem;
+}
+.mplan-gizi-chip b { color: var(--accent); font-family: var(--font-mono); font-size: .74rem; }
+
 /* ── Form Tambah/Ubah Menu (modal biasa, menuPlanMealModal) ── */
 .mplan-bahan-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
 .mplan-bahan-row {
