@@ -311,7 +311,7 @@ window._mplanEstimateIngredient = function(name, qty, unit) {
         normQty = qty / 1000;
     }
     if (normQty === null) return { matched: true, ref: ref, subtotal: null, unitMismatch: true };
-    return { matched: true, ref: ref, subtotal: normQty * ref.price, unitMismatch: false };
+    return { matched: true, ref: ref, subtotal: normQty * ref.price, normQty: normQty, unitMismatch: false };
 };
 
 // Sama seperti aggregateMenuPlanBahan, tapi dibatasi ke SATU hari saja --
@@ -561,9 +561,21 @@ window.deleteMenuPlanMeal = async function(weekKey, dayKey, mealId) {
 
 // ==================== KIRIM ESTIMASI KE DAFTAR BELANJA BULANAN ====================
 // Menambahkan seluruh bahan yang sudah dikumpulkan (window._mplanLastAggregated)
-// sebagai barang baru ke Daftar Belanja (js/shopping-list.js), lengkap
-// dengan harga referensi komoditas yang sudah cocok -- supaya user tidak
-// perlu ketik ulang satu-satu bahan yang sama persis di Daftar Belanja.
+// ke Daftar Belanja (js/shopping-list.js), lengkap dengan harga referensi
+// komoditas yang sudah cocok -- supaya user tidak perlu ketik ulang
+// satu-satu bahan yang sama persis di Daftar Belanja.
+//
+// Barang hasil push ditandai `item.mplanKey` (nama bahan, lowercase) supaya
+// push BERIKUTNYA (mis. dari minggu lain, atau setelah jadwal menu diubah)
+// bisa MENGUPDATE jumlah & harga barang yang sama, bukan cuma skip diam-diam
+// seperti sebelumnya -- supaya kalau "Bawang Merah" dipakai di Minggu 1 & 2
+// dengan jumlah beda, Daftar Belanja tetap mencerminkan total yang benar.
+// Barang yang sudah ada TAPI bukan hasil push (ditambah manual oleh user,
+// tanpa mplanKey) tetap TIDAK disentuh sama sekali -- dianggap sudah "milik"
+// user, cuma dihitung sebagai "sudah ada" di ringkasan. Barang hasil push
+// yang harganya sudah pernah diedit manual (priceSource 'manual') juga tidak
+// pernah ditimpa lagi, mengikuti pola yang sama dengan
+// window._applyHargaPanganReferensiToShoppingList.
 window.pushMenuPlanEstimateToShoppingList = function() {
     if (window._mplanBlockIfViewer()) return;
     const activeWeek = window._mplanActiveWeek || 'w1';
@@ -575,30 +587,79 @@ window.pushMenuPlanEstimateToShoppingList = function() {
         return;
     }
     const items = window.getShoppingList(window.currentBookId);
-    const existingNames = new Set(items.map(function(i) { return (i.name || '').trim().toLowerCase(); }));
-    let added = 0;
+    // Index barang yang sudah ada: barang hasil push sebelumnya dicari lewat
+    // mplanKey; barang manual (tanpa mplanKey) dicari lewat nama, sama
+    // seperti perilaku dedup lama -- supaya tidak menimpa barang yang user
+    // tambahkan sendiri.
+    const byKey = new Map();
+    items.forEach(function(item) {
+        const k = item.mplanKey || (item.name || '').trim().toLowerCase();
+        if (!byKey.has(k)) byKey.set(k, item);
+    });
+
+    let added = 0, updated = 0, skippedManual = 0;
     aggregated.forEach(function(ing) {
         const key = ing.name.trim().toLowerCase();
-        if (existingNames.has(key)) return; // hindari duplikat kalau sudah ada barang dengan nama sama
         const est = window._mplanEstimateIngredient(ing.name, ing.qty, ing.unit);
-        const price = (est.matched && !est.unitMismatch) ? est.ref.price : 0;
-        items.push({
+        // Kalau bahan cocok ke komoditas acuan & satuannya sesuai: pakai
+        // jumlah HASIL KONVERSI (mis. gram->kg) apa adanya, TIDAK dibulatkan
+        // paksa ke bilangan bulat -- field qty di Daftar Belanja sudah
+        // mendukung desimal, dan harga acuan dihitung per satuan itu (mis.
+        // per kg), jadi qty pecahan (mis. 0,3) memang perlu supaya
+        // Qty x Harga di Daftar Belanja tetap = perkiraan biaya bahan itu
+        // yang benar (sebelumnya dibulatkan minimal 1, jadi bahan dalam
+        // jumlah kecil bisa dihitung seolah 1 kg penuh -- taksiran jauh
+        // meleset lebih mahal).
+        const matched = est.matched && !est.unitMismatch;
+        let qty = Math.round((matched ? est.normQty : ing.qty) * 100) / 100;
+        if (!(qty > 0)) qty = ing.qty > 0 ? Math.round(ing.qty * 100) / 100 : 1;
+        const price = matched ? est.ref.price : 0;
+
+        const existing = byKey.get(key);
+        if (existing) {
+            if (!existing.mplanKey) { skippedManual++; return; } // barang manual, jangan disentuh
+            const priceLocked = existing.priceSource === 'manual';
+            let changed = false;
+            if (!priceLocked) {
+                if (existing.qty !== qty) { existing.qty = qty; changed = true; }
+                if (existing.price !== price) {
+                    existing.price = price;
+                    existing.priceSource = price ? 'ref' : existing.priceSource;
+                    existing.priceRefDate = (matched && est.ref) ? est.ref.date : existing.priceRefDate;
+                    changed = true;
+                }
+            }
+            if (changed) updated++;
+            return;
+        }
+
+        const newItem = {
             id: 'sl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
             name: ing.name,
-            qty: Math.max(1, Math.round(ing.qty) || 1),
+            qty: qty,
             price: price,
             priceSource: price ? 'ref' : undefined,
-            priceRefDate: (est.matched && est.ref) ? est.ref.date : undefined,
-            category: '',
-            done: false
-        });
-        existingNames.add(key);
+            priceRefDate: (matched && est.ref) ? est.ref.date : undefined,
+            category: 'Belanja Harian',
+            done: false,
+            mplanKey: key
+        };
+        items.push(newItem);
+        byKey.set(key, newItem);
         added++;
     });
-    if (!added) {
-        window.showToast && window.showToast('Semua bahan sudah ada di Daftar Belanja.', 'warning');
+
+    if (!added && !updated) {
+        window.showToast && window.showToast(
+            skippedManual ? 'Semua bahan sudah ada di Daftar Belanja (ditambahkan manual sebelumnya).' : 'Semua bahan sudah sesuai di Daftar Belanja.',
+            'warning'
+        );
         return;
     }
     window.saveShoppingList(window.currentBookId, items);
-    window.showToast && window.showToast(`${added} bahan dari ${weekLabel} ditambahkan ke Daftar Belanja Bulanan.`, 'success');
+    const parts = [];
+    if (added) parts.push(`${added} ditambahkan`);
+    if (updated) parts.push(`${updated} diperbarui`);
+    if (skippedManual) parts.push(`${skippedManual} sudah ada manual`);
+    window.showToast && window.showToast(`Daftar Belanja dari ${weekLabel}: ${parts.join(', ')}.`, 'success');
 };

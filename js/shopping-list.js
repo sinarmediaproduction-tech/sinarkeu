@@ -336,7 +336,13 @@ window.renderShoppingList = function() {
         }
         _slistNoCounter++;
         const itemNo = _slistNoCounter;
-        const qtyText = (item.qty && Number(item.qty) > 1) ? `x${window.escapeHtml(String(item.qty))}` : '';
+        // Tampilkan badge qty kecuali persis 1 (default barang biasa) --
+        // qty pecahan (mis. 0,3) TETAP ditampilkan, bukan cuma disembunyikan
+        // seperti sebelumnya (dulu cuma dicek `> 1`), supaya barang hasil
+        // push dari Daftar Menu (js/menu-plan.js, bisa pecahan kg/liter)
+        // tetap kelihatan jumlah persisnya, bukan cuma subtotal harganya.
+        const qtyNum = Number(item.qty);
+        const qtyText = (item.qty && qtyNum !== 1) ? `x${window.escapeHtml(String(item.qty).replace('.', ','))}` : '';
         const catText = item.category ? window.escapeHtml(item.category) : '';
         const catColor = item.category ? window.getCategoryColor(item.category) : null;
         const catStyleAttr = catColor ? ` style="--cat-color:${catColor}"` : '';
