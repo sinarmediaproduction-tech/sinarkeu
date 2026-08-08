@@ -967,6 +967,7 @@ alter table public.settings
             <div class="setelan-desc">
                 <span>Setiap akun terhubung ke database Supabase yang berbeda. Beralih akun akan memuat data dari database tersebut.</span>
             </div>
+            <button type="button" class="btn btn-secondary" style="width:100%; margin-bottom:14px;" onclick="window.toggleManual()">📖 Panduan Pengguna &amp; Setup</button>
             <div id="accModalList" class="acc-modal-list"></div>
             <div style="border-top:1.5px dashed var(--ink); padding-top:16px; margin-top:12px;">
                 <button type="button" class="btn btn-secondary" id="newAccToggleBtn" style="width:100%; display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700;" onclick="window.toggleAddAccountForm()"><span id="newAccToggleBtnLabel">＋ Tambah Akun</span></button>
@@ -1745,6 +1746,7 @@ alter table public.settings
             <div style="font-size:1rem; font-weight:700; margin-bottom:4px;">Setup Sinarkeu</div>
             <div style="font-size:.75rem; color:var(--ink-faint);">Masukkan kredensial Supabase dan buat password keamanan</div>
         </div>
+        <button type="button" class="btn btn-secondary" style="width:100%; margin-bottom:16px;" onclick="window.toggleManual()">📖 Panduan Pengguna &amp; Setup</button>
         <div class="form-group"><label>Supabase Project URL</label><input type="text" id="setupUrlInput" class="form-control" placeholder="https://xxxxxxxx.supabase.co" onblur="window._skCheckSetupBackendStatus && window._skCheckSetupBackendStatus()"></div>
         <div class="form-group"><label data-i18n="supabase_key_label">Supabase Anon Key</label><input type="password" id="setupKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." onblur="window._skCheckSetupBackendStatus && window._skCheckSetupBackendStatus()"><div style="display:flex; align-items:center; gap:6px; margin-top:6px;"><input type="checkbox" id="showKeyToggle" onchange="document.getElementById('setupKeyInput').type = this.checked ? 'text' : 'password'"><label for="showKeyToggle" style="font-size:.7rem; color:var(--ink-faint); cursor:pointer; text-transform:none; letter-spacing:0;">Tampilkan key</label></div></div>
         <div id="setupBackendStatusMsg" class="setup-status" style="display:none; margin-bottom:12px;"></div>
