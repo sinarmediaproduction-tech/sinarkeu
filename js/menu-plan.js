@@ -1,12 +1,13 @@
-// ==================== DAFTAR MENU (JADWAL MASAK 2 MINGGUAN) ====================
-// Menu sidebar baru: jadwal menu masak untuk 2 minggu (Minggu 1 & Minggu 2,
+// ==================== DAFTAR MENU (JADWAL MASAK 4 MINGGUAN) ====================
+// Menu sidebar baru: jadwal menu masak untuk 4 minggu (Minggu 1-4,
 // masing-masing Senin-Minggu), tiap menu punya daftar bahan (nama, qty,
-// satuan). Data disimpan per-minggu: { w1: {senin:[],...}, w2: {senin:[],...} }
+// satuan). Data disimpan per-minggu: { w1: {senin:[],...}, ..., w4: {...} }
 // -- lihat window.MENU_PLAN_WEEKS & window.getMenuPlan. User berpindah
 // minggu lewat tab (window.switchMenuPlanWeek); tab yang cocok dengan
 // minggu kalender berjalan ditentukan otomatis & konsisten lewat
-// window._mplanCurrentWeekKey() (paritas nomor minggu sejak epoch), supaya
-// badge "Hari Ini" & tab default saat buka halaman selalu pas.
+// window._mplanCurrentWeekKey() (posisi nomor minggu sejak epoch modulo 4,
+// jadi siklus 4 minggu berulang terus), supaya badge "Hari Ini" & tab
+// default saat buka halaman selalu pas.
 //
 // Semua bahan dari seluruh menu DALAM SATU MINGGU YANG SAMA otomatis
 // dikumpulkan jadi satu "Estimasi Belanja Mingguan" yang dicocokkan ke
@@ -29,7 +30,9 @@
 
 window.MENU_PLAN_WEEKS = [
     { key: 'w1', label: 'Minggu 1' },
-    { key: 'w2', label: 'Minggu 2' }
+    { key: 'w2', label: 'Minggu 2' },
+    { key: 'w3', label: 'Minggu 3' },
+    { key: 'w4', label: 'Minggu 4' }
 ];
 window.MENU_PLAN_DAYS = [
     { key: 'senin', label: 'Senin' },
@@ -55,17 +58,18 @@ window._mplanTodayKey = function() {
     return map[new Date().getDay()];
 };
 
-// Menentukan tab minggu ('w1'/'w2') yang cocok dengan minggu kalender
-// berjalan, berdasarkan paritas nomor minggu sejak epoch -- fungsi murni
-// dari tanggal hari ini saja (tidak perlu state tersimpan), jadi hasilnya
-// otomatis bergantian tiap minggu & konsisten di semua perangkat. Dipakai
-// untuk badge "Hari Ini" dan tab default saat halaman dibuka.
+// Menentukan tab minggu ('w1'..'w4') yang cocok dengan minggu kalender
+// berjalan, berdasarkan posisi nomor minggu sejak epoch modulo 4 -- fungsi
+// murni dari tanggal hari ini saja (tidak perlu state tersimpan), jadi
+// hasilnya otomatis bergantian tiap minggu (siklus 4 minggu berulang) &
+// konsisten di semua perangkat. Dipakai untuk badge "Hari Ini" dan tab
+// default saat halaman dibuka.
 window._mplanCurrentWeekKey = function() {
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const daysSinceEpoch = Math.floor(startOfDay.getTime() / 86400000);
     const weekIndex = Math.floor(daysSinceEpoch / 7);
-    return (weekIndex % 2 === 0) ? 'w1' : 'w2';
+    return window.MENU_PLAN_WEEKS[weekIndex % window.MENU_PLAN_WEEKS.length].key;
 };
 
 window.getMenuPlan = function(bookId) {
@@ -77,21 +81,26 @@ window.getMenuPlan = function(bookId) {
     if (!data || typeof data !== 'object') data = {};
 
     // Migrasi data lama (format 1 minggu, day-key langsung di root, mis.
-    // {senin:[...], selasa:[...]}) ke format 2 minggu {w1:{...}, w2:{...}}
+    // {senin:[...], selasa:[...]}) ke format multi-minggu {w1:{...}, ...}
     // -- supaya jadwal yang sudah pernah diisi user tidak hilang, otomatis
-    // jadi isi Minggu 1 saat pertama kali dibuka setelah update ini.
+    // jadi isi Minggu 1 saat pertama kali dibuka setelah update ini. Data
+    // yang sudah dalam format 2 minggu lama ({w1, w2} tanpa w3/w4) TIDAK
+    // butuh migrasi eksplisit di sini -- blok "pastikan semua minggu ada"
+    // di bawah otomatis menambahkan w3 & w4 kosong.
     const looksLikeOldFormat = !data.w1 && !data.w2 && window.MENU_PLAN_DAYS.some(function(d) {
         return Array.isArray(data[d.key]);
     });
     if (looksLikeOldFormat) {
         const migrated = {};
         window.MENU_PLAN_DAYS.forEach(function(d) { migrated[d.key] = data[d.key] || []; });
-        data = { w1: migrated, w2: {} };
+        data = { w1: migrated };
     }
 
-    // Pastikan kedua minggu & semua 7 hari di tiap minggu selalu ada
-    // (kalau belum pernah diisi) supaya renderMenuPlan tidak perlu cek
-    // keberadaan tiap kali.
+    // Pastikan SEMUA minggu di window.MENU_PLAN_WEEKS & semua 7 hari di
+    // tiap minggu selalu ada (kalau belum pernah diisi) supaya
+    // renderMenuPlan tidak perlu cek keberadaan tiap kali -- ini juga yang
+    // otomatis mengisi w3/w4 kosong untuk data lama yang cuma punya w1/w2
+    // (dari sebelum Daftar Menu diperpanjang jadi 4 minggu).
     window.MENU_PLAN_WEEKS.forEach(function(w) {
         if (!data[w.key] || typeof data[w.key] !== 'object') data[w.key] = {};
         window.MENU_PLAN_DAYS.forEach(function(d) {

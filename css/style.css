@@ -5076,16 +5076,20 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   margin: 0 0 14px;
   line-height: 1.5;
 }
-/* Tab pemilih minggu (Minggu 1 / Minggu 2) -- segmented control 2 tombol
-   di atas kartu-kartu hari. Titik kecil menandai minggu yang cocok dengan
-   minggu kalender berjalan (lihat window._mplanCurrentWeekKey). */
+/* Tab pemilih minggu (Minggu 1..4) -- segmented control di atas
+   kartu-kartu hari. Titik kecil menandai minggu yang cocok dengan minggu
+   kalender berjalan (lihat window._mplanCurrentWeekKey). Pakai grid (bukan
+   flex) supaya jumlah kolom gampang diatur beda antara layar lebar & HP
+   sempit tanpa mengubah markup -- lihat media query di bawah untuk 2x2 di
+   HP (4 tab "MINGGU 1".."MINGGU 4" kalau dipaksa 1 baris penuh di layar
+   sempit jadi kepotong/kepenceng). */
 .mplan-week-tabs {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 6px;
   margin-bottom: 14px;
 }
 .mplan-week-tab {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5115,6 +5119,12 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   border-radius: 50%;
   background: currentColor;
   flex: 0 0 auto;
+}
+@media (max-width: 480px) {
+  /* 4 tab minggu ("MINGGU 1".."MINGGU 4") dipaksa 1 baris di layar HP
+     sempit bikin teksnya kepotong/kepenceng -- di lebar ini disusun 2x2
+     supaya tiap tab tetap punya ruang cukup buat labelnya. */
+  .mplan-week-tabs { grid-template-columns: repeat(2, 1fr); }
 }
 .mplan-days {
   display: flex;
