@@ -1,520 +1,160 @@
-// api/harga-pangan.js — Vercel Serverless Function
-// Proxy harga pangan acuan untuk fitur auto-update kolom harga di Daftar
-// Belanja (js/shopping-list.js, lewat js/harga-pangan.js). Pola CORS &
-// struktur sengaja disamakan dengan api/emas.js supaya konsisten.
-//
-// SUMBER (berjenjang, per-komoditas):
-//   1) SISKAPERBAPO -- sistem resmi Disperindag Provinsi Jawa Timur
-//      (siskaperbapo.jatimprov.go.id). Utama karena datanya murni Jatim
-//      (bukan turunan nasional) dan mencakup semua 12 komoditas yang
-//      ditrack app ini. Endpoint tidak resmi/tidak didokumentasikan --
-//      hasil reverse-engineering lewat DevTools (lihat komentar di bawah
-//      SISKAPERBAPO_URL). Situs ini ada di belakang Cloudflare tapi
-//      (per pengecekan manual) belum pakai JS Challenge/Turnstile, jadi
-//      proxy server-to-server masih bisa lolos asal header mirip browser
-//      asli -- KALAU Cloudflare-nya diperketat suatu saat, fetch ini akan
-//      mulai gagal/timeout dan otomatis jatuh ke fallback di bawah (tidak
-//      bikin seluruh fitur mati).
-//   2) PIHPS Bank Indonesia -- fallback, dipakai HANYA untuk komoditas yang
-//      gagal/tidak ada di SISKAPERBAPO pada request tsb. Endpoint ini resmi
-//      didokumentasikan dan sudah terbukti stabil sebelumnya.
-//
-// GET /api/harga-pangan?slugs=beras-medium,cabai-rawit-merah
-// -> { prices: { "beras-medium": { price, date, region, source }, ... } }
-// Slug yang tidak dikenali atau gagal diambil dari KEDUA sumber dilewati
-// saja (tidak bikin seluruh request gagal) -- caller (js/harga-pangan.js)
-// sudah didesain untuk toleran terhadap hasil parsial.
+# Panduan Setup SQL — SinarKeu
 
-// ==================== SUMBER 1: SISKAPERBAPO (Disperindag Jatim) ====================
+> **Catatan tentang dokumen ini:** versi sebelumnya dari file ini sempat
+> tertimpa tidak sengaja (isinya berubah jadi salinan mentah
+> `api/harga-pangan.js`), sehingga skema dasar yang tadinya ada di sini
+> hilang dari repo. Dokumen ini ditulis ulang dari nol dengan membaca
+> ulang kode aplikasi yang berjalan **saat ini** (bukan menyalin isi lama
+> yang sudah tidak ada jejaknya), dan sekarang berfungsi sebagai **indeks
+> urutan eksekusi** untuk semua file di `sql/` — bukan tempat menyalin
+> ulang isi SQL-nya (supaya tidak ada dua sumber kebenaran yang bisa
+> saling berbeda). Untuk isi SQL yang sebenarnya, buka file yang
+> direferensikan di setiap langkah.
 
-// [ENDPOINT TIDAK RESMI] Ditemukan lewat DevTools Network tab, bukan
-// dokumentasi resmi -- bisa berubah tanpa pemberitahuan. Nama file
-// "tabel.nodesign" (bukan cuma "tabel") sengaja: itu varian yang
-// mengembalikan fragmen HTML polos tanpa layout situs, dipakai situsnya
-// sendiri untuk AJAX partial-update tabel.
-const SISKAPERBAPO_URL = 'https://siskaperbapo.jatimprov.go.id/harga/tabel.nodesign/';
-const SISKAPERBAPO_REFERER = 'https://siskaperbapo.jatimprov.go.id/harga/tabel/';
+## Cara pakai
 
-// slug internal -> data-commodity-id SISKAPERBAPO. Diambil dari atribut
-// data-commodity-id di <span class="price-tooltip-enabled"> pada respons
-// HTML "Harga Rata-Rata Provinsi Jawa Timur" (level provinsi, kabkota
-// dikosongkan -- lihat buildSiskaperbapoBody). Kalau situsnya menambah/
-// mengubah id komoditas, baris terkait cukup tidak ketemu saat parsing dan
-// otomatis jatuh ke fallback BI, bukan bikin request lain ikut gagal.
-const SLUG_TO_SISKAPERBAPO_ID = {
-  'beras-premium': '2',
-  'beras-medium': '4',
-  'gula-pasir': '7',
-  'minyak-goreng-curah': '10',
-  'daging-sapi': '12',
-  'daging-ayam': '13',
-  'telur-ayam': '16',
-  'cabai-merah-keriting': '37',
-  'bawang-merah': '39',
-  'bawang-putih': '49', // Sinco/Honan -- merek acuan yang dipakai SISKAPERBAPO
-  'cabai-rawit-merah': '50',
-  'minyak-goreng-kemasan': '96', // MINYAKITA -- representatif krn harganya diatur (HET)
+1. Buka **Supabase Dashboard → SQL Editor** pada project yang dipakai
+   aplikasi (URL + anon key yang sama dengan `js/config.js` / setup Anda).
+2. Jalankan file-file di bawah **satu per satu, sesuai urutan FASE**.
+   Semua file idempoten (aman dijalankan ulang — pakai `IF EXISTS`/
+   `IF NOT EXISTS`, `CREATE OR REPLACE`), jadi tidak masalah kalau Anda
+   perlu mengulang dari awal atau menjalankan ulang project yang sudah
+   pernah setup sebagian.
+3. Kalau project Anda **sudah berjalan lama** (bukan instalasi baru),
+   jalankan dulu query verifikasi di akhir FASE 0 untuk cek skema yang
+   sudah ada sebelum menjalankan `CREATE TABLE`.
+4. FASE 3 (Buku Bersama) **opsional** — hanya perlu kalau Anda memakai
+   fitur berbagi buku dengan anggota lain (role admin/editor/viewer). Buku
+   pribadi biasa jalan sempurna hanya dengan FASE 0–2.
 
-  // [BARU] Sayur mayur -- tidak ada padanan di PIHPS BI (comcat_id BI cuma
-  // untuk 21 komoditas pokok nasional), jadi slug ini TIDAK ada di
-  // SLUG_TO_BI_ID di bawah -> kalau SISKAPERBAPO gagal, slug ini otomatis
-  // dilewati (bukan error), bukan fallback ke BI.
-  'kol-kubis': '44',
-  'kentang': '45',
-  'tomat': '46',
-  'wortel': '47',
-  'buncis': '48',
+---
 
-  // [BARU] Ikan segar
-  'ikan-bandeng': '58',
-  'ikan-kembung': '59',
-  'ikan-tongkol': '60',
-  'ikan-tuna': '61',
-  'ikan-cakalang': '62',
-  'ikan-asin-teri': '40',
+## FASE 0 — Skema dasar
 
-  // [BARU] Sembako tambahan
-  'susu-kental-manis': '20', // Merk Bendera -- representatif
-  'susu-bubuk': '23', // Merk Bendera (Instant) -- representatif
-  'jagung-pipilan': '25',
-  'garam-beryodium': '28', // varian Halus (kg) -- lebih relevan utk belanja harian drpd varian Bata
-  'tepung-terigu': '30',
-  'kedelai': '33', // Lokal -- representatif
-  'mie-instan': '35', // Indomie Rasa Kari Ayam -- representatif
-  'kacang-hijau': '41',
-  'kacang-tanah': '42',
-  'ketela-pohon': '43',
+**File:** [`sql/00_base_schema.sql`](sql/00_base_schema.sql)
 
-  // [OTOMATIS] Sebelumnya cuma manual di frontend -- SISKAPERBAPO ternyata
-  // melacak ini juga.
-  'gas-melon': '82',
-};
+Membuat 5 tabel inti: `transactions`, `settings`, `backups`,
+`payment_reminders`, `audit_logs`, plus GRANT dasar ke role `anon` &
+`authenticated`. **Jalankan ini paling pertama**, sebelum file lain
+manapun di folder `sql/`.
 
-function fmtDateID(d) {
-  return d.toISOString().split('T')[0]; // YYYY-MM-DD, sama seperti field "tanggal" di payload
-}
+Kalau project Anda sudah punya tabel-tabel ini dari setup lama, jalankan
+query verifikasi di akhir file tersebut dulu untuk memastikan nama
+kolomnya cocok dengan yang diasumsikan file-file di fase berikutnya.
 
-const SISKAPERBAPO_USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36';
+---
 
-// [SESI PHP] Browser asli bawa Cookie PHPSESSID saat POST ke endpoint AJAX
-// -- sesi itu didapat dari GET halaman /harga/tabel/ lebih dulu. Percobaan
-// awal proxy ini langsung POST tanpa sesi sama sekali dan dapat 403 --
-// dugaan: aplikasi PHP-nya menolak POST AJAX tanpa sesi valid (beda dari
-// soal Cloudflare/IP reputation). Sesi di-cache di module scope (bertahan
-// selama Vercel function instance masih "warm", biasanya beberapa menit
-// sampai berjam-jam) supaya tidak GET ulang di setiap request kalau tidak
-// perlu -- TTL pendek (10 menit) dipilih hati-hati: sesi PHP bisa
-// kedaluwarsa di server, lebih baik agak sering refresh daripada dapat 403
-// gara-gara sesi basi.
-let _cachedSessionCookie = null;
-let _cachedSessionAt = 0;
-const SESSION_TTL_MS = 10 * 60 * 1000;
+## FASE 1 — Keamanan & hardening dasar
 
-async function getSiskaperbapoSessionCookie() {
-  const now = Date.now();
-  if (_cachedSessionCookie && now - _cachedSessionAt < SESSION_TTL_MS) {
-    return _cachedSessionCookie;
-  }
+Urutan di bawah **penting** — beberapa file saling bergantung.
 
-  const res = await fetch(SISKAPERBAPO_REFERER, {
-    headers: {
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'User-Agent': SISKAPERBAPO_USER_AGENT,
-    },
-    signal: AbortSignal.timeout(10000),
-  });
+| # | File | Fungsi |
+|---|------|--------|
+| 1 | [`sql/supabase_migration_account_tag.sql`](sql/supabase_migration_account_tag.sql) | Tambah kolom `account_tag` ke `settings`/`transactions`/`audit_logs` + index — dasar isolasi data multi-akun dalam satu project Supabase. |
+| 2 | [`sql/harden_transactions_encryption.sql`](sql/harden_transactions_encryption.sql) | Tambah kolom `enc_payload` (ciphertext AES-GCM) ke `transactions`/`payment_reminders`, longgarkan `NOT NULL` kolom lama, **aktifkan RLS** + policy `anon_full_access` dasar di `transactions`/`settings`/`backups`/`payment_reminders`/`audit_logs`. |
+| 3 | [`sql/fix_settings_upsert.sql`](sql/fix_settings_upsert.sql) | Bersihkan duplikat lama di `settings`, buat unique constraint `settings_unique_row (book_id, key, account_tag)` supaya `on_conflict` di `js/db.js` benar-benar meng-upsert, plus cron harian pembersih baris `account_tag IS NULL`. Butuh extension `pg_cron` — enable dulu lewat **Dashboard → Database → Extensions** kalau `CREATE EXTENSION` di skrip ditolak. |
+| 4 | [`sql/fix_server_side_updated_at.sql`](sql/fix_server_side_updated_at.sql) | Trigger supaya `updated_at` selalu dari jam server Postgres (bukan jam device) — mencegah salah menang saat sinkronisasi multi-device akibat jam device yang meleset. |
+| 5 | [`sql/perf_query_indexes.sql`](sql/perf_query_indexes.sql) | Index tambahan yang cocok dengan pola query nyata (`book_id + is_deleted + date`, `book_id + updated_at`) — signifikan untuk buku dengan riwayat transaksi besar. |
+| 6 | [`sql/cleanup_old_audit_logs.sql`](sql/cleanup_old_audit_logs.sql) | Jadwalkan `pg_cron` untuk hapus otomatis baris `audit_logs` yang lebih tua dari 180 hari, supaya log tidak menumpuk selamanya. |
 
-  if (!res.ok) {
-    throw new Error(`SISKAPERBAPO gagal ambil sesi (GET /harga/tabel/): ${res.status}`);
-  }
+---
 
-  // getSetCookie() -- API khusus undici/Node 18+ untuk baca SEMUA header
-  // Set-Cookie sebagai array (Headers.get('set-cookie') biasa akan
-  // menggabungkan semua jadi 1 string dengan koma, salah parse). Fallback
-  // ke .get() untuk runtime yang belum dukung getSetCookie.
-  const rawCookies =
-    typeof res.headers.getSetCookie === 'function'
-      ? res.headers.getSetCookie()
-      : [res.headers.get('set-cookie')].filter(Boolean);
+## FASE 2 — Harga Pangan Referensi
 
-  const phpSessId = rawCookies
-    .map((c) => c.match(/^PHPSESSID=([^;]+)/))
-    .find(Boolean);
+**File:** [`sql/fix_rls_harga_pangan_42501.sql`](sql/fix_rls_harga_pangan_42501.sql)
 
-  if (!phpSessId) {
-    console.warn('[harga-pangan] SISKAPERBAPO: GET /harga/tabel/ tidak balas Set-Cookie PHPSESSID. Header Set-Cookie mentah:', JSON.stringify(rawCookies));
-    throw new Error('SISKAPERBAPO tidak mengembalikan PHPSESSID');
-  }
+Ini **versi terbaru & lengkap** untuk fitur auto-isi harga di Daftar
+Belanja (`js/harga-pangan.js`, proxy `api/harga-pangan.js`) — sudah
+menyertakan kolom `region` (dulu file terpisah `add_region_to_harga_
+pangan.sql`) dan GRANT eksplisit (dulu hilang di `harga_pangan_
+referensi.sql` versi awal, itulah yang bikin error 42501). Cukup jalankan
+**file ini saja**; `sql/harga_pangan_referensi.sql` dan `sql/add_region_
+to_harga_pangan.sql` sudah tidak perlu dijalankan terpisah untuk
+instalasi baru (isinya sudah tercakup di sini).
 
-  const cookie = `PHPSESSID=${phpSessId[1]}`;
-  _cachedSessionCookie = cookie;
-  _cachedSessionAt = now;
-  return cookie;
-}
+---
 
-// Body request persis meniru payload asli dari DevTools: cuma 2 field,
-// "tanggal" dan "kabkota".
-// [WILAYAH] Di-hardcode ke "magetankab" (Kabupaten Magetan) supaya harga
-// acuan yang tampil di app adalah level KABUPATEN MAGETAN, bukan rata-rata
-// Provinsi Jawa Timur. Nilai ini terbukti valid lewat endpoint
-// SISKAPERBAPO (lihat komentar di fetchSiskaperbapoDay). Kalau suatu saat
-// mau ganti wilayah, cukup ubah string di sini (mis. "madiunkab" untuk
-// Kabupaten Madiun, "madiunkota" untuk Kota Madiun, "" untuk rata-rata
-// Provinsi Jatim).
-const WILAYAH_ACUAN = 'magetankab';
-const WILAYAH_ACUAN_LABEL = 'Kabupaten Magetan';
-function buildSiskaperbapoBody(dateStr) {
-  return new URLSearchParams({ tanggal: dateStr, kabkota: WILAYAH_ACUAN }).toString();
-}
+## FASE 3 — Buku Bersama & Role (opsional)
 
-// Ambil & parse 1 hari data SISKAPERBAPO -> Map(commodityId -> { price, date }).
-// null kalau request gagal total (network/blocked/bukan HTML tabel yang
-// dikenali) -- caller lalu retry tanggal lain atau menyerah ke fallback BI.
-async function fetchSiskaperbapoDay(dateStr, sessionCookie) {
-  const res = await fetch(SISKAPERBAPO_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-      Accept: '*/*',
-      Origin: 'https://siskaperbapo.jatimprov.go.id',
-      Referer: SISKAPERBAPO_REFERER,
-      'X-Requested-With': 'XMLHttpRequest',
-      Cookie: sessionCookie,
-      // User-Agent browser asli -- header standar Node/undici sebelumnya
-      // ("SinarKeu/1.0") kemungkinan yang bikin situs ini menolak fetch
-      // langsung (beda dari BI PIHPS yang ternyata tidak sepicky itu).
-      'User-Agent': SISKAPERBAPO_USER_AGENT,
-    },
-    body: buildSiskaperbapoBody(dateStr),
-    signal: AbortSignal.timeout(10000),
-  });
+Hanya perlu kalau Anda memakai fitur berbagi buku (admin/editor/viewer).
+**Urutan wajib** karena tiap file bergantung pada fungsi/tabel dari file
+sebelumnya:
 
-  if (!res.ok) throw new Error(`SISKAPERBAPO request gagal: ${res.status}`);
-  const html = await res.text();
+| # | File | Fungsi | Bergantung pada |
+|---|------|--------|------------------|
+| 1 | [`sql/profiles_and_invite.sql`](sql/profiles_and_invite.sql) | Tabel `public.profiles` (salinan id+email dari `auth.users`) + trigger otomatis saat user baru daftar — fondasi untuk cari & undang anggota lewat email. | FASE 0 |
+| 2 | [`sql/shared_books_roles.sql`](sql/shared_books_roles.sql) | Tabel `sk_books` & `book_members`, fungsi helper `sk_is_book_admin`/`sk_is_book_member`, RLS role admin/editor/viewer untuk kedua tabel ini. | #1 |
+| 3 | [`sql/bootstrap_shared_book.sql`](sql/bootstrap_shared_book.sql) | Policy tambahan supaya admin **pertama** sebuah buku bisa insert dirinya sendiri ke `book_members` (mengatasi ayam-telur: butuh sudah admin untuk bisa jadi admin pertama). | #2 |
+| 4 | [`sql/harden_shared_book_data_rls.sql`](sql/harden_shared_book_data_rls.sql) | RLS role-aware di tabel **data** (`transactions`, `settings`, `payment_reminders`) — viewer read-only, editor/admin full akses, ditegakkan di database (bukan cuma UI). Membuat fungsi `sk_role_for_book` & `sk_book_is_shared` yang dipakai banyak file lain sesudah ini. | #2, #3 |
+| 5 | [`sql/harden_shared_book_backups_rls.sql`](sql/harden_shared_book_backups_rls.sql) | RLS role-aware khusus tabel `backups` (menutup celah yang tidak tercakup file #4). | #4 |
+| 6 | [`sql/protect_last_book_admin.sql`](sql/protect_last_book_admin.sql) | Cegah admin **terakhir** suatu buku menghapus/menurunkan perannya sendiri lewat REST API langsung (transfer admin tetap bisa: tambah admin baru dulu, baru hapus yang lama). | #2 |
+| 7 | [`sql/last_login_tracking.sql`](sql/last_login_tracking.sql) | Kolom `last_login_at` di `profiles` + RPC `sk_touch_last_login()` untuk catat kapan anggota terakhir login (ditampilkan di panel Kelola Anggota). | #1 |
+| 8 | [`sql/menu_visibility.sql`](sql/menu_visibility.sql) | Kolom `menu_visibility` (JSONB) di `sk_books` — admin bisa atur per-role menu apa yang tampil (Setelan/Backup/Device/Budget/Tambah Transaksi) lewat panel Manajemen User. | #2 |
+| 9 | [`sql/universal_payment_reminders.sql`](sql/universal_payment_reminders.sql) | Kolom `is_universal` di `payment_reminders` + fungsi `sk_book_member_signature` + RPC `sk_list_payment_reminders` — pengingat pembayaran ikut tampil di semua buku yang anggotanya persis sama (tim yang sama tidak perlu catat 2x). | #4 |
 
-  // Sanity check: kalau Cloudflare/situsnya mengembalikan halaman
-  // challenge/error alih-alih fragmen tabel yang diharapkan, jangan coba
-  // parse (bisa salah tangkap angka) -- anggap gagal, biar fallback jalan.
-  // [DEBUG] Sengaja di-log (bukan diam-diam return null) -- tanpa ini,
-  // kegagalan "200 OK tapi bukan tabel harga" (mis. halaman Cloudflare
-  // challenge yang statusnya tetap 200) tidak akan pernah muncul di Vercel
-  // Function Logs, bikin susah dibedakan dari "memang lagi tidak ada data".
-  if (!html.includes('price-tooltip-enabled') || !html.includes('data-commodity-id')) {
-    console.warn(
-      `[harga-pangan] SISKAPERBAPO (${dateStr}) balas 200 tapi bukan tabel harga yang dikenali. ` +
-      `Panjang body: ${html.length} char. Cuplikan awal: ${JSON.stringify(html.slice(0, 300))}`
-    );
-    return null;
-  }
+---
 
-  const rowMap = new Map();
-  const rowRegex = /<tr>([\s\S]*?)<\/tr>/g;
-  let rowMatch;
-  while ((rowMatch = rowRegex.exec(html))) {
-    const rowHtml = rowMatch[1];
-    const idMatch = rowHtml.match(/data-commodity-id=['"](\d+)['"]/);
-    if (!idMatch) continue; // baris header kategori (mis. "BERAS") tidak punya id, lewati
+## Lampiran — perbaikan situasional (bukan bagian instalasi baru)
 
-    const priceMatch = rowHtml.match(/class="right sekarang">([^<]*)</);
-    if (!priceMatch) continue;
+File-file berikut dibuat untuk memperbaiki drift/insiden spesifik di
+project yang **sudah berjalan**. Untuk instalasi baru, **lewati semua
+ini** — kondisi yang mereka perbaiki tidak akan terjadi kalau FASE 0–3 di
+atas diikuti berurutan sejak awal.
 
-    // Format Indonesia: titik = pemisah ribuan, contoh "127.712" -> 127712.
-    const raw = priceMatch[1].trim();
-    const num = Number(raw.replace(/\./g, '').replace(/,/g, ''));
-    if (!Number.isFinite(num) || num <= 0) continue;
+- **[`sql/cleanup_legacy_open_policies.sql`](sql/cleanup_legacy_open_policies.sql)** —
+  hapus policy RLS lama/duplikat (`qual = true` tanpa syarat) yang sempat
+  dibuat manual berkali-kali lewat Dashboard UI di beberapa project lama.
+  Jalankan hanya kalau query verifikasi di akhir file itu menunjukkan ada
+  policy dengan nama-nama legacy tersebut.
+- **[`sql/fix_rls_sync_42501.sql`](sql/fix_rls_sync_42501.sql)** —
+  pemulihan policy RLS `settings`/`backups` kalau sempat error 42501/401
+  saat sync. Isinya sudah tercakup ulang oleh FASE 3 #4–#5 di atas; hanya
+  perlu dijalankan sebagai perbaikan darurat, **setelah** FASE 3 #4
+  (butuh fungsi `sk_book_is_shared`).
+- **[`sql/fix_bdefault_shared_collision.sql`](sql/fix_bdefault_shared_collision.sql)** —
+  migrasi data satu-kali untuk memindahkan buku bersama yang terlanjur
+  dibuat dengan ID literal `'b_default'` (bentrok dengan ID buku pribadi
+  akun lain) ke ID unik baru. **Sesuaikan `old_id`/`new_id` di dalam
+  skrip** sebelum menjalankan — jangan copy-paste apa adanya, skrip ini
+  berisi nilai spesifik untuk satu insiden tertentu.
 
-    rowMap.set(idMatch[1], { price: num, date: dateStr });
-  }
+---
 
-  return rowMap.size ? rowMap : null;
-}
+## Checklist verifikasi akhir
 
-// Ambil harga hari ini dari SISKAPERBAPO untuk SEMUA slug yang diminta
-// sekaligus (1 request HTTP untuk semua komoditas -- beda dari BI yang
-// harus 1 request per komoditas -- karena SISKAPERBAPO memang balas
-// seluruh tabel harga sekaligus). Kalau hari ini kosong/gagal, coba mundur
-// H-1 sekali (situsnya kadang belum update di pagi hari) sebelum menyerah.
-// Return Map(slug -> { price, date }) -- BISA parsial (cuma slug yang
-// ketemu), TIDAK pernah melempar error ke caller.
-async function fetchSiskaperbapoPrices(slugs) {
-  const result = new Map();
-  const today = new Date();
+Setelah menjalankan FASE 0–2 (dan FASE 3 kalau dipakai), cek:
 
-  let sessionCookie;
-  try {
-    sessionCookie = await getSiskaperbapoSessionCookie();
-  } catch (e) {
-    console.warn('[harga-pangan] SISKAPERBAPO gagal ambil sesi:', e.message);
-    return result; // tanpa sesi, POST pasti gagal juga -- langsung menyerah ke fallback BI
-  }
+```sql
+-- 1. Semua tabel inti ada
+SELECT table_name FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_name IN ('transactions','settings','backups','payment_reminders',
+                      'audit_logs','harga_pangan_referensi',
+                      'profiles','sk_books','book_members')
+ORDER BY table_name;
 
-  for (let daysBack = 0; daysBack <= 1; daysBack++) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - daysBack);
-    const dateStr = fmtDateID(d);
+-- 2. RLS aktif di semua tabel data
+SELECT relname, relrowsecurity
+FROM pg_class
+WHERE relname IN ('transactions','settings','backups','payment_reminders',
+                   'audit_logs','harga_pangan_referensi')
+ORDER BY relname;
 
-    let rowMap;
-    try {
-      rowMap = await fetchSiskaperbapoDay(dateStr, sessionCookie);
-    } catch (e) {
-      console.warn(`[harga-pangan] SISKAPERBAPO gagal (${dateStr}):`, e.message);
-      rowMap = null;
-    }
-    if (!rowMap) continue;
+-- 3. Tidak ada policy "terbuka tanpa syarat" yang tersisa selain yang
+--    memang disengaja (anon_full_access di backups/audit_logs/payment_reminders
+--    dasar dari harden_transactions_encryption.sql, dan harga_pangan_referensi
+--    yang memang publik)
+SELECT tablename, policyname, cmd, roles, qual
+FROM pg_policies
+WHERE schemaname = 'public'
+ORDER BY tablename, policyname;
 
-    slugs.forEach((slug) => {
-      if (result.has(slug)) return; // sudah ketemu dari iterasi tanggal sebelumnya, jangan ditimpa tanggal lebih lama
-      const commodityId = SLUG_TO_SISKAPERBAPO_ID[slug];
-      if (!commodityId) return;
-      const hit = rowMap.get(commodityId);
-      if (hit) result.set(slug, hit);
-    });
+-- 4. (Kalau FASE 3 dipakai) pg_cron sudah terjadwal
+SELECT jobname, schedule, active FROM cron.job
+WHERE jobname IN ('sk_cleanup_old_audit_logs','sk_dedupe_null_tag_settings');
+```
 
-    if (result.size === slugs.length) break; // semua sudah ketemu, tidak perlu cek tanggal lebih lama
-  }
-
-  return result;
-}
-
-// ==================== SUMBER 2: PIHPS Bank Indonesia (fallback) ====================
-
-const PIHPS_BASE_URL = 'https://www.bi.go.id/hargapangan';
-
-// slug internal -> comcat_id PIHPS. Sengaja hanya komoditas yang relevan
-// untuk belanja rumah tangga (bukan semua 21 yang ditrack BI). Kalau mau
-// nambah, cek daftar comcat_id lengkap di pangan.id (src/lib/pihps.ts).
-const SLUG_TO_BI_ID = {
-  'beras-medium': 'com_3',
-  'beras-premium': 'com_5',
-  'daging-ayam': 'com_7',
-  'daging-sapi': 'com_8',
-  'telur-ayam': 'com_10',
-  'bawang-merah': 'com_11',
-  'bawang-putih': 'com_12',
-  'cabai-merah-keriting': 'com_14',
-  'cabai-rawit-merah': 'com_16',
-  'minyak-goreng-curah': 'com_17',
-  'minyak-goreng-kemasan': 'com_18',
-  'gula-pasir': 'com_21',
-};
-
-// [WILAYAH] Kode wilayah Kemendagri/BPS -- konvensi standar yang dipakai
-// hampir semua sistem data pemerintah RI (province_id 2 digit). BI PIHPS
-// TIDAK menyediakan cara resmi untuk memverifikasi kode internalnya dari
-// luar (endpoint dropdown provinsi butuh sesi browser penuh), jadi ini
-// best-effort berdasarkan konvensi tsb -- kalau ternyata meleset, fallback
-// ke Nasional di bawah tetap membuat fitur ini tidak pernah gagal total.
-const JATIM_PROVINCE_ID = '35';
-
-function parsePrice(value) {
-  if (value === null || value === undefined) return null;
-  const str = String(value).trim();
-  if (!str || str === '-' || str === '0') return null;
-  const num = Number(str.replace(/\./g, '').replace(/,/g, ''));
-  return Number.isFinite(num) && num > 0 ? num : null;
-}
-
-function parseDateKey(key) {
-  const match = key.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (!match) return null;
-  const [, dd, mm, yyyy] = match;
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function fmtDate(d) {
-  return d.toISOString().split('T')[0];
-}
-
-// Cari harga terbaru dari 1 baris hasil GetGridDataKomoditas (format sama
-// untuk baris nasional/provinsi/kabupaten -- bedanya cuma isi tanggalnya).
-function _latestFromRow(row) {
-  let latestDate = null;
-  let latestPrice = null;
-  for (const [key, rawValue] of Object.entries(row)) {
-    const isoDate = parseDateKey(key);
-    if (!isoDate) continue;
-    const price = parsePrice(rawValue);
-    if (price === null) continue;
-    if (!latestDate || isoDate > latestDate) {
-      latestDate = isoDate;
-      latestPrice = price;
-    }
-  }
-  return latestDate ? { price: latestPrice, date: latestDate } : null;
-}
-
-// Ambil harga terbaru untuk 1 komoditas, dengan fallback berjenjang:
-// Kabupaten Madiun -> rata-rata Provinsi Jawa Timur -> rata-rata Nasional.
-// [WILAYAH] Diubah dari preferensi Magetan dulu menjadi MADIUN dulu, supaya
-// selaras dengan sumber utama SISKAPERBAPO yang sudah di-hardcode ke
-// Kabupaten Madiun (lihat WILAYAH_ACUAN di atas).
-// [SATU REQUEST UNTUK 3 LEVEL PERTAMA] showKota:'true' di baseParams bikin
-// 1 request ke province_id Jatim SEKALIGUS balikin baris per-kabupaten/kota
-// (termasuk Magetan & Madiun kalau ada) DAN baris rata-rata provinsi --
-// jadi cek Magetan/Madiun/Jatim dilakukan dari 1 response yang sama, tidak
-// perlu request terpisah per level (hemat request & tidak perlu tahu kode
-// internal regency_id BI, cukup cocokkan nama baris). Request ke-2 (Nasional)
-// baru dilakukan kalau ketiganya kosong.
-async function fetchLatestRegionalPrice(biId) {
-  const end = new Date();
-  const start = new Date(end);
-  start.setDate(start.getDate() - 7);
-
-  const baseParams = {
-    price_type_id: '1', // pasar tradisional
-    comcat_id: biId,
-    showKota: 'true', // sertakan baris per-kabupaten/kota, bukan cuma rata-rata provinsi
-    showPasar: 'false',
-    tipe_laporan: '1',
-    start_date: fmtDate(start),
-    end_date: fmtDate(end),
-  };
-
-  async function fetchRows(provinceId, regencyId) {
-    const params = new URLSearchParams({
-      ...baseParams,
-      province_id: provinceId,
-      regency_id: regencyId,
-    });
-    const res = await fetch(
-      `${PIHPS_BASE_URL}/WebSite/TabelHarga/GetGridDataKomoditas?${params.toString()}`,
-      {
-        headers: {
-          Accept: 'application/json, text/javascript, */*; q=0.01',
-          'X-Requested-With': 'XMLHttpRequest',
-          Referer: `${PIHPS_BASE_URL}/TabelHarga/PasarTradisionalKomoditas`,
-          'User-Agent': 'Mozilla/5.0 (compatible; SinarKeu/1.0)',
-        },
-        signal: AbortSignal.timeout(10000),
-      }
-    );
-    if (!res.ok) throw new Error(`PIHPS request gagal: ${res.status}`);
-    const payload = await res.json();
-    return payload.data || [];
-  }
-
-  // 1-4) Kabupaten Madiun -> Kabupaten Magetan -> rata-rata Provinsi Jawa
-  // Timur -> rata-rata Nasional, dari 1 response yang sama (regency_id
-  // kosong, tapi showKota: 'true' tetap membawa baris per-kabupaten/kota).
-  // [WILAYAH] Urutan ini dipilih supaya kalau sumber utama SISKAPERBAPO
-  // (yang sudah di-hardcode ke Kabupaten Magetan, lihat WILAYAH_ACUAN)
-  // gagal, fallback BI mengambil wilayah terdekat dengan Magetan (Madiun
-  // dulu, lalu Magetan sendiri) sebelum jatuh ke rata-rata provinsi/nasional.
-  try {
-    const rows = await fetchRows(JATIM_PROVINCE_ID, '');
-
-    // 1) Kabupaten Madiun -- [KAB/KOTA] BI biasa balikin "Kabupaten Madiun"
-    // dan "Kota Madiun" sebagai 2 baris terpisah. Ambil yang duluan ketemu
-    // di array (urutan dari BI, bukan preferensi kita).
-    const madiunRow = rows.find((r) => r.name && String(r.name).toLowerCase().includes('madiun'));
-    if (madiunRow) {
-      const hit = _latestFromRow(madiunRow);
-      if (hit) return { ...hit, region: String(madiunRow.name).trim() };
-    }
-
-    // 2) Kabupaten Magetan.
-    const magetanRow = rows.find((r) => r.name && String(r.name).toLowerCase().includes('magetan'));
-    if (magetanRow) {
-      const hit = _latestFromRow(magetanRow);
-      if (hit) return { ...hit, region: String(magetanRow.name).trim() };
-    }
-
-    // 3) Rata-rata Provinsi Jawa Timur.
-    const jatimRow = rows.find((r) => r.name && String(r.name).toLowerCase().includes('jawa timur'));
-    if (jatimRow) {
-      const hit = _latestFromRow(jatimRow);
-      if (hit) return { ...hit, region: 'Provinsi Jawa Timur' };
-    }
-  } catch (e) {
-    console.warn('[harga-pangan] Gagal ambil level Madiun/Magetan/Jawa Timur (BI):', e.message);
-  }
-
-  // 4) Fallback terakhir: rata-rata Nasional (province_id & regency_id kosong).
-  try {
-    const rows = await fetchRows('', '');
-    const nationalRow = rows.find((r) => r.level === 0 || r.name === 'Semua Provinsi');
-    if (nationalRow) {
-      const hit = _latestFromRow(nationalRow);
-      if (hit) return { ...hit, region: 'Nasional' };
-    }
-  } catch (e) {
-    console.warn('[harga-pangan] Gagal ambil level Nasional (BI):', e.message);
-  }
-
-  return null;
-}
-
-// ==================== HANDLER ====================
-
-export default async function handler(req, res) {
-  const allowedOrigins = [
-    'https://sinarkeu.vercel.app',
-    'http://localhost:3000',
-    'http://127.0.0.1:5500',
-  ];
-  const origin = req.headers.origin || '';
-  res.setHeader(
-    'Access-Control-Allow-Origin',
-    allowedOrigins.includes(origin) ? origin : 'https://sinarkeu.vercel.app'
-  );
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const slugsParam = String(req.query.slugs || '');
-  // Kenal di SALAH SATU sumber (SISKAPERBAPO atau BI) sudah cukup untuk
-  // masuk daftar yang diproses -- penentuan sumber mana yang benar-benar
-  // dipakai terjadi per-slug di bawah.
-  const slugs = slugsParam
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => SLUG_TO_SISKAPERBAPO_ID[s] || SLUG_TO_BI_ID[s]);
-
-  if (!slugs.length) {
-    return res.status(400).json({ error: 'Parameter slugs kosong atau tidak ada yang dikenali' });
-  }
-
-  const prices = {};
-
-  // 1) SUMBER UTAMA: SISKAPERBAPO, 1 request untuk semua slug sekaligus.
-  const siskaperbapoSlugs = slugs.filter((s) => SLUG_TO_SISKAPERBAPO_ID[s]);
-  if (siskaperbapoSlugs.length) {
-    try {
-      const hits = await fetchSiskaperbapoPrices(siskaperbapoSlugs);
-      hits.forEach((hit, slug) => {
-        prices[slug] = { ...hit, region: WILAYAH_ACUAN_LABEL, source: 'siskaperbapo' };
-      });
-    } catch (e) {
-      console.error('[harga-pangan] SISKAPERBAPO gagal total:', e.message);
-    }
-  }
-
-  // 2) FALLBACK: PIHPS BI, HANYA untuk slug yang belum dapat harga di atas.
-  const missingSlugs = slugs.filter((s) => !prices[s] && SLUG_TO_BI_ID[s]);
-  if (missingSlugs.length) {
-    await Promise.all(
-      missingSlugs.map(async (slug) => {
-        try {
-          const result = await fetchLatestRegionalPrice(SLUG_TO_BI_ID[slug]);
-          if (result) prices[slug] = { ...result, source: 'pihps-bi' };
-        } catch (err) {
-          console.error(`[harga-pangan] Fallback BI gagal untuk ${slug}:`, err.message);
-        }
-      })
-    );
-  }
-
-  // Cache singkat di edge Vercel -- bukan andalan utama (itu ada di
-  // localStorage + Supabase, lihat js/harga-pangan.js), cuma cadangan
-  // tambahan supaya request beruntun dalam 1 jam tidak selalu hit
-  // SISKAPERBAPO/BI.
-  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=600');
-  return res.status(200).json({ prices });
-}
+Kalau semua di atas sesuai ekspektasi (tabel ada, RLS `true`, tidak ada
+policy longgar yang tidak disengaja, cron terjadwal), setup selesai —
+lanjutkan ke pengaturan `js/config.js` (URL + anon key project ini) di
+aplikasi.
