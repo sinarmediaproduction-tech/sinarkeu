@@ -132,7 +132,7 @@ window.submitAccountUnlock = async function() {
                 if (cloud.check !== checkEnc) localStorage.setItem(checkKey, cloud.check);
             }
         } catch (e) {
-            console.warn('[MultiAccount] Gagal verifikasi password ke cloud, lanjut pakai cache lokal (mode offline-fallback):', e);
+            window.skWarn('[MultiAccount] Gagal verifikasi password ke cloud, lanjut pakai cache lokal (mode offline-fallback):', e);
         }
     }
 
@@ -267,7 +267,7 @@ window._backfillActiveAccountUrlHash = async function() {
         const hash = await window._hashUrlForDup(window.globalSupabaseUrl);
         const key = 'sk_a' + activeId + '_url_hash';
         if (localStorage.getItem(key) !== hash) localStorage.setItem(key, hash);
-    } catch (e) { console.warn('[MultiAccount] Gagal backfill url_hash:', e); }
+    } catch (e) { window.skWarn('[MultiAccount] Gagal backfill url_hash:', e); }
 };
 // Cari akun LAIN (selain excludeAccId) yang sudah terdaftar dengan URL
 // Supabase yang sama (setelah dinormalisasi). Mengembalikan objek akun kalau
@@ -742,7 +742,7 @@ window.bootstrapMultiAccount = function() {
     if (pendingSwitch) {
         try {
             const { toId } = JSON.parse(pendingSwitch);
-            console.warn('[MultiAccount] Terdeteksi crash saat switch. Memulihkan ke akun:', toId);
+            window.skWarn('[MultiAccount] Terdeteksi crash saat switch. Memulihkan ke akun:', toId);
             localStorage.removeItem('sk_switching_in_progress');
             window._clearActiveKeys();
             window._restoreInAccount(toId);

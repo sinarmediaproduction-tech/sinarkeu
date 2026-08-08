@@ -590,7 +590,7 @@ window.pullSetting = async function(key, bookId) {
         }
         return null;
     } catch (e) {
-        console.warn('[Settings] Gagal pull setting:', e);
+        window.skWarn('[Settings] Gagal pull setting:', e);
         return null;
     }
 };

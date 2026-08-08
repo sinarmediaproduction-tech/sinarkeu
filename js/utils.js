@@ -1,3 +1,51 @@
+// ==================== LOGGER TERPUSAT (console) ====================
+// Sebelumnya console.log/console.warn dipakai langsung tersebar di semua
+// file (100+ pemanggilan) -- selalu tampil ke SEMUA user tiap kali app
+// jalan, walau tidak sedang debugging. window.skLog/window.skWarn
+// menggantikan console.log/console.warn di seluruh aplikasi, disaring
+// lewat window._skLogLevel supaya console browser user biasa tetap bersih:
+//   'error' -- HANYA console.error asli yang tampil (paling sepi)
+//   'warn'  -- + skWarn tampil juga (DEFAULT)
+//   'info'  -- + skLog tampil juga (paling lengkap, buat debugging)
+// console.error TIDAK PERNAH disaring lewat logger ini -- error asli
+// (exception dari try/catch yang benar-benar fatal) harus selalu kelihatan
+// apa pun levelnya.
+//
+// Cara ganti level saat debugging (lewat console browser):
+//   window.setSkLogLevel('info')   -- lihat semua log lagi
+//   window.setSkLogLevel('error')  -- paling sepi, cuma error
+// Tersimpan ke localStorage ('sk_log_level') supaya ikut kepakai di reload
+// berikutnya. Bisa juga dinyalakan sekali pakai tanpa localStorage lewat
+// URL ?debug=1 (otomatis level 'info' untuk sesi tab itu saja).
+(function() {
+    const LEVELS = { error: 0, warn: 1, info: 2 };
+    let level = 'warn';
+    try {
+        const saved = localStorage.getItem('sk_log_level');
+        if (saved && LEVELS.hasOwnProperty(saved)) level = saved;
+    } catch (_) { /* localStorage tidak tersedia -- pakai default */ }
+    try {
+        if (new URLSearchParams(window.location.search).get('debug') === '1') level = 'info';
+    } catch (_) { /* tidak fatal */ }
+    window._skLogLevel = level;
+
+    window.setSkLogLevel = function(newLevel) {
+        if (!LEVELS.hasOwnProperty(newLevel)) {
+            console.warn('[Logger] Level tidak dikenal:', newLevel, '-- pakai salah satu: error, warn, info');
+            return;
+        }
+        window._skLogLevel = newLevel;
+        try { localStorage.setItem('sk_log_level', newLevel); } catch (_) { /* tidak fatal */ }
+        console.log('[Logger] Level console diubah ke:', newLevel);
+    };
+    window.skLog = function() {
+        if (LEVELS[window._skLogLevel] >= LEVELS.info) console.log.apply(console, arguments);
+    };
+    window.skWarn = function() {
+        if (LEVELS[window._skLogLevel] >= LEVELS.warn) console.warn.apply(console, arguments);
+    };
+})();
+
 // ==================== UTILITY FUNCTIONS ====================
 window.rp = function(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); };
 // [FIX — ditemukan oleh tests/run.mjs] Versi lama membuang SEMUA karakter
@@ -167,7 +215,7 @@ window._recordToastError = function(msg) {
         if (typeof window._refreshToastErrorLogPanel === 'function') window._refreshToastErrorLogPanel();
     } catch (e) {
         // Kalau localStorage penuh/diblokir, jangan sampai malah bikin toast asli gagal tampil.
-        console.warn('[ToastErrorLog] Gagal merekam:', e);
+        window.skWarn('[ToastErrorLog] Gagal merekam:', e);
     }
 };
 
@@ -372,7 +420,7 @@ window.restoreLastFullviewModal = function() {
     } catch (e) {
         // Gagal buka ulang (mis. data buku belum sempat siap) -- biarkan
         // user tetap di Dashboard daripada layar putih/error tak jelas.
-        console.warn('[Restore] Gagal membuka kembali menu "' + id + '":', e && e.message);
+        window.skWarn('[Restore] Gagal membuka kembali menu "' + id + '":', e && e.message);
         try { localStorage.removeItem('sk_last_fullview'); } catch { /* tidak fatal */ }
     }
 };

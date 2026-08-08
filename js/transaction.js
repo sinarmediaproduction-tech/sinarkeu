@@ -93,7 +93,7 @@ window.saveTxsLocal = function(bookId, arr) {
         return arr;
     } catch (e) {
         if (!isQuotaError(e)) throw e;
-        console.warn('[Storage] Kuota localStorage penuh saat menyimpan cache transaksi buku', bookId, '-- membuang lampiran base64 dari cache.');
+        window.skWarn('[Storage] Kuota localStorage penuh saat menyimpan cache transaksi buku', bookId, '-- membuang lampiran base64 dari cache.');
         const stripped = arr.map(t => (t && typeof t.attachment === 'string' && t.attachment.startsWith('data:'))
             ? { ...t, attachment: null } : t);
         try {
@@ -106,7 +106,7 @@ window.saveTxsLocal = function(bookId, arr) {
                 cur = cur.slice(0, Math.ceil(cur.length / 2));
                 try {
                     localStorage.setItem(key, JSON.stringify(cur));
-                    console.warn('[Storage] Cache lokal buku', bookId, 'dipotong jadi', cur.length, 'transaksi karena kuota localStorage tetap penuh.');
+                    window.skWarn('[Storage] Cache lokal buku', bookId, 'dipotong jadi', cur.length, 'transaksi karena kuota localStorage tetap penuh.');
                     return cur;
                 } catch (e3) { if (!isQuotaError(e3)) throw e3; /* coba potong lagi */ }
             }
@@ -404,7 +404,7 @@ window.pullAllBooksFromCloud = async function() {
     window._lastSyncTime = new Date();
     window.updateSyncTimeBadge();
     if (window._maybeWarnLockedTx) window._maybeWarnLockedTx();
-    console.log('[Sync] Selesai pull semua buku —', bookIds.length, 'buku diproses');
+    window.skLog('[Sync] Selesai pull semua buku —', bookIds.length, 'buku diproses');
 };
 
 window.forceFullSync = async function() {
@@ -606,14 +606,14 @@ window.addEventListener('storage', function(e) {
         try {
             window.txs = e.newValue ? JSON.parse(e.newValue) : [];
             window.render();
-        } catch (err) { console.warn('[MultiTab] Gagal parse update txs dari tab lain:', err); }
+        } catch (err) { window.skWarn('[MultiTab] Gagal parse update txs dari tab lain:', err); }
         return;
     }
     if (e.key === window._dirtyStoreKey) {
         try {
             const store = e.newValue ? JSON.parse(e.newValue) : {};
             window._dirtyTxIds = new Set(Object.keys(store).filter(id => store[id] === window.currentBookId));
-        } catch (err) { console.warn('[MultiTab] Gagal parse dirty store dari tab lain:', err); }
+        } catch (err) { window.skWarn('[MultiTab] Gagal parse dirty store dari tab lain:', err); }
     }
 });
 
@@ -665,7 +665,7 @@ window.pushToCloud = async function(bookId, txs, dirtyIds) {
     if (payload.length === 0) return;
     let res = await window.callSupabaseAPI('transactions', 'POST', payload);
     if (res && Array.isArray(res)) {
-        console.log(`Sinkronisasi ${res.length} transaksi ke Supabase Cloud berhasil.`);
+        window.skLog(`Sinkronisasi ${res.length} transaksi ke Supabase Cloud berhasil.`);
         // [FIX CLOCK SKEW] `res` adalah representasi baris SETELAH trigger DB
         // menimpa updated_at dengan jam SERVER (lihat
         // sql/server_side_updated_at_trigger.sql). Timpa cache lokal (tab ini

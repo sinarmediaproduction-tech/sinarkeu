@@ -78,7 +78,7 @@ window.startAutoSync = function() {
             const hasUnrefreshedSharedBook = window._skAuthUser && Array.isArray(window.books) &&
                 window.books.some(function(b) { return b._isShared && !window.skIsSharedBookId(b.id); });
             if (hasUnrefreshedSharedBook && typeof window.skRefreshSharedAccess === 'function') {
-                try { await window.skRefreshSharedAccess(); } catch (e) { console.warn('[AutoSync] Self-heal skRefreshSharedAccess gagal:', e); }
+                try { await window.skRefreshSharedAccess(); } catch (e) { window.skWarn('[AutoSync] Self-heal skRefreshSharedAccess gagal:', e); }
             }
             await window.pullAllSettings();
             await window.pullFromCloudSilently();
@@ -103,15 +103,15 @@ window.startAutoSync = function() {
                 if (typeof window.renderPaymentReminders === 'function') await window.renderPaymentReminders();
                 if (typeof window.updatePaymentReminderBanner === 'function') window.updatePaymentReminderBanner();
             } catch (e) {
-                console.warn('[AutoSync] Gagal pull payment reminders:', e);
+                window.skWarn('[AutoSync] Gagal pull payment reminders:', e);
             }
         }
     }, 30000);
-    console.log('[AutoSync] Dimulai, interval 30 detik.');
+    window.skLog('[AutoSync] Dimulai, interval 30 detik.');
 };
 window.stopAutoSync = function() {
     if (window._syncInterval) { clearInterval(window._syncInterval); window._syncInterval = null; }
-    console.log('[AutoSync] Dihentikan.');
+    window.skLog('[AutoSync] Dihentikan.');
 };
 
 window.submitLockPassword = async function() {
@@ -213,7 +213,7 @@ window.continueAppInit = async function() {
     // (default role global 'editor' kalau belum login, lihat
     // skComputeGlobalRole di js/auth.js).
     if (typeof window.skRefreshSharedAccess === 'function' && window.getCloudUrl && window.getCloudUrl()) {
-        try { await window.skRefreshSharedAccess(); } catch (e) { console.warn('[App] Gagal refresh akses Buku Bersama saat unlock:', e); }
+        try { await window.skRefreshSharedAccess(); } catch (e) { window.skWarn('[App] Gagal refresh akses Buku Bersama saat unlock:', e); }
     }
     if (typeof window.skApplyRoleUI === 'function') window.skApplyRoleUI();
 
@@ -297,7 +297,7 @@ window.continueAppInit = async function() {
                         await window.migratePaymentReminders(window.currentBookId);
                     }
                 } catch (e) {
-                    console.warn('[App] Gagal load payment reminders:', e);
+                    window.skWarn('[App] Gagal load payment reminders:', e);
                 }
             }
 
@@ -418,7 +418,7 @@ window.initApp = async function() {
         }
         const restored = await window.restoreSessionCryptoKey();
         if (!restored) {
-            console.warn('[App] Gagal restore session crypto key; push setting akan dinonaktifkan sampai user lock+unlock ulang.');
+            window.skWarn('[App] Gagal restore session crypto key; push setting akan dinonaktifkan sampai user lock+unlock ulang.');
         }
     }
     // [FIX RACE] Sebelumnya dipanggil TANPA await -- initApp() (dan promise

@@ -26,7 +26,7 @@ window.saveShoppingList = function(bookId, items) {
     // perubahan lokal, dan akan tersinkron lagi di push/pull berikutnya.
     if (window.isOnline && window.isOnline() && window.pushSetting) {
         window.pushSetting('shopping_list', items, targetId).catch(function(e) {
-            console.warn('[ShoppingList] Gagal sync ke cloud:', e);
+            window.skWarn('[ShoppingList] Gagal sync ke cloud:', e);
             // [FIX] Sebelumnya kegagalan sync cuma dilempar ke console.warn --
             // perubahan terlihat berhasil di layar (sudah tersimpan lokal)
             // padahal cuma nyangkut di device ini (mis. ditolak RLS Supabase
@@ -189,7 +189,7 @@ window.openShoppingListModal = function() {
                 window.renderShoppingList();
             }
         }).catch(function(e) {
-            console.warn('[ShoppingList] Gagal tarik data terbaru dari cloud saat buka modal:', e);
+            window.skWarn('[ShoppingList] Gagal tarik data terbaru dari cloud saat buka modal:', e);
         });
     }
 
@@ -210,7 +210,7 @@ window.openShoppingListModal = function() {
                 window._applyHargaPanganReferensiToShoppingList();
             }
         }).catch(function(e) {
-            console.warn('[ShoppingList] Gagal ambil harga referensi pangan:', e.message);
+            window.skWarn('[ShoppingList] Gagal ambil harga referensi pangan:', e.message);
         });
     }
 };
@@ -404,7 +404,7 @@ window.saveShoppingListMonthlyIncome = function(bookId, income) {
     localStorage.setItem('sk_shopping_list_income_' + targetId, String(income));
     if (window.isOnline && window.isOnline() && window.pushSetting) {
         window.pushSetting('shopping_list_income', income, targetId).catch(function(e) {
-            console.warn('[ShoppingList] Gagal sync pemasukan bulanan ke cloud:', e);
+            window.skWarn('[ShoppingList] Gagal sync pemasukan bulanan ke cloud:', e);
             window.showToast && window.showToast('Pemasukan bulanan tersimpan di perangkat ini, tapi gagal sinkron ke cloud.', 'error');
         });
     }

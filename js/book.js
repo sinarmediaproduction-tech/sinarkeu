@@ -137,7 +137,7 @@ window.switchBook = async function(id) {
             if (typeof window.renderPaymentReminders === 'function') await window.renderPaymentReminders();
             if (typeof window.updatePaymentReminderBanner === 'function') window.updatePaymentReminderBanner();
         } catch (e) {
-            console.warn('[switchBook] Gagal pull payment reminders:', e);
+            window.skWarn('[switchBook] Gagal pull payment reminders:', e);
         }
 
         // Render ulang semua card keuangan setelah semua data per-buku selesai dimuat
@@ -393,7 +393,7 @@ window.deleteBook = async function(id) {
                 if (window._skSharedRoles) delete window._skSharedRoles[id];
             }
 
-            console.log(`Data cloud buku "${b.name}" berhasil dihapus.`);
+            window.skLog(`Data cloud buku "${b.name}" berhasil dihapus.`);
         } catch (e) {
             console.error('Gagal hapus data cloud:', e);
             window.showToast('Gagal menghapus data cloud, coba lagi' + (e && e.message ? ': ' + e.message : ''), 'error');
@@ -522,7 +522,7 @@ window.duplicateBook = async function(id) {
         let value;
         try { value = JSON.parse(raw); } catch { value = raw; }
         try { await window.pushSetting(settingKey, value, newId); }
-        catch (e) { console.warn(`[duplicateBook] Gagal salin setting '${settingKey}' ke buku baru:`, e); }
+        catch (e) { window.skWarn(`[duplicateBook] Gagal salin setting '${settingKey}' ke buku baru:`, e); }
     }
 
     // Salin transaksi (opsional, sesuai pilihan user).

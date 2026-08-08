@@ -237,7 +237,7 @@ window.skTouchLastLogin = async function() {
         // Non-fatal: kalau RPC belum di-setup (sql/last_login_tracking.sql
         // belum dijalankan) atau lagi offline, cukup log -- jangan ganggu
         // alur login/refresh akses yang jauh lebih penting.
-        console.warn('[auth.js] Gagal mencatat last_login_at (cek sql/last_login_tracking.sql sudah dijalankan?):', e);
+        window.skWarn('[auth.js] Gagal mencatat last_login_at (cek sql/last_login_tracking.sql sudah dijalankan?):', e);
     }
 };
 
@@ -431,7 +431,7 @@ window.skRefreshSharedAccess = async function() {
             break;
         } catch (e) {
             lastErr = e;
-            console.warn(`[auth.js] Gagal ambil book_members (percobaan ${attempt}/${MEMBER_FETCH_RETRIES}):`, e);
+            window.skWarn(`[auth.js] Gagal ambil book_members (percobaan ${attempt}/${MEMBER_FETCH_RETRIES}):`, e);
             if (attempt < MEMBER_FETCH_RETRIES) {
                 await new Promise(function(r) { setTimeout(r, attempt * 1000); }); // 1s, lalu 2s
             }
@@ -752,7 +752,7 @@ window._skMigrateBookIdCloud = async function(oldId, newId) {
     }
     for (const table of BEST_EFFORT_TABLES) {
         try { await window.callSupabaseAPI(table, 'PATCH', { book_id: newId }, query); }
-        catch (e) { console.warn('[auth.js] Gagal migrasi book_id cloud tabel (best-effort) ' + table + ':', e); }
+        catch (e) { window.skWarn('[auth.js] Gagal migrasi book_id cloud tabel (best-effort) ' + table + ':', e); }
     }
     return true;
 };
@@ -881,7 +881,7 @@ window.skMakeBookShared = async function(bookId, skipConfirm) {
         // di sini (best-effort, sebelum ada kesempatan pull membangkitkan
         // ID lama itu lagi) supaya cloud langsung ikut lupa 'b_default'.
         if (window.isOnline && window.isOnline() && typeof window.pushSettingBooks === 'function') {
-            try { await window.pushSettingBooks(); } catch (e) { console.warn('[auth.js] Gagal push daftar buku setelah migrasi ID b_default:', e); }
+            try { await window.pushSettingBooks(); } catch (e) { window.skWarn('[auth.js] Gagal push daftar buku setelah migrasi ID b_default:', e); }
         }
     }
 // ── Konversi data lama (terenkripsi) ke plaintext saat buku jadi Bersama ──
@@ -993,7 +993,7 @@ window._skConvertBookSettingsToPlaintext = async function(bookId) {
         // js/book.js seharusnya selalu sudah termuat lebih dulu (urutan
         // <script> di index.html) -- guard ini cuma jaga-jaga kalau urutan
         // itu berubah di masa depan.
-        console.warn('[auth.js] DUPLICATE_BOOK_SETTINGS_MAP belum tersedia, lewati konversi plaintext settings buku bersama.');
+        window.skWarn('[auth.js] DUPLICATE_BOOK_SETTINGS_MAP belum tersedia, lewati konversi plaintext settings buku bersama.');
         return;
     }
     for (const [prefix, settingKey] of window.DUPLICATE_BOOK_SETTINGS_MAP) {
@@ -1002,7 +1002,7 @@ window._skConvertBookSettingsToPlaintext = async function(bookId) {
         let value;
         try { value = JSON.parse(raw); } catch { value = raw; }
         try { await window.pushSetting(settingKey, value, bookId); }
-        catch (e) { console.warn(`[auth.js] Gagal push plaintext setting '${settingKey}' saat menjadikan buku bersama:`, e); }
+        catch (e) { window.skWarn(`[auth.js] Gagal push plaintext setting '${settingKey}' saat menjadikan buku bersama:`, e); }
     }
 };
 
@@ -1105,7 +1105,7 @@ window._skConvertBookDataToEncrypted = async function(bookId) {
 // otomatis "menang" lewat updated_at.desc di pullAllSettings().
 window._skConvertBookSettingsToEncrypted = async function(bookId) {
     if (!Array.isArray(window.DUPLICATE_BOOK_SETTINGS_MAP)) {
-        console.warn('[auth.js] DUPLICATE_BOOK_SETTINGS_MAP belum tersedia, lewati konversi enkripsi settings buku pribadi.');
+        window.skWarn('[auth.js] DUPLICATE_BOOK_SETTINGS_MAP belum tersedia, lewati konversi enkripsi settings buku pribadi.');
         return;
     }
     for (const [prefix, settingKey] of window.DUPLICATE_BOOK_SETTINGS_MAP) {
@@ -1114,7 +1114,7 @@ window._skConvertBookSettingsToEncrypted = async function(bookId) {
         let value;
         try { value = JSON.parse(raw); } catch { value = raw; }
         try { await window.pushSetting(settingKey, value, bookId); }
-        catch (e) { console.warn(`[auth.js] Gagal push ulang terenkripsi setting '${settingKey}' saat menjadikan buku pribadi:`, e); }
+        catch (e) { window.skWarn(`[auth.js] Gagal push ulang terenkripsi setting '${settingKey}' saat menjadikan buku pribadi:`, e); }
     }
 };
 
@@ -1595,7 +1595,7 @@ window.skAdminCreateMemberAccount = async function(bookId, email, password, role
                 refresh_token: adminSession.refresh_token
             });
         } catch (e) {
-            console.warn('[auth.js] Gagal memulihkan sesi admin setelah buat akun anggota:', e);
+            window.skWarn('[auth.js] Gagal memulihkan sesi admin setelah buat akun anggota:', e);
         }
     }
 

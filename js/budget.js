@@ -68,7 +68,7 @@ window.ensureMonthlyBudgetExists = function(year, month, bookId) {
         budgetsForThisBook[key] = { ...defaultBudget };
         window._budgetAutoAppliedKeys.add(key + '_' + bId);
         window.saveMonthlyBudgetToCloud(bId, budgetsForThisBook);
-        console.log(`[Budget] Auto-apply default budget untuk ${key} di buku ${bId}`);
+        window.skLog(`[Budget] Auto-apply default budget untuk ${key} di buku ${bId}`);
     }
 };
 window.checkNewMonthAutoApply = function() {
@@ -90,7 +90,7 @@ window.checkNewMonthAutoApply = function() {
             localStorage.setItem('sk_budgets_' + window.currentBookId, JSON.stringify(window.budgets));
             window._budgetAutoAppliedKeys.add(key + '_' + window.currentBookId);
             window.saveMonthlyBudgetToCloud(window.currentBookId, window.budgets);
-            console.log(`[Budget] Auto-apply default budget untuk ${key} (bulan baru)`);
+            window.skLog(`[Budget] Auto-apply default budget untuk ${key} (bulan baru)`);
             // DO NOT call renderBudget() here — renderBudget() already calls
             // checkNewMonthAutoApply() at its start, so calling it here would
             // cause infinite mutual recursion.
@@ -675,7 +675,7 @@ window.openAnnualBudgetModal = function() {
             if (!modal || !modal.classList.contains('show') || window.currentBookId !== bookAtOpen) return;
             window._applyHargaPanganReferensiToAnnualBudget();
         }).catch(function(e) {
-            console.warn('[AnggaranTahunan] Gagal ambil harga referensi pangan:', e.message);
+            window.skWarn('[AnggaranTahunan] Gagal ambil harga referensi pangan:', e.message);
         });
     }
 };
@@ -867,7 +867,7 @@ window.loadDefaultBudgetFromCloud = async function(bookId) {
                 return parsed;
             }
         } catch (e) {
-            console.warn('[Budget] Gagal load default budget dari cloud:', e);
+            window.skWarn('[Budget] Gagal load default budget dari cloud:', e);
             try { window._healStaleCloudSetting('default_budget', bookId, window.getDefaultBudget(bookId)); } catch {}
         }
     }
@@ -921,7 +921,7 @@ window.loadMonthlyBudgetFromCloud = async function(bookId) {
                 return parsed;
             }
         } catch (e) {
-            console.warn('[Budget] Gagal load monthly budget dari cloud:', e);
+            window.skWarn('[Budget] Gagal load monthly budget dari cloud:', e);
             const localRaw = localStorage.getItem('sk_budgets_' + bookId);
             if (localRaw) {
                 try { window._healStaleCloudSetting('budgets', bookId, JSON.parse(localRaw)); } catch {}
@@ -982,7 +982,7 @@ window.loadAnnualBudgetFromCloud = async function(bookId) {
                 return parsed;
             }
         } catch (e) {
-            console.warn('[Budget] Gagal load annual budget dari cloud:', e);
+            window.skWarn('[Budget] Gagal load annual budget dari cloud:', e);
             try { window._healStaleCloudSetting('annual_budget', bookId, window.getAnnualBudget(bookId)); } catch {}
         }
     }
@@ -1027,7 +1027,7 @@ window.syncAllBudgetsToCloud = async function(bookId) {
             window.saveAnnualBudgetToCloud(bookId, annualBudget)
         ]);
         
-        console.log('[Budget] Semua budget berhasil disync ke cloud');
+        window.skLog('[Budget] Semua budget berhasil disync ke cloud');
         return true;
     } catch (e) {
         console.error('[Budget] Gagal sync all budgets:', e);
@@ -1049,11 +1049,11 @@ window.migrateAllBudgets = async function(bookId) {
         );
         
         if (existing && Array.isArray(existing) && existing.length > 0) {
-            console.log('[Budget] Data sudah ada di cloud, skip migrasi');
+            window.skLog('[Budget] Data sudah ada di cloud, skip migrasi');
             return;
         }
     } catch (e) {
-        console.warn('[Budget] Gagal cek data existing:', e);
+        window.skWarn('[Budget] Gagal cek data existing:', e);
     }
     
     const defaultBudget = window.getDefaultBudget(bookId);

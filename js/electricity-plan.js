@@ -43,7 +43,7 @@ window.saveElectricityPlan = function(bookId, plan) {
     // menunggu cloud, kegagalan sync ditoast tapi tidak menghalangi UI.
     if (window.isOnline && window.isOnline() && window.pushSetting) {
         window.pushSetting('electricity_plan', plan, targetId).catch(function(e) {
-            console.warn('[ElectricityPlan] Gagal sync ke cloud:', e);
+            window.skWarn('[ElectricityPlan] Gagal sync ke cloud:', e);
             window.showToast && window.showToast('Perubahan tersimpan di perangkat ini, tapi gagal sinkron ke cloud.', 'error');
         });
     }

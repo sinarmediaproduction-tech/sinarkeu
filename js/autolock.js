@@ -84,7 +84,7 @@
         // Pastikan sesi memang sedang terbuka sebelum mengunci
         const unlocked = sessionStorage.getItem('sk_session_unlocked');
         if (!unlocked) return; // sudah di layar kunci, tidak perlu apa-apa
-        console.log('[AutoLock] Sesi dikunci karena tidak aktif.');
+        window.skLog('[AutoLock] Sesi dikunci karena tidak aktif.');
         if (typeof window.logoutToLockScreen === 'function') {
             window.logoutToLockScreen();
         }
@@ -140,7 +140,7 @@
             _started = true;
             _attachListeners();
             _resetTimer(); // mulai hitung mundur dari sekarang
-            console.log(`[AutoLock] Aktif — kunci otomatis setelah ${LOCK_TIMEOUT / 1000} detik tidak aktif.`);
+            window.skLog(`[AutoLock] Aktif — kunci otomatis setelah ${LOCK_TIMEOUT / 1000} detik tidak aktif.`);
         },
         stop() {
             _started = false;
@@ -150,7 +150,7 @@
             if (_warnTimer)  clearTimeout(_warnTimer);
             _lockTimer = null;
             _warnTimer = null;
-            console.log('[AutoLock] Dinonaktifkan.');
+            window.skLog('[AutoLock] Dinonaktifkan.');
         },
         reset: _resetTimer,
     };

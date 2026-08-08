@@ -2105,7 +2105,7 @@ let _patchReady = false;
 let _syncIntervalId = null;
 
 function _log(msg, ...args) {
-  console.log(`[SyncPatch v${PATCH_VERSION}]`, msg, ...args);
+  window.skLog(`[SyncPatch v${PATCH_VERSION}]`, msg, ...args);
 }
 
 function _getSupabase() {

@@ -148,7 +148,7 @@ window.loadPaymentReminders = async function(bookId) {
                 return merged;
             }
         } catch (e) {
-            console.warn('[PaymentReminder] Gagal load dari Supabase:', e);
+            window.skWarn('[PaymentReminder] Gagal load dari Supabase:', e);
         }
     }
     
@@ -180,7 +180,7 @@ window.savePaymentReminder = async function(bookId, reminderData, skipLocalUpser
             }
             localStorage.setItem(prCacheKey(bookId), JSON.stringify(localReminders));
         } catch (e) {
-            console.warn('[PaymentReminder] Gagal save ke localStorage:', e);
+            window.skWarn('[PaymentReminder] Gagal save ke localStorage:', e);
         }
     }
 
@@ -204,7 +204,7 @@ window.savePaymentReminder = async function(bookId, reminderData, skipLocalUpser
 
             const result = await window.callSupabaseAPI('payment_reminders', 'POST', [payload]);
             if (result) {
-                console.log('[PaymentReminder] Berhasil sync ke cloud');
+                window.skLog('[PaymentReminder] Berhasil sync ke cloud');
                 _prClearPendingPush(bookId, reminderData.id);
                 return true;
             }
@@ -236,7 +236,7 @@ window.deletePaymentReminder = async function(reminderId, bookId, skipLocalRemov
             localReminders = localReminders.filter(r => r.id !== reminderId);
             localStorage.setItem(prCacheKey(bookId), JSON.stringify(localReminders));
         } catch (e) {
-            console.warn('[PaymentReminder] Gagal hapus dari localStorage:', e);
+            window.skWarn('[PaymentReminder] Gagal hapus dari localStorage:', e);
         }
         // Kalau reminder ini masih pending-push (belum sempat sampai ke
         // cloud sama sekali), tidak perlu lagi didorong -- cukup batalkan.
@@ -278,7 +278,7 @@ window.deletePaymentReminder = async function(reminderId, bookId, skipLocalRemov
                 );
             }
             if (result) {
-                console.log('[PaymentReminder] Berhasil hapus dari cloud');
+                window.skLog('[PaymentReminder] Berhasil hapus dari cloud');
                 _prClearPendingDelete(bookId, reminderId);
                 return true;
             }
@@ -333,11 +333,11 @@ window.migratePaymentReminders = async function(bookId) {
             `?book_id=eq.${bookId}&order=updated_at.desc&limit=1${tagFilter}`
         );
         if (existing && Array.isArray(existing) && existing.length > 0) {
-            console.log('[PaymentReminder] Data sudah ada di cloud, skip migrasi');
+            window.skLog('[PaymentReminder] Data sudah ada di cloud, skip migrasi');
             return;
         }
     } catch (e) {
-        console.warn('[PaymentReminder] Gagal cek data existing:', e);
+        window.skWarn('[PaymentReminder] Gagal cek data existing:', e);
     }
     
     // Ambil dari Local Storage
@@ -369,7 +369,7 @@ window.migratePaymentReminders = async function(bookId) {
             }
         }
     } catch (e) {
-        console.warn('[PaymentReminder] Gagal baca data lokal:', e);
+        window.skWarn('[PaymentReminder] Gagal baca data lokal:', e);
         return;
     }
     
@@ -378,13 +378,13 @@ window.migratePaymentReminders = async function(bookId) {
     const toMigrate = localReminders.filter(r => r.book_id === bookId);
     if (toMigrate.length === 0) return;
     
-    console.log(`[PaymentReminder] Migrasi ${toMigrate.length} data ke cloud...`);
+    window.skLog(`[PaymentReminder] Migrasi ${toMigrate.length} data ke cloud...`);
     
     try {
         const tag = window.getAccountTag ? window.getAccountTag() : null;
         const payload = toMigrate.map(r => ({ ...r, book_id: r.book_id || bookId, updated_at: new Date().toISOString(), ...(tag ? { account_tag: tag } : {}) }));
         await window.callSupabaseAPI('payment_reminders', 'POST', payload);
-        console.log('[PaymentReminder] Migrasi berhasil!');
+        window.skLog('[PaymentReminder] Migrasi berhasil!');
         window.showToast(`${toMigrate.length} jadwal pembayaran berhasil dimigrasi ke cloud`, 'success');
     } catch (e) {
         console.error('[PaymentReminder] Gagal migrasi:', e);

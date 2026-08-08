@@ -85,7 +85,54 @@ if (W) {
     }
 }
 
+if (W) {
+    if (typeof W.skLog === 'function' && typeof W.skWarn === 'function') {
+        test('skLog/skWarn: level default "warn" -> skLog disaring, skWarn tampil', () => {
+            eq(W._skLogLevel, 'warn', 'level default seharusnya warn');
+            const calls = [];
+            const realLog = W.console ? W.console.log : undefined;
+            // utils.js dieksekusi dengan `console` global Node asli (tidak
+            // di-mock lewat parameter Function seperti window/document), jadi
+            // kita sadap console.log/warn proses ini sementara.
+            const origLog = console.log, origWarn = console.warn;
+            console.log = (...a) => calls.push(['log', a]);
+            console.warn = (...a) => calls.push(['warn', a]);
+            try {
+                W.skLog('pesan info -- seharusnya tidak tampil');
+                W.skWarn('pesan warning -- seharusnya tampil');
+            } finally {
+                console.log = origLog; console.warn = origWarn;
+            }
+            assert(!calls.some(c => c[0] === 'log'), 'skLog harusnya disaring di level warn');
+            assert(calls.some(c => c[0] === 'warn'), 'skWarn harusnya tetap tampil di level warn');
+        });
+        test('setSkLogLevel("info") membuka skLog lagi', () => {
+            W.setSkLogLevel('info');
+            eq(W._skLogLevel, 'info', 'level seharusnya berubah jadi info');
+            const origLog = console.log;
+            let logged = false;
+            console.log = () => { logged = true; };
+            try { W.skLog('pesan info'); } finally { console.log = origLog; }
+            assert(logged, 'skLog seharusnya tampil di level info');
+            W.setSkLogLevel('warn'); // kembalikan ke default untuk tes lain
+        });
+    }
+}
+
 // ---------- pemeriksaan statis lintas file (murah, menangkap regresi nyata) ----------
+test('tidak ada console.log/console.warn langsung di luar js/utils.js (harus lewat skLog/skWarn)', () => {
+    const files = [
+        'js/account.js', 'js/app.js', 'js/auth.js', 'js/autolock.js', 'js/book.js',
+        'js/budget.js', 'js/crypto.js', 'js/db.js', 'js/electricity-plan.js',
+        'js/harga-pangan.js', 'js/menu-plan.js', 'js/payment-reminder.js',
+        'js/render.js', 'js/safety-snapshot.js', 'js/settings.js',
+        'js/shopping-list.js', 'js/telegram.js', 'js/transaction.js'
+    ];
+    for (const f of files) {
+        const src = readFileSync(join(ROOT, f), 'utf8');
+        assert(!/console\.(log|warn)\(/.test(src), f + ' masih pakai console.log/warn langsung (harusnya window.skLog/skWarn supaya bisa disaring)');
+    }
+});
 test('index.html memuat semua js/*.js yang ada (tidak ada file yatim tak sengaja)', () => {
     const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
     const listed = [...html.matchAll(/['"]js\/([\w.-]+\.js)['"]/g)].map((m) => m[1]);

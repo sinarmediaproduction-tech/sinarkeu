@@ -72,7 +72,7 @@ window.sendTelegramNotif = async function(msg) {
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${window.getSupabaseKey()}` },
                 body: JSON.stringify(body)
             });
-            if (!res.ok) console.warn('[Telegram] Edge Function error:', await res.text());
+            if (!res.ok) window.skWarn('[Telegram] Edge Function error:', await res.text());
         } else if (cfg.token && cfg.chatId) {
             const res = await fetch(`https://api.telegram.org/bot${cfg.token}/sendMessage`, {
                 method: 'POST',
@@ -80,10 +80,10 @@ window.sendTelegramNotif = async function(msg) {
                 body: JSON.stringify({ chat_id: cfg.chatId, text: msg, parse_mode: 'HTML' })
             });
             const data = await res.json();
-            if (!data.ok) console.warn('[Telegram] Gagal kirim:', data.description);
+            if (!data.ok) window.skWarn('[Telegram] Gagal kirim:', data.description);
         }
     } catch(e) {
-        console.warn('[Telegram] Gagal kirim notifikasi:', e.message);
+        window.skWarn('[Telegram] Gagal kirim notifikasi:', e.message);
     }
 };
 
@@ -221,5 +221,5 @@ window.scheduleDailySummary = async function() {
         window.sendDailySummaryToTelegram();
         setInterval(window.sendDailySummaryToTelegram, 24 * 60 * 60 * 1000);
     }, msUntil);
-    console.log(`[Telegram] Ringkasan harian dijadwalkan pukul 21:00`);
+    window.skLog(`[Telegram] Ringkasan harian dijadwalkan pukul 21:00`);
 };

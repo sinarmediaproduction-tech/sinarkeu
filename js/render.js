@@ -400,12 +400,12 @@ window.uploadAttachmentToStorage = async function(file, txId) {
             headers: { 'apikey': apiKey, 'Authorization': `Bearer ${apiKey}`, 'Content-Type': file.type || 'image/jpeg', 'x-upsert': 'true' },
             body: file
         });
-        if (!res.ok) { console.warn('[Storage] Upload gagal, fallback ke base64:', await res.text()); return null; }
+        if (!res.ok) { window.skWarn('[Storage] Upload gagal, fallback ke base64:', await res.text()); return null; }
         const publicUrl = `${baseUrl}/storage/v1/object/public/attachments/${path}`;
-        console.log('[Storage] Upload berhasil:', publicUrl);
+        window.skLog('[Storage] Upload berhasil:', publicUrl);
         return publicUrl;
     } catch (e) {
-        console.warn('[Storage] Upload error, fallback ke base64:', e.message);
+        window.skWarn('[Storage] Upload error, fallback ke base64:', e.message);
         return null;
     }
 };
@@ -568,7 +568,7 @@ window.confirmDelete = async function(id) {
             if (ok) {
                 window.clearTxPendingDelete(id);
             } else {
-                console.warn('[Delete] Gagal PATCH is_deleted ke cloud, akan dicoba lagi otomatis:', id);
+                window.skWarn('[Delete] Gagal PATCH is_deleted ke cloud, akan dicoba lagi otomatis:', id);
             }
         }
         await window.addCloudLog('HAPUS', `Menghapus transaksi "${t.description}" ber-ID: ${id}`);
@@ -665,7 +665,7 @@ window.syncFaseKehidupanToCloud = async function(data, bookId) {
         localStorage.removeItem(pendingKey);
         return true;
     } catch (error) {
-        console.warn('[FaseKehidupan] Gagal sinkron ke cloud, akan dicoba lagi:', error);
+        window.skWarn('[FaseKehidupan] Gagal sinkron ke cloud, akan dicoba lagi:', error);
         return false;
     }
 };
@@ -676,7 +676,7 @@ window.flushPendingFaseKehidupanSync = async function() {
     if (!raw || !window.isOnline()) return false;
     try { return await window.syncFaseKehidupanToCloud(JSON.parse(raw), bookId); }
     catch (error) {
-        console.warn('[FaseKehidupan] Data antrean tidak valid:', error);
+        window.skWarn('[FaseKehidupan] Data antrean tidak valid:', error);
         return false;
     }
 };

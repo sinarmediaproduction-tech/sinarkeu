@@ -63,7 +63,7 @@ window.createSafetySnapshot = function(reason) {
             // coba lagi sekali. Kalau masih gagal, lewati snapshot ini saja: lebih
             // baik aksi berisiko tetap jalan tanpa jaring pengaman daripada aplikasi
             // macet gara-gara localStorage penuh.
-            console.warn('[SafetySnapshot] Kuota localStorage penuh, coba pangkas snapshot terlama:', quotaErr);
+            window.skWarn('[SafetySnapshot] Kuota localStorage penuh, coba pangkas snapshot terlama:', quotaErr);
             while (list.length > 1) {
                 list.pop();
                 try {

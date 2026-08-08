@@ -418,18 +418,18 @@ async function _skDropDeadSharedBooksBeforePush() {
     try {
         const res = await authClient.from('sk_books').select('id').in('id', candidateIds);
         if (res.error) {
-            console.warn('[Sync] Gagal verifikasi sk_books sebelum push, lewati pengecekan kali ini:', res.error);
+            window.skWarn('[Sync] Gagal verifikasi sk_books sebelum push, lewati pengecekan kali ini:', res.error);
             return;
         }
         existingIds = new Set((res.data || []).map(function(r) { return r.id; }));
     } catch (e) {
-        console.warn('[Sync] Gagal verifikasi sk_books sebelum push, lewati pengecekan kali ini:', e);
+        window.skWarn('[Sync] Gagal verifikasi sk_books sebelum push, lewati pengecekan kali ini:', e);
         return;
     }
 
     const deadIds = candidateIds.filter(function(id) { return !existingIds.has(id); });
     if (deadIds.length === 0) return;
-    console.warn('[Sync] Buku bersama berikut sudah tidak ada lagi di server (dihapus lewat device/admin lain), dibuang dari device ini sebelum push:', deadIds);
+    window.skWarn('[Sync] Buku bersama berikut sudah tidak ada lagi di server (dihapus lewat device/admin lain), dibuang dari device ini sebelum push:', deadIds);
 
     const deadSet = new Set(deadIds);
     deadIds.forEach(function(id) {
@@ -479,7 +479,7 @@ window.pushSettingBooks = async function() {
         const _beforeLen = window.books.length;
         window.books = window.books.filter(function(b) { return !_tombstones.has(b.id); });
         if (window.books.length !== _beforeLen) {
-            console.log('[Sync] Buku ber-tombstone dibuang dari payload push:', _beforeLen - window.books.length);
+            window.skLog('[Sync] Buku ber-tombstone dibuang dari payload push:', _beforeLen - window.books.length);
             localStorage.setItem('sk_books', JSON.stringify(window.books));
         }
     }
@@ -509,14 +509,14 @@ window.pushSettingBooks = async function() {
         return clean;
     });
     const result = await window.pushSetting('books', sanitizedBooks, 'global');
-    console.log('[Sync] Books saved to cloud:', window.books.length);
+    window.skLog('[Sync] Books saved to cloud:', window.books.length);
     // Sinkronkan tombstone ke cloud juga, best-effort -- kegagalan di sini
     // TIDAK boleh membuat pushSettingBooks dianggap gagal (daftar buku
     // utamanya sendiri sudah berhasil di atas); device lain masih akan
     // menerima tombstone ini di kesempatan push berikutnya.
     if (_tombstones.size > 0) {
         window.pushBookTombstones().catch(function(e) {
-            console.warn('[Sync] Gagal push tombstone buku (akan dicoba lagi push berikutnya):', e);
+            window.skWarn('[Sync] Gagal push tombstone buku (akan dicoba lagi push berikutnya):', e);
         });
     }
     return !!result;
@@ -575,7 +575,7 @@ window.reEncryptAllCloudSettings = async function() {
         // yang cuma jalan kalau b._isShared SUDAH pernah true sebelumnya.
         if (typeof window.skRefreshSharedAccess === 'function') {
             try { await window.skRefreshSharedAccess(); }
-            catch (e) { console.warn('[Sync] Gagal refresh akses buku bersama sebelum re-enkripsi (lanjut pakai state lama):', e); }
+            catch (e) { window.skWarn('[Sync] Gagal refresh akses buku bersama sebelum re-enkripsi (lanjut pakai state lama):', e); }
         }
         await window.pushSettingBooks();
         const books = Array.isArray(window.books) ? window.books : [];
@@ -621,13 +621,13 @@ window.reEncryptAllCloudSettings = async function() {
             const faseRaw = localStorage.getItem('sk_fase_kehidupan_' + b.id);
             if (faseRaw) {
                 try { await window.pushSetting('fase_kehidupan', JSON.parse(faseRaw), b.id); }
-                catch (e) { console.warn('[Sync] Fase Kehidupan lokal tidak valid, dilewati:', e); }
+                catch (e) { window.skWarn('[Sync] Fase Kehidupan lokal tidak valid, dilewati:', e); }
             }
         }
         await window.pushSettingTelegram();
-        console.log('[Sync] Re-enkripsi & push ulang semua setting ke cloud selesai (kunci baru).');
+        window.skLog('[Sync] Re-enkripsi & push ulang semua setting ke cloud selesai (kunci baru).');
     } catch (e) {
-        console.warn('[Sync] Gagal re-enkripsi setting cloud setelah ganti password:', e);
+        window.skWarn('[Sync] Gagal re-enkripsi setting cloud setelah ganti password:', e);
     }
 };
 
@@ -645,10 +645,10 @@ window._healStaleCloudSetting = async function(key, bookId, localValue) {
     try {
         const ok = await window.pushSetting(key, localValue, bookId);
         if (ok) {
-            console.log(`[Sync] Heal: '${key}' (book ${bookId}) berhasil di-push ulang dengan kunci sesi saat ini.`);
+            window.skLog(`[Sync] Heal: '${key}' (book ${bookId}) berhasil di-push ulang dengan kunci sesi saat ini.`);
         }
     } catch (e) {
-        console.warn(`[Sync] Heal gagal untuk '${key}' (book ${bookId}):`, e);
+        window.skWarn(`[Sync] Heal gagal untuk '${key}' (book ${bookId}):`, e);
     }
 };
 
@@ -661,7 +661,7 @@ window._decryptSettingValue = async function(rawValue) {
         try {
             return await window.decryptStr(window._sessionCryptoKey, rawValue);
         } catch (e) {
-            console.log('[Sync] Data cloud terenkripsi kunci lama, akan di-heal otomatis.');
+            window.skLog('[Sync] Data cloud terenkripsi kunci lama, akan di-heal otomatis.');
         }
     }
     // Fallback: cek apakah rawValue adalah JSON valid (data lama sebelum enkripsi).
@@ -671,7 +671,7 @@ window._decryptSettingValue = async function(rawValue) {
         JSON.parse(rawValue);
         return rawValue; // memang plain JSON (data lama, sebelum fitur enkripsi)
     } catch {
-        console.log('[Sync] rawValue kunci lama (bukan JSON valid), return null — akan di-heal.');
+        window.skLog('[Sync] rawValue kunci lama (bukan JSON valid), return null — akan di-heal.');
         return null;
     }
 };
@@ -723,7 +723,7 @@ window.pullAllSettings = async function() {
             if (_result.status === 'fulfilled' && Array.isArray(_result.value)) {
                 _sharedRows.push(..._result.value);
             } else if (_result.status === 'rejected') {
-                console.warn('[Sync] shared book pull failed', _sharedBookIds[_idx], _result.reason);
+                window.skWarn('[Sync] shared book pull failed', _sharedBookIds[_idx], _result.reason);
             }
         });
         if (Array.isArray(allRows)) allRows = allRows.concat(_sharedRows);
@@ -921,7 +921,7 @@ window.pullAllSettings = async function() {
                 window.books.forEach(lb => {
                     if (seenIds.has(lb.id)) return; // sudah diproses di atas
                     if (lb.id === 'b_default' && cloudHasRealBook) {
-                        console.log('[Sync] Menghapus placeholder b_default yang tidak ada di cloud.');
+                        window.skLog('[Sync] Menghapus placeholder b_default yang tidak ada di cloud.');
                         changed = true;
                         return;
                     }
@@ -929,7 +929,7 @@ window.pullAllSettings = async function() {
                         // Penghapusan buku ini sekarang terkonfirmasi juga
                         // hilang di cloud -- baru di sini aman membersihkan
                         // cache lokal terkait buku itu.
-                        console.log('[Sync] Penghapusan buku terkonfirmasi cloud, bersihkan cache lokal:', lb.name);
+                        window.skLog('[Sync] Penghapusan buku terkonfirmasi cloud, bersihkan cache lokal:', lb.name);
                         localStorage.removeItem('sk_txs_' + lb.id);
                         localStorage.removeItem('sk_budgets_' + lb.id);
                         localStorage.removeItem('sk_logs_' + lb.id);
@@ -958,7 +958,7 @@ window.pullAllSettings = async function() {
                         window._promptCreateFirstBookIfEmpty();
                     }
                     if (needsHealPush && window.isOnline()) {
-                        console.log('[Sync] Menyembuhkan daftar buku di cloud (union-merge lokal vs cloud)...');
+                        window.skLog('[Sync] Menyembuhkan daftar buku di cloud (union-merge lokal vs cloud)...');
                         window.pushSettingBooks();
                     }
                 }
@@ -1174,11 +1174,11 @@ window.pullAllSettings = async function() {
         // Push ulang semua setting dari localStorage ke cloud dengan kunci sesi saat ini,
         // supaya baris-baris itu tertimpa dan pull berikutnya tidak memicu warning lagi.
         if (hasStaleRows && window._sessionCryptoKey) {
-            console.log('[Sync] Terdeteksi data cloud kunci lama — memulai re-enkripsi otomatis...');
+            window.skLog('[Sync] Terdeteksi data cloud kunci lama — memulai re-enkripsi otomatis...');
             window.reEncryptAllCloudSettings().then(() => {
-                console.log('[Sync] Re-enkripsi otomatis selesai. Pull berikutnya tidak akan ada warning kunci lama.');
+                window.skLog('[Sync] Re-enkripsi otomatis selesai. Pull berikutnya tidak akan ada warning kunci lama.');
             }).catch(e => {
-                console.warn('[Sync] Re-enkripsi otomatis gagal:', e);
+                window.skWarn('[Sync] Re-enkripsi otomatis gagal:', e);
             });
         }
 

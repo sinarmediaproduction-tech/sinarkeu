@@ -137,7 +137,7 @@ window.setManualHargaKomoditas = function(slug, price) {
     // yang berubah).
     if (window.pushSettingHargaKomoditasManual) {
         window.pushSettingHargaKomoditasManual().catch(function(e) {
-            console.warn('[HargaKomoditas] Gagal sync harga manual ke cloud:', e.message);
+            window.skWarn('[HargaKomoditas] Gagal sync harga manual ke cloud:', e.message);
         });
     }
     return true;
@@ -274,7 +274,7 @@ window.prefetchHargaPanganReferensi = async function(forceProxy) {
                 });
             });
         } catch (e) {
-            console.warn('[HargaPangan] Gagal cek cache Supabase:', e.message);
+            window.skWarn('[HargaPangan] Gagal cek cache Supabase:', e.message);
         }
     }
 
@@ -321,12 +321,12 @@ const res = await fetch(_proxyUrl, { signal: AbortSignal.timeout(10000) });
                         'harga_pangan_referensi', 'POST', rowsToUpsert,
                         '?on_conflict=commodity_slug,price_date'
                     ).catch(function(e) {
-                        console.warn('[HargaPangan] Gagal simpan cache ke Supabase:', e.message);
+                        window.skWarn('[HargaPangan] Gagal simpan cache ke Supabase:', e.message);
                     });
                 }
             }
         } catch (e) {
-            console.warn('[HargaPangan] Gagal ambil harga live dari proxy:', e.message);
+            window.skWarn('[HargaPangan] Gagal ambil harga live dari proxy:', e.message);
         }
     }
 
@@ -383,7 +383,7 @@ window.fetchHargaPanganHistory = async function(days) {
             history.get(r.commodity_slug).push({ date: r.price_date, price: Number(r.price) });
         });
     } catch (e) {
-        console.warn('[HargaPangan] Gagal ambil histori:', e.message);
+        window.skWarn('[HargaPangan] Gagal ambil histori:', e.message);
     }
     window._hargaPanganHistory = history;
     return history;

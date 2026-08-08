@@ -106,7 +106,7 @@ window.unlockWithPassword = async function(password) {
             // cloud null (belum pernah push / baris tidak ditemukan) -> anggap
             // device ini sumber kebenaran, lanjut pakai cache lokal seperti biasa.
         } catch (e) {
-            console.warn('[Crypto] Gagal verifikasi password ke cloud, lanjut pakai cache lokal (mode offline-fallback):', e);
+            window.skWarn('[Crypto] Gagal verifikasi password ke cloud, lanjut pakai cache lokal (mode offline-fallback):', e);
         }
     }
 
@@ -245,11 +245,11 @@ window.ensureCryptoSaltPushed = async function() {
         if (!cloud) {
             const pushed = await window.pushCryptoSaltCheck(localSalt, localCheck);
             if (pushed) {
-                console.log('[Crypto] Self-heal: salt lokal belum ada di cloud, sudah di-push otomatis.');
+                window.skLog('[Crypto] Self-heal: salt lokal belum ada di cloud, sudah di-push otomatis.');
             }
         }
     } catch (e) {
-        console.warn('[Crypto] Gagal self-heal crypto salt ke cloud:', e);
+        window.skWarn('[Crypto] Gagal self-heal crypto salt ke cloud:', e);
     }
 };
 
@@ -289,10 +289,10 @@ window.restoreSessionCryptoKey = async function() {
         if (plain !== 'sinarkeu_ok') return false;
 
         window._sessionCryptoKey = candidateKey;
-        console.log('[Crypto] Session key berhasil di-derive ulang setelah reload.');
+        window.skLog('[Crypto] Session key berhasil di-derive ulang setelah reload.');
         return true;
     } catch (e) {
-        console.warn('[Crypto] Gagal restore session key setelah reload:', e);
+        window.skWarn('[Crypto] Gagal restore session key setelah reload:', e);
         return false;
     }
 };
@@ -430,7 +430,7 @@ window.decodeCloudTxRow = async function(c) {
             };
         } catch (e) {
             window._lockedTxIds.add(c.id);
-            console.warn('[Crypto] Gagal dekripsi transaksi', c.id, '-- fallback ke kolom plaintext (jika ada).', e);
+            window.skWarn('[Crypto] Gagal dekripsi transaksi', c.id, '-- fallback ke kolom plaintext (jika ada).', e);
         }
     }
     // Fallback: baris pra-migrasi, atau dekripsi gagal (mis. kunci sesi belum siap).
@@ -458,7 +458,7 @@ window.decodeCloudReminderRow = async function(row) {
                 created_at: row.created_at, updated_at: row.updated_at
             };
         } catch (e) {
-            console.warn('[Crypto] Gagal dekripsi payment reminder', row.id, '-- fallback ke kolom plaintext (jika ada).', e);
+            window.skWarn('[Crypto] Gagal dekripsi payment reminder', row.id, '-- fallback ke kolom plaintext (jika ada).', e);
         }
     }
     // Fallback: baris pra-migrasi.

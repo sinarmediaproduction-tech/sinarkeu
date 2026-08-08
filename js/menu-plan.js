@@ -113,7 +113,7 @@ window.saveMenuPlan = function(bookId, data) {
     // perubahan lokal (akan tersinkron lagi di push/pull berikutnya).
     if (window.isOnline && window.isOnline() && window.pushSetting) {
         window.pushSetting('menu_plan', data, targetId).catch(function(e) {
-            console.warn('[MenuPlan] Gagal sync ke cloud:', e);
+            window.skWarn('[MenuPlan] Gagal sync ke cloud:', e);
             window.showToast && window.showToast('Perubahan tersimpan di perangkat ini, tapi gagal sinkron ke cloud. Menu tidak akan muncul di perangkat lain sampai sinkron berhasil.', 'error');
         });
     }
@@ -164,7 +164,7 @@ window.openMenuPlanView = function() {
                 window.renderMenuPlan();
             }
         }).catch(function(e) {
-            console.warn('[MenuPlan] Gagal tarik data terbaru dari cloud saat buka halaman:', e);
+            window.skWarn('[MenuPlan] Gagal tarik data terbaru dari cloud saat buka halaman:', e);
         });
     }
 
@@ -178,7 +178,7 @@ window.openMenuPlanView = function() {
             if (!modalEl || !modalEl.classList.contains('show') || window.currentBookId !== bookAtOpen) return;
             window.renderMenuPlan();
         }).catch(function(e) {
-            console.warn('[MenuPlan] Gagal ambil harga referensi pangan:', e.message);
+            window.skWarn('[MenuPlan] Gagal ambil harga referensi pangan:', e.message);
         });
     }
 };
