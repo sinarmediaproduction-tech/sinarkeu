@@ -334,6 +334,98 @@ window.changePassword = async function() {
     window.showToast('Password berhasil diganti ', 'success');
 };
 
+// ==================== DETEKSI PROJECT BARU VS SUDAH ADA ====================
+// Dipanggil saat user selesai isi URL & Anon Key di form setup pertama
+// (onblur di kedua input, lihat index.html). Tujuannya murni UX: form ini
+// sebelumnya SELALU menampilkan "Email Admin Utama" + "Buat Password
+// Keamanan" seolah-olah device ini pasti yang pertama -- padahal kalau
+// project Supabase itu SUDAH pernah di-setup dari device lain (mis. dikasih
+// URL+Key oleh admin untuk device editor baru), device ini seharusnya
+// GABUNG (pakai password yang sama persis), bukan "membuat" apa-apa lagi.
+//
+// Fungsi ini cuma membaca (window.pullCryptoSaltCheck, read-only, tidak
+// generate/push apa pun) untuk tahu status project, lalu menyesuaikan UI:
+//   - Project SUDAH ada crypto_salt/check -> sembunyikan "Email Admin
+//     Utama" (diabaikan sistem juga di doFirstTimeSetup, lihat
+//     window.bootstrapCryptoForBackend/boot.joined) & "Konfirmasi
+//     Password", ganti label jadi "Masukkan Password Keamanan" karena ini
+//     BUKAN bikin password baru.
+//   - Project masih kosong -> tampilkan form lengkap seperti biasa (device
+//     ini akan jadi Admin Utama).
+// CATATAN: ini HANYA bantuan visual/UX. Keputusan sesungguhnya (join vs
+// buat baru) tetap sepenuhnya ditentukan oleh bootstrapCryptoForBackend()
+// saat submit -- jadi walau pengecekan ini gagal/di-skip (mis. offline),
+// tidak ada risiko keamanan, cuma form yang tampil kurang pas.
+window._skSetupBackendState = null; // null=belum dicek, 'checking', 'new', 'joined'
+window._skCheckSetupBackendStatus = async function() {
+    var urlEl = document.getElementById('setupUrlInput');
+    var keyEl = document.getElementById('setupKeyInput');
+    var statusEl = document.getElementById('setupBackendStatusMsg');
+    var adminGroup = document.getElementById('setupAdminEmailGroup');
+    var pwdLabel = document.getElementById('setupPwdLabel');
+    var confirmGroup = document.getElementById('setupPwdConfirmGroup');
+    if (!urlEl || !keyEl) return;
+    var url = urlEl.value.trim();
+    var key = keyEl.value.trim();
+
+    function showFullForm() {
+        if (adminGroup) adminGroup.style.display = '';
+        if (pwdLabel) pwdLabel.innerText = 'Buat Password Keamanan';
+        if (confirmGroup) confirmGroup.style.display = '';
+    }
+    function showJoinForm() {
+        if (adminGroup) adminGroup.style.display = 'none';
+        if (pwdLabel) pwdLabel.innerText = 'Masukkan Password Keamanan';
+        if (confirmGroup) confirmGroup.style.display = 'none';
+    }
+
+    if (!url || !key || !/^https?:\/\/.+\..+/i.test(url)) {
+        window._skSetupBackendState = null;
+        if (statusEl) statusEl.style.display = 'none';
+        showFullForm();
+        return;
+    }
+
+    window._skSetupBackendState = 'checking';
+    if (statusEl) {
+        statusEl.style.display = '';
+        statusEl.className = 'setup-status warning';
+        statusEl.innerText = 'Mengecek status project...';
+    }
+
+    var oldUrl = window.globalSupabaseUrl, oldKey = window.globalSupabaseKey;
+    window.globalSupabaseUrl = url;
+    window.globalSupabaseKey = key;
+    var cloud = null;
+    try {
+        cloud = await window.pullCryptoSaltCheck(null);
+    } catch (e) {
+        cloud = null;
+    } finally {
+        window.globalSupabaseUrl = oldUrl;
+        window.globalSupabaseKey = oldKey;
+    }
+
+    // Kalau user keburu ubah lagi URL/Key selagi menunggu, hasil ini basi -- buang.
+    if (urlEl.value.trim() !== url || keyEl.value.trim() !== key) return;
+
+    if (cloud && cloud.salt && cloud.check) {
+        window._skSetupBackendState = 'joined';
+        showJoinForm();
+        if (statusEl) {
+            statusEl.className = 'setup-status success';
+            statusEl.innerText = 'Project ini sudah pernah di-setup dari perangkat lain. Perangkat ini akan BERGABUNG -- masukkan Password Keamanan yang SAMA seperti yang sudah dipakai (tanya admin kalau belum tahu), bukan bikin password baru.';
+        }
+    } else {
+        window._skSetupBackendState = 'new';
+        showFullForm();
+        if (statusEl) {
+            statusEl.className = 'setup-status';
+            statusEl.innerText = 'Project ini masih kosong / belum pernah di-setup. Perangkat ini akan jadi yang pertama (Admin Utama).';
+        }
+    }
+};
+
 window.doFirstTimeSetup = async function() {
     var url = document.getElementById('setupUrlInput').value.trim();
     var key = document.getElementById('setupKeyInput').value.trim();
@@ -349,10 +441,19 @@ window.doFirstTimeSetup = async function() {
         st.innerText = window.t('supabase_url_key_required');
         return;
     }
-    // [ADMIN BOOTSTRAP] Wajib diisi supaya device pertama yang setup backend
-    // baru tidak nyangkut di skLoginGateScreen tanpa cara masuk (lihat
+    // [ADMIN BOOTSTRAP] Wajib diisi HANYA kalau project ini memang belum
+    // pernah di-setup sama sekali -- device pertama yang setup backend baru
+    // tidak boleh nyangkut di skLoginGateScreen tanpa cara masuk (lihat
     // window.skBootstrapFirstAdmin di js/auth.js untuk alasan lengkap).
-    if (!adminEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail)) {
+    // Kalau window._skCheckSetupBackendStatus() (dipicu onblur URL/Key)
+    // sudah mendeteksi project ini SUDAH ada (state 'joined'), field ini
+    // disembunyikan di UI & TIDAK divalidasi -- device ini cuma gabung
+    // pakai Password Keamanan yang sama, bukan bikin admin baru. Kalau
+    // status belum sempat diketahui (null/'checking', mis. pengecekan
+    // gagal/di-skip), tetap wajib diisi seperti sebelumnya -- fallback
+    // yang aman, bukan longgar.
+    var isJoiningExisting = (window._skSetupBackendState === 'joined');
+    if (!isJoiningExisting && (!adminEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail))) {
         st.className = 'setup-status error';
         st.innerText = 'Email admin wajib diisi dengan format yang benar.';
         return;
@@ -362,7 +463,12 @@ window.doFirstTimeSetup = async function() {
         st.innerText = window.t('pwd_min_6_short');
         return;
     }
-    if (pwd !== pwd2) {
+    // Field Konfirmasi Password disembunyikan (jadi selalu kosong) saat
+    // mode gabung ke project yang sudah ada -- lihat showJoinForm() di
+    // window._skCheckSetupBackendStatus(). Jangan validasi cocok/tidaknya
+    // dalam mode itu, atau user akan selalu kena "password tidak cocok"
+    // yang salah walau memang tidak diminta mengisi field itu.
+    if (!isJoiningExisting && pwd !== pwd2) {
         st.className = 'setup-status error';
         st.innerText = window.t('confirm_pwd_mismatch');
         return;
@@ -504,6 +610,18 @@ window.openSetupModal = function() {
             btn.disabled = false;
             btn.innerText = window.t('save_start');
         }
+        // Reset status deteksi project baru/sudah-ada tiap kali modal ini
+        // dibuka ulang -- jangan bawa status basi dari percobaan sebelumnya
+        // (mis. modal ditutup lalu dibuka lagi dengan URL/Key kosong).
+        window._skSetupBackendState = null;
+        var backendStatusMsg = document.getElementById('setupBackendStatusMsg');
+        if (backendStatusMsg) backendStatusMsg.style.display = 'none';
+        var adminGroup = document.getElementById('setupAdminEmailGroup');
+        if (adminGroup) adminGroup.style.display = '';
+        var pwdLabel = document.getElementById('setupPwdLabel');
+        if (pwdLabel) pwdLabel.innerText = 'Buat Password Keamanan';
+        var confirmGroup = document.getElementById('setupPwdConfirmGroup');
+        if (confirmGroup) confirmGroup.style.display = '';
     }
 };
 
