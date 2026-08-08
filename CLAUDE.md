@@ -89,6 +89,19 @@ di repo ini SAMA PERSIS dengan yang disajikan ke browser.
   yang mau menambah proses build SUNGGUHAN (bundler, minifier, dst), ganti isi
   `buildCommand` di `vercel.json` ini -- jangan cuma edit dashboard Vercel,
   supaya config-nya tetap tercermin di repo.
+  **Catatan soal isi `headers[]` di `vercel.json`:** jangan tambahkan key
+  komentar (mis. `"//"`) di dalam object header rule -- schema Vercel
+  menolak additional property apa pun di situ dan bikin deploy gagal saat
+  validasi. Taruh penjelasan di sini saja, bukan di file JSON-nya:
+  - Rule untuk `/(.*)` = header keamanan global. Vercel TIDAK membaca file
+    `_headers` (itu khusus Cloudflare Pages/Netlify), jadi aturannya harus
+    diduplikasi di `vercel.json` ini agar posture-nya sama di semua target
+    deploy.
+  - Rule untuk `/` (Cache-Control `max-age=0, must-revalidate`) = HTML &
+    service worker tidak boleh di-cache lama -- kalau tidak, perbaikan tidak
+    pernah sampai ke user.
+  - Rule untuk `/js/(.*)` (cache 1 tahun, `immutable`) = aman karena aset
+    dipanggil dengan `?v=<APP_JS_VERSION>` sehingga URL berubah tiap rilis.
 - **Cloudflare Pages:** tidak butuh file config build khusus untuk static
   site sepert ini -- cukup set "Build command" KOSONG dan "Build output
   directory" ke `/` di dashboard project-nya. `_headers` di root sudah
