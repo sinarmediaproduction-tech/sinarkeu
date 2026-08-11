@@ -583,12 +583,29 @@ window.callSupabaseAPI = async function(table, method, body, queryString, option
             if (options && options.returnRepresentation) headers['Prefer'] = 'return=representation';
             // [FIX] Sama seperti di js/db.js -- tanpa timeout, fetch bisa
             // menggantung tanpa batas kalau jaringan "hang" (bukan langsung
-            // offline), bikin UI macet permanen. Batas 15s konsisten dengan
-            // callSupabaseAPI di db.js dan pola forex.js/ai.js.
-            const config = { method: method, headers: headers, signal: AbortSignal.timeout(15000) };
-            if (body) config.body = JSON.stringify(body);
+            // offline), bikin UI macet permanen. Batas 25s konsisten dengan
+            // callSupabaseAPI di db.js (dinaikkan dari 15s karena koneksi
+            // seluler lambat sering kepotong duluan padahal cuma butuh
+            // sedikit waktu lagi) dan pola forex.js/ai.js.
+            const buildConfig = () => {
+                const c = { method: method, headers: headers, signal: AbortSignal.timeout(25000) };
+                if (body) c.body = JSON.stringify(body);
+                return c;
+            };
             try {
-                const res = await fetch(url, config);
+                let res;
+                try {
+                    res = await fetch(url, buildConfig());
+                } catch (e1) {
+                    // [RETRY] Sama seperti di js/db.js -- timeout pertama sering
+                    // cuma lag sesaat, coba sekali lagi dengan config/signal baru
+                    // sebelum dianggap gagal. Hanya retry untuk timeout, error
+                    // lain langsung dilempar ke catch luar.
+                    const isTimeout1 = e1 && (e1.name === 'TimeoutError' || e1.name === 'AbortError');
+                    if (!isTimeout1) throw e1;
+                    console.warn(`Supabase API timeout (buku bersama, ${table}), mencoba ulang sekali...`);
+                    res = await fetch(url, buildConfig());
+                }
                 if (!res.ok) {
                     const errText = await res.text();
                     const err = new Error(errText);
@@ -602,10 +619,17 @@ window.callSupabaseAPI = async function(table, method, body, queryString, option
                 // selalu melempar 'AbortError' ("The user aborted a request."),
                 // bukan 'TimeoutError' sesuai spec (bug Chromium #40263649).
                 // Jalur ini tidak pernah memanggil AbortController.abort()
-                // manual, jadi AbortError di sini pasti berasal dari timeout
-                // 15 detik, bukan pembatalan user.
+                // manual, jadi AbortError di sini pasti berasal dari timeout,
+                // bukan pembatalan user.
                 const isTimeout = e && (e.name === 'TimeoutError' || e.name === 'AbortError');
-                console.error(`Supabase API Error (buku bersama, ${table}):`, e);
+                // [FIX LOG LEVEL] Timeout (bahkan setelah retry) sudah tertangani
+                // baik (fallback lokal, toast di-throttle) -- log sebagai warn,
+                // bukan error, supaya console tidak terlihat seperti error fatal.
+                if (isTimeout) {
+                    console.warn(`Supabase API timeout (buku bersama, ${table}) setelah retry:`, e);
+                } else {
+                    console.error(`Supabase API Error (buku bersama, ${table}):`, e);
+                }
                 // [FIX SPAM TOAST] Jalur non-shared di db.js sudah di-throttle 15
                 // detik (window._lastSyncErrorToastAt) supaya gagal beruntun (mis.
                 // pullAllBooksFromCloud yang loop banyak buku sekaligus saat app

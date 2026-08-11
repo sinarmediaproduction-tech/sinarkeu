@@ -17,10 +17,33 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
     // benar-benar ter-update, supaya panjang array itu bisa dipakai sebagai
     // sinyal konflik yang pasti (bukan asumsi).
     if (options && options.returnRepresentation) headers['Prefer'] = 'return=representation';
-    const config = { method: method, headers: headers, signal: AbortSignal.timeout(15000) };
-    if (body) config.body = JSON.stringify(body);
+    // [FIX TIMEOUT] Dinaikkan dari 15s ke 25s -- 15s ternyata sering
+    // kepotong duluan di koneksi seluler lambat (bukan benar-benar hang),
+    // jadi banyak sync yang gagal padahal cuma butuh sedikit waktu lagi.
+    const buildConfig = () => {
+        const c = { method: method, headers: headers, signal: AbortSignal.timeout(25000) };
+        if (body) c.body = JSON.stringify(body);
+        return c;
+    };
     try {
-        const res = await fetch(url, config);
+        let res;
+        try {
+            res = await fetch(url, buildConfig());
+        } catch (e1) {
+            // [RETRY] Timeout pertama sering cuma lag sesaat (mis. jaringan
+            // seluler yang macet lalu pulih beberapa detik kemudian) --
+            // coba sekali lagi dengan timeout baru sebelum benar-benar
+            // dianggap gagal & fallback ke data lokal. Signal AbortSignal.timeout
+            // lama sudah "terpakai" begitu abort, jadi butuh config baru
+            // (buildConfig()) untuk percobaan kedua, bukan reuse config lama.
+            // Retry HANYA untuk timeout -- error lain (4xx/5xx, offline)
+            // langsung dilempar ke catch luar seperti biasa, tidak perlu
+            // buang waktu retry kalau memang bukan soal lag sesaat.
+            const isTimeout1 = e1 && (e1.name === 'TimeoutError' || e1.name === 'AbortError');
+            if (!isTimeout1) throw e1;
+            console.warn(`Supabase API timeout (${table}), mencoba ulang sekali...`);
+            res = await fetch(url, buildConfig());
+        }
         if (!res.ok) {
             const errText = await res.text();
             const err = new Error(errText);
@@ -37,7 +60,7 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
         // dipakai di jalur kritis (test koneksi setup awal, bootstrap
         // crypto, tambah akun baru, verifikasi unlock, dst.), itu bikin UI
         // macet permanen -- bukan error, bukan selesai, cuma spinner
-        // selamanya. AbortSignal.timeout(15000) memastikan selalu ada batas
+        // selamanya. AbortSignal.timeout(25000) memastikan selalu ada batas
         // waktu, konsisten dengan pola yang sudah dipakai di forex.js/ai.js.
         // [FIX] Di Chromium (Chrome/Edge/WebView Android, termasuk versi yang
         // dipakai kebanyakan HP di Indonesia), AbortSignal.timeout() TIDAK
@@ -50,10 +73,21 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
         // detik itu sendiri -- jadi aman menganggap AbortError == timeout,
         // bukan "user membatalkan". Cek TimeoutError tetap dipertahankan
         // untuk browser yang sudah sesuai spec (Firefox/Safari terbaru).
-        if (e && (e.name === 'TimeoutError' || e.name === 'AbortError')) {
+        const isTimeoutFinal = e && (e.name === 'TimeoutError' || e.name === 'AbortError');
+        if (isTimeoutFinal) {
             e.message = 'Waktu koneksi ke server habis (timeout). Coba lagi.';
         }
-        console.error(`Supabase API Error (${table}):`, e);
+        // [FIX LOG LEVEL] Timeout (bahkan setelah retry) dicatat sebagai
+        // console.warn, bukan console.error -- ini sudah tertangani dengan
+        // baik (fallback ke data lokal, toast di-throttle), jadi tidak
+        // perlu tampil seperti error fatal di console. Error lain (4xx/5xx
+        // dari server, dsb.) tetap console.error karena itu benar-benar
+        // butuh perhatian (mis. RLS/policy salah).
+        if (isTimeoutFinal) {
+            console.warn(`Supabase API timeout (${table}) setelah retry:`, e);
+        } else {
+            console.error(`Supabase API Error (${table}):`, e);
+        }
         // [FIX SALAH DIAGNOSIS RLS] Pesan RLS di bawah dulu SELALU mengarah
         // ke "jalankan fix_rls_sync_42501.sql" -- benar untuk kasus policy
         // memang belum ada, TAPI ada penyebab lain yang menghasilkan gejala
