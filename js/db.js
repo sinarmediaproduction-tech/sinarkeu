@@ -39,7 +39,18 @@ window.callSupabaseAPI = async function(table, method, body = null, queryString 
         // macet permanen -- bukan error, bukan selesai, cuma spinner
         // selamanya. AbortSignal.timeout(15000) memastikan selalu ada batas
         // waktu, konsisten dengan pola yang sudah dipakai di forex.js/ai.js.
-        if (e && e.name === 'TimeoutError') {
+        // [FIX] Di Chromium (Chrome/Edge/WebView Android, termasuk versi yang
+        // dipakai kebanyakan HP di Indonesia), AbortSignal.timeout() TIDAK
+        // pernah menghasilkan e.name === 'TimeoutError' seperti spec --
+        // selalu jatuh ke 'AbortError' dengan pesan "The user aborted a
+        // request." (bug Chromium #40263649, per Agustus 2026 belum
+        // diperbaiki). Karena kode ini tidak pernah memanggil
+        // AbortController.abort() secara manual di jalur ini, SATU-SATUNYA
+        // sumber AbortError yang mungkin muncul di sini memang timeout 15
+        // detik itu sendiri -- jadi aman menganggap AbortError == timeout,
+        // bukan "user membatalkan". Cek TimeoutError tetap dipertahankan
+        // untuk browser yang sudah sesuai spec (Firefox/Safari terbaru).
+        if (e && (e.name === 'TimeoutError' || e.name === 'AbortError')) {
             e.message = 'Waktu koneksi ke server habis (timeout). Coba lagi.';
         }
         console.error(`Supabase API Error (${table}):`, e);

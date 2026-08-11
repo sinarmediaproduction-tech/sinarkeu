@@ -598,7 +598,13 @@ window.callSupabaseAPI = async function(table, method, body, queryString, option
                 const text = await res.text();
                 return text ? JSON.parse(text) : true;
             } catch (e) {
-                const isTimeout = e && e.name === 'TimeoutError';
+                // [FIX] Sama seperti di js/db.js -- di Chromium AbortSignal.timeout()
+                // selalu melempar 'AbortError' ("The user aborted a request."),
+                // bukan 'TimeoutError' sesuai spec (bug Chromium #40263649).
+                // Jalur ini tidak pernah memanggil AbortController.abort()
+                // manual, jadi AbortError di sini pasti berasal dari timeout
+                // 15 detik, bukan pembatalan user.
+                const isTimeout = e && (e.name === 'TimeoutError' || e.name === 'AbortError');
                 console.error(`Supabase API Error (buku bersama, ${table}):`, e);
                 // [FIX SPAM TOAST] Jalur non-shared di db.js sudah di-throttle 15
                 // detik (window._lastSyncErrorToastAt) supaya gagal beruntun (mis.
