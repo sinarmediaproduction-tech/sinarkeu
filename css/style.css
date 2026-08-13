@@ -1039,7 +1039,6 @@ button:disabled, .btn:disabled,
   background: var(--paper);
   border: 1.5px solid var(--rule);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
   overflow-x: auto;
   margin-bottom: 20px;
 }
@@ -1587,11 +1586,20 @@ tr:hover td { background: var(--accent-lt); }
 
   /* Konten mengisi penuh sisa layar di sebelah kanan sidebar, tidak lagi
      terpotong oleh max-width:1440px bawaan .container yang menyisakan
-     ruang kosong di layar lebar. */
+     ruang kosong di layar lebar.
+     [RAPATKAN JARAK SIDEBAR-KONTEN] padding-left dipangkas dari 32px
+     (default mobile/tablet di baris .container atas) jadi 16px KHUSUS di
+     breakpoint ini -- di layar sempit paddingnya tetap 32px karena di situ
+     tidak ada sidebar permanen yang bikin sisi kiri sudah "terpakai", jadi
+     32px masih wajar sebagai jarak dari tepi layar. Di desktop, sidebar
+     sudah jadi pembatas visual sendiri, jadi 32px tambahan setelahnya
+     berlebihan/boros ruang. padding-right & padding-bottom TIDAK diubah
+     (tetap 32px / 40px bawaan) supaya sisi kanan halaman tidak berubah. */
   .container {
     margin-left: var(--sidebar-w);
     margin-right: 0;
     max-width: none;
+    padding-left: 16px;
     transition: margin-left .18s ease;
   }
 
