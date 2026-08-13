@@ -10,13 +10,21 @@
 //    API gizi publik gratis berbasis produk kemasan berbahasa Inggris --
 //    hasilnya jauh lebih akurat & instan (tanpa perlu koneksi internet).
 //
-// 2) API GRATIS OPEN FOOD FACTS (world.openfoodfacts.org, tanpa API key,
-//    CORS diizinkan langsung dari browser) -- dipakai sebagai FALLBACK
-//    untuk bahan yang tidak ketemu di basis data lokal, terutama produk
-//    kemasan/bermerek (kecap manis, susu kental manis, mie instan merek
+// 2) API GRATIS OPEN FOOD FACTS, VIA SEARCH-A-LICIOUS (search.openfoodfacts.org,
+//    tanpa API key, CORS diizinkan langsung dari browser) -- dipakai sebagai
+//    FALLBACK untuk bahan yang tidak ketemu di basis data lokal, terutama
+//    produk kemasan/bermerek (kecap manis, susu kental manis, mie instan merek
 //    tertentu, dst) yang memang cocoknya dicari di database produk seperti
 //    ini. Hasil query di-cache di localStorage (window._nutrisiOffCache)
 //    supaya tidak berulang kali hit API yang sama.
+//    [BUG FIX - CORS/503 dari endpoint lama] Endpoint legacy
+//    world.openfoodfacts.org/cgi/search.pl sudah tidak dipakai lagi --
+//    sekarang selalu balas HTTP 503 di server Open Food Facts sendiri
+//    (bukan masalah dari aplikasi ini), dan karena respons error itu tidak
+//    membawa header CORS, browser melaporkannya sebagai "blocked by CORS
+//    policy" alih-alih error 503 biasa. Open Food Facts sendiri sudah
+//    memigrasikan full-text search ke API baru "Search-a-licious" di
+//    search.openfoodfacts.org, jadi fallback ini dipindah ke sana.
 //
 // Estimasi ini SELALU perkiraan kasar (basis data umum per 100 gram +
 // konversi satuan yang disederhanakan di window._nutrisiUnitToGram) --
@@ -127,7 +135,7 @@ window._nutrisiMatchLocal = function(name) {
     }) || null;
 };
 
-// ==================== FALLBACK: API GRATIS OPEN FOOD FACTS ====================
+// ==================== FALLBACK: API GRATIS OPEN FOOD FACTS (Search-a-licious) ====================
 // Tanpa API key, CORS diizinkan -- cocok untuk dipanggil langsung dari
 // browser. Paling berguna untuk produk kemasan/bermerek yang tidak ada di
 // basis data lokal di atas.
@@ -159,12 +167,15 @@ window._nutrisiFetchOFF = async function(name) {
     }
     if (!window.isOnline || !window.isOnline()) return null;
     try {
-        const url = 'https://world.openfoodfacts.org/cgi/search.pl?search_terms=' + encodeURIComponent(name) +
-            '&search_simple=1&action=process&json=1&page_size=1&fields=product_name,nutriments';
+        const url = 'https://search.openfoodfacts.org/search?q=' + encodeURIComponent(name) +
+            '&langs=id,en&page_size=1&fields=product_name,nutriments';
         const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
         if (!res.ok) throw new Error('status ' + res.status);
         const json = await res.json();
-        const product = (json.products || [])[0];
+        // Search-a-licious membalas { hits: [...] } (bukan { products: [...] }
+        // seperti endpoint lama) -- tetap jaga-jaga baca products juga kalau-kalau
+        // bentuk responsnya berubah lagi di kemudian hari.
+        const product = (json.hits || json.products || [])[0];
         let entry = null;
         if (product && product.nutriments) {
             const n = product.nutriments;
