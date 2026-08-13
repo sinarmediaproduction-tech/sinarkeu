@@ -1847,6 +1847,56 @@ tr:hover td { background: var(--accent-lt); }
     line-height: 0;
     border-radius: 50%;
   }
+
+  /* ---- Hover-to-expand (samain dengan dashboard-main): saat sidebar lagi
+     ciut, arahkan mouse ke atasnya supaya melebar SEMENTARA sebagai overlay
+     (posisinya sudah position:fixed dari awal, jadi tidak mendorong
+     .container/konten di kanan) lalu otomatis menciut lagi begitu mouse
+     keluar. Murni CSS :hover, tanpa perlu ubah js/app.js atau state
+     body.sidebar-collapsed itu sendiri -- yang berubah cuma tampilan
+     sidebar-nya doang selama di-hover. ---- */
+  body.sidebar-collapsed #appSidebar {
+    transition: width .2s ease, padding .2s ease, box-shadow .2s ease;
+  }
+  body.sidebar-collapsed #appSidebar:hover {
+    width: 220px;
+    padding-left: 14px;
+    padding-right: 14px;
+    box-shadow: 14px 0 34px rgba(0,0,0,.22);
+    z-index: 9600; /* di atas .sidebar-collapse-toggle (9500) supaya tombolnya tidak ketutup ujung sidebar yang melebar */
+  }
+  body.sidebar-collapsed #appSidebar:hover .app-nav-group-label {
+    display: block;
+  }
+  body.sidebar-collapsed #appSidebar:hover .app-sidebar-brand {
+    padding-left: 10px;
+    padding-right: 10px;
+    text-align: left;
+  }
+  body.sidebar-collapsed #appSidebar:hover .app-sidebar-brand-full {
+    display: block;
+  }
+  body.sidebar-collapsed #appSidebar:hover .app-sidebar-brand-initial {
+    display: none;
+  }
+  body.sidebar-collapsed #appSidebar:hover .app-nav-item {
+    justify-content: flex-start;
+    padding-left: 13px;
+    padding-right: 13px;
+  }
+  body.sidebar-collapsed #appSidebar:hover .app-nav-item span:not(.app-nav-badge) {
+    display: inline;
+  }
+  body.sidebar-collapsed #appSidebar:hover .app-nav-badge {
+    position: static;
+    margin-left: auto;
+    min-width: 0;
+    height: auto;
+    padding: 1px 6px;
+    font-size: .62rem;
+    line-height: 1.5;
+    border-radius: var(--radius-pill);
+  }
 }
 
 .modal-header {
