@@ -3610,6 +3610,60 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   width: 0%;
 }
 
+/* [LOCKSCREEN INSIGHT] Kartu kisi-kisi/nasihat/motivasi keuangan otomatis,
+   dihitung dari semua buku -- lihat js/lockscreen-insight.js. Sengaja
+   TIDAK pernah menampilkan nominal Rupiah presisi di sini (cuma status
+   kualitatif + kalimat template/AI), demi privasi orang yang sekadar lirik
+   layar terkunci. */
+.lock-insight-card {
+  text-align: left;
+  background: var(--paper);
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+.lock-insight-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.lock-insight-badge {
+  display: inline-block;
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
+.lock-insight-badge--success { background: var(--success-lt); color: var(--success); }
+.lock-insight-badge--info    { background: var(--info-lt);    color: var(--info); }
+.lock-insight-badge--warning { background: var(--warning-lt); color: var(--warning); }
+.lock-insight-badge--danger  { background: var(--danger-lt);  color: var(--danger); }
+.lock-insight-badge--neutral { background: var(--rule);       color: var(--ink-muted); }
+.lock-insight-ai-tag {
+  font-size: .58rem;
+  font-weight: 700;
+  color: var(--ink-faint);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+}
+.lock-insight-body {
+  font-size: .74rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.lock-insight-motivasi {
+  font-size: .68rem;
+  font-style: italic;
+  color: var(--ink-faint);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
 .lock-account-picker {
   display: flex;
   flex-direction: column;

@@ -1,5 +1,5 @@
 {
-  "name": "Sinarkeu - Buku Kas Digital",
+  "name": "Sinarkeu - Aplikasi Keuangan Rumah Tangga",
   "short_name": "Sinarkeu",
   "description": "Asisten keuangan & rumah tangga: pencatatan keuangan multi buku kas, anggaran, daftar belanja dengan harga komoditas, jadwal menu masak, dan pengingat stok bahan pokok, dengan sinkronisasi cloud Supabase",
   "start_url": "./index.html",

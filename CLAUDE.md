@@ -169,6 +169,7 @@ di repo ini SAMA PERSIS dengan yang disajikan ke browser.
 | `payment-reminder.js` | Pengingat jadwal pembayaran |
 | `telegram.js` | Notifikasi Telegram |
 | `ai.js` | Analisis keuangan & chat berbasis AI |
+| `lockscreen-insight.js` | Kisi-kisi/nasihat/motivasi keuangan otomatis di layar kunci, dihitung dari SEMUA buku (lokal selalu ON, lapis AI opsional lewat Worker URL yang sama dengan `ai.js`) |
 | `safety-snapshot.js` | Snapshot Keamanan (restore point otomatis) -- kini di halaman sidebar tersendiri "Cadangan Data" (`dataBackupModal`), bukan tab Setelan lagi |
 | `backup.js` | Backup & migrasi data ke cloud -- kini di halaman sidebar tersendiri "Cadangan Data" (`dataBackupModal`), bukan tab Setelan lagi |
 | `settings.js` | Panel Setelan (10 tab: akun, telegram, devices, AI, emas, supabase, password, sync, reset, arsip) + `window.openDataBackupView()` untuk halaman "Cadangan Data" (backup, snapshot keamanan & migrasi) yang terpisah dari Setelan |

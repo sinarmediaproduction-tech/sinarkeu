@@ -598,14 +598,14 @@ alter table public.settings
         </div>
     </div>
 
-    <!-- ===== FRAUD/ANOMALI ALERT BANNER ===== -->
+    <!-- ===== DETEKSI KEUANGAN TIDAK WAJAR (ALERT BANNER) ===== -->
     <!-- Diisi & ditampilkan oleh js/fraud-detection.js (window.renderFraudBanner),
          mengikuti pola paymentReminderBanner di atas -- tersembunyi kalau tidak
          ada flag aktif, tidak pernah memblokir apa pun di dashboard. -->
     <div id="fraudAlertBanner" class="pr-banner" style="display:none; border-radius: var(--radius); padding:12px 16px; margin-bottom:10px; background:#fff4f4; border:1.5px solid #dc2626;">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
             <div>
-                <div style="font-size:.78rem; font-weight:700; color:#dc2626;">⚠️ Deteksi Fraud / Anomali</div>
+                <div style="font-size:.78rem; font-weight:700; color:#dc2626;">⚠️ Deteksi Keuangan Tidak Wajar</div>
                 <div id="fraudAlertBannerText" style="font-size:.72rem; line-height:1.6; color:var(--ink);"></div>
             </div>
             <button onclick="window.openFraudAlertModal()" style="font-size:.7rem; padding:5px 12px; background:#dc2626; color:#fff; border:none; border-radius: var(--radius-sm); cursor:pointer; font-weight:600; white-space:nowrap;">Lihat Semua</button>
@@ -1083,6 +1083,22 @@ alter table public.settings
                 <button class="btn btn-secondary" style="flex:1;" onclick="testAiWorkerUrl()" data-i18n="test_connection">Tes Koneksi</button>
                 <button class="btn btn-danger" style="flex:1;" onclick="clearAiWorkerUrl()">Hapus</button>
                 <button class="btn btn-primary" style="flex:2;" onclick="saveAiWorkerUrl()">Simpan</button>
+            </div>
+
+            <hr style="margin:16px 0; border-color:var(--rule);">
+            <div class="panel-title" style="font-size:.82rem;">Kisi-Kisi Keuangan di Layar Kunci</div>
+            <div class="setelan-desc">Ringkasan singkat, nasihat, dan motivasi keuangan berdasarkan SEMUA buku, tampil otomatis di layar kunci -- tanpa menyebut nominal Rupiah, supaya tetap sopan dilihat orang lain yang lewat.</div>
+            <div class="form-group form-group-checkbox">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="lockInsightToggle" onchange="window.setLockscreenInsightEnabled(this.checked)">
+                    Tampilkan kisi-kisi keuangan di layar kunci
+                </label>
+            </div>
+            <div class="form-group form-group-checkbox" style="margin-bottom:0;">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="lockAiInsightToggle" onchange="window.setLockscreenAiEnabled(this.checked)">
+                    Perhalus dengan Analisis AI (pakai Worker URL di atas, dicek ulang tiap 6 jam)
+                </label>
             </div>
         </div>
 
@@ -1778,10 +1794,10 @@ alter table public.settings
     </div>
 </div>
 
-<!-- Fraud/Anomali Detail Modal -- diisi oleh js/fraud-detection.js (window.openFraudAlertModal) -->
+<!-- Deteksi Keuangan Tidak Wajar - Detail Modal -- diisi oleh js/fraud-detection.js (window.openFraudAlertModal) -->
 <div id="fraudAlertModal" class="modal">
     <div class="modal-content" style="max-width:520px;">
-        <div class="modal-header"><h3>⚠️ Deteksi Fraud / Anomali</h3><button class="modal-close" onclick="closeModal('fraudAlertModal')">×</button></div>
+        <div class="modal-header"><h3>⚠️ Deteksi Keuangan Tidak Wajar</h3><button class="modal-close" onclick="closeModal('fraudAlertModal')">×</button></div>
         <div style="font-size:.7rem; color:var(--ink-faint); margin-bottom:10px; line-height:1.5;">
             Daftar ini murni peringatan lokal (dihitung dari transaksi &amp; log aktivitas buku ini) --
             tidak ada yang otomatis diblokir atau dikirim ke pihak lain. Tinjau lalu tekan "Abaikan"
@@ -2111,7 +2127,7 @@ alter table public.settings
   statis sebelumnya, jadi urutan dependency antar file tidak berubah.
 -->
 <script>
-    var APP_JS_VERSION = 'v45'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
+    var APP_JS_VERSION = 'v47'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
     var SK_JS_FILES = [
         'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js', 'js/db.js',
         'js/telegram.js', 'js/account.js', 'js/book.js', 'js/transaction.js',
@@ -2119,6 +2135,7 @@ alter table public.settings
         'js/shopping-list.js', 'js/menu-plan.js', 'js/electricity-plan.js', 'js/payment-reminder.js', 'js/expense-chart.js',
         'js/render.js', 'js/report.js', 'js/forecast.js', 'js/report-shortcuts.js',
         'js/backup.js', 'js/safety-snapshot.js', 'js/forex.js', 'js/ai.js',
+        'js/lockscreen-insight.js',
         'js/fraud-detection.js',
         'js/settings.js', 'js/auth.js', 'js/autolock.js', 'js/app.js',
         'js/custom-select.js'

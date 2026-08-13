@@ -33,6 +33,11 @@ window.openSetelanModal = function(initialTab) {
     if (typeof window.updateAiWorkerBadge === 'function') {
         window.updateAiWorkerBadge();
     }
+
+    var lockInsightChk = document.getElementById('lockInsightToggle');
+    if (lockInsightChk) lockInsightChk.checked = localStorage.getItem('sk_lockscreen_insight_enabled') !== '0';
+    var lockAiInsightChk = document.getElementById('lockAiInsightToggle');
+    if (lockAiInsightChk) lockAiInsightChk.checked = localStorage.getItem('sk_lockscreen_ai_enabled') === '1';
     
     var emasInp = document.getElementById('emasApiKeyInput');
     var emasSt = document.getElementById('emasApiTestStatus');
