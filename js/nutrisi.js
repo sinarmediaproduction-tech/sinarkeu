@@ -252,11 +252,68 @@ window.aggregateMenuPlanNutrisi = function(weekData) {
     return { rows: rows, totalKalori: totalKalori, totalProtein: totalProtein, totalKarbo: totalKarbo, totalLemak: totalLemak, unmatchedCount: unmatchedCount };
 };
 
-// ==================== EVALUASI GIZI MINGGUAN ====================
+// Sama seperti aggregateMenuPlanNutrisi, tapi digabung dari SELURUH 4
+// minggu (bukan cuma minggu yang lagi aktif dilihat) -- dipakai KHUSUS
+// untuk Evaluasi Menu Bulanan (lihat window.evaluateMenuPlanGizi di
+// bawah), supaya penilaian "kurang protein"/"belum ada sayur" dst tidak
+// berubah-ubah tiap kali user pindah tab minggu, dan tetap representatif
+// sebagai gambaran pola makan sebulan (bukan cuma 1 dari 4 minggu yang
+// kebetulan lagi kelihatan).
+window.aggregateMenuPlanBahanBulanan = function(data) {
+    const map = new Map();
+    window.MENU_PLAN_WEEKS.forEach(function(w) {
+        window.MENU_PLAN_DAYS.forEach(function(d) {
+            (((data[w.key] || {})[d.key]) || []).forEach(function(meal) {
+                (meal.bahan || []).forEach(function(b) {
+                    const name = (b.name || '').trim();
+                    if (!name) return;
+                    const unit = (b.unit || '').trim();
+                    const qty = Number(b.qty) || 0;
+                    const key = name.toLowerCase() + '|' + unit.toLowerCase();
+                    if (map.has(key)) {
+                        map.get(key).qty += qty;
+                    } else {
+                        map.set(key, { name: name, unit: unit, qty: qty });
+                    }
+                });
+            });
+        });
+    });
+    return Array.from(map.values()).sort(function(a, b) { return a.name.localeCompare(b.name); });
+};
+
+window.aggregateMenuPlanNutrisiBulanan = function(data) {
+    const aggregated = window.aggregateMenuPlanBahanBulanan(data);
+    let totalKalori = 0, totalProtein = 0, totalKarbo = 0, totalLemak = 0, unmatchedCount = 0;
+    const rows = aggregated.map(function(item) {
+        const est = window._mplanEstimateNutrisiIngredient(item.name, item.qty, item.unit);
+        if (est.matched && est.hasGrams) {
+            totalKalori += est.kalori;
+            totalProtein += est.protein;
+            totalKarbo += est.karbo;
+            totalLemak += est.lemak;
+        } else {
+            unmatchedCount++;
+        }
+        return Object.assign({}, item, est);
+    });
+    return { rows: rows, totalKalori: totalKalori, totalProtein: totalProtein, totalKarbo: totalKarbo, totalLemak: totalLemak, unmatchedCount: unmatchedCount };
+};
+
+// ==================== EVALUASI GIZI BULANAN ====================
 // Menerjemahkan angka mentah (total kalori/protein/karbo/lemak) jadi
 // insight yang gampang dipahami orang awam: "kurang protein", "kebanyakan
 // karbo", dll -- supaya kartu gizi tidak cuma menampilkan angka tapi juga
-// membantu keluarga menilai apakah menu seminggu ini sudah seimbang.
+// membantu keluarga menilai apakah pola makan sudah seimbang.
+//
+// SENGAJA dihitung dari SELURUH 4 minggu digabung (lihat
+// window.aggregateMenuPlanNutrisiBulanan), BUKAN dari minggu yang lagi
+// aktif dilihat -- supaya penilaiannya tidak berubah-ubah tiap user pindah
+// tab minggu, dan lebih representatif sebagai gambaran pola makan sebulan
+// (1 minggu kadang kebetulan sedikit sayur, tapi minggu lain banyak --
+// baru kelihatan seimbang atau tidaknya kalau dilihat sebulan penuh).
+// Kartu angka kalori/gram di atasnya TETAP per-minggu (ganti-ganti sesuai
+// tab) -- cuma bagian evaluasi ini yang bulanan.
 //
 // Dua jenis evaluasi, keduanya TIDAK butuh tahu jumlah anggota keluarga
 // atau ukuran porsi (data yang tidak kita punya di app ini), makanya
@@ -269,10 +326,10 @@ window.aggregateMenuPlanNutrisi = function(weekData) {
 //    20-35% dari total kalori). Proporsi ini sama nilainya baik menunya
 //    untuk 2 orang atau 8 orang, jadi valid dipakai tanpa perlu tahu
 //    jumlah anggota keluarga.
-// 2) KELENGKAPAN KELOMPOK BAHAN -- cek apakah menu seminggu ini sama
+// 2) KELENGKAPAN KELOMPOK BAHAN -- cek apakah menu sebulan ini sama
 //    sekali belum menyentuh sayuran atau sumber protein (hewani/nabati)
 //    di basis data lokal manapun -- sinyal paling gampang dikenali orang
-//    awam ("belum ada sayur seminggu ini") yang sering luput kalau cuma
+//    awam ("belum ada sayur sebulan ini") yang sering luput kalau cuma
 //    lihat angka kalori/gram.
 //
 // Selalu tegaskan (di UI) ini evaluasi KASAR dari basis data umum,
@@ -337,10 +394,10 @@ window.evaluateMenuPlanGizi = function(result) {
         if (ref && ref.group) groupsPresent.add(ref.group);
     });
     if (!groupsPresent.has('sayur')) {
-        insights.push({ level: 'warning', label: 'Sayuran', text: 'belum ada sayuran yang terdeteksi di jadwal minggu ini — coba selipkan sayur di beberapa menu.' });
+        insights.push({ level: 'warning', label: 'Sayuran', text: 'belum ada sayuran yang terdeteksi di jadwal bulan ini — coba selipkan sayur di beberapa menu.' });
     }
     if (!groupsPresent.has('protein-hewani') && !groupsPresent.has('protein-nabati')) {
-        insights.push({ level: 'warning', label: 'Protein', text: 'belum ada sumber protein (daging/ikan/telur/tahu/tempe) yang terdeteksi di jadwal minggu ini.' });
+        insights.push({ level: 'warning', label: 'Protein', text: 'belum ada sumber protein (daging/ikan/telur/tahu/tempe) yang terdeteksi di jadwal bulan ini.' });
     }
     if (!groupsPresent.has('buah') && !groupsPresent.has('susu')) {
         insights.push({ level: 'info', label: 'Buah & Susu', text: 'belum ada buah/susu yang terdeteksi — opsional, tapi bagus untuk tambahan vitamin & kalsium keluarga.' });
@@ -359,7 +416,8 @@ window.renderMenuPlanGizi = function(weekData, weekKey) {
     if (!listEl) return; // markup belum tersedia di versi index.html ini
 
     const activeWeek = weekKey || window._mplanActiveWeek || 'w1';
-    weekData = weekData || window.getMenuPlan(window.currentBookId)[activeWeek];
+    const fullData = window.getMenuPlan(window.currentBookId);
+    weekData = weekData || fullData[activeWeek];
     const result = window.aggregateMenuPlanNutrisi(weekData);
 
     const emptyEl = document.getElementById('mplanGiziEmpty');
@@ -376,14 +434,32 @@ window.renderMenuPlanGizi = function(weekData, weekKey) {
         labelEl.innerText = `Estimasi Gizi ${weekMeta ? weekMeta.label : 'Mingguan'}`;
     }
 
+    // Evaluasi (bagian "Evaluasi Menu Bulan Ini") dihitung dari GABUNGAN
+    // seluruh 4 minggu -- lihat catatan panjang di
+    // window.evaluateMenuPlanGizi kenapa ini sengaja bulanan, bukan ikut
+    // minggu yang lagi dibuka. Makanya blok ini diletakkan TERPISAH dari
+    // render angka kalori/gram per-minggu di bawah (yang masih boleh
+    // kosong kalau minggu aktif memang belum diisi menu).
+    if (evaluasiWrapEl && evaluasiEl) {
+        const monthlyResult = window.aggregateMenuPlanNutrisiBulanan(fullData);
+        const insights = window.evaluateMenuPlanGizi(monthlyResult);
+        if (insights.length) {
+            evaluasiWrapEl.style.display = '';
+            evaluasiEl.innerHTML = insights.map(function(it) {
+                return `<div class="mplan-gizi-insight is-${it.level}"><span class="mplan-gizi-insight-label">${window.escapeHtml(it.label)}</span><span class="mplan-gizi-insight-text">${window.escapeHtml(it.text)}</span></div>`;
+            }).join('');
+        } else {
+            evaluasiWrapEl.style.display = 'none';
+            evaluasiEl.innerHTML = '';
+        }
+    }
+
     if (!result.rows.length) {
         listEl.innerHTML = '';
         if (emptyEl) emptyEl.style.display = '';
         if (kaloriEl) kaloriEl.innerText = '0 kkal';
         if (macrosEl) macrosEl.innerHTML = '';
         if (noteEl) noteEl.innerText = '';
-        if (evaluasiWrapEl) evaluasiWrapEl.style.display = 'none';
-        if (evaluasiEl) evaluasiEl.innerHTML = '';
         // [RAPI] Sembunyikan toggle "Rincian gizi per bahan" total kalau
         // memang belum ada bahan sama sekali -- tidak ada gunanya buka
         // rincian kosong.
@@ -401,18 +477,6 @@ window.renderMenuPlanGizi = function(weekData, weekKey) {
         ].map(function(m) {
             return `<span class="mplan-gizi-chip"><b>${Math.round(m.val).toLocaleString('id-ID')} g</b> ${m.label}</span>`;
         }).join('');
-    }
-    if (evaluasiWrapEl && evaluasiEl) {
-        const insights = window.evaluateMenuPlanGizi(result);
-        if (insights.length) {
-            evaluasiWrapEl.style.display = '';
-            evaluasiEl.innerHTML = insights.map(function(it) {
-                return `<div class="mplan-gizi-insight is-${it.level}"><span class="mplan-gizi-insight-label">${window.escapeHtml(it.label)}</span><span class="mplan-gizi-insight-text">${window.escapeHtml(it.text)}</span></div>`;
-            }).join('');
-        } else {
-            evaluasiWrapEl.style.display = 'none';
-            evaluasiEl.innerHTML = '';
-        }
     }
     listEl.innerHTML = result.rows.map(function(item) {
         let kaloriHtml = '<span class="mplan-estimate-price is-unknown">-</span>';
