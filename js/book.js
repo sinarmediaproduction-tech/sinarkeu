@@ -151,6 +151,9 @@ window.switchBook = async function(id) {
         console.error('[switchBook] Gagal pull data cloud:', e);
         window.showToast('Sebagian data cloud gagal dimuat', 'warning');
     }
+    // [FRAUD-DETECTION] Buku aktif berganti -- pindai ulang & ambil log buku
+    // baru (cache log fraud lama milik buku sebelumnya tidak relevan lagi).
+    if (typeof window.refreshFraudAlerts === 'function') window.refreshFraudAlerts();
 };
 
 window.openBookManager = function() {

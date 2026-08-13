@@ -447,8 +447,22 @@ window.handleSubmit = async function(e) {
     window.saveTransactions();
     window.showToast(window.isOnline() ? "Transaksi berhasil disimpan" : "Tersimpan lokal — akan disinkron otomatis saat online", window.isOnline() ? "success" : "warning");
     if (type === 'expense') window.checkBudgetWarningAfterSave(date, category);
-    await window.addCloudLog('TAMBAH', `Menambah item baru: "${description}" sebesar ${window.rp(amount)}`);
+    // [FRAUD-DETECTION] ID transaksi disisipkan di detail log (bukan cuma
+    // deskripsi+nominal seperti sebelumnya) supaya window.analyzeAuditLogsForAbuse
+    // (js/fraud-detection.js) bisa menelusuri device PEMBUAT sebuah transaksi
+    // dari histori log, lalu membandingkannya dengan device yang belakangan
+    // mengedit/menghapusnya (lihat js/fraud-detection.js).
+    await window.addCloudLog('TAMBAH', `Menambah item baru: "${description}" sebesar ${window.rp(amount)} (ID: ${txId})`);
     window.sendTelegramNotif(window.buildTxNotifMessage('TAMBAH', newTx, window.getCurrentBookName()));
+    // [FRAUD-DETECTION] Cek anomali (nominal janggal/duplikat/beruntun) atas
+    // transaksi yang baru saja disimpan -- murni peringatan, tidak pernah
+    // membatalkan simpan yang sudah terjadi di atas.
+    if (typeof window.checkTransactionAnomaly === 'function') {
+        const anomalies = window.checkTransactionAnomaly(newTx, window.txs, newTx.id);
+        const warn = anomalies.find(a => a.level === 'warning');
+        if (warn) setTimeout(() => window.showToast('⚠️ ' + warn.message, 'warning'), 900);
+    }
+    if (typeof window.refreshFraudAlerts === 'function') window.refreshFraudAlerts();
 };
 window.openActionMenu = function(id) {
     // [FIX UX] Sama seperti handleSubmit -- edit & hapus transaksi sudah
@@ -518,6 +532,10 @@ window.handleEditSubmit = async function(e) {
     if (!category) { alert('Harap pilih kategori!'); return; }
     if (amount <= 0) { alert('Nominal harus valid!'); return; }
     const editAttachment = await window.resolveAttachment(window.currentAttachmentFile, window.currentAttachmentData, id);
+    // [FRAUD-DETECTION] Simpan data transaksi SEBELUM ditimpa -- dipakai di
+    // bawah oleh window.checkEditAnomaly (js/fraud-detection.js) utk deteksi
+    // lonjakan nominal janggal saat edit.
+    const _fraudOldTx = window.txs[idx];
     window.txs[idx] = { id, type, date, category, description, amount, attachment: editAttachment, updated_at: new Date().toISOString() };
     window.markTxDirty(id); // [FIX RACE + MULTI-TAB] tandai baris ini saja yang perlu di-push (memori + localStorage)
     window.closeModal('editModal');
@@ -531,8 +549,20 @@ window.handleEditSubmit = async function(e) {
     // tidak ada peringatan sama sekali walau hasilnya jadi melewati anggaran.
     // Cek ulang di sini juga, sama seperti alur tambah transaksi.
     if (type === 'expense') window.checkBudgetWarningAfterSave(date, category);
-    await window.addCloudLog('UBAH', `Mengubah transaksi "${description}" menjadi senilai ${window.rp(amount)}`);
+    // [FRAUD-DETECTION] Lihat catatan di handleSubmit -- ID disisipkan supaya
+    // bisa ditelusuri device pembuat vs device pengedit.
+    await window.addCloudLog('UBAH', `Mengubah transaksi "${description}" menjadi senilai ${window.rp(amount)} (ID: ${id})`);
     window.sendTelegramNotif(window.buildTxNotifMessage('UBAH', window.txs[idx], window.getCurrentBookName()));
+    // [FRAUD-DETECTION] Cek lonjakan nominal janggal dari edit ini + anomali
+    // umum lain (outlier/duplikat) -- murni peringatan, tidak membatalkan.
+    if (typeof window.checkEditAnomaly === 'function') {
+        const editFlags = window.checkEditAnomaly(_fraudOldTx, window.txs[idx]);
+        const anomFlags = typeof window.checkTransactionAnomaly === 'function'
+            ? window.checkTransactionAnomaly(window.txs[idx], window.txs, id) : [];
+        const warn = [...editFlags, ...anomFlags].find(a => a.level === 'warning');
+        if (warn) setTimeout(() => window.showToast('⚠️ ' + warn.message, 'warning'), 900);
+    }
+    if (typeof window.refreshFraudAlerts === 'function') window.refreshFraudAlerts();
 };
 window.confirmDelete = async function(id) {
     // [FIX UX] Lihat catatan di handleSubmit -- hapus juga aman offline
@@ -573,6 +603,9 @@ window.confirmDelete = async function(id) {
         }
         await window.addCloudLog('HAPUS', `Menghapus transaksi "${t.description}" ber-ID: ${id}`);
         window.sendTelegramNotif(window.buildTxNotifMessage('HAPUS', t, window.getCurrentBookName()));
+        // [FRAUD-DETECTION] Perbarui status alert (mis. outlier yg baru saja
+        // dihapus jadi hilang dari daftar, atau pola hapus beruntun mulai terdeteksi).
+        if (typeof window.refreshFraudAlerts === 'function') window.refreshFraudAlerts();
     }
 };
 window.viewAttachment = function(id) {

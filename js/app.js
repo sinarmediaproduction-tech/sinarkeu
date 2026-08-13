@@ -335,6 +335,10 @@ window.continueAppInit = async function() {
     // dipanggil di sini -- di luar percabangan online/offline di atas -- supaya
     // tetap berjalan walau user sedang offline.
     setTimeout(window.checkAndRunDailySafetySnapshot, 2000);
+    // [FRAUD-DETECTION] Pindai anomali pribadi + tarik log buku (utk cek
+    // aktivitas anggota) tak lama setelah app siap -- diberi jeda supaya
+    // tidak rebutan dgn proses startup lain di atas (pull transaksi/settings dll).
+    if (typeof window.refreshFraudAlerts === 'function') setTimeout(window.refreshFraudAlerts, 3500);
     // Mulai auto-lock: kunci otomatis setelah tidak ada aktivitas
     if (typeof window.autoLock !== 'undefined') window.autoLock.start();
     // [BUG FIX 1] Event listener online/offline/visibilitychange hanya boleh

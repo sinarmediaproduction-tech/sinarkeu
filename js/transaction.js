@@ -853,6 +853,10 @@ window.loadTransactions = function() {
     window._dirtyTxIds = new Set(Object.keys(_dirtyStore).filter(id => _dirtyStore[id] === window.currentBookId));
     window.render();
     if (window.isOnline()) window.pullFromCloudSilently();
+    // [FRAUD-DETECTION] Pindai ulang saat buku dimuat (app start / ganti
+    // buku) supaya banner peringatan langsung akurat tanpa perlu user
+    // membuka panel Log Audit dulu.
+    if (typeof window.refreshFraudAlerts === 'function') window.refreshFraudAlerts();
 };
 
 window.saveTransactions = function(forceFullPush) {

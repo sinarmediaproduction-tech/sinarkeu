@@ -598,6 +598,20 @@ alter table public.settings
         </div>
     </div>
 
+    <!-- ===== FRAUD/ANOMALI ALERT BANNER ===== -->
+    <!-- Diisi & ditampilkan oleh js/fraud-detection.js (window.renderFraudBanner),
+         mengikuti pola paymentReminderBanner di atas -- tersembunyi kalau tidak
+         ada flag aktif, tidak pernah memblokir apa pun di dashboard. -->
+    <div id="fraudAlertBanner" class="pr-banner" style="display:none; border-radius: var(--radius); padding:12px 16px; margin-bottom:10px; background:#fff4f4; border:1.5px solid #dc2626;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <div>
+                <div style="font-size:.78rem; font-weight:700; color:#dc2626;">⚠️ Deteksi Fraud / Anomali</div>
+                <div id="fraudAlertBannerText" style="font-size:.72rem; line-height:1.6; color:var(--ink);"></div>
+            </div>
+            <button onclick="window.openFraudAlertModal()" style="font-size:.7rem; padding:5px 12px; background:#dc2626; color:#fff; border:none; border-radius: var(--radius-sm); cursor:pointer; font-weight:600; white-space:nowrap;">Lihat Semua</button>
+        </div>
+    </div>
+
     <div class="balance-hero">
         <div class="balance-hero-blob"></div>
         <div class="balance-hero-label">
@@ -1745,6 +1759,19 @@ alter table public.settings
     </div>
 </div>
 
+<!-- Fraud/Anomali Detail Modal -- diisi oleh js/fraud-detection.js (window.openFraudAlertModal) -->
+<div id="fraudAlertModal" class="modal">
+    <div class="modal-content" style="max-width:520px;">
+        <div class="modal-header"><h3>⚠️ Deteksi Fraud / Anomali</h3><button class="modal-close" onclick="closeModal('fraudAlertModal')">×</button></div>
+        <div style="font-size:.7rem; color:var(--ink-faint); margin-bottom:10px; line-height:1.5;">
+            Daftar ini murni peringatan lokal (dihitung dari transaksi &amp; log aktivitas buku ini) --
+            tidak ada yang otomatis diblokir atau dikirim ke pihak lain. Tinjau lalu tekan "Abaikan"
+            kalau memang sudah sesuai.
+        </div>
+        <div id="fraudAlertList"></div>
+    </div>
+</div>
+
 <!-- View Attachment Modal -->
 <div id="viewAttachmentModal" class="modal">
     <div class="modal-content" style="max-width:600px; text-align:center">
@@ -2065,7 +2092,7 @@ alter table public.settings
   statis sebelumnya, jadi urutan dependency antar file tidak berubah.
 -->
 <script>
-    var APP_JS_VERSION = 'v36'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
+    var APP_JS_VERSION = 'v40'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
     var SK_JS_FILES = [
         'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js', 'js/db.js',
         'js/telegram.js', 'js/account.js', 'js/book.js', 'js/transaction.js',
@@ -2073,6 +2100,7 @@ alter table public.settings
         'js/shopping-list.js', 'js/menu-plan.js', 'js/electricity-plan.js', 'js/payment-reminder.js', 'js/expense-chart.js',
         'js/render.js', 'js/report.js', 'js/forecast.js', 'js/report-shortcuts.js',
         'js/backup.js', 'js/safety-snapshot.js', 'js/forex.js', 'js/ai.js',
+        'js/fraud-detection.js',
         'js/settings.js', 'js/auth.js', 'js/autolock.js', 'js/app.js',
         'js/custom-select.js'
     ];
