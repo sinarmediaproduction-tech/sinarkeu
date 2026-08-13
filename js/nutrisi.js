@@ -10,21 +10,22 @@
 //    API gizi publik gratis berbasis produk kemasan berbahasa Inggris --
 //    hasilnya jauh lebih akurat & instan (tanpa perlu koneksi internet).
 //
-// 2) API GRATIS OPEN FOOD FACTS, VIA SEARCH-A-LICIOUS (search.openfoodfacts.org,
-//    tanpa API key, CORS diizinkan langsung dari browser) -- dipakai sebagai
-//    FALLBACK untuk bahan yang tidak ketemu di basis data lokal, terutama
-//    produk kemasan/bermerek (kecap manis, susu kental manis, mie instan merek
-//    tertentu, dst) yang memang cocoknya dicari di database produk seperti
-//    ini. Hasil query di-cache di localStorage (window._nutrisiOffCache)
-//    supaya tidak berulang kali hit API yang sama.
-//    [BUG FIX - CORS/503 dari endpoint lama] Endpoint legacy
-//    world.openfoodfacts.org/cgi/search.pl sudah tidak dipakai lagi --
-//    sekarang selalu balas HTTP 503 di server Open Food Facts sendiri
-//    (bukan masalah dari aplikasi ini), dan karena respons error itu tidak
-//    membawa header CORS, browser melaporkannya sebagai "blocked by CORS
-//    policy" alih-alih error 503 biasa. Open Food Facts sendiri sudah
-//    memigrasikan full-text search ke API baru "Search-a-licious" di
-//    search.openfoodfacts.org, jadi fallback ini dipindah ke sana.
+// 2) API GRATIS OPEN FOOD FACTS, VIA PROXY /api/openfoodfacts.js -- dipakai
+//    sebagai FALLBACK untuk bahan yang tidak ketemu di basis data lokal,
+//    terutama produk kemasan/bermerek (kecap manis, susu kental manis, mie
+//    instan merek tertentu, dst) yang memang cocoknya dicari di database
+//    produk seperti ini. Hasil query di-cache di localStorage
+//    (window._nutrisiOffCache) supaya tidak berulang kali hit API yang sama.
+//    [BUG FIX - CORS] Sebelumnya fetch LANGSUNG dari browser ke Open Food
+//    Facts (baik endpoint legacy cgi/search.pl -- sekarang konsisten balas
+//    503 di server mereka, maupun API penggantinya search.openfoodfacts.org
+//    -- ternyata juga tidak mengizinkan origin sinarkeu.vercel.app secara
+//    langsung), keduanya muncul di console sebagai "blocked by CORS policy"
+//    walau akar masalahnya beda-beda. Sekarang fallback ini lewat proxy
+//    /api/openfoodfacts.js (server-to-server, lihat file itu untuk detail
+//    & alasannya -- pola yang sama dengan api/harga-pangan.js & api/emas.js
+//    untuk sumber data lain), supaya browser tidak pernah hit domain Open
+//    Food Facts secara langsung.
 //
 // Estimasi ini SELALU perkiraan kasar (basis data umum per 100 gram +
 // konversi satuan yang disederhanakan di window._nutrisiUnitToGram) --
@@ -167,15 +168,11 @@ window._nutrisiFetchOFF = async function(name) {
     }
     if (!window.isOnline || !window.isOnline()) return null;
     try {
-        const url = 'https://search.openfoodfacts.org/search?q=' + encodeURIComponent(name) +
-            '&langs=id,en&page_size=1&fields=product_name,nutriments';
+        const url = '/api/openfoodfacts?q=' + encodeURIComponent(name);
         const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
         if (!res.ok) throw new Error('status ' + res.status);
         const json = await res.json();
-        // Search-a-licious membalas { hits: [...] } (bukan { products: [...] }
-        // seperti endpoint lama) -- tetap jaga-jaga baca products juga kalau-kalau
-        // bentuk responsnya berubah lagi di kemudian hari.
-        const product = (json.hits || json.products || [])[0];
+        const product = (json.products || [])[0];
         let entry = null;
         if (product && product.nutriments) {
             const n = product.nutriments;
