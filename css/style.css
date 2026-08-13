@@ -50,12 +50,16 @@
   --topbar-item-active-color: #16233F;
   --topbar-footer-border: rgba(242,244,247,.12);
   --topbar-active-shadow: 0 4px 14px rgba(6,10,20,0.30);
-  /* Balance Hero (kartu "Saldo Akhir") — gradasi navy formal, senada
-     dengan sidebar, dengan teks netral di atasnya. */
-  --hero-bg-from:  #22335A;
-  --hero-bg-to:    #0C1424;
-  --hero-text:       #F2F4F7;
-  --hero-text-muted: rgba(242,244,247,0.72);
+  /* Balance Hero (kartu "Saldo Akhir") — [DIRATAKAN] sebelumnya gradasi
+     navy formal senada sidebar dengan teks putih di atasnya; sekarang flat
+     seperti kartu lain (var(--paper) + border), jadi teksnya dipetakan ke
+     var(--ink)/var(--ink-muted) biasa (lihat .balance-hero di bawah).
+     Variabel --hero-text* dipertahankan (bukan dihapus) supaya selector
+     yang masih mereferensikannya (.balance-hero-label, -eye, -value) tidak
+     perlu diubah satu-satu -- cukup ganti definisi variabelnya di sini &
+     di override [data-theme="dark"]. */
+  --hero-text:       var(--ink);
+  --hero-text-muted: var(--ink-muted);
   /* Extended palette */
   --fase:       #4A5578;
   --fase-lt:    #E9EBF2;
@@ -405,7 +409,6 @@ h1, h2, h3, h4,
   background: var(--paper);
   border: 1.5px solid var(--rule);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
   padding: 14px 20px;
   margin-bottom: 20px;
   display: flex;
@@ -473,25 +476,24 @@ h1, h2, h3, h4,
 .budget-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-lt); }
 
 /* ── Balance Hero Card (signature element) ── */
+/* [DIRATAKAN] Sebelumnya kartu ini gradasi navy (var(--hero-bg-from/-to))
+   + box-shadow besar + blob dekoratif putih transparan di pojok -- efek
+   "glossy" itu cuma masuk akal di atas warna gelap. Sekarang flat sama
+   seperti kartu lain di app (var(--paper) + border tipis, tanpa shadow),
+   jadi blob dekoratifnya juga dilepas (disembunyikan lewat display:none
+   di bawah, bukan dihapus elemennya dari index.html/app.js supaya tidak
+   perlu sentuh JS) karena blob putih transparan itu nyaris tidak
+   kelihatan/tidak masuk akal di atas latar terang. */
 .balance-hero {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--hero-bg-from) 0%, var(--hero-bg-to) 100%);
-  border: none;
+  background: var(--paper);
+  border: 1.5px solid var(--rule);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
   padding: 26px 28px;
   margin-bottom: 18px;
 }
-.balance-hero-blob {
-  position: absolute;
-  top: -60px; right: -60px;
-  width: 220px; height: 220px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #fff, transparent 70%);
-  opacity: 0.35;
-  pointer-events: none;
-}
+.balance-hero-blob { display: none; }
 .balance-hero-label {
   position: relative;
   display: flex;
@@ -531,11 +533,10 @@ h1, h2, h3, h4,
   background: var(--paper);
   border: 1.5px solid var(--rule);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
   padding: 16px 18px;
   transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
 }
-.stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--accent); }
+.stat-card:hover { transform: translateY(-3px); border-color: var(--accent); }
 
 .stat-label {
   font-size: .68rem;
@@ -562,7 +563,6 @@ h1, h2, h3, h4,
   background: var(--paper);
   border: 1.5px solid var(--rule);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
   padding: 0;
   margin-bottom: 16px;
   overflow: hidden;
@@ -662,7 +662,6 @@ h1, h2, h3, h4,
   background: var(--paper);
   border: 1.5px solid var(--rule);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
   padding: 16px 20px;
   margin-bottom: 20px;
 }
@@ -1045,21 +1044,27 @@ button:disabled, .btn:disabled,
 
 /* ── Harga Komoditas: kotak "Ringkasan Hari Ini" -- rekap 1-lirik di atas
    tabel/kartu supaya user tidak perlu baca baris komoditas satu-satu buat
-   tahu apa yang berubah hari ini. Sama pola gradient navy dgn
-   .slist-summary-card (Belanja Bulanan) supaya terasa konsisten sebagai
-   "kartu ringkasan" di seluruh app, warna teks disesuaikan manual (bukan
-   var(--danger)/var(--success) yang terlalu gelap di atas navy gelap). ── */
+   tahu apa yang berubah hari ini.
+   [DIRATAKAN] Sebelumnya gradient navy gelap (pola sama dengan
+   .dbudget-summary-card/.slist-summary-card di bawah) dengan teks putih
+   manual -- sekarang flat seperti kartu lain (var(--paper) + border),
+   warna teks dipetakan ke var(--ink)/var(--ink-muted)/var(--ink-faint)
+   biasa, dan aksen naik/turun harga dipetakan ke var(--danger)/var(--success)
+   standar (sebelumnya sengaja pakai warna custom #F2A7A0/#A7D9BE karena
+   var(--danger)/var(--success) dianggap terlalu gelap di atas navy --
+   sekarang di atas latar terang keduanya sudah kontras dengan baik). ── */
 .hk-summary-box {
-  background: linear-gradient(135deg, #22335A 0%, #0C1424 100%);
+  background: var(--paper);
+  border: 1.5px solid var(--rule);
   border-radius: var(--radius);
   padding: 16px 20px;
   margin-bottom: 16px;
-  color: rgba(242,244,247,.92);
+  color: var(--ink);
 }
 .hk-summary-date {
   font-size: .68rem;
   font-weight: 600;
-  color: rgba(242,244,247,.55);
+  color: var(--ink-faint);
   text-transform: uppercase;
   letter-spacing: .03em;
   margin-bottom: 10px;
@@ -1072,27 +1077,27 @@ button:disabled, .btn:disabled,
 }
 .hk-summary-stat { font-size: .8rem; white-space: nowrap; }
 .hk-summary-stat b { font-size: .95rem; margin-right: 3px; }
-.hk-summary-stat-naik b { color: #F2A7A0; }
-.hk-summary-stat-turun b { color: #A7D9BE; }
-.hk-summary-stat-stabil b { color: rgba(242,244,247,.75); }
+.hk-summary-stat-naik b { color: var(--danger); }
+.hk-summary-stat-turun b { color: var(--success); }
+.hk-summary-stat-stabil b { color: var(--ink-muted); }
 .hk-summary-highlight-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
   font-size: .78rem;
   line-height: 1.5;
-  color: rgba(242,244,247,.85);
+  color: var(--ink-muted);
 }
-.hk-summary-highlight-list b { color: #F2F4F7; }
-.hk-summary-highlight-up { color: #F2A7A0; font-weight: 700; }
-.hk-summary-highlight-down { color: #A7D9BE; font-weight: 700; }
-.hk-summary-empty { font-size: .78rem; color: rgba(242,244,247,.65); }
+.hk-summary-highlight-list b { color: var(--ink); }
+.hk-summary-highlight-up { color: var(--danger); font-weight: 700; }
+.hk-summary-highlight-down { color: var(--success); font-weight: 700; }
+.hk-summary-empty { font-size: .78rem; color: var(--ink-faint); }
 .hk-summary-reminder {
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px solid rgba(242,244,247,.14);
+  border-top: 1px solid var(--rule);
   font-size: .74rem;
-  color: rgba(242,244,247,.65);
+  color: var(--ink-faint);
 }
 
 /* ── Harga Komoditas: kartu ala-app untuk hape (pengganti tabel scroll
@@ -1104,7 +1109,6 @@ button:disabled, .btn:disabled,
   background: var(--paper);
   border: 1.5px solid var(--rule);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
   padding: 12px 14px;
 }
 .hk-card-name { font-weight: 700; font-size: .82rem; color: var(--ink); margin-bottom: 6px; display: block; }
@@ -2466,14 +2470,21 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 /* ── Anggaran Dasar (kartu ringkasan + grid kategori) ──
    Khusus modal #defaultBudgetModal — sengaja pakai prefix .dbudget-
    supaya tidak menyentuh tampilan modal Anggaran Bulanan (.budget-cat-row dst.)
-   yang masih dipakai di #budgetModal. */
+   yang masih dipakai di #budgetModal.
+   [DIRATAKAN] Sama seperti .hk-summary-box & .slist-summary-card -- gradient
+   navy diganti flat var(--paper)+border, teks putih dipetakan ke
+   var(--ink)/var(--ink-muted), pill emas dipetakan ke token
+   var(--warning)/var(--warning-lt) yang memang untuk itu (sebelumnya
+   warna emas custom #E7C874 dituning khusus supaya kontras di atas navy
+   gelap, sekarang di atas latar terang var(--warning) sudah pas). */
 .dbudget-summary-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
   flex-wrap: wrap;
-  background: linear-gradient(135deg, #22335A 0%, #0C1424 100%);
+  background: var(--paper);
+  border: 1.5px solid var(--rule);
   border-radius: var(--radius);
   padding: 16px 20px;
   margin-bottom: 14px;
@@ -2484,7 +2495,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .06em;
-  color: rgba(242,244,247,.68);
+  color: var(--ink-muted);
   margin-bottom: 5px;
 }
 .dbudget-summary-value {
@@ -2492,14 +2503,14 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   font-size: 1.5rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: #F2F4F7;
+  color: var(--ink);
 }
 .dbudget-summary-meta {
   font-size: .68rem;
   font-weight: 500;
-  color: #E7C874;
-  background: rgba(169,131,46,.18);
-  border: 1px solid rgba(169,131,46,.42);
+  color: var(--warning);
+  background: var(--warning-lt);
+  border: 1px solid var(--warning);
   padding: 5px 11px;
   border-radius: var(--radius-pill);
   white-space: nowrap;
@@ -2585,7 +2596,8 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   justify-content: space-between;
   gap: 14px;
   flex-wrap: wrap;
-  background: linear-gradient(135deg, #22335A 0%, #0C1424 100%);
+  background: var(--paper);
+  border: 1.5px solid var(--rule);
   border-radius: var(--radius);
   padding: 16px 20px;
   margin-bottom: 0;
@@ -2594,15 +2606,15 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   font-family: var(--font-display);
   font-size: 1.1rem;
   font-weight: 500;
-  color: rgba(242,244,247,.45);
+  color: var(--ink-faint);
   margin: 0 4px;
 }
 .slist-summary-value-total {
   font-size: 1.1rem;
-  color: rgba(242,244,247,.78);
+  color: var(--ink-muted);
 }
 .slist-summary-value.is-negative {
-  color: #F2A7A0;
+  color: var(--danger);
 }
 @media (max-width: 760px) {
   .slist-summary-grid { grid-template-columns: 1fr; gap: 10px; }
@@ -2691,7 +2703,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: .06em;
-  color: rgba(242,244,247,.68);
+  color: var(--ink-muted);
   margin-bottom: 5px;
 }
 .slist-summary-value {
@@ -2699,31 +2711,34 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   font-size: 1.5rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: #F2F4F7;
+  color: var(--ink);
 }
 .slist-summary-meta {
   font-size: .68rem;
   font-weight: 500;
-  color: #E7C874;
-  background: rgba(169,131,46,.18);
-  border: 1px solid rgba(169,131,46,.42);
+  color: var(--warning);
+  background: var(--warning-lt);
+  border: 1px solid var(--warning);
   padding: 5px 11px;
   border-radius: var(--radius-pill);
   white-space: nowrap;
 }
 .slist-summary-meta.is-negative {
-  color: #F2A7A0;
-  background: rgba(200,60,50,.18);
-  border: 1px solid rgba(200,60,50,.42);
+  color: var(--danger);
+  background: var(--danger-lt);
+  border: 1px solid var(--danger);
 }
 
 /* [KONTRAS] Label pill "Harga Komoditas" (Harga Pangan otomatis / Update
    terakhir / Komoditas Lain) sengaja TIDAK pakai .slist-summary-meta di
-   atas -- warna emas itu didesain untuk kartu gelap (.slist-summary-card,
-   gradient navy), kalau dipakai di atas modal background TERANG (seperti
-   modal Harga Komoditas) kontrasnya jadi lemah/susah dibaca. Pakai token
-   --accent/--accent-lt yang sudah dipakai badge lain di atas latar terang
-   (lihat .budget-info-badge.custom) supaya tegas & konsisten. */
+   atas. [CATATAN LAMA, SUDAH TIDAK BERLAKU] Dulu warna emas
+   .slist-summary-meta dituning khusus untuk kartu gelap (.slist-summary-card
+   waktu masih gradient navy) jadi lemah kalau dipakai di latar terang --
+   sekarang .slist-summary-meta sendiri sudah dipetakan ke token
+   var(--warning)/var(--warning-lt) yang aman di latar terang, tapi label
+   ini tetap dibiarkan pakai --accent/--accent-lt (bukan disatukan) supaya
+   dua elemen dengan makna beda -- badge kategori vs meta info tambahan --
+   tetap gampang dibedakan visualnya. */
 .hk-section-label {
   display: inline-block;
   font-size: .68rem;
@@ -2852,7 +2867,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 .slist-budget-warning b { font-weight: 700; }
 
 /* Card "Proyeksi Keuangan" -- Belanja Bulanan. Pakai --paper-warm + border
-   --rule (bukan gradient navy seperti .slist-summary-card) supaya jelas
+   --rule (beda dari --paper polos di .slist-summary-card) supaya jelas
    ini kartu input/kalkulasi terpisah dari ringkasan sisa belanja di atas. */
 .slist-forecast-card {
   background: var(--paper-warm);
@@ -3308,7 +3323,6 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   background: var(--paper);
   border: 1.5px solid var(--rule);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
   padding: 14px 18px;
   text-align: center;
 }
@@ -4133,11 +4147,11 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   --topbar-item-active-color: #0E1F0F;
   --topbar-footer-border: rgba(205,217,229,.12);
   --topbar-active-shadow: 0 4px 14px rgba(0,0,0,0.45);
-  /* Balance Hero -- gradasi abu gelap senada topbar (bukan navy lagi) */
-  --hero-bg-from:  #2D333B;
-  --hero-bg-to:    #1C2128;
-  --hero-text:       #CDD9E5;
-  --hero-text-muted: rgba(205,217,229,0.72);
+  /* Balance Hero -- [DIRATAKAN] flat sama seperti mode terang, ikut
+     var(--ink)/var(--ink-muted) dark theme (lihat definisi ulang di :root
+     paling atas file & catatan di .balance-hero). */
+  --hero-text:       var(--ink);
+  --hero-text-muted: var(--ink-muted);
   /* Extended palette — dark overrides (ikut hijau, lihat catatan atas) */
   --fase:       #4FA66C;
   --fase-lt:    #17291C;
@@ -5049,11 +5063,9 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   border-color: var(--rule);
   border-left: 3px solid var(--accent-lt);
   margin-bottom: 10px;
-  box-shadow: var(--shadow-sm);
   transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
 }
 #bookManagerModal .book-list-item:hover {
-  box-shadow: var(--shadow-md);
   border-left-color: var(--accent);
 }
 /* Kartu buku yang sedang aktif (badge "SEDANG AKTIF" ada di dalamnya)
@@ -5082,7 +5094,6 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 }
 #bookManagerModal .book-list-actions .btn-mini:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
 }
 /* Badge status "SEDANG AKTIF" (bukan tombol) -- jadikan pill emas kecil
    dengan titik indikator, bukan teks polos. */
