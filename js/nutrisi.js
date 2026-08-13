@@ -253,7 +253,8 @@ window.aggregateMenuPlanNutrisi = function(weekData) {
 };
 
 // Render kartu "Estimasi Gizi Mingguan" di halaman Daftar Menu (markup di
-// index.html, di bawah kartu Estimasi Belanja). Dipanggil dari
+// index.html, SEKARANG DI ATAS -- sebelum tab minggu & jadwal 7 hari,
+// bukan lagi di bawah kartu Estimasi Belanja). Dipanggil dari
 // window.renderMenuPlan (js/menu-plan.js) tiap kali halaman/minggu aktif
 // berubah, dan lagi setelah window.prefetchNutrisiOFFUntukMenuPlan selesai.
 window.renderMenuPlanGizi = function(weekData, weekKey) {
@@ -268,6 +269,13 @@ window.renderMenuPlanGizi = function(weekData, weekKey) {
     const kaloriEl = document.getElementById('mplanGiziKalori');
     const macrosEl = document.getElementById('mplanGiziMacros');
     const noteEl = document.getElementById('mplanGiziNote');
+    const labelEl = document.getElementById('mplanGiziHeaderLabel');
+    const detailsEl = document.getElementById('mplanGiziDetails');
+
+    if (labelEl) {
+        const weekMeta = window.MENU_PLAN_WEEKS.find(function(w) { return w.key === activeWeek; });
+        labelEl.innerText = `Estimasi Gizi ${weekMeta ? weekMeta.label : 'Mingguan'}`;
+    }
 
     if (!result.rows.length) {
         listEl.innerHTML = '';
@@ -275,9 +283,14 @@ window.renderMenuPlanGizi = function(weekData, weekKey) {
         if (kaloriEl) kaloriEl.innerText = '0 kkal';
         if (macrosEl) macrosEl.innerHTML = '';
         if (noteEl) noteEl.innerText = '';
+        // [RAPI] Sembunyikan toggle "Rincian gizi per bahan" total kalau
+        // memang belum ada bahan sama sekali -- tidak ada gunanya buka
+        // rincian kosong.
+        if (detailsEl) detailsEl.style.display = 'none';
         return;
     }
     if (emptyEl) emptyEl.style.display = 'none';
+    if (detailsEl) detailsEl.style.display = '';
     if (kaloriEl) kaloriEl.innerText = Math.round(result.totalKalori).toLocaleString('id-ID') + ' kkal';
     if (macrosEl) {
         macrosEl.innerHTML = [

@@ -5348,20 +5348,78 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   margin: 6px 0 0;
 }
 
-/* ── Kartu Estimasi Gizi Mingguan (di bawah kartu Estimasi Belanja) ── */
-.mplan-gizi-card { margin-top: 12px; }
-.mplan-gizi-macros { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+/* ── Kartu Estimasi Gizi Mingguan -- SEKARANG DI ATAS (di bawah intro,
+   sebelum tab minggu/jadwal hari), bukan lagi di bawah kartu Estimasi
+   Belanja. Redesign jadi "kartu ringkasan" yang lebih ringkas: kalori
+   total besar + chip makro langsung kelihatan tanpa scroll, rincian per
+   bahan (yang isinya cenderung duplikat sama daftar bahan di kartu-kartu
+   hari di bawahnya) disembunyikan di balik <details> supaya halaman tidak
+   terasa penuh sebelum user benar-benar butuh rinciannya. ── */
+.mplan-gizi-card.mplan-gizi-top {
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent-lt);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.mplan-gizi-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+.mplan-gizi-label {
+  display: block;
+  font-family: var(--font-display);
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: var(--ink-muted);
+  margin-bottom: 2px;
+}
+.mplan-gizi-kalori {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.2;
+}
+.mplan-gizi-macros { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; }
 .mplan-gizi-chip {
   display: inline-flex;
   align-items: baseline;
   gap: 4px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: var(--accent-lt);
+  background: var(--paper);
+  border: 1px solid var(--rule);
   color: var(--ink-muted);
   font-size: .68rem;
 }
 .mplan-gizi-chip b { color: var(--accent); font-family: var(--font-mono); font-size: .74rem; }
+.mplan-gizi-card.mplan-gizi-top .slist-empty { margin: 10px 0 0; }
+.mplan-gizi-details {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 25%, var(--rule));
+}
+.mplan-gizi-details summary {
+  cursor: pointer;
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--accent);
+  list-style: none;
+  user-select: none;
+}
+.mplan-gizi-details summary::-webkit-details-marker { display: none; }
+.mplan-gizi-details summary::before { content: '▸ '; }
+.mplan-gizi-details[open] summary::before { content: '▾ '; }
+.mplan-gizi-details .mplan-estimate-list { margin-top: 8px; }
+@media (max-width: 480px) {
+  .mplan-gizi-kalori { font-size: 1.28rem; }
+}
 
 /* ── Form Tambah/Ubah Menu (modal biasa, menuPlanMealModal) ── */
 .mplan-bahan-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
