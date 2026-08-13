@@ -1044,6 +1044,58 @@ button:disabled, .btn:disabled,
   margin-bottom: 20px;
 }
 
+/* ── Harga Komoditas: kotak "Ringkasan Hari Ini" -- rekap 1-lirik di atas
+   tabel/kartu supaya user tidak perlu baca baris komoditas satu-satu buat
+   tahu apa yang berubah hari ini. Sama pola gradient navy dgn
+   .slist-summary-card (Belanja Bulanan) supaya terasa konsisten sebagai
+   "kartu ringkasan" di seluruh app, warna teks disesuaikan manual (bukan
+   var(--danger)/var(--success) yang terlalu gelap di atas navy gelap). ── */
+.hk-summary-box {
+  background: linear-gradient(135deg, #22335A 0%, #0C1424 100%);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  color: rgba(242,244,247,.92);
+}
+.hk-summary-date {
+  font-size: .68rem;
+  font-weight: 600;
+  color: rgba(242,244,247,.55);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  margin-bottom: 10px;
+}
+.hk-summary-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-bottom: 12px;
+}
+.hk-summary-stat { font-size: .8rem; white-space: nowrap; }
+.hk-summary-stat b { font-size: .95rem; margin-right: 3px; }
+.hk-summary-stat-naik b { color: #F2A7A0; }
+.hk-summary-stat-turun b { color: #A7D9BE; }
+.hk-summary-stat-stabil b { color: rgba(242,244,247,.75); }
+.hk-summary-highlight-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: .78rem;
+  line-height: 1.5;
+  color: rgba(242,244,247,.85);
+}
+.hk-summary-highlight-list b { color: #F2F4F7; }
+.hk-summary-highlight-up { color: #F2A7A0; font-weight: 700; }
+.hk-summary-highlight-down { color: #A7D9BE; font-weight: 700; }
+.hk-summary-empty { font-size: .78rem; color: rgba(242,244,247,.65); }
+.hk-summary-reminder {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(242,244,247,.14);
+  font-size: .74rem;
+  color: rgba(242,244,247,.65);
+}
+
 /* ── Harga Komoditas: kartu ala-app untuk hape (pengganti tabel scroll
    horizontal yang terasa "native"/mentah di layar sempit) --
    disembunyikan by default, baru tampil di breakpoint mobile (lihat

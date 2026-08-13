@@ -433,6 +433,104 @@ window.refreshHargaKomoditas = async function() {
     window.renderHargaKomoditasModal();
 };
 
+// ==================== RINGKASAN HARIAN ====================
+// Rekap 1-lirik di atas tabel/kartu supaya user tidak perlu baca baris
+// komoditas satu-satu buat tahu apa yang berubah hari ini -- cukup lihat
+// kotak ini: berapa naik/turun/stabil, kenaikan & penurunan paling tajam,
+// dan pengingat kalau komoditas manual (Gas Melon/Token Listrik) sudah
+// lama tidak diupdate. Dipanggil dari renderHargaKomoditasModal, pakai
+// data yang SAMA (cache + window._hargaPanganHistory) yang sudah ditarik
+// modal itu -- tidak ada request tambahan di sini.
+function _hkBuildDailySummary(cache, autoRows, manualRows, latestAutoDate) {
+    let naik = 0, turun = 0, stabil = 0, tanpaHistori = 0;
+    let topGainer = null, topLoser = null;
+
+    autoRows.forEach(function(c) {
+        const change = _hkPctChange(c.slug);
+        const hit = cache.get(c.slug);
+        if (!change) { tanpaHistori++; return; }
+        const flat = Math.abs(change.pct) < 0.05;
+        if (flat) {
+            stabil++;
+        } else if (change.pct > 0) {
+            naik++;
+            if (!topGainer || change.pct > topGainer.pct) {
+                topGainer = { name: c.name, unit: c.unit, pct: change.pct, price: hit ? hit.price : null };
+            }
+        } else {
+            turun++;
+            if (!topLoser || change.pct < topLoser.pct) {
+                topLoser = { name: c.name, unit: c.unit, pct: change.pct, price: hit ? hit.price : null };
+            }
+        }
+    });
+
+    // [PENGINGAT MANUAL] Komoditas manual yang tanggal terakhir diisi BUKAN
+    // hari ini (atau belum pernah diisi sama sekali) -- bukan berarti "wajib
+    // update tiap hari" (harga listrik/gas memang jarang berubah), sekadar
+    // info kapan terakhir dicek supaya tidak lupa kalau memang sudah lama.
+    const today = _hpTodayDate();
+    const staleManual = manualRows.filter(function(c) {
+        const hit = cache.get(c.slug);
+        return !hit || hit.date !== today;
+    });
+
+    return {
+        date: latestAutoDate,
+        total: autoRows.length,
+        naik: naik, turun: turun, stabil: stabil, tanpaHistori: tanpaHistori,
+        topGainer: topGainer, topLoser: topLoser,
+        staleManual: staleManual
+    };
+}
+
+window.renderHargaKomoditasSummary = function(cache, autoRows, manualRows, latestAutoDate) {
+    const box = document.getElementById('hkSummaryBox');
+    if (!box) return;
+
+    if (!autoRows.length) {
+        box.innerHTML = '<div class="hk-summary-empty">Belum ada data harga hari ini. Tekan "Segarkan dari BI" untuk menarik data terbaru.</div>';
+        return;
+    }
+
+    const s = _hkBuildDailySummary(cache, autoRows, manualRows, latestAutoDate);
+
+    const fmtPct = function(pct) { return Math.abs(pct).toFixed(1) + '%'; };
+    const dateHtml = '<div class="hk-summary-date">Ringkasan ' + (s.date ? window.escapeHtml(s.date) : 'hari ini') + '</div>';
+
+    const statsHtml = '<div class="hk-summary-stats">' +
+        '<span class="hk-summary-stat hk-summary-stat-naik"><b>' + s.naik + '</b>naik</span>' +
+        '<span class="hk-summary-stat hk-summary-stat-turun"><b>' + s.turun + '</b>turun</span>' +
+        '<span class="hk-summary-stat hk-summary-stat-stabil"><b>' + s.stabil + '</b>stabil</span>' +
+        '</div>';
+
+    const lines = [];
+    if (s.topGainer) {
+        lines.push('<span class="hk-summary-highlight-up">\u25B2 Naik paling tajam:</span> <b>' + window.escapeHtml(s.topGainer.name) + '</b> ' +
+            fmtPct(s.topGainer.pct) + (s.topGainer.price ? ' &rarr; ' + window.rp(s.topGainer.price) + '/' + window.escapeHtml(s.topGainer.unit) : ''));
+    }
+    if (s.topLoser) {
+        lines.push('<span class="hk-summary-highlight-down">\u25BC Turun paling tajam:</span> <b>' + window.escapeHtml(s.topLoser.name) + '</b> ' +
+            fmtPct(s.topLoser.pct) + (s.topLoser.price ? ' &rarr; ' + window.rp(s.topLoser.price) + '/' + window.escapeHtml(s.topLoser.unit) : ''));
+    }
+    if (!s.topGainer && !s.topLoser) {
+        lines.push('Tidak ada perubahan harga signifikan dibanding data sebelumnya.');
+    }
+    if (s.tanpaHistori > 0) {
+        lines.push('<span style="color:rgba(242,244,247,.55);">' + s.tanpaHistori + ' komoditas belum punya histori pembanding.</span>');
+    }
+    const highlightHtml = '<div class="hk-summary-highlight-list">' + lines.map(function(l) { return '<div>' + l + '</div>'; }).join('') + '</div>';
+
+    let reminderHtml = '';
+    if (s.staleManual.length) {
+        reminderHtml = '<div class="hk-summary-reminder">Cek manual: ' +
+            s.staleManual.map(function(c) { return window.escapeHtml(c.name); }).join(', ') +
+            ' belum diupdate hari ini.</div>';
+    }
+
+    box.innerHTML = dateHtml + statsHtml + highlightHtml + reminderHtml;
+};
+
 window.renderHargaKomoditasModal = function() {
     const autoBody = document.getElementById('hkAutoTableBody');
     const manualBody = document.getElementById('hkManualTableBody');
@@ -467,6 +565,8 @@ window.renderHargaKomoditasModal = function() {
             ? ('Update terakhir: ' + latestAutoDate)
             : 'Update terakhir: belum ada data';
     }
+
+    window.renderHargaKomoditasSummary(cache, autoRows, manualRows, latestAutoDate);
 
     const renderAutoRow = function(c) {
         const hit = cache.get(c.slug);
