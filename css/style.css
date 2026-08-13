@@ -5178,6 +5178,32 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
      supaya tiap tab tetap punya ruang cukup buat labelnya. */
   .mplan-week-tabs { grid-template-columns: repeat(2, 1fr); }
 }
+/* Baris pembungkus tab minggu + tombol "Salin Minggu" -- tab tetap grid
+   4 kolom penuh, tombol salin ditaruh di bawahnya (bukan sejajar) supaya
+   tidak memaksa tab jadi sempit di layar HP. */
+.mplan-week-tabs-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.mplan-week-tabs-row .mplan-week-tabs { margin-bottom: 0; }
+.mplan-copy-week-btn {
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  color: var(--ink-muted);
+  font-size: .66rem;
+  font-weight: 600;
+  padding: 4px 6px;
+  cursor: pointer;
+  transition: color .15s ease;
+}
+.mplan-copy-week-btn:hover { color: var(--accent); }
+.mplan-copy-week-btn svg { flex: 0 0 auto; }
 .mplan-days {
   display: flex;
   flex-direction: column;
@@ -5249,6 +5275,64 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 }
 .mplan-add-meal-btn:hover { border-style: solid; background: var(--accent-lt); }
 .mplan-add-meal-btn-short { display: none; }
+.mplan-day-header-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; }
+.mplan-copy-day-btn {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid var(--rule);
+  background: none;
+  color: var(--ink-faint);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+.mplan-copy-day-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-lt); }
+/* Modal Salin Menu (day/week) */
+.mplan-copy-hint {
+  font-size: .72rem;
+  color: var(--ink-muted);
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+.mplan-copy-week-tabs { margin-bottom: 12px; }
+.mplan-copy-week-tabs:empty { margin-bottom: 0; }
+.mplan-copy-day-list { display: flex; flex-direction: column; gap: 6px; }
+.mplan-copy-day-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  border: 1.5px solid var(--rule);
+  background: var(--paper);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+.mplan-copy-day-item:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-lt); }
+.mplan-copy-day-item:disabled { opacity: .5; cursor: not-allowed; }
+.mplan-copy-day-item-label {
+  flex: 0 0 auto;
+  font-family: var(--font-display);
+  font-size: .74rem;
+  font-weight: 700;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.mplan-copy-day-item-desc {
+  flex: 1 1 auto;
+  font-size: .68rem;
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+  text-align: right;
+}
 .mplan-meal-list { display: flex; flex-direction: column; gap: 6px; }
 .mplan-meal {
   display: flex;
@@ -5486,4 +5570,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   .mplan-bahan-row .mplan-bahan-qty { grid-area: qty; }
   .mplan-bahan-row .slist-del-btn { grid-area: del; }
   .mplan-bahan-row .mplan-bahan-unit { grid-area: unit; }
+  /* Tombol "Salin Minggu" jadi ikon saja di layar sempit -- labelnya
+     sudah jelas dari ikon copy + posisinya di sebelah tab minggu. */
+  .mplan-copy-week-btn-full { display: none; }
 }

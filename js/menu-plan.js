@@ -247,6 +247,17 @@ window.renderMenuPlan = function() {
             const meals = weekData[d.key] || [];
             const isToday = activeWeek === currentWeekKey && d.key === todayKey;
             const isEmpty = meals.length === 0;
+            // Tampilkan menu terurut sesuai waktu makan (Sarapan -> Camilan),
+            // bukan urutan input -- supaya kartu hari mudah dibaca sebagai
+            // alur sehari (jadwal, bukan catatan). Urutan data ASLI (meals)
+            // tetap tidak diubah, cuma urutan tampilnya (sortedMeals) yang
+            // beda -- waktu makan tak dikenal (mis. data lama/rusak)
+            // ditaruh paling belakang, bukan hilang.
+            const sortedMeals = meals.length > 1 ? meals.slice().sort(function(a, b) {
+                const ai = window.MENU_PLAN_WAKTU.indexOf(a.waktu);
+                const bi = window.MENU_PLAN_WAKTU.indexOf(b.waktu);
+                return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+            }) : meals;
             // Hari tanpa menu TIDAK lagi menampilkan paragraf "Belum ada
             // menu." + wrapper .mplan-meal-list kosong -- di layar hp,
             // kartu-kartu kosong ini (biasanya mayoritas di awal minggu)
@@ -255,7 +266,7 @@ window.renderMenuPlan = function() {
             // masih kosong). Class `is-empty` dipakai CSS mobile untuk
             // memangkas padding bawah kartu kosong lebih jauh.
             const mealsHtml = meals.length
-                ? `<div class="mplan-meal-list">${meals.map(function(m) {
+                ? `<div class="mplan-meal-list">${sortedMeals.map(function(m) {
                     const bahanSummary = (m.bahan || []).map(function(b) {
                         return window.escapeHtml(b.name) + (b.qty ? ` (${window._mplanFormatQty(b.qty)} ${window.escapeHtml(b.unit || '')})` : '');
                     }).join(', ');
@@ -286,7 +297,11 @@ window.renderMenuPlan = function() {
                 <div class="mplan-day-card${isToday ? ' is-today' : ''}${isEmpty ? ' is-empty' : ''}"${isToday ? ' id="mplanTodayCard"' : ''}>
                     <div class="mplan-day-header">
                         <span class="mplan-day-label">${d.label}${isToday ? '<span class="mplan-today-badge">Hari Ini</span>' : ''}${dayEstimateHtml}</span>
-                        ${isViewer ? '' : `<button type="button" class="mplan-add-meal-btn" title="Tambah Menu" onclick="window.openAddMenuPlanMealModal('${activeWeek}','${d.key}')">+ <span class="mplan-add-meal-btn-full">Tambah Menu</span><span class="mplan-add-meal-btn-short">Menu</span></button>`}
+                        ${isViewer ? '' : `
+                        <div class="mplan-day-header-actions">
+                            <button type="button" class="mplan-copy-day-btn" title="Salin dari hari lain" onclick="window.openCopyMenuPlanDayModal('${activeWeek}','${d.key}')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
+                            <button type="button" class="mplan-add-meal-btn" title="Tambah Menu" onclick="window.openAddMenuPlanMealModal('${activeWeek}','${d.key}')">+ <span class="mplan-add-meal-btn-full">Tambah Menu</span><span class="mplan-add-meal-btn-short">Menu</span></button>
+                        </div>`}
                     </div>
                     ${mealsHtml}
                 </div>`;
@@ -462,6 +477,7 @@ window.openAddMenuPlanMealModal = function(weekKey, dayKey) {
     document.getElementById('mplanMealWaktu').value = window.MENU_PLAN_WAKTU[0];
     window._mplanBahanRows = [{ id: 'r0', name: '', qty: '', unit: 'kg' }];
     window._mplanRenderBahanRows();
+    window._mplanPopulateHistoryDatalists();
     window.openModal('menuPlanMealModal');
 };
 
@@ -482,6 +498,7 @@ window.openEditMenuPlanMealModal = function(weekKey, dayKey, mealId) {
         ? meal.bahan.map(function(b, i) { return { id: 'r' + i, name: b.name, qty: b.qty, unit: b.unit }; })
         : [{ id: 'r0', name: '', qty: '', unit: 'kg' }];
     window._mplanRenderBahanRows();
+    window._mplanPopulateHistoryDatalists();
     window.openModal('menuPlanMealModal');
 };
 
@@ -499,7 +516,7 @@ window._mplanRenderBahanRows = function() {
     wrap.innerHTML = window._mplanBahanRows.map(function(row) {
         return `
             <div class="mplan-bahan-row" data-row-id="${row.id}">
-                <input type="text" class="form-control mplan-bahan-name" placeholder="Nama bahan" value="${window.escapeHtml(row.name || '')}" oninput="window._mplanUpdateBahanRow('${row.id}','name',this.value)">
+                <input type="text" class="form-control mplan-bahan-name" list="mplanBahanHistoryList" placeholder="Nama bahan" value="${window.escapeHtml(row.name || '')}" oninput="window._mplanUpdateBahanRow('${row.id}','name',this.value)">
                 <input type="number" class="form-control mplan-bahan-qty" placeholder="Qty" min="0" step="any" inputmode="decimal" value="${row.qty || ''}" oninput="window._mplanUpdateBahanRow('${row.id}','qty',this.value)">
                 <select class="form-control mplan-bahan-unit" onchange="window._mplanUpdateBahanRow('${row.id}','unit',this.value)">
                     ${window.MENU_PLAN_UNITS.map(function(u) {
@@ -593,6 +610,187 @@ window.deleteMenuPlanMeal = async function(weekKey, dayKey, mealId) {
     window.saveMenuPlan(window.currentBookId, data);
     window.renderMenuPlan();
     window.showToast && window.showToast('Menu dihapus.', 'success');
+};
+
+// ==================== SALIN MENU (1 HARI ATAU 1 MINGGU PENUH) ====================
+// Mempercepat pengisian jadwal berulang (mis. menu Senin biasanya sama tiap
+// minggu, atau mau pakai lagi menu minggu lalu sebagai basis minggu ini)
+// tanpa harus ketik ulang satu-satu. Dua mode dipakai modal yang sama
+// (#menuPlanCopyModal):
+//   - 'day'  : tarik SATU hari dari minggu/hari manapun ke satu hari target
+//              (tombol salin di header tiap kartu hari).
+//   - 'week' : salin SELURUH minggu yang sedang aktif ke minggu lain
+//              (tombol "Salin Minggu" di sebelah tab minggu).
+// Keduanya MENIMPA (replace, bukan gabung) isi hari/minggu tujuan --
+// selalu dikonfirmasi dulu lewat customConfirm supaya tidak tertimpa tanpa
+// sadar. ID menu & bahan dibuat ulang (bukan dipakai ulang dari sumber)
+// supaya tetap unik di lokasi barunya.
+window._mplanCopyMode = null; // 'day' | 'week'
+window._mplanCopyTarget = null; // {week, day?}
+window._mplanCopySourceWeek = null; // dipakai mode 'day' saat pilih minggu sumber di modal
+
+window._mplanCloneMeal = function(m) {
+    return {
+        id: 'mp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        waktu: m.waktu,
+        nama: m.nama,
+        bahan: (m.bahan || []).map(function(b) {
+            return { id: 'b_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: b.name, qty: b.qty, unit: b.unit };
+        })
+    };
+};
+
+window.openCopyMenuPlanDayModal = function(targetWeek, targetDay) {
+    if (window._mplanBlockIfViewer()) return;
+    window._mplanCopyMode = 'day';
+    window._mplanCopyTarget = { week: targetWeek, day: targetDay };
+    window._mplanCopySourceWeek = targetWeek;
+    const dayLabel = (window.MENU_PLAN_DAYS.find(function(d) { return d.key === targetDay; }) || {}).label || '';
+    const weekLabel = (window.MENU_PLAN_WEEKS.find(function(w) { return w.key === targetWeek; }) || {}).label || '';
+    document.getElementById('mplanCopyModalTitle').innerText = 'Salin Menu ke ' + dayLabel;
+    document.getElementById('mplanCopyHint').innerText = `Pilih hari sumber untuk disalin ke ${dayLabel}, ${weekLabel}. Menu yang sudah ada di ${dayLabel} akan ditimpa.`;
+    window._mplanRenderCopyWeekTabs();
+    window._mplanRenderCopyDayList();
+    window.openModal('menuPlanCopyModal');
+};
+
+window.openCopyMenuPlanWeekModal = function() {
+    if (window._mplanBlockIfViewer()) return;
+    const sourceWeek = window._mplanActiveWeek || window._mplanCurrentWeekKey();
+    const data = window.getMenuPlan(window.currentBookId);
+    const sourceWeekData = data[sourceWeek] || {};
+    const hasAny = window.MENU_PLAN_DAYS.some(function(d) { return (sourceWeekData[d.key] || []).length > 0; });
+    if (!hasAny) {
+        window.showToast && window.showToast('Minggu ini belum ada menu untuk disalin.', 'warning');
+        return;
+    }
+    window._mplanCopyMode = 'week';
+    window._mplanCopyTarget = { week: sourceWeek };
+    const weekLabel = (window.MENU_PLAN_WEEKS.find(function(w) { return w.key === sourceWeek; }) || {}).label || '';
+    document.getElementById('mplanCopyModalTitle').innerText = 'Salin ' + weekLabel;
+    document.getElementById('mplanCopyHint').innerText = `Pilih minggu tujuan untuk menerima salinan seluruh menu ${weekLabel}. Menu yang sudah ada di minggu tujuan akan ditimpa.`;
+    document.getElementById('mplanCopyWeekTabs').innerHTML = window.MENU_PLAN_WEEKS
+        .filter(function(w) { return w.key !== sourceWeek; })
+        .map(function(w) { return `<button type="button" class="mplan-week-tab" onclick="window.confirmCopyMenuPlanWeek('${w.key}')">${w.label}</button>`; })
+        .join('');
+    document.getElementById('mplanCopyDayList').innerHTML = '';
+    window.openModal('menuPlanCopyModal');
+};
+
+window._mplanRenderCopyWeekTabs = function() {
+    const wrap = document.getElementById('mplanCopyWeekTabs');
+    if (!wrap) return;
+    wrap.innerHTML = window.MENU_PLAN_WEEKS.map(function(w) {
+        return `<button type="button" class="mplan-week-tab${w.key === window._mplanCopySourceWeek ? ' is-active' : ''}" onclick="window._mplanSwitchCopySourceWeek('${w.key}')">${w.label}</button>`;
+    }).join('');
+};
+
+window._mplanSwitchCopySourceWeek = function(weekKey) {
+    window._mplanCopySourceWeek = weekKey;
+    window._mplanRenderCopyWeekTabs();
+    window._mplanRenderCopyDayList();
+};
+
+window._mplanRenderCopyDayList = function() {
+    const wrap = document.getElementById('mplanCopyDayList');
+    if (!wrap) return;
+    const data = window.getMenuPlan(window.currentBookId);
+    const sourceWeek = window._mplanCopySourceWeek;
+    const weekData = data[sourceWeek] || {};
+    const target = window._mplanCopyTarget;
+    wrap.innerHTML = window.MENU_PLAN_DAYS.map(function(d) {
+        const meals = weekData[d.key] || [];
+        const isSameAsTarget = sourceWeek === target.week && d.key === target.day;
+        const count = meals.length;
+        const namaPreview = meals.slice(0, 2).map(function(m) { return m.nama; }).join(', ') + (count > 2 ? ', ...' : '');
+        const disabled = isSameAsTarget || !count;
+        return `
+            <button type="button" class="mplan-copy-day-item${disabled ? ' is-disabled' : ''}"${disabled ? ' disabled' : ''}
+                onclick="window.confirmCopyMenuPlanDay('${sourceWeek}','${d.key}')">
+                <span class="mplan-copy-day-item-label">${d.label}</span>
+                <span class="mplan-copy-day-item-desc">${isSameAsTarget ? 'Hari ini juga' : (count ? (count + ' menu: ' + window.escapeHtml(namaPreview)) : 'Belum ada menu')}</span>
+            </button>`;
+    }).join('');
+};
+
+window.confirmCopyMenuPlanDay = async function(sourceWeek, sourceDay) {
+    const target = window._mplanCopyTarget;
+    if (!target) return;
+    const data = window.getMenuPlan(window.currentBookId);
+    const sourceMeals = (data[sourceWeek] && data[sourceWeek][sourceDay]) || [];
+    if (!sourceMeals.length) return;
+    const targetDayLabel = (window.MENU_PLAN_DAYS.find(function(d) { return d.key === target.day; }) || {}).label || '';
+    const confirmed = await window.customConfirm({
+        title: 'Salin Menu',
+        message: `Salin ${sourceMeals.length} menu ke ${targetDayLabel}? Menu yang sudah ada di hari itu akan ditimpa.`,
+        confirmLabel: 'Salin'
+    });
+    if (!confirmed) return;
+    if (!data[target.week] || typeof data[target.week] !== 'object') data[target.week] = {};
+    data[target.week][target.day] = sourceMeals.map(window._mplanCloneMeal);
+    window.saveMenuPlan(window.currentBookId, data);
+    window.closeModal('menuPlanCopyModal');
+    if (window._mplanActiveWeek === target.week) window.renderMenuPlan();
+    window.showToast && window.showToast('Menu berhasil disalin.', 'success');
+};
+
+window.confirmCopyMenuPlanWeek = async function(targetWeek) {
+    const sourceWeek = window._mplanCopyTarget.week;
+    const data = window.getMenuPlan(window.currentBookId);
+    const sourceWeekData = data[sourceWeek] || {};
+    const weekLabel = (window.MENU_PLAN_WEEKS.find(function(w) { return w.key === targetWeek; }) || {}).label || '';
+    const confirmed = await window.customConfirm({
+        title: 'Salin Minggu',
+        message: `Salin seluruh menu ke ${weekLabel}? Menu yang sudah ada di ${weekLabel} akan ditimpa.`,
+        confirmLabel: 'Salin'
+    });
+    if (!confirmed) return;
+    const clonedWeek = {};
+    window.MENU_PLAN_DAYS.forEach(function(d) {
+        clonedWeek[d.key] = (sourceWeekData[d.key] || []).map(window._mplanCloneMeal);
+    });
+    data[targetWeek] = clonedWeek;
+    window.saveMenuPlan(window.currentBookId, data);
+    window.closeModal('menuPlanCopyModal');
+    window._mplanActiveWeek = targetWeek;
+    window.renderMenuPlan();
+    window.showToast && window.showToast(`Menu berhasil disalin ke ${weekLabel}.`, 'success');
+};
+
+// ==================== AUTOCOMPLETE NAMA MENU & BAHAN DARI HISTORI ====================
+// Kumpulkan nama menu & nama bahan yang PERNAH dipakai (di semua minggu,
+// bukan cuma minggu aktif) supaya user tinggal pilih dari saran ketimbang
+// ketik ulang nama yang sama tiap minggu -- misal "Sayur Asem" atau
+// "Bawang Merah" yang muncul di banyak menu. Dipakai lewat <datalist> HTML
+// native (elemen #mplanNamaHistoryList & #mplanBahanHistoryList), jadi
+// tetap berupa <input type="text"> biasa (bebas isi teks baru) + saran
+// ketik, bukan dropdown tertutup.
+window._mplanPopulateHistoryDatalists = function() {
+    const data = window.getMenuPlan(window.currentBookId);
+    const namaSet = new Set();
+    const bahanSet = new Set();
+    window.MENU_PLAN_WEEKS.forEach(function(w) {
+        window.MENU_PLAN_DAYS.forEach(function(d) {
+            ((data[w.key] || {})[d.key] || []).forEach(function(m) {
+                if (m.nama) namaSet.add(m.nama.trim());
+                (m.bahan || []).forEach(function(b) {
+                    if (b.name) bahanSet.add(b.name.trim());
+                });
+            });
+        });
+    });
+    const namaListEl = document.getElementById('mplanNamaHistoryList');
+    if (namaListEl) {
+        namaListEl.innerHTML = Array.from(namaSet).sort().map(function(n) {
+            return `<option value="${window.escapeHtml(n)}"></option>`;
+        }).join('');
+    }
+    const bahanListEl = document.getElementById('mplanBahanHistoryList');
+    if (bahanListEl) {
+        bahanListEl.innerHTML = Array.from(bahanSet).sort().map(function(n) {
+            return `<option value="${window.escapeHtml(n)}"></option>`;
+        }).join('');
+    }
 };
 
 // ==================== KIRIM ESTIMASI KE DAFTAR BELANJA BULANAN ====================
