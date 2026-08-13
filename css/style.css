@@ -5484,6 +5484,47 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 }
 .mplan-gizi-chip b { color: var(--accent); font-family: var(--font-mono); font-size: .74rem; }
 .mplan-gizi-card.mplan-gizi-top .slist-empty { margin: 10px 0 0; }
+/* Evaluasi Menu Minggu Ini -- daftar insight kurang/lebih/seimbang di
+   bawah chip makro, sebelum toggle rincian per bahan. */
+.mplan-gizi-evaluasi-wrap {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+}
+.mplan-gizi-evaluasi-title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  margin-bottom: 6px;
+}
+.mplan-gizi-evaluasi { display: flex; flex-direction: column; gap: 5px; }
+.mplan-gizi-insight {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 9px;
+  border-radius: var(--radius-sm);
+  font-size: .72rem;
+  line-height: 1.5;
+}
+.mplan-gizi-insight-label {
+  flex: 0 0 auto;
+  font-weight: 700;
+}
+.mplan-gizi-insight-text { color: var(--ink-muted); }
+.mplan-gizi-insight.is-good { background: var(--success-lt); }
+.mplan-gizi-insight.is-good .mplan-gizi-insight-label { color: var(--success); }
+.mplan-gizi-insight.is-warning { background: var(--warning-lt); }
+.mplan-gizi-insight.is-warning .mplan-gizi-insight-label { color: var(--warning); }
+.mplan-gizi-insight.is-info { background: var(--paper-warm); }
+.mplan-gizi-insight.is-info .mplan-gizi-insight-label { color: var(--ink-muted); }
+@media (max-width: 480px) {
+  .mplan-gizi-insight { flex-direction: column; align-items: flex-start; gap: 1px; }
+}
 .mplan-gizi-details {
   margin-top: 10px;
   padding-top: 10px;
