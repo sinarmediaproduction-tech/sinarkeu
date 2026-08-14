@@ -45,15 +45,29 @@ async function generateMonthlyReport() {
   // Offline: tetap fallback ke window.txs (best effort, mungkin tidak
   // lengkap untuk bulan yang sudah di luar cache lokal).
   const reportContentEl = document.getElementById('reportContent');
-  let allTx;
+  // [FALLBACK-INDICATOR] allTxIsFallback = true kalau data yang dipakai laporan
+  // ini BUKAN dari query cloud per-bulan (cloudTx null karena offline, gagal,
+  // atau timeout -- lihat auth.js/db.js) melainkan dari window.txs lokal yang
+  // difilter. window.txs cuma menyimpan MAX_LOCAL_TXS (1000) transaksi
+  // terbaru, jadi kalau buku ini sudah lebih dari itu, laporan bulan lama bisa
+  // tampil kurang lengkap. User perlu tahu ini lewat banner, bukan diam-diam.
+  let allTx, allTxIsFallback = false;
   if (window.isOnline() && typeof window.fetchMonthTransactionsFromCloud === 'function') {
     if (reportContentEl) reportContentEl.innerHTML = '<div style="padding:24px;text-align:center;color:#9AA2AC;">Memuat laporan...</div>';
     const cloudTx = await window.fetchMonthTransactionsFromCloud(window.currentBookId, year, month);
-    allTx = cloudTx !== null ? cloudTx : (window.txs || []).filter(t => {
-      const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
-      return d.getFullYear() === year && (d.getMonth() + 1) === month;
-    });
+    if (cloudTx !== null) {
+      allTx = cloudTx;
+    } else {
+      allTxIsFallback = true;
+      allTx = (window.txs || []).filter(t => {
+        const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
+        return d.getFullYear() === year && (d.getMonth() + 1) === month;
+      });
+    }
   } else {
+    // Offline juga dihitung fallback -- window.txs sama-sama bisa saja
+    // kepotong untuk bulan yang lebih lama dari cache lokal.
+    allTxIsFallback = true;
     allTx = (window.txs || []).filter(t => {
       const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
       return d.getFullYear() === year && (d.getMonth() + 1) === month;
@@ -139,6 +153,12 @@ async function generateMonthlyReport() {
         </div>
         <div style="font-size:.7rem; color:${C.inkFaint};">Dibuat: ${nowStr()}</div>
       </div>
+
+      ${allTxIsFallback ? `
+      <div style="background:${C.budgetBg}; border:1.5px solid ${C.budgetBd}; border-radius: var(--radius-sm); padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:${C.budgetTxt}; display:flex; align-items:center; gap:8px;">
+        <span style="font-size:1rem; line-height:1;">⚠️</span>
+        <span>${window.isOnline() ? 'Gagal ambil data lengkap dari server (koneksi lambat/timeout). Laporan ini dari data tersimpan di perangkat dan mungkin tidak lengkap untuk bulan lama.' : 'Sedang offline. Laporan ini dari data tersimpan di perangkat dan mungkin tidak lengkap untuk bulan lama.'}</span>
+      </div>` : ''}
 
       <!-- Summary cards -->
       <div class="laporan-summary-grid" style="margin-bottom:20px;">
@@ -239,14 +259,25 @@ async function exportReportAsPDF() {
   // [FIX] Sama seperti generateMonthlyReport(): jangan andalkan window.txs
   // yang cuma menyimpan 1000 transaksi terbaru -- tarik langsung dari cloud
   // per-bulan supaya export PDF untuk bulan lama tetap lengkap.
-  let allTx;
+  // [FALLBACK-INDICATOR] Sama seperti generateMonthlyReport() -- lihat catatan
+  // lengkap di sana. Untuk PDF, ini ditampilkan sebagai catatan kecil di
+  // footer dokumen supaya kalau nanti dicetak/dikirim, pembaca tetap tahu
+  // datanya kemungkinan tidak lengkap (bukan cuma indikator yang hilang
+  // begitu modal ditutup).
+  let allTx, allTxIsFallback = false;
   if (window.isOnline() && typeof window.fetchMonthTransactionsFromCloud === 'function') {
     const cloudTx = await window.fetchMonthTransactionsFromCloud(window.currentBookId, year, month);
-    allTx = cloudTx !== null ? cloudTx : (window.txs || []).filter(t => {
-      const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
-      return d.getFullYear() === year && (d.getMonth() + 1) === month;
-    });
+    if (cloudTx !== null) {
+      allTx = cloudTx;
+    } else {
+      allTxIsFallback = true;
+      allTx = (window.txs || []).filter(t => {
+        const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
+        return d.getFullYear() === year && (d.getMonth() + 1) === month;
+      });
+    }
   } else {
+    allTxIsFallback = true;
     allTx = (window.txs || []).filter(t => {
       const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
       return d.getFullYear() === year && (d.getMonth() + 1) === month;
@@ -531,6 +562,11 @@ async function exportReportAsPDF() {
 
 <div class="content">
 
+  ${allTxIsFallback ? `
+  <div style="background:#F1EBDA; border:1.5px solid #B99A4E; border-radius: var(--radius-sm); padding:8px 12px; margin-bottom:14px; font-size:7.5pt; color:#6B5320;">
+    ⚠️ ${window.isOnline() ? 'Gagal ambil data lengkap dari server saat dokumen ini dibuat (koneksi lambat/timeout).' : 'Dokumen ini dibuat saat offline.'} Data diambil dari cache di perangkat dan mungkin tidak lengkap untuk bulan yang sudah lama.
+  </div>` : ''}
+
   <!-- ── KPI ── -->
   <div class="section-title">Ringkasan Keuangan</div>
   <div class="kpi-grid">
@@ -622,7 +658,7 @@ async function exportReportAsPDF() {
 
 <!-- ── FOOTER ── -->
 <div class="doc-footer">
-  <div>Laporan ini dibuat secara otomatis oleh sistem Sinarkeu.<br>Dokumen ini bersifat rahasia dan hanya untuk keperluan internal.</div>
+  <div>Laporan ini dibuat secara otomatis oleh sistem Sinarkeu.<br>Dokumen ini bersifat rahasia dan hanya untuk keperluan internal.${allTxIsFallback ? '<br><b>Catatan: dokumen ini dibuat dari data cache lokal, bukan data server lengkap.</b>' : ''}</div>
   <div class="watermark">Sinarkeu</div>
 </div>
 

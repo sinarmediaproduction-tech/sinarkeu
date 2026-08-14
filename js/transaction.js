@@ -118,6 +118,11 @@ window.saveTxsLocal = function(bookId, arr) {
 };
 
 window.trimAndSaveLocal = function(bookId, data) {
+    // [CACHE] Data lokal buku ini baru saja berubah (tambah/ubah/hapus
+    // transaksi, atau pull dari cloud) -- buang cache per-bulan supaya
+    // laporan/anggaran/forecast berikutnya tidak membaca hasil basi.
+    // Lihat catatan lengkap di window._monthTxCache.
+    window._invalidateMonthTxCache(bookId);
     const sorted = [...data].sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date) || String(b.id).localeCompare(String(a.id)));
     let trimmed = sorted.slice(0, window.MAX_LOCAL_TXS);
     trimmed = window.saveTxsLocal(bookId, trimmed);
@@ -193,6 +198,58 @@ window._fetchOlderTxsBalanceOffset = async function(bookId) {
     return result ? result.balanceOffset : null;
 };
 
+// ==================== CACHE HASIL FETCH PER-BULAN ====================
+// [CACHE] fetchMonthTransactionsFromCloud dipanggil dari BANYAK tempat yang
+// sering tumpang tindih bulannya dalam sesi yang sama: report.js (buka
+// laporan bulan X), budget.js (renderBudget tiap ganti bulan/render), dan
+// forecast.js (menarik ULANG hingga 8 bulan sekaligus tiap render card,
+// walau sudah dibatasi throttle 20 detik). Tanpa cache, tiap pemanggilan
+// itu selalu hit Supabase dari nol -- padahal datanya sering sama persis
+// dengan request sebelumnya beberapa detik lalu. Ini juga yang bikin
+// timeout satu request (mis. koneksi lagi lambat) gampang KEBERULANG di
+// pemanggil lain yang menyusul dalam rentang waktu dekat.
+//
+// Cache disimpan in-memory (bukan localStorage -- ini cuma percepatan sesi
+// berjalan, bukan persistensi) per bookId+tahun-bulan, dengan dua TTL beda:
+//  - Hasil SUKSES: 60 detik. Cukup untuk "meredam" beberapa pemanggil yang
+//    hampir bersamaan minta bulan yang sama, tapi tetap cukup pendek supaya
+//    laporan tidak menampilkan data basi kalau user memang menunggu lama.
+//  - Hasil GAGAL/timeout (null): 15 detik. Supaya saat koneksi lagi
+//    bermasalah, 8 request forecast yang menyusul dalam sedetik dua detik
+//    tidak ikut-ikutan menghantam Supabase dan menumpuk timeout baru --
+//    tapi cukup pendek juga supaya begitu koneksi pulih, next fetch tidak
+//    nunggu lama.
+// Selain TTL, cache SELALU dibuang lebih awal begitu ada perubahan data
+// lokal untuk buku itu (lihat invalidasi di window.trimAndSaveLocal di
+// bawah) -- supaya transaksi yang baru ditambah/diubah/dihapus/ditarik dari
+// device lain tidak "ketutup" oleh cache lama.
+window._monthTxCache = {}; // { [bookId]: { [ 'YYYY-MM' ]: { data, ts, ok } } }
+const MONTH_TX_CACHE_TTL_OK = 60000;
+const MONTH_TX_CACHE_TTL_FAIL = 15000;
+
+window._monthTxCacheGet = function(bookId, cacheKey) {
+    const bucket = window._monthTxCache[bookId];
+    const entry = bucket && bucket[cacheKey];
+    if (!entry) return undefined;
+    const ttl = entry.ok ? MONTH_TX_CACHE_TTL_OK : MONTH_TX_CACHE_TTL_FAIL;
+    if (Date.now() - entry.ts > ttl) return undefined; // kedaluwarsa
+    return entry.data;
+};
+
+window._monthTxCacheSet = function(bookId, cacheKey, data) {
+    if (!window._monthTxCache[bookId]) window._monthTxCache[bookId] = {};
+    window._monthTxCache[bookId][cacheKey] = { data, ts: Date.now(), ok: data !== null };
+};
+
+// Dipanggil dari trimAndSaveLocal setiap kali data lokal buku berubah
+// (tambah/ubah/hapus transaksi, atau pull baru dari cloud) -- lihat catatan
+// di atas. Membuang SELURUH cache bulan milik buku itu (bukan cuma bulan
+// yang berubah) karena sederhana & aman; dampaknya cuma next-fetch bulan
+// lain jadi hit cloud sekali lagi, bukan hal yang mahal.
+window._invalidateMonthTxCache = function(bookId) {
+    if (bookId) delete window._monthTxCache[bookId];
+};
+
 // ==================== LAPORAN: AMBIL SATU BULAN LANGSUNG DARI CLOUD ====================
 // [FIX] window.txs (dan cache localStorage sk_txs_*) cuma menyimpan
 // MAX_LOCAL_TXS (1000) transaksi TERBARU per buku (lihat trimAndSaveLocal).
@@ -216,6 +273,10 @@ window.fetchMonthTransactionsFromCloud = async function(bookId, year, month) {
     // angka lokal karena null di sini diperlakukan sama seperti gagal/offline.
     if (!Number.isFinite(year) || !Number.isFinite(month)) return null;
     const pad = (n) => String(n).padStart(2, '0');
+    const cacheKey = `${year}-${pad(month)}`;
+    // [CACHE] Lihat catatan lengkap di window._monthTxCache di atas.
+    const cached = window._monthTxCacheGet(bookId, cacheKey);
+    if (cached !== undefined) return cached;
     const startStr = `${year}-${pad(month)}-01`;
     const nextMonth = month === 12 ? 1 : month + 1;
     const nextYear = month === 12 ? year + 1 : year;
@@ -224,10 +285,15 @@ window.fetchMonthTransactionsFromCloud = async function(bookId, year, month) {
     const tagFilter = window.tagOrFilter(tag, bookId);
     const query = `?book_id=eq.${bookId}&is_deleted=eq.false&date=gte.${startStr}&date=lt.${endStr}&order=date.asc${tagFilter}`;
     const rows = await window.callSupabaseAPI('transactions', 'GET', null, query);
-    if (!rows || !Array.isArray(rows)) return null;
+    if (!rows || !Array.isArray(rows)) {
+        window._monthTxCacheSet(bookId, cacheKey, null);
+        return null;
+    }
     // [SECURITY] Dekripsi field sensitif (jumlah/kategori/catatan/lampiran) --
     // lihat window.decodeCloudTxRow di crypto.js.
-    return Promise.all(rows.map(c => window.decodeCloudTxRow(c)));
+    const decoded = await Promise.all(rows.map(c => window.decodeCloudTxRow(c)));
+    window._monthTxCacheSet(bookId, cacheKey, decoded);
+    return decoded;
 };
 
 window.pullFromCloudSilently = async function() {
