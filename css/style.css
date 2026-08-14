@@ -49,7 +49,13 @@
   --topbar-item-active-bg: #FFFFFF;
   --topbar-item-active-color: #16233F;
   --topbar-footer-border: rgba(242,244,247,.12);
-  --topbar-active-shadow: 0 4px 14px rgba(6,10,20,0.30);
+  /* [FLAT] Semua efek shadow dimatikan (diset none) supaya tampilan flat
+     total -- variabel ini masih dipertahankan (bukan dihapus) supaya
+     semua selector yang mereferensikannya (.header, .modal-content,
+     #appSidebar, .toast-message, .cs-dropdown, .app-nav-item.active)
+     tidak perlu diedit satu-satu & gampang dikembalikan kalau suatu saat
+     mau dipakai lagi. */
+  --topbar-active-shadow: none;
   /* Balance Hero (kartu "Saldo Akhir") — [DIRATAKAN] sebelumnya gradasi
      navy formal senada sidebar dengan teks putih di atasnya; sekarang flat
      seperti kartu lain (var(--paper) + border), jadi teksnya dipetakan ke
@@ -74,9 +80,11 @@
   --radius:     6px;
   --radius-lg:  10px;
   --radius-pill: 999px;
-  --shadow-sm:  0 1px 2px rgba(16,22,34,0.07);
-  --shadow-md:  0 3px 10px rgba(16,22,34,0.09);
-  --shadow-lg:  0 12px 28px rgba(16,22,34,0.13);
+  /* [FLAT] Lihat catatan --topbar-active-shadow di atas -- sama, diset
+     none supaya seluruh app (mode terang) flat total tanpa shadow. */
+  --shadow-sm:  none;
+  --shadow-md:  none;
+  --shadow-lg:  none;
   --font-display: 'IBM Plex Sans', 'Inter', sans-serif;
   --font-body:    'Inter', sans-serif;
   --font-mono:    'JetBrains Mono', ui-monospace, monospace;
@@ -917,9 +925,10 @@ button:disabled, .btn:disabled,
   color: #fff;
   border-color: var(--accent);
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(122,46,66,0.24);
+  /* [FLAT] Shadow tombol utama dimatikan. */
+  box-shadow: none;
 }
-.btn-primary:hover:not(:disabled) { background: var(--brand-dark); border-color: var(--brand-dark); box-shadow: 0 6px 18px rgba(122,46,66,0.30); transform: translateY(-1px); }
+.btn-primary:hover:not(:disabled) { background: var(--brand-dark); border-color: var(--brand-dark); transform: translateY(-1px); }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; background: var(--ink-faint); border-color: var(--ink-faint); box-shadow: none; }
 
 .btn-secondary {
@@ -1623,7 +1632,13 @@ tr:hover td { background: var(--accent-lt); }
     background: none;
     border: none;
     z-index: auto;
-    padding: 28px 32px 40px;
+    /* [SAMAKAN JARAK SIDEBAR] padding-left disamakan dengan .container
+       (16px, lihat aturan @media min-width:1024px di atas) supaya jarak
+       konten ke sidebar konsisten antara Dashboard/tampilan utama dan
+       menu full-page lain (Setelan, Laporan, Anggaran, dst). Sebelumnya
+       32px di sini vs 16px di .container bikin menu ini terasa lebih
+       menjorok ke kanan dibanding Dashboard. */
+    padding: 28px 16px 40px;
   }
   body.view-settings #setelanModal .setelan-modal-content {
     width: 100%; height: auto;
@@ -1720,7 +1735,9 @@ tr:hover td { background: var(--accent-lt); }
     background: none;
     border: none;
     z-index: auto;
-    padding: 28px 32px 40px;
+    /* [SAMAKAN JARAK SIDEBAR] padding-left disamakan dengan .container
+       (16px) -- lihat catatan sama di aturan #setelanModal di atas. */
+    padding: 28px 16px 40px;
   }
   body.view-fullpage .fullview-modal.show .modal-content {
     width: 100%; height: auto;
@@ -1862,7 +1879,6 @@ tr:hover td { background: var(--accent-lt); }
     width: 220px;
     padding-left: 14px;
     padding-right: 14px;
-    box-shadow: 14px 0 34px rgba(0,0,0,.22);
     z-index: 9600; /* di atas .sidebar-collapse-toggle (9500) supaya tombolnya tidak ketutup ujung sidebar yang melebar */
   }
   body.sidebar-collapsed #appSidebar:hover .app-nav-group-label {
@@ -4131,7 +4147,6 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   border: 1.5px solid var(--fase);
   border-top: none;
   border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
   z-index: 3000;
   overflow: hidden;
   animation: fadeDropdown 0.15s ease;
@@ -4250,7 +4265,8 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   --topbar-item-active-bg: #57AB5A;
   --topbar-item-active-color: #0E1F0F;
   --topbar-footer-border: rgba(205,217,229,.12);
-  --topbar-active-shadow: 0 4px 14px rgba(0,0,0,0.45);
+  /* [FLAT] Sama seperti mode terang -- lihat catatan di :root paling atas. */
+  --topbar-active-shadow: none;
   /* Balance Hero -- [DIRATAKAN] flat sama seperti mode terang, ikut
      var(--ink)/var(--ink-muted) dark theme (lihat definisi ulang di :root
      paling atas file & catatan di .balance-hero). */
@@ -4265,9 +4281,9 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   --ink-inv:    #F0F6FC;
   --paper-inv:  #ADBAC7;
   --row-alt:    #1C2128;
-  --shadow-sm:  0 1px 2px rgba(0,0,0,0.32);
-  --shadow-md:  0 4px 12px rgba(0,0,0,0.40);
-  --shadow-lg:  0 14px 32px rgba(0,0,0,0.50);
+  --shadow-sm:  none;
+  --shadow-md:  none;
+  --shadow-lg:  none;
 }
 
 [data-theme="dark"] body {
@@ -4324,7 +4340,6 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   background: var(--brand);
   color: var(--ink-inv);
   border-color: var(--brand);
-  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
 }
 [data-theme="dark"] .btn-primary:hover:not(:disabled) { background: var(--brand-dark); border-color: var(--brand-dark); }
 [data-theme="dark"] .manage-books-btn {
@@ -4749,7 +4764,6 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 [data-theme="dark"] .cs-dropdown {
   background: var(--paper);
   border-color: var(--ink-faint);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
 }
 [data-theme="dark"] .cs-search {
   background: var(--paper-warm);
