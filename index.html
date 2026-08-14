@@ -1867,7 +1867,7 @@ alter table public.settings
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:8px;">
             <span id="aiAnalysisFooter" style="font-size:.65rem; color:var(--ink-faint);"></span>
-            <div style="display:flex; gap:8px;"><button id="aiCopyBtn" class="btn btn-secondary" style="display:none;" onclick="copyAIResult()">Salin</button><button class="btn btn-secondary" onclick="closeModal('aiAnalysisModal')">Tutup</button></div>
+            <div style="display:flex; gap:8px;"><button id="aiCopyBtn" class="btn btn-secondary" style="display:none;" onclick="copyAIResult()">Salin</button><button id="aiExportBtn" class="btn btn-secondary" style="display:none; background:var(--purple-lt); border-color:var(--purple);" onclick="exportAIResult()">📥 Export</button><button class="btn btn-secondary" onclick="closeModal('aiAnalysisModal')">Tutup</button></div>
         </div>
     </div>
 </div>
@@ -1880,11 +1880,13 @@ alter table public.settings
             <div id="aiChatWorkerWarning" style="display:none; background:var(--danger-lt); border:1px solid color-mix(in srgb, var(--danger) 35%, var(--danger-lt)); border-radius: var(--radius-sm); padding:10px 12px; margin-bottom:12px; font-size:.72rem; color:var(--danger);">
                 <strong>Worker URL belum dikonfigurasi.</strong> Buka <a href="#" onclick="closeModal('aiChatModal'); openSetelanModal('ai'); return false;" style="color:var(--danger); font-weight:600; text-decoration:underline;">Setelan → Analisis AI</a> untuk mengisi URL Cloudflare Worker Anda.
             </div>
-            <div style="font-size:.68rem; color:var(--ink-faint); margin-bottom:8px;">Tanyakan apa saja soal transaksi Anda, contoh:</div>
-            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
-                <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.useAIChatExample('Pemasukan bulan ini berapa?')">Pemasukan bulan ini?</button>
-                <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.useAIChatExample('Pengeluaran bulan lalu berapa?')">Pengeluaran bulan lalu?</button>
-                <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.useAIChatExample('Kategori apa yang paling besar pengeluarannya bulan ini?')">Kategori terbesar bulan ini?</button>
+            <div id="aiChatPresets">
+                <div style="font-size:.68rem; color:var(--ink-faint); margin-bottom:8px;">Tanyakan apa saja soal transaksi Anda, contoh:</div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
+                    <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.useAIChatExample('Pemasukan bulan ini berapa?')">Pemasukan bulan ini?</button>
+                    <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.useAIChatExample('Pengeluaran bulan lalu berapa?')">Pengeluaran bulan lalu?</button>
+                    <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.useAIChatExample('Kategori apa yang paling besar pengeluarannya bulan ini?')">Kategori terbesar bulan ini?</button>
+                </div>
             </div>
             <div id="aiChatHistory" style="max-height:340px; overflow-y:auto; border:1px solid var(--rule); border-radius: var(--radius-sm); padding:12px; margin-bottom:10px; background:var(--paper-warm);">
                 <div style="text-align:center; color:var(--ink-faint); font-size:.72rem; padding:20px 0;" id="aiChatEmptyState">Belum ada percakapan. Coba tanyakan sesuatu di bawah.</div>

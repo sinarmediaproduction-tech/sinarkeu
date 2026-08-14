@@ -102,6 +102,7 @@ window.runAIAnalysis = async function() {
         resultEl.innerText = text;
         footerEl.innerText = `Dianalisis oleh Groq AI (LLaMA 3.3) · ${new Date().toLocaleString('id-ID')} · ${data.count} transaksi`;
         copyBtn.style.display = 'inline-flex';
+        document.getElementById('aiExportBtn').style.display = 'inline-flex';
     } catch (e) {
         resultEl.innerHTML = `<div style="color:#A13A3A; line-height:1.8;">Gagal: <b>${e.message}</b><br><small>Kemungkinan penyebab:<br>• Worker URL salah atau tidak aktif<br>• Worker belum di-deploy ulang setelah edit<br>• API key tidak valid</small></div>`;
         footerEl.innerText = '';
@@ -168,6 +169,29 @@ window.copyAIResult = function() {
     const text = document.getElementById('aiAnalysisResult').innerText;
     navigator.clipboard.writeText(text).then(() => window.showToast('Hasil analisis disalin!', 'success'));
 };
+// [NEW] Export hasil AI analisis ke file teks yang bisa di-download
+window.exportAIResult = function() {
+    const text = document.getElementById('aiAnalysisResult').innerText;
+    if (!text || text.includes('Pilih periode')) {
+        window.showToast('Tidak ada hasil untuk diekspor.', 'warning');
+        return;
+    }
+    const period = document.getElementById('aiAnalysisPeriod')?.value || 'all';
+    const type = document.getElementById('aiAnalysisType')?.value || 'general';
+    const periodLabel = { all:'Semua Data', thismonth:'Bulan Ini', lastmonth:'Bulan Lalu', last3months:'3 Bulan Terakhir' }[period];
+    const typeLabel = { general:'Ringkasan Umum', expense:'Analisis Pengeluaran', saving:'Tips Hemat', cashflow:'Arus Kas' }[type];
+    const header = `=== Laporan Analisis AI Sinarkeu ===\nPeriode: ${periodLabel}\nJenis: ${typeLabel}\nTanggal: ${new Date().toLocaleString('id-ID')}\n\n`;
+    const blob = new Blob([header + text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const safePeriod = { all:'semua', thismonth:'bulan-ini', lastmonth:'bulan-lalu', last3months:'3-bulan' }[period];
+    const safeType = { general:'ringkasan', expense:'pengeluaran', saving:'hemat', cashflow:'arus-kas' }[type];
+    a.download = `sinarkeu-ai-${safePeriod}-${safeType}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    window.showToast('Hasil AI diekspor ke file teks!', 'success');
+};
 
 // ==================== TANYA AI (CHAT Q&A) ====================
 // Beda dengan "Analisis AI" (insight umum), fitur ini menjawab pertanyaan
@@ -177,14 +201,57 @@ window.copyAIResult = function() {
 // wajibkan AI menunjukkan rincian transaksi yang dipakai untuk menghitung
 // jawabannya -- supaya pengguna bisa memverifikasi sendiri ketepatannya.
 if (!window._aiChatHistory) window._aiChatHistory = [];
+// [NEW] Load history dari localStorage saat pertama dipakai
+window.loadAIChatHistory = function() {
+    try {
+        const saved = localStorage.getItem('sinarkeu_ai_chat_history');
+        if (saved) {
+            window._aiChatHistory = JSON.parse(saved);
+        }
+    } catch(e) {
+        window._aiChatHistory = [];
+    }
+};
+// [NEW] Simpan history ke localStorage otomatis
+window.saveAIChatHistory = function() {
+    try {
+        localStorage.setItem('sinarkeu_ai_chat_history', JSON.stringify(window._aiChatHistory));
+    } catch(e) {
+        // ignore quota errors
+    }
+};
 
 window.openAIChatModal = function() {
     const workerUrl = (localStorage.getItem('sk_ai_worker_url') || '').trim();
     const warn = document.getElementById('aiChatWorkerWarning');
     if (warn) warn.style.display = workerUrl ? 'none' : 'block';
+    window.loadAIChatHistory();
     window.renderAIChatBubbles();
+    window.updateAIChatPresets();
     window.openModal('aiChatModal');
     setTimeout(() => { const inp = document.getElementById('aiChatInput'); if (inp) inp.focus(); }, 150);
+};
+// [NEW] Update tombol preset pertanyaan berdasarkan transaksi
+window.updateAIChatPresets = function() {
+    const presetContainer = document.getElementById('aiChatPresets');
+    if (!presetContainer || !window.txs || window.txs.length === 0) return;
+    // Cari kategori pengeluaran teratas
+    const catMap = {};
+    window.txs.filter(t => t.type === 'expense').forEach(t => {
+        const cat = t.category || 'Lain-lain';
+        catMap[cat] = (catMap[cat] || 0) + Number(t.amount);
+    });
+    const sorted = Object.entries(catMap).sort((a,b) => b[1]-a[1]);
+    const topCat = sorted[0]?.[0] || 'pengeluaran';
+    const topCatLower = topCat.toLowerCase();
+    presetContainer.innerHTML = `
+        <div style="font-size:.68rem; color:var(--ink-faint); margin-bottom:8px;">Tanyakan apa saja, contoh:</div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+            <button type="button" class="btn btn-secondary" style="font-size:.62rem; padding:3px 8px;" onclick="window.useAIChatExample('Pemasukan bulan ini berapa?')">Pemasukan bulan ini?</button>
+            <button type="button" class="btn btn-secondary" style="font-size:.62rem; padding:3px 8px;" onclick="window.useAIChatExample('Pengeluaran ${topCatLower} bulan ini berapa?')">${topCat} bulan ini?</button>
+            <button type="button" class="btn btn-secondary" style="font-size:.62rem; padding:3px 8px;" onclick="window.useAIChatExample('Kategori apa yang paling besar pengeluarannya?')">Kategori terbesar?</button>
+        </div>
+    `;
 };
 
 window.useAIChatExample = function(text) {
@@ -245,6 +312,7 @@ window.sendAIChatMessage = async function() {
     }
     window._aiChatHistory.push({ role: 'user', text: question });
     window._aiChatHistory.push({ role: 'loading', text: '' });
+    window.saveAIChatHistory();
     window.renderAIChatBubbles();
     inp.value = '';
     sendBtn.disabled = true;
@@ -284,9 +352,11 @@ INSTRUKSI WAJIB:
         const text = json?.result || '(Tidak ada respons)';
         window._aiChatHistory.pop(); // buang placeholder loading
         window._aiChatHistory.push({ role: 'assistant', text });
+        window.saveAIChatHistory();
     } catch (e) {
         window._aiChatHistory.pop();
         window._aiChatHistory.push({ role: 'error', text: `Gagal mendapat jawaban: ${e.message}` });
+        window.saveAIChatHistory();
     } finally {
         sendBtn.disabled = false;
         window.renderAIChatBubbles();
@@ -297,6 +367,7 @@ window.clearAIChatHistory = function() {
     if (window._aiChatHistory.length === 0) return;
     if (!confirm('Hapus seluruh riwayat percakapan Tanya AI?')) return;
     window._aiChatHistory = [];
+    localStorage.removeItem('sinarkeu_ai_chat_history');
     window.renderAIChatBubbles();
 };
 // ==================== AI ANALISIS FASE KEHIDUPAN ====================
