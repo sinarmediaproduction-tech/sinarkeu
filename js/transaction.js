@@ -483,7 +483,7 @@ window.forceFullSync = async function() {
         return;
     }
     try {
-        await window.pullAllSettings();
+        await window.pullAllSettings(true);
         await window.pullAllBooksFromCloud();
         window.updateBookSelectDropdown();
         window.updateTgStatusBadge();

@@ -721,14 +721,55 @@ window._decryptSettingValue = async function(rawValue) {
     }
 };
 
-window.pullAllSettings = async function() {
+window.pullAllSettings = async function(forceFull) {
     if (!window.isOnline()) return;
+    // [PERF FIX - EGRESS] forceFull=true dipakai window.forceFullSync ("Sinkron
+    // Penuh", tombol manual) supaya sesuai namanya: benar-benar tarik ulang
+    // SELURUH settings, bukan cuma delta -- berguna untuk troubleshooting/
+    // self-heal manual saat user curiga ada yang tidak sinkron. Autosync
+    // (js/app.js, tiap 30 detik) TIDAK memakai ini -- tetap incremental.
+    if (forceFull) {
+        window._lastSettingsSyncTime.global = null;
+        window._lastSettingsSyncTime.shared = {};
+    }
     const tag = window.getAccountTag();
     // OR filter: baris ber-tag milik akun ini ATAU baris lama tanpa tag (data sebelum
     // fitur account_tag). Setelah migrasi selesai, semua baris sudah punya tag dan
     // baris NULL tidak akan muncul lagi — filter ini aman dipakai permanen.
     const tagFilter = window.tagOrFilter(tag);
-    let allRows = await window.callSupabaseAPI('settings', 'GET', null, `?order=updated_at.desc${tagFilter}`);
+    // [PERF FIX - EGRESS] Sebelumnya baris ini SELALU menarik SELURUH baris
+    // settings (semua buku milik akun ini, semua key) pada TIAP pemanggilan --
+    // termasuk tiap tick autosync 30 detik (js/app.js, window.startAutoSync)
+    // yang jalan terus-menerus selama app terbuka, walau hampir selalu tidak
+    // ada apa pun yang berubah sejak pull sebelumnya. Ini penyumbang egress
+    // Supabase terbesar untuk tabel `settings` (lihat sql/fix_settings_upsert.sql
+    // untuk sisi lain masalah ini -- tabel yang insert-only/menumpuk; PENTING:
+    // migrasi itu WAJIB sudah dijalankan di database supaya baris per key
+    // benar-benar ke-upsert, bukan cuma numpuk -- kalau belum, jalankan dulu,
+    // supaya full pull pertama di bawah juga tidak menarik histori lama yang
+    // seharusnya sudah tidak relevan).
+    //
+    // Fix: cursor incremental sama seperti window.pullFromCloudSilently untuk
+    // transaksi (lihat window._maxUpdatedAt, js/transaction.js). Pull PERTAMA
+    // di tiap sesi (cursor masih null) tetap full seperti sebelumnya -- supaya
+    // semua state yang sudah ada di cloud SEBELUM sesi ini mulai tetap
+    // tertangkap. Setelah itu, tiap pull berikutnya cuma minta baris yang
+    // updated_at-nya lebih baru dari cursor: kalau memang tidak ada perubahan,
+    // Supabase balas array kosong (beberapa byte), bukan seluruh tabel lagi.
+    // Ini aman karena tiap `key` settings adalah snapshot JSON MANDIRI (lihat
+    // blok pemrosesan 'books'/'budgets'/dst di bawah) -- key yang tidak ikut
+    // ter-fetch karena belum berubah memang tidak perlu diproses ulang, cache
+    // lokalnya sudah benar. Penghapusan (books, dll) juga tidak bergantung ke
+    // "hilang dari full fetch" -- itu lewat key tombstone ('deleted_book_ids')
+    // yang sendirinya ikut ter-fetch begitu berubah, jadi tetap aman diproses
+    // secara incremental.
+    const _settingsCursor = window._lastSettingsSyncTime.global;
+    let _settingsQuery = `?order=updated_at.desc${tagFilter}`;
+    if (_settingsCursor) _settingsQuery += `&updated_at=gt.${encodeURIComponent(_settingsCursor)}`;
+    let allRows = await window.callSupabaseAPI('settings', 'GET', null, _settingsQuery);
+    if (allRows && Array.isArray(allRows)) {
+        window._lastSettingsSyncTime.global = window._maxUpdatedAt(allRows, _settingsCursor);
+    }
 
     // [FIX SYNC SHARED BOOK PULL]
     // Pull global/tag rows above cannot see settings rows belonging to shared
@@ -755,20 +796,26 @@ window.pullAllSettings = async function() {
         // penuh macet nunggu network round-trip demi round-trip. Jalankan
         // paralel lewat Promise.allSettled -- satu buku gagal tetap tidak
         // membatalkan buku lain (sama seperti try/catch per-iterasi yang lama).
+        // [PERF FIX - EGRESS] Cursor incremental per buku Bersama, sama alasan
+        // & mekanisme seperti cursor `.global` di atas -- pull pertama untuk
+        // suatu book_id (belum pernah tersimpan di window._lastSettingsSyncTime.shared)
+        // tetap full, supaya histori yang sudah ada di cloud (mis. baru saja
+        // gabung buku Bersama yang sudah lama dipakai anggota lain) tetap
+        // tertangkap; pull berikutnya untuk book_id yang sama jadi incremental.
         const _sharedRowsResults = await Promise.allSettled(_sharedBookIds.map(function(_bookId) {
-            return window.callSupabaseAPI(
-                'settings',
-                'GET',
-                null,
-                `?book_id=eq.${encodeURIComponent(_bookId)}&order=updated_at.desc`
-            );
+            const _sharedCursor = window._lastSettingsSyncTime.shared[_bookId];
+            let _sharedQuery = `?book_id=eq.${encodeURIComponent(_bookId)}&order=updated_at.desc`;
+            if (_sharedCursor) _sharedQuery += `&updated_at=gt.${encodeURIComponent(_sharedCursor)}`;
+            return window.callSupabaseAPI('settings', 'GET', null, _sharedQuery);
         }));
         const _sharedRows = [];
         _sharedRowsResults.forEach(function(_result, _idx) {
+            const _bookId = _sharedBookIds[_idx];
             if (_result.status === 'fulfilled' && Array.isArray(_result.value)) {
                 _sharedRows.push(..._result.value);
+                window._lastSettingsSyncTime.shared[_bookId] = window._maxUpdatedAt(_result.value, window._lastSettingsSyncTime.shared[_bookId]);
             } else if (_result.status === 'rejected') {
-                window.skWarn('[Sync] shared book pull failed', _sharedBookIds[_idx], _result.reason);
+                window.skWarn('[Sync] shared book pull failed', _bookId, _result.reason);
             }
         });
         if (Array.isArray(allRows)) allRows = allRows.concat(_sharedRows);

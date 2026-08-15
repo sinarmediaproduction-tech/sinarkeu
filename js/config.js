@@ -126,3 +126,10 @@ window._lastSyncTime = null;
 window._syncInterval = null;
 window._pushDebounceTimer = null;
 window._lastFullSyncTime = {};
+// [PERF FIX - EGRESS] Cursor incremental untuk window.pullAllSettings (js/db.js),
+// pola sama seperti _lastFullSyncTime di atas (dipakai transaksi). `.global`
+// untuk query tag-scoped (buku sendiri, lintas semua buku), `.shared[bookId]`
+// per buku Bersama. Reset ke kosong tiap reload halaman (session-lifetime),
+// sengaja -- supaya pull PERTAMA di tiap sesi baru selalu full (aman), dan
+// baru tick berikutnya (mis. autosync tiap 30 detik) jadi incremental.
+window._lastSettingsSyncTime = { global: null, shared: {} };
