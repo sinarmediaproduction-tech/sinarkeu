@@ -336,18 +336,24 @@ window.openFraudAlertModal = function() {
         } else {
             const sorted = [...flags].sort((a, b) => (b.level === 'warning') - (a.level === 'warning'));
             list.innerHTML = sorted.map(f => {
-                const sig = window._fraudSignature(f).replace(/'/g, "\\'");
+                const sig = window._fraudSignature(f);
                 const isWarn = f.level === 'warning';
                 const badgeColor = isWarn ? '#dc2626' : '#d97706';
                 return `<div style="border:1.5px solid var(--ink); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:8px;">
                     <div style="display:flex; justify-content:space-between; gap:8px; align-items:flex-start;">
                         <span style="font-size:.62rem; font-weight:700; color:#fff; background:${badgeColor}; padding:2px 8px; border-radius:4px; white-space:nowrap;">${isWarn ? 'PERINGATAN' : 'INFO'}</span>
-                        <button type="button" style="font-size:.65rem; background:none; border:1px solid var(--rule); border-radius:4px; padding:2px 8px; cursor:pointer; white-space:nowrap;" onclick="window.dismissFraudAlert('${sig}')">Abaikan</button>
+                        <button type="button" data-sig="${sig}" class="fraud-dismiss-btn" style="font-size:.65rem; background:none; border:1px solid var(--rule); border-radius:4px; padding:2px 8px; cursor:pointer; white-space:nowrap;">Abaikan</button>
                     </div>
                     <div style="font-size:.75rem; margin-top:6px; line-height:1.5;">${window.escapeHtml(f.message)}</div>
                     ${f.timestamp ? `<div style="font-size:.62rem; color:var(--ink-faint); margin-top:4px;">${new Date(f.timestamp).toLocaleString('id-ID')}</div>` : ''}
                 </div>`;
             }).join('');
+            // Attach event listeners after render
+            list.querySelectorAll('.fraud-dismiss-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    window.dismissFraudAlert(this.getAttribute('data-sig'));
+                });
+            });
         }
     }
     if (window.openModal) window.openModal('fraudAlertModal');
