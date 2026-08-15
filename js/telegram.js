@@ -57,15 +57,94 @@ window.loadTgConfigToForm = async function() {
     if (tokenEl) tokenEl.value = cfg.token;
     if (edgeEl) edgeEl.value = cfg.edgeUrl;
     if (chatEl) chatEl.value = cfg.chatId;
+    const humanizeEl = document.getElementById('tgHumanizeToggle');
+    if (humanizeEl) humanizeEl.checked = window.getTgHumanizeEnabled();
     window.updateTgStatusBadge();
+};
+
+// ==================== GAYA BAHASA AI (opsional) ====================
+// Toggle lokal per-perangkat (mirip pola window.setLockscreenAiEnabled di
+// js/lockscreen-insight.js) -- SENGAJA tidak disinkronkan ke cloud, karena
+// ini murni preferensi tampilan, bukan data yang perlu sama di semua device.
+window.getTgHumanizeEnabled = function() {
+    return localStorage.getItem('sk_tg_humanize') === '1';
+};
+window.setTgHumanizeEnabled = function(on) {
+    localStorage.setItem('sk_tg_humanize', on ? '1' : '0');
+    if (on && typeof window.resolveAIEndpoint === 'function' && !window.resolveAIEndpoint().ok) {
+        window.showToast('Atur dulu mesin AI di Setelan → Analisis AI, supaya gaya bahasa notifikasi Telegram bisa dibuat AI.', 'error');
+    }
+};
+
+// [FITUR - GAYA BAHASA AI] Semua notifikasi Telegram di app ini (transaksi,
+// ringkasan harian, anggaran, buku, backup, dst) dibangun dari TEMPLATE HTML
+// tetap (lihat buildTxNotifMessage dkk) -- rapi & selalu benar angkanya,
+// tapi kalau dibaca terus-menerus terasa seperti pesan robot/laporan sistem,
+// bukan sesuatu yang manusiawi.
+//
+// Fungsi ini dipasang SATU TEMPAT di window.sendTelegramNotif (titik akhir
+// SEMUA jalur notifikasi di atas) supaya tidak perlu mengubah tiap pemanggil
+// satu-satu: kalau toggle aktif & mesin AI sudah dikonfigurasi (lihat
+// window.resolveAIEndpoint, js/ai.js), teks template dilucuti tag HTML-nya
+// lalu diminta AI ditulis ulang jadi 1-3 kalimat santai ala manusia --
+// dengan larangan KETAT mengubah/mengarang angka atau info apa pun, cuma
+// menyusun ulang kalimatnya. Best-effort murni: toggle mati, AI belum
+// dikonfigurasi, request gagal/timeout, atau hasilnya kosong/mencurigakan
+// -> diam-diam balik pakai teks template asli. Notifikasi TIDAK PERNAH gagal
+// terkirim gara-gara fitur opsional ini bermasalah.
+//
+// CATATAN BIAYA: tiap notifikasi yang di-humanize berarti satu panggilan
+// tambahan ke mesin AI aktif (Groq/Cloudflare Worker atau Gemini/Supabase
+// Edge Function). Kalau mesin aktifnya 'gemini', ini menambah beban ke
+// project Supabase yang sama (invocation Edge Function) -- pertimbangkan
+// pakai mesin 'worker' (Cloudflare, di luar Supabase) untuk fitur ini kalau
+// kuota Supabase sedang ketat.
+window._humanizeTelegramText = async function(templatedMsg) {
+    if (!window.getTgHumanizeEnabled()) return templatedMsg;
+    if (typeof window.resolveAIEndpoint !== 'function' || !window.resolveAIEndpoint().ok) return templatedMsg;
+    if (typeof window.callAIEngine !== 'function') return templatedMsg;
+    // Lucuti tag HTML supaya AI menerima teks fakta yang bersih, bukan markup.
+    const plainFacts = String(templatedMsg)
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .trim();
+    if (!plainFacts) return templatedMsg;
+    const prompt = `Tulis ulang notifikasi berikut jadi 1-3 kalimat pendek berbahasa Indonesia yang santai dan enak dibaca, seperti pesan singkat dari asisten pribadi ke pemiliknya -- BUKAN gaya laporan/template sistem.
+
+ATURAN KETAT (wajib dipatuhi):
+- JANGAN mengubah, membulatkan, atau mengarang angka/nominal/tanggal/nama apa pun -- salin persis apa adanya dari data di bawah.
+- JANGAN menambahkan informasi yang tidak ada di data.
+- JANGAN pakai markdown atau HTML (tanpa **, tanpa tag <b>, maksimal 1 emoji kalau memang pas).
+- Balas HANYA kalimat hasil tulis ulangnya saja, tanpa embel-embel seperti "Berikut adalah" atau tanda kutip pembuka/penutup.
+
+DATA (fakta ini harus tetap akurat & lengkap di hasil tulisan):
+${plainFacts}`;
+    try {
+        const { text } = await window.callAIEngine(prompt);
+        const cleaned = (text || '').trim();
+        // Guard minimal: hasil kosong/terlalu pendek kemungkinan respons error
+        // atau tidak masuk akal -- lebih aman fallback ke template asli
+        // daripada mengirim sesuatu yang mencurigakan ke Telegram.
+        if (!cleaned || cleaned.length < 5) return templatedMsg;
+        // [KEAMANAN] Escape entity HTML pada hasil AI -- jaga-jaga kalau AI
+        // kebetulan menulis literal '<'/'>'/'&' (mis. "kurang dari 500rb"),
+        // supaya tidak dibaca sebagai tag HTML yang salah/rusak oleh Telegram
+        // saat dikirim dengan parse_mode HTML (lihat window.sendTelegramNotif).
+        return window.escapeHtml ? window.escapeHtml(cleaned) : cleaned;
+    } catch (e) {
+        window.skWarn('[Telegram] Gagal humanize teks notifikasi, pakai template asli:', e.message);
+        return templatedMsg;
+    }
 };
 
 window.sendTelegramNotif = async function(msg) {
     let cfg = await window.getTgConfig();
     if (!cfg.active) return;
+    // Lihat window._humanizeTelegramText di atas -- best-effort, aman fallback.
+    const finalMsg = await window._humanizeTelegramText(msg);
     try {
         if (cfg.edgeUrl) {
-            const body = { message: msg };
+            const body = { message: finalMsg };
             if (cfg.chatId) body.chat_id = cfg.chatId;
             const res = await fetch(cfg.edgeUrl, {
                 method: 'POST',
@@ -77,7 +156,7 @@ window.sendTelegramNotif = async function(msg) {
             const res = await fetch(`https://api.telegram.org/bot${cfg.token}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: cfg.chatId, text: msg, parse_mode: 'HTML' })
+                body: JSON.stringify({ chat_id: cfg.chatId, text: finalMsg, parse_mode: 'HTML' })
             });
             const data = await res.json();
             if (!data.ok) window.skWarn('[Telegram] Gagal kirim:', data.description);

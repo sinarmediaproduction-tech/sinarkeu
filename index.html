@@ -1019,6 +1019,7 @@ alter table public.settings
             </details>
             <div class="form-group"><label>Bot Token <span style="font-weight:400;color:var(--ink-faint);font-size:.7rem;">dari @BotFather</span></label><input type="text" id="tgBotTokenInput" class="form-control" placeholder="123456789:AAF-contoh-token-dari-botfather" autocomplete="off"></div>
             <div class="form-group"><label>Chat ID <span style="font-weight:400;color:var(--ink-faint);font-size:.7rem;">dari @userinfobot (angka, bisa negatif untuk grup)</span></label><input type="text" id="tgChatIdInput" class="form-control" placeholder="123456789" autocomplete="off"></div>
+            <div class="form-group form-group-checkbox"><label class="checkbox-label"><input type="checkbox" id="tgHumanizeToggle" onchange="window.setTgHumanizeEnabled(this.checked)"> Gaya bahasa natural (AI) <span style="font-weight:400;color:var(--ink-faint);font-size:.7rem;">— tulis ulang notifikasi jadi kalimat santai, bukan template. Butuh mesin AI aktif di Setelan → Analisis AI.</span></label></div>
             <input type="hidden" id="tgEdgeUrlInput" value="">
             <div id="tgTestStatus" style="font-size:.72rem; margin-bottom:12px; min-height:20px; padding: 0 2px;"></div>
             <div class="setelan-actions-row" style="flex-wrap:wrap;">
@@ -2157,7 +2158,7 @@ alter table public.settings
   statis sebelumnya, jadi urutan dependency antar file tidak berubah.
 -->
 <script>
-    var APP_JS_VERSION = 'v52'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
+    var APP_JS_VERSION = 'v53'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
     var SK_JS_FILES = [
         'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js', 'js/db.js',
         'js/telegram.js', 'js/account.js', 'js/book.js', 'js/transaction.js',
