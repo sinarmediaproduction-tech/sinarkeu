@@ -103,10 +103,10 @@ async function callGemini(
     const data = await res.json().catch(() => null);
 
     if (!res.ok) {
-      // 429 (kuota habis), 503 (model overload), 500 -> layak dicoba
-      // key/model lain. 400/403 dengan key salah juga aman dilanjut ke
-      // key berikutnya (bukan ditolak permanen untuk SEMUA percobaan).
-      const retryable = [429, 500, 503].includes(res.status) ||
+      // 401 (key tidak dikenali/format salah), 429 (kuota habis), 500/503
+      // (server Gemini bermasalah) -> semua layak dicoba key/model lain,
+      // BUKAN langsung dianggap gagal permanen untuk seluruh percobaan.
+      const retryable = [401, 429, 500, 503].includes(res.status) ||
         res.status === 403 || res.status === 400;
       const message = data?.error?.message || `HTTP ${res.status}`;
       return { ok: false, retryable, message };

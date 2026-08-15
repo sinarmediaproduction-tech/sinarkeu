@@ -62,6 +62,122 @@ window.callAIEngine = async function(prompt) {
     return { text: json?.result || '(Tidak ada respons)', engineLabel: endpoint.label };
 };
 
+// ==================== SARAN KATEGORI OTOMATIS (AI) ====================
+// Saat Deskripsi transaksi diisi, mesin AI aktif (lihat resolveAIEndpoint
+// di atas) disuruh menyarankan SATU kategori yang paling cocok dari daftar
+// resmi (EXPENSE_CATEGORIES/INCOME_CATEGORIES). Sengaja TIDAK PERNAH
+// menimpa kategori otomatis -- cuma tampil sebagai chip "Saran AI: ...
+// [Pakai]" yang diklik manual, supaya user tetap pegang kendali penuh dan
+// tidak kaget kategorinya berubah sendiri. Kalau mesin AI belum
+// dikonfigurasi (resolveAIEndpoint gagal), fitur ini diam total -- tidak
+// ada chip, tidak ada request, tidak ada error -- supaya alur catat cepat
+// tidak terganggu buat user yang belum/tidak pakai AI.
+window._aiCatDebounce = {};
+window._aiCatLastQuery = {};
+
+// Dipanggil sekali per pasangan form (add/edit) saat app boot, lihat
+// pemanggilan di bagian bawah file ini (DOMContentLoaded).
+window.initAiCategorySuggest = function(descId, catExpenseId, catIncomeId, typeRadioName, chipId) {
+    const descEl = document.getElementById(descId);
+    if (!descEl || descEl._aiCatBound) return; // hindari double-bind
+    descEl._aiCatBound = true;
+    descEl.addEventListener('input', function() {
+        window._scheduleAiCategorySuggest(descId, catExpenseId, catIncomeId, typeRadioName, chipId);
+    });
+    // Ganti jenis transaksi (Pemasukan/Pengeluaran) juga bisa mengubah
+    // daftar kategori yang relevan -- sembunyikan chip lama supaya tidak
+    // menyarankan kategori dari daftar yang salah jenis.
+    document.querySelectorAll(`input[name="${typeRadioName}"]`).forEach(r => {
+        r.addEventListener('change', function() {
+            const chipEl = document.getElementById(chipId);
+            if (chipEl) chipEl.style.display = 'none';
+            window._scheduleAiCategorySuggest(descId, catExpenseId, catIncomeId, typeRadioName, chipId);
+        });
+    });
+};
+
+window._scheduleAiCategorySuggest = function(descId, catExpenseId, catIncomeId, typeRadioName, chipId) {
+    clearTimeout(window._aiCatDebounce[descId]);
+    // Debounce 800ms supaya tidak nembak AI di tiap ketikan huruf -- cukup
+    // dipanggil sekali setelah user berhenti mengetik sejenak.
+    window._aiCatDebounce[descId] = setTimeout(function() {
+        window._runAiCategorySuggest(descId, catExpenseId, catIncomeId, typeRadioName, chipId);
+    }, 800);
+};
+
+window._runAiCategorySuggest = async function(descId, catExpenseId, catIncomeId, typeRadioName, chipId) {
+    const chipEl = document.getElementById(chipId);
+    const descEl = document.getElementById(descId);
+    const desc = (descEl?.value || '').trim();
+    if (chipEl) chipEl.style.display = 'none';
+    if (desc.length < 3) return;
+    if (typeof window.resolveAIEndpoint !== 'function' || !window.resolveAIEndpoint().ok) return;
+
+    const typeInput = document.querySelector(`input[name="${typeRadioName}"]:checked`);
+    const type = typeInput ? typeInput.value : 'expense';
+    const targetSelectId = type === 'income' ? catIncomeId : catExpenseId;
+    const targetSelect = document.getElementById(targetSelectId);
+    if (!targetSelect) return;
+
+    // Jangan tembak ulang AI kalau deskripsi & jenis sama persis dengan
+    // query terakhir untuk field ini (mis. user cuma pindah fokus lalu balik lagi).
+    const cacheKey = type + '|' + desc.toLowerCase();
+    if (window._aiCatLastQuery[descId] === cacheKey) {
+        if (chipEl && chipEl.dataset.suggestedCategory && chipEl.dataset.targetSelect === targetSelectId) {
+            chipEl.style.display = 'block'; // tampilkan lagi chip yang sudah pernah didapat
+        }
+        return;
+    }
+    window._aiCatLastQuery[descId] = cacheKey;
+
+    const categories = type === 'income' ? window.INCOME_CATEGORIES : window.EXPENSE_CATEGORIES;
+    const prompt = `Kamu adalah pengklasifikasi kategori transaksi keuangan rumah tangga Indonesia. Diberikan deskripsi transaksi ${type === 'income' ? 'PEMASUKAN' : 'PENGELUARAN'} di bawah, pilih SATU kategori yang PALING cocok dari daftar berikut (jawab PERSIS salah satu nama kategori ini, tanpa tanda kutip/penjelasan/kata tambahan apa pun):\n${categories.join(', ')}\n\nDeskripsi transaksi: "${desc}"\n\nJawab hanya nama kategorinya saja.`;
+
+    try {
+        const { text } = await window.callAIEngine(prompt);
+        // Kalau selagi menunggu respons user sudah lanjut mengetik/ganti jenis
+        // transaksi, hasil ini sudah tidak relevan lagi -- buang saja.
+        const stillRelevant = (document.getElementById(descId)?.value || '').trim() === desc &&
+            (document.querySelector(`input[name="${typeRadioName}"]:checked`)?.value || 'expense') === type;
+        if (!stillRelevant || !chipEl) return;
+
+        const clean = (text || '').trim();
+        const matched = categories.find(c => c.toLowerCase() === clean.toLowerCase()) ||
+            categories.find(c => clean.toLowerCase().includes(c.toLowerCase()));
+        if (!matched) return;
+
+        chipEl.innerHTML = `🤖 Saran AI: <b>${window.escapeHtml(matched)}</b> <button type="button" class="btn btn-secondary" style="font-size:.62rem; padding:2px 8px; margin-left:4px;" onclick="window._applyAiCategorySuggest(this)">Pakai</button>`;
+        chipEl.dataset.suggestedCategory = matched;
+        chipEl.dataset.targetSelect = targetSelectId;
+        chipEl.style.display = 'block';
+    } catch (e) {
+        // Diam-diam gagal -- ini fitur bantu opsional, bukan alur wajib.
+        // Tidak pakai showToast supaya tidak mengganggu user yang sedang
+        // cepat-cepat mencatat transaksi (mis. jaringan lemot/AI lagi limit).
+        if (window.skLog) window.skLog('[AI Kategori] gagal saran: ' + e.message);
+    }
+};
+
+window._applyAiCategorySuggest = function(btnEl) {
+    const chipEl = btnEl.closest('[data-target-select]') || btnEl.parentElement;
+    if (!chipEl) return;
+    const select = document.getElementById(chipEl.dataset.targetSelect);
+    const cat = chipEl.dataset.suggestedCategory;
+    if (select && cat) {
+        select.value = cat;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    chipEl.style.display = 'none';
+};
+
+// Aktifkan untuk form Tambah Transaksi dan Ubah Transaksi begitu DOM siap.
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.initAiCategorySuggest === 'function') {
+        window.initAiCategorySuggest('txDesc', 'txCategory', 'txIncomeCategory', 'type', 'txCategoryAiSuggest');
+        window.initAiCategorySuggest('editTxDesc', 'editTxCategory', 'editTxIncomeCategory', 'editType', 'editTxCategoryAiSuggest');
+    }
+});
+
 // ==================== AI ANALYSIS ====================
 window.openAIAnalysis = function() {
     const endpoint = window.resolveAIEndpoint();
