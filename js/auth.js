@@ -253,6 +253,7 @@ window.skSignIn = async function(email, password) {
         return false;
     }
     window._skAuthUser = data.user ? { id: data.user.id, email: data.user.email } : null;
+    window._skInvalidateSessionCache(); // [OPT] jangan pakai cache session lama dari sebelum login ini
     await window.skRefreshSharedAccess();
     window.skTouchLastLogin();
     window.showToast && window.showToast('Berhasil login: ' + (window._skAuthUser ? window._skAuthUser.email : ''));
@@ -263,6 +264,7 @@ window.skSignIn = async function(email, password) {
 window.skSignOut = async function() {
     const client = getSupabaseAuthClient();
     if (client) { try { await client.auth.signOut(); } catch (e) { /* abaikan */ } }
+    window._skInvalidateSessionCache(); // [OPT] session sudah tidak valid, buang cache-nya
     window._skAuthUser = null;
     window._skSharedRoles = {};
     window._skAuthMode = 'login';
@@ -300,16 +302,67 @@ window.skSignOut = async function() {
     }
 };
 
+// [OPT PERFORMA BUKU BERSAMA] Sebelumnya setiap request cloud ke buku
+// bersama (report.js, budget.js, forecast.js -- semua lewat
+// fetchMonthTransactionsFromCloud) memanggil client.auth.getSession() dari
+// NOL, tanpa cache. Biasanya cepat (baca localStorage), TAPI kalau access
+// token sudah dekat/lewat masa berlaku, Supabase JS diam-diam melakukan
+// refresh token ke server (POST /auth/v1/token) dulu sebelum getSession()
+// resolve -- nambah satu round-trip PENUH sebelum request datanya sendiri
+// sempat mulai. Ini yang bikin buku bersama terasa lebih lambat dari buku
+// pribadi (yang tidak pernah butuh langkah ini sama sekali). forecast.js
+// juga bisa memanggil ini sampai 8x beruntun (satu per bulan) dalam satu
+// render, jadi tanpa cache, delay itu bisa terkumpul jadi cukup terasa.
+//
+// Cache session di memori (BUKAN localStorage -- session-nya sendiri sudah
+// dikelola/di-refresh oleh Supabase client, ini cuma mempercepat baca
+// ULANG dalam jendela pendek) dengan TTL singkat (10 detik) -- cukup untuk
+// meredam banyak pemanggil yang saling tumpang tindih dalam satu siklus
+// render/fetch, tapi cukup pendek supaya token yang baru saja di-refresh
+// (mis. oleh panggilan lain) tetap segera terpakai, bukan basi berlama-lama.
+// Kalau ada request in-flight, pemanggil berikutnya menumpang promise yang
+// SAMA (dedupe) alih-alih memicu getSession() paralel yang berlipat.
+window._skSessionCache = null; // { session, ts }
+window._skSessionInFlight = null;
+const SK_SESSION_CACHE_TTL = 10000;
+
+window._skInvalidateSessionCache = function() {
+    window._skSessionCache = null;
+    window._skSessionInFlight = null;
+};
+
 window.skGetSession = async function() {
     const client = getSupabaseAuthClient();
     if (!client) return null;
-    try {
-        const { data } = await client.auth.getSession();
-        return data ? data.session : null;
-    } catch (e) {
-        console.error('[auth.js] Gagal ambil session:', e);
-        return null;
+
+    const cached = window._skSessionCache;
+    if (cached && (Date.now() - cached.ts) < SK_SESSION_CACHE_TTL) {
+        return cached.session;
     }
+    // [DEDUPE] Beberapa pemanggil (mis. report + budget + forecast) bisa
+    // memicu skGetSession() nyaris bersamaan saat cache kosong/kedaluwarsa --
+    // tanpa ini, masing-masing akan mulai request getSession()-nya sendiri
+    // secara paralel (dan kalau perlu refresh token, jadi beberapa refresh
+    // token paralel sekaligus, yang justru tidak perlu dan boros).
+    if (window._skSessionInFlight) return window._skSessionInFlight;
+
+    window._skSessionInFlight = (async () => {
+        try {
+            const { data } = await client.auth.getSession();
+            const session = data ? data.session : null;
+            window._skSessionCache = { session, ts: Date.now() };
+            return session;
+        } catch (e) {
+            console.error('[auth.js] Gagal ambil session:', e);
+            // Jangan simpan hasil gagal ke cache -- biar percobaan
+            // berikutnya (bukan dalam 10 detik yang sama) langsung coba lagi,
+            // bukan ikut menahan status gagal itu.
+            return null;
+        } finally {
+            window._skSessionInFlight = null;
+        }
+    })();
+    return window._skSessionInFlight;
 };
 
 // [FIX BUG #3] Buang dari window.books buku-buku yang DULU ditandai shared
