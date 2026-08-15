@@ -347,7 +347,7 @@ window.pullCryptoSaltCheckStrict = async function(tagOverride) {
 // -- supaya otomatis tersinkron ke SEMUA device yang connect ke backend
 // Supabase yang sama, terlepas dari beda-tidaknya password lokal/account_tag
 // tiap device. Lihat catatan lengkap di window.pushSetting di bawah.
-window.DEVICE_AGNOSTIC_SETTING_KEYS = new Set(['ai_worker_url', 'harga_pangan_worker_url', 'emas_api_key']);
+window.DEVICE_AGNOSTIC_SETTING_KEYS = new Set(['ai_worker_url', 'ai_engine', 'harga_pangan_worker_url', 'emas_api_key']);
 
 window.pushSetting = async function(key, value, bookId) {
     if (!window.isOnline()) return false;
@@ -1168,6 +1168,17 @@ window.pullAllSettings = async function() {
                 }
                 const workerInp = document.getElementById('aiWorkerUrlInput');
                 if (workerInp) workerInp.value = localStorage.getItem('sk_ai_worker_url') || '';
+                if (typeof window.updateAiWorkerBadge === 'function') window.updateAiWorkerBadge();
+            }
+            if (row.key === 'ai_engine') {
+                // [SYNC MULTI-DEVICE] Pilihan mesin AI ('worker'/'gemini',
+                // lihat window.setAIEngine di js/ai.js) ikut disamakan di
+                // semua perangkat, sama seperti ai_worker_url di atas.
+                if (parsed === 'gemini' || parsed === 'worker') {
+                    localStorage.setItem('sk_ai_engine', parsed);
+                } else {
+                    localStorage.removeItem('sk_ai_engine');
+                }
                 if (typeof window.updateAiWorkerBadge === 'function') window.updateAiWorkerBadge();
             }
             if (row.key === 'emas_api_key') {

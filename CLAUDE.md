@@ -168,7 +168,7 @@ di repo ini SAMA PERSIS dengan yang disajikan ke browser.
 | `sync-conflict.js` | Deteksi & resolusi konflik sync |
 | `payment-reminder.js` | Pengingat jadwal pembayaran |
 | `telegram.js` | Notifikasi Telegram |
-| `ai.js` | Analisis keuangan & chat berbasis AI |
+| `ai.js` | Analisis keuangan & chat berbasis AI. Mendukung 2 mesin (dipilih via `window.getAIEngine()`/`setAIEngine()`, disimpan di `sk_ai_engine`): `worker` (Cloudflare Worker + Groq, lama) dan `gemini` (Supabase Edge Function `supabase/functions/ai-gemini/`, fallback multi API key Gemini di sisi server). Semua fitur AI manggil lewat satu titik: `window.callAIEngine(prompt)` / `window.resolveAIEndpoint()` -- jangan `fetch` worker URL langsung lagi di fitur baru, pakai helper ini supaya otomatis ikut mesin yang dipilih user. |
 | `lockscreen-insight.js` | Kisi-kisi/nasihat/motivasi keuangan otomatis di layar kunci, dihitung dari SEMUA buku (lokal selalu ON, lapis AI opsional lewat Worker URL yang sama dengan `ai.js`) |
 | `safety-snapshot.js` | Snapshot Keamanan (restore point otomatis) -- kini di halaman sidebar tersendiri "Cadangan Data" (`dataBackupModal`), bukan tab Setelan lagi |
 | `backup.js` | Backup & migrasi data ke cloud -- kini di halaman sidebar tersendiri "Cadangan Data" (`dataBackupModal`), bukan tab Setelan lagi |

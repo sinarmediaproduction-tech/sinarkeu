@@ -200,8 +200,12 @@ ATURAN: Jangan menyebut angka Rupiah spesifik apa pun (tidak ada data itu, hanya
 
     async function _tryAiEnhance(status, snap) {
         if (!_isAiEnabled()) return;
-        const workerUrl = (localStorage.getItem('sk_ai_worker_url') || '').trim();
-        if (!workerUrl) return;
+        // [MESIN AI] Pakai window.callAIEngine (js/ai.js) supaya lapis AI di
+        // layar kunci ini otomatis ikut mesin yang dipilih user di Setelan ->
+        // Analisis AI (worker Groq ATAU Gemini via Supabase Edge Function),
+        // bukan cuma worker URL lama. Kalau ai.js belum sempat ke-load atau
+        // mesinnya belum siap, diam-diam skip (tetap fallback ke versi lokal).
+        if (typeof window.resolveAIEndpoint !== 'function' || !window.resolveAIEndpoint().ok) return;
 
         const fp = _statusFingerprint(status, snap);
         let cache = null;
@@ -213,10 +217,9 @@ ATURAN: Jangan menyebut angka Rupiah spesifik apa pun (tidak ada data itu, hanya
 
         try {
             const prompt = _buildAiPrompt(status, snap);
-            const res = await fetch(workerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: prompt }) });
-            const json = await res.json();
-            const text = ((json && json.result) || '').trim();
-            if (!res.ok || !text) return;
+            const { text: rawText } = await window.callAIEngine(prompt);
+            const text = (rawText || '').trim();
+            if (!text) return;
             localStorage.setItem(AI_CACHE_KEY, JSON.stringify({ fp: fp, ts: Date.now(), text: text }));
             // Cuma timpa tampilan kalau layar kunci masih tampil (hindari nimpa
             // layar lain kalau user sudah keburu login sebelum fetch selesai).
@@ -253,8 +256,8 @@ ATURAN: Jangan menyebut angka Rupiah spesifik apa pun (tidak ada data itu, hanya
     };
     window.setLockscreenAiEnabled = function (on) {
         localStorage.setItem(AI_TOGGLE_KEY, on ? '1' : '0');
-        if (on && !(localStorage.getItem('sk_ai_worker_url') || '').trim()) {
-            if (window.showToast) window.showToast('Isi dulu Worker URL di atas supaya AI di layar kunci bisa aktif.', 'error');
+        if (on && typeof window.resolveAIEndpoint === 'function' && !window.resolveAIEndpoint().ok) {
+            if (window.showToast) window.showToast('Atur dulu mesin AI di atas (Worker atau Gemini) supaya AI di layar kunci bisa aktif.', 'error');
         }
         if (typeof window.renderLockScreenInsight === 'function') window.renderLockScreenInsight();
     };

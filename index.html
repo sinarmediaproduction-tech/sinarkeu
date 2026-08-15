@@ -1072,17 +1072,43 @@ alter table public.settings
                 <span id="aiWorkerStatusBadge" class="setelan-badge setelan-badge--neutral">Belum dikonfigurasi</span>
             </div>
             <div class="setelan-desc">
-                <span data-i18n="ai_desc">Masukkan URL Cloudflare Worker milik Anda untuk mengaktifkan fitur Analisis Keuangan AI.</span>
+                Pilih mesin AI yang dipakai untuk Analisis AI, Tanya AI, dan Analisis Fase Kehidupan. Bisa pakai Cloudflare Worker (Groq) seperti sebelumnya, atau mesin baru: Gemini lewat Supabase Edge Function.
             </div>
             <div class="form-group" style="margin-bottom:10px;">
-                <label data-i18n="worker_url">Worker URL</label>
-                <input type="text" id="aiWorkerUrlInput" class="form-control" placeholder="https://nama-worker-anda.workers.dev" data-i18n="worker_placeholder" data-i18n-attr="placeholder" oninput="updateAiWorkerBadge()">
+                <label class="checkbox-label" style="display:flex; align-items:center; gap:8px; margin-bottom:6px; font-weight:600;">
+                    <input type="radio" name="aiEngineChoice" id="aiEngineRadioWorker" onchange="window.setAIEngine('worker')" checked>
+                    Cloudflare Worker (Groq)
+                </label>
+                <label class="checkbox-label" style="display:flex; align-items:center; gap:8px; font-weight:600;">
+                    <input type="radio" name="aiEngineChoice" id="aiEngineRadioGemini" onchange="window.setAIEngine('gemini')">
+                    Gemini (Supabase Edge Function) — fallback beberapa API key otomatis
+                </label>
             </div>
-            <div id="aiWorkerTestStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
-            <div class="setelan-actions-row">
-                <button class="btn btn-secondary" style="flex:1;" onclick="testAiWorkerUrl()" data-i18n="test_connection">Tes Koneksi</button>
-                <button class="btn btn-danger" style="flex:1;" onclick="clearAiWorkerUrl()">Hapus</button>
-                <button class="btn btn-primary" style="flex:2;" onclick="saveAiWorkerUrl()">Simpan</button>
+
+            <div id="aiEngineWorkerPanel">
+                <div class="setelan-desc">
+                    <span data-i18n="ai_desc">Masukkan URL Cloudflare Worker milik Anda untuk mengaktifkan fitur Analisis Keuangan AI.</span>
+                </div>
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label data-i18n="worker_url">Worker URL</label>
+                    <input type="text" id="aiWorkerUrlInput" class="form-control" placeholder="https://nama-worker-anda.workers.dev" data-i18n="worker_placeholder" data-i18n-attr="placeholder" oninput="updateAiWorkerBadge()">
+                </div>
+                <div id="aiWorkerTestStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
+                <div class="setelan-actions-row">
+                    <button class="btn btn-secondary" style="flex:1;" onclick="testAiWorkerUrl()" data-i18n="test_connection">Tes Koneksi</button>
+                    <button class="btn btn-danger" style="flex:1;" onclick="clearAiWorkerUrl()">Hapus</button>
+                    <button class="btn btn-primary" style="flex:2;" onclick="saveAiWorkerUrl()">Simpan</button>
+                </div>
+            </div>
+
+            <div id="aiEngineGeminiPanel" style="display:none;">
+                <div class="setelan-desc">
+                    Mesin Gemini otomatis memakai URL &amp; kunci project Supabase yang sudah tersambung di <strong>Setelan → Cloud Sync</strong> (tidak perlu isi URL manual). Edge function <code>ai-gemini</code> perlu di-deploy dulu di sisi Supabase Anda — lihat <code>supabase/functions/ai-gemini/README.md</code> di dalam proyek untuk langkah deploy &amp; pengisian beberapa API key Gemini (untuk fallback otomatis kalau satu key kena limit).
+                </div>
+                <div id="aiGeminiTestStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
+                <div class="setelan-actions-row">
+                    <button class="btn btn-secondary" style="flex:1;" onclick="window.testAiGeminiEngine()">Tes Koneksi</button>
+                </div>
             </div>
 
             <hr style="margin:16px 0; border-color:var(--rule);">
@@ -2129,7 +2155,7 @@ alter table public.settings
   statis sebelumnya, jadi urutan dependency antar file tidak berubah.
 -->
 <script>
-    var APP_JS_VERSION = 'v49'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
+    var APP_JS_VERSION = 'v50'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
     var SK_JS_FILES = [
         'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js', 'js/db.js',
         'js/telegram.js', 'js/account.js', 'js/book.js', 'js/transaction.js',

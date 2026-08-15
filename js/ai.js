@@ -1,9 +1,73 @@
+// ==================== AI ENGINE SELECTION ====================
+// SinarKeu mendukung 2 mesin AI yang bisa dipilih di Setelan -> Analisis AI:
+//   - 'worker' : Cloudflare Worker + Groq (cara lama, butuh URL worker sendiri)
+//   - 'gemini' : Supabase Edge Function `ai-gemini` (lihat
+//                supabase/functions/ai-gemini/) yang meneruskan ke Gemini API
+//                dengan fallback BEBERAPA API key sekaligus di sisi server,
+//                jadi tidak gampang mati total kalau satu key kena limit.
+// Satu setelan ini dipakai bersama oleh Analisis AI, Tanya AI (chat), dan
+// Analisis Fase Kehidupan -- supaya user cukup pilih mesin sekali, bukan
+// per-fitur. Fitur pemakaian lain menyusul; bagian ini baru menyediakan
+// jalur pemanggilannya (mesinnya) supaya siap dipakai kapan saja.
+window.getAIEngine = function() {
+    return localStorage.getItem('sk_ai_engine') || 'worker';
+};
+window.setAIEngine = function(engine) {
+    if (engine !== 'worker' && engine !== 'gemini') return;
+    localStorage.setItem('sk_ai_engine', engine);
+    // [SYNC MULTI-DEVICE] Konsisten dengan pola ai_worker_url -- ikut
+    // disinkronkan ke tabel `settings` (book_id 'global') supaya pilihan
+    // mesin AI ini sama di semua perangkat yang login ke backend yang sama.
+    if (window.pushSetting) window.pushSetting('ai_engine', engine, 'global').catch(function() {});
+    if (window.updateAiWorkerBadge) window.updateAiWorkerBadge();
+};
+
+// Menentukan {url, headers, label} tujuan panggilan AI berdasarkan mesin
+// yang sedang aktif. Untuk mesin 'gemini', URL & anon key TIDAK perlu diisi
+// manual -- diambil dari konfigurasi Supabase Cloud Sync yang sudah ada
+// (window.globalSupabaseUrl/globalSupabaseKey), karena edge function selalu
+// hidup di `${SUPABASE_URL}/functions/v1/ai-gemini` pada project yang sama.
+window.resolveAIEndpoint = function() {
+    const engine = window.getAIEngine();
+    if (engine === 'gemini') {
+        const supaUrl = (window.globalSupabaseUrl || '').replace(/\/+$/, '');
+        const supaKey = window.globalSupabaseKey || '';
+        if (!supaUrl || !supaKey) {
+            return { ok: false, reason: 'Supabase Cloud Sync belum dikonfigurasi. Buka Setelan → Cloud Sync untuk menyambungkan project Supabase Anda dulu, baru mesin Gemini bisa dipakai.' };
+        }
+        return {
+            ok: true,
+            url: `${supaUrl}/functions/v1/ai-gemini`,
+            headers: { 'Content-Type': 'application/json', 'apikey': supaKey, 'Authorization': `Bearer ${supaKey}` },
+            label: 'Gemini (Supabase Edge Function)'
+        };
+    }
+    const workerUrl = (localStorage.getItem('sk_ai_worker_url') || '').trim();
+    if (!workerUrl) {
+        return { ok: false, reason: 'Worker URL belum dikonfigurasi. Buka Setelan → Analisis AI untuk mengisi URL Cloudflare Worker Anda.' };
+    }
+    return { ok: true, url: workerUrl, headers: { 'Content-Type': 'application/json' }, label: 'Groq (Cloudflare Worker)' };
+};
+
+// Titik panggil TUNGGAL ke mesin AI yang aktif, dipakai oleh Analisis AI,
+// Tanya AI, dan Analisis Fase Kehidupan -- supaya logic pemilihan mesin
+// hanya ada di satu tempat (resolveAIEndpoint di atas), bukan diduplikasi.
+// Melempar Error kalau gagal; caller yang menangani tampilannya.
+window.callAIEngine = async function(prompt) {
+    const endpoint = window.resolveAIEndpoint();
+    if (!endpoint.ok) throw new Error(endpoint.reason);
+    const res = await fetch(endpoint.url, { method: 'POST', headers: endpoint.headers, body: JSON.stringify({ prompt }) });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`);
+    return { text: json?.result || '(Tidak ada respons)', engineLabel: endpoint.label };
+};
+
 // ==================== AI ANALYSIS ====================
 window.openAIAnalysis = function() {
-    const workerUrl = localStorage.getItem('sk_ai_worker_url') || '';
+    const endpoint = window.resolveAIEndpoint();
     const warningEl = document.getElementById('aiWorkerWarning');
     const runBtn    = document.getElementById('aiAnalysisRunBtn');
-    if (!workerUrl) {
+    if (!endpoint.ok) {
         warningEl.style.display = 'block';
         runBtn.disabled = false;
         runBtn.style.opacity = '1';
@@ -78,9 +142,9 @@ window.runAIAnalysis = async function() {
     const resultEl = document.getElementById('aiAnalysisResult');
     const footerEl = document.getElementById('aiAnalysisFooter');
     const copyBtn  = document.getElementById('aiCopyBtn');
-    const WORKER_URL = (localStorage.getItem('sk_ai_worker_url') || '').trim();
-    if (!WORKER_URL) {
-        resultEl.innerHTML = '<div style="text-align:center; color:#A13A3A; padding:40px 0;">Worker URL belum dikonfigurasi. Buka <a href="#" onclick="window.closeModal(\'aiAnalysisModal\'); window.openSetelanModal(\'ai\'); return false;" style="color:#A13A3A; font-weight:600; text-decoration:underline;">Setelan → Analisis AI</a> untuk mengisi URL Cloudflare Worker Anda.</div>';
+    const endpointCheck = window.resolveAIEndpoint();
+    if (!endpointCheck.ok) {
+        resultEl.innerHTML = `<div style="text-align:center; color:#A13A3A; padding:40px 0;">${window.escapeHtml(endpointCheck.reason)} Buka <a href="#" onclick="window.closeModal('aiAnalysisModal'); window.openSetelanModal('ai'); return false;" style="color:#A13A3A; font-weight:600; text-decoration:underline;">Setelan → Analisis AI</a>.</div>`;
         return;
     }
     const data = window.getAITransactionData();
@@ -91,16 +155,13 @@ window.runAIAnalysis = async function() {
     btn.disabled = true;
     btn.innerText = 'Menganalisis...';
     copyBtn.style.display = 'none';
-    resultEl.innerHTML = '<div style="text-align:center; color:#5C4E72; padding:40px 0;">Groq AI sedang membaca data keuangan Anda...</div>';
+    resultEl.innerHTML = `<div style="text-align:center; color:#5C4E72; padding:40px 0;">${window.escapeHtml(endpointCheck.label)} sedang membaca data keuangan Anda...</div>`;
     footerEl.innerText = '';
     const prompt = window.buildAIPrompt(data);
     try {
-        const res = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) });
-        const json = await res.json();
-        if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`);
-        const text = json?.result || '(Tidak ada respons)';
+        const { text, engineLabel } = await window.callAIEngine(prompt);
         resultEl.innerText = text;
-        footerEl.innerText = `Dianalisis oleh Groq AI (LLaMA 3.3) · ${new Date().toLocaleString('id-ID')} · ${data.count} transaksi`;
+        footerEl.innerText = `Dianalisis oleh ${engineLabel} · ${new Date().toLocaleString('id-ID')} · ${data.count} transaksi`;
         copyBtn.style.display = 'inline-flex';
         document.getElementById('aiExportBtn').style.display = 'inline-flex';
     } catch (e) {
@@ -111,9 +172,52 @@ window.runAIAnalysis = async function() {
 window.updateAiWorkerBadge = function() {
     const badge = document.getElementById('aiWorkerStatusBadge');
     if (!badge) return;
-    const val = (document.getElementById('aiWorkerUrlInput')?.value || '').trim();
-    if (val) { badge.style.background = '#E3F0E9'; badge.style.color = '#1F5138'; badge.innerText = 'Terkonfigurasi'; }
-    else { badge.style.background = '#E7E9ED'; badge.style.color = '#5B6472'; badge.innerText = 'Belum dikonfigurasi'; }
+    const engine = window.getAIEngine();
+    // Tampilkan status sesuai mesin yang SEDANG AKTIF, bukan sekadar isi
+    // input worker URL -- supaya kalau user pilih mesin Gemini, badge tidak
+    // salah bilang "Belum dikonfigurasi" hanya gara-gara kolom worker kosong.
+    const endpoint = window.resolveAIEndpoint();
+    if (endpoint.ok) {
+        badge.style.background = '#E3F0E9'; badge.style.color = '#1F5138';
+        badge.innerText = `Aktif: ${endpoint.label}`;
+    } else {
+        badge.style.background = '#E7E9ED'; badge.style.color = '#5B6472';
+        badge.innerText = engine === 'gemini' ? 'Gemini: Cloud Sync belum tersambung' : 'Belum dikonfigurasi';
+    }
+    // Sinkronkan tampilan radio pilihan mesin & panel yang relevan.
+    const radioWorker = document.getElementById('aiEngineRadioWorker');
+    const radioGemini = document.getElementById('aiEngineRadioGemini');
+    if (radioWorker) radioWorker.checked = (engine !== 'gemini');
+    if (radioGemini) radioGemini.checked = (engine === 'gemini');
+    const workerPanel = document.getElementById('aiEngineWorkerPanel');
+    const geminiPanel = document.getElementById('aiEngineGeminiPanel');
+    if (workerPanel) workerPanel.style.display = (engine === 'gemini') ? 'none' : 'block';
+    if (geminiPanel) geminiPanel.style.display = (engine === 'gemini') ? 'block' : 'none';
+};
+
+// Tes cepat mesin Gemini (Supabase Edge Function) yang sedang aktif --
+// mengirim prompt "ping" singkat, mirip testAiWorkerUrl tapi lewat
+// resolveAIEndpoint sehingga otomatis pakai URL & anon key Supabase yang
+// sudah tersambung (tidak perlu isi URL manual).
+window.testAiGeminiEngine = async function() {
+    const st = document.getElementById('aiGeminiTestStatus');
+    const endpoint = window.resolveAIEndpoint();
+    if (!st) return;
+    if (window.getAIEngine() !== 'gemini' || !endpoint.ok) {
+        st.style.color = '#A13A3A';
+        st.innerText = endpoint.ok ? 'Pilih mesin Gemini dulu.' : endpoint.reason;
+        return;
+    }
+    st.style.color = '#9C7A2E';
+    st.innerText = 'Menghubungi Supabase Edge Function...';
+    try {
+        const { text } = await window.callAIEngine('Balas dengan kata "siap" saja.');
+        st.style.color = '#2E6B4F';
+        st.innerText = `Mesin Gemini merespons: "${text.slice(0, 60)}${text.length > 60 ? '…' : ''}"`;
+    } catch (e) {
+        st.style.color = '#A13A3A';
+        st.innerText = `Gagal terhubung: ${e.message}`;
+    }
 };
 window.saveAiWorkerUrl = function() {
     const url = (document.getElementById('aiWorkerUrlInput')?.value || '').trim();
@@ -222,9 +326,9 @@ window.saveAIChatHistory = function() {
 };
 
 window.openAIChatModal = function() {
-    const workerUrl = (localStorage.getItem('sk_ai_worker_url') || '').trim();
+    const endpoint = window.resolveAIEndpoint();
     const warn = document.getElementById('aiChatWorkerWarning');
-    if (warn) warn.style.display = workerUrl ? 'none' : 'block';
+    if (warn) warn.style.display = endpoint.ok ? 'none' : 'block';
     window.loadAIChatHistory();
     window.renderAIChatBubbles();
     window.updateAIChatPresets();
@@ -301,9 +405,9 @@ window.sendAIChatMessage = async function() {
     const sendBtn = document.getElementById('aiChatSendBtn');
     const question = (inp?.value || '').trim();
     if (!question) return;
-    const WORKER_URL = (localStorage.getItem('sk_ai_worker_url') || '').trim();
-    if (!WORKER_URL) {
-        window.showToast('Worker URL AI belum dikonfigurasi. Buka Setelan → Analisis AI.', 'warning');
+    const endpointCheck = window.resolveAIEndpoint();
+    if (!endpointCheck.ok) {
+        window.showToast(endpointCheck.reason, 'warning');
         return;
     }
     if (!window.txs || window.txs.length === 0) {
@@ -346,10 +450,7 @@ INSTRUKSI WAJIB:
 6. Jawab singkat, padat, dan ramah dalam Bahasa Indonesia. Gunakan format "Rp" dengan titik sebagai pemisah ribuan.`;
 
     try {
-        const res = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) });
-        const json = await res.json();
-        if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`);
-        const text = json?.result || '(Tidak ada respons)';
+        const { text } = await window.callAIEngine(prompt);
         window._aiChatHistory.pop(); // buang placeholder loading
         window._aiChatHistory.push({ role: 'assistant', text });
         window.saveAIChatHistory();
@@ -372,7 +473,7 @@ window.clearAIChatHistory = function() {
 };
 // ==================== AI ANALISIS FASE KEHIDUPAN ====================
 window.runFaseAIAnalysis = async function() {
-    const WORKER_URL = (localStorage.getItem('sk_ai_worker_url') || '').trim();
+    const endpointCheck = window.resolveAIEndpoint();
     const fase = window.getFaseKehidupan ? window.getFaseKehidupan() : null;
 
     window.openModal('faseAIModal');
@@ -386,8 +487,8 @@ window.runFaseAIAnalysis = async function() {
         resultEl.innerHTML = '<div style="text-align:center; color:#A13A3A; padding:40px 0;">Atur fase kehidupan terlebih dahulu.<br><a href="#" onclick="window.closeModal(\'faseAIModal\'); window.openFaseKehidupanModal(); return false;" style="color:#8C6B78; font-weight:600;">Atur Fase Kehidupan</a></div>';
         return;
     }
-    if (!WORKER_URL) {
-        resultEl.innerHTML = '<div style="text-align:center; color:#A13A3A; padding:40px 0;">Worker URL belum dikonfigurasi.<br><a href="#" onclick="window.closeModal(\'faseAIModal\'); window.openSetelanModal(\'ai\'); return false;" style="color:#A13A3A; font-weight:600;">Setelan → Analisis AI</a></div>';
+    if (!endpointCheck.ok) {
+        resultEl.innerHTML = `<div style="text-align:center; color:#A13A3A; padding:40px 0;">${window.escapeHtml(endpointCheck.reason)}<br><a href="#" onclick="window.closeModal('faseAIModal'); window.openSetelanModal('ai'); return false;" style="color:#A13A3A; font-weight:600;">Setelan → Analisis AI</a></div>`;
         return;
     }
 
@@ -463,10 +564,7 @@ Gunakan bahasa Indonesia yang hangat, to-the-point, dan motivatif. Maksimal 450 
     footerEl.innerText = '';
 
     try {
-        const res = await fetch(WORKER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) });
-        const json = await res.json();
-        if (!res.ok || json?.error) throw new Error(json?.error || `HTTP ${res.status}`);
-        const text = json?.result || '(Tidak ada respons)';
+        const { text } = await window.callAIEngine(prompt);
         resultEl.innerText = text;
         footerEl.innerText = `Dianalisis berdasarkan fase: ${faseData.nama} · ${new Date().toLocaleString('id-ID')}`;
         copyBtn.style.display = 'inline-flex';

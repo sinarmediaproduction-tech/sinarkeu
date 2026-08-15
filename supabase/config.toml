@@ -1,0 +1,6 @@
+# Konfigurasi minimal untuk Supabase CLI, hanya untuk edge function AI Gemini.
+# Tidak mempengaruhi project Supabase yang sudah ada (DB, auth, dst) --
+# cukup dipakai saat `supabase functions deploy` dijalankan dari repo ini.
+
+[functions.ai-gemini]
+verify_jwt = false
