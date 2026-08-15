@@ -522,13 +522,8 @@ window.renderHargaKomoditasSummary = function(cache, autoRows, manualRows, lates
     const highlightHtml = '<div class="hk-summary-highlight-list">' + lines.map(function(l) { return '<div>' + l + '</div>'; }).join('') + '</div>';
 
     let reminderHtml = '';
-    if (s.staleManual.length) {
-        reminderHtml = '<div class="hk-summary-reminder">Cek manual: ' +
-            s.staleManual.map(function(c) { return window.escapeHtml(c.name); }).join(', ') +
-            ' belum diupdate hari ini.</div>';
-    }
 
-    box.innerHTML = dateHtml + statsHtml + highlightHtml + reminderHtml;
+        box.innerHTML = dateHtml + statsHtml + highlightHtml + reminderHtml;
 };
 
 window.renderHargaKomoditasModal = function() {
