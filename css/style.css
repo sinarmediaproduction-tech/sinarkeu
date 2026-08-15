@@ -1446,6 +1446,18 @@ tr:hover td { background: var(--accent-lt); }
   z-index: 3001;
   padding: 22px 14px;
   overflow-y: auto;
+  /* [FIX SIDEBAR HOVER-EXPAND JANK] overflow-x default browser itu
+     'visible' -- kalau tidak dikunci 'hidden', teks nav (sekarang
+     white-space:nowrap, lihat .app-nav-item) yang belum cukup ruang saat
+     sidebar masih sempit (mode icon-only/lagi mulai melebar) akan
+     nongol/bleed keluar tepi sidebar, bukan tersembunyi rapi. Dengan
+     overflow-x:hidden, teks itu otomatis ke-crop pas di tepi sidebar dan
+     "tersingkap" halus mengikuti lebar sidebar yang sedang animasi --
+     bukan lompat/patah seperti sebelumnya.
+     [FIX] overflow-x kombinasi dengan overflow-y:auto sengaja pakai dua
+     properti terpisah (bukan shorthand overflow) supaya scroll vertikal
+     tetap jalan seperti semula, cuma horizontal yang dikunci. */
+  overflow-x: hidden;
   box-shadow: var(--shadow-lg);
   transform: translateX(-100%);
 }
@@ -1521,6 +1533,21 @@ tr:hover td { background: var(--accent-lt); }
   color: var(--topbar-item-color);
   cursor: pointer;
   transition: background .15s, color .15s;
+  /* [FIX SIDEBAR HOVER-EXPAND JANK] Tanpa ini, saat sidebar mode icon-only
+     (68px) di-hover, teks label (display:none -> inline) muncul SEKETIKA
+     di frame pertama transisi width -- sebelum sidebar sempat melebar.
+     Karena flex item ini defaultnya boleh wrap konten teksnya, teks
+     "Dashboard" dkk yang tiba-tiba muncul di ruang sempit 68px langsung
+     PATAH ke baris kedua, menaikkan tinggi baris itu -- lalu begitu width
+     terus melebar tiap frame (durasi transisi width), teks berangsur
+     muat satu baris lagi dan tinggi baris balik normal. Baris-baris nav
+     DI BAWAHNYA ikut kedorong turun lalu naik lagi tiap frame perubahan
+     tinggi itu -- itulah efek "patah-patah, geser dari atas ke bawah"
+     yang terlihat. white-space:nowrap memaksa teks selalu satu baris
+     (kalau belum cukup lebar, cukup KEPOTONG rapi oleh overflow-x:hidden
+     #appSidebar di bawah, bukan wrap), jadi tinggi tiap item nav constant
+     sepanjang animasi -- yang berubah cuma lebar area teks yang kelihatan. */
+  white-space: nowrap;
 }
 .app-nav-item svg { stroke: currentColor; }
 .app-nav-item:hover { background: var(--topbar-item-hover-bg); color: var(--topbar-text); }
@@ -1815,7 +1842,20 @@ tr:hover td { background: var(--accent-lt); }
     padding-right: 10px;
   }
   body.sidebar-collapsed .app-nav-group-label {
-    display: none;
+    /* [FIX SIDEBAR HOVER-EXPAND JANK] display:none di sini SEBELUMNYA
+       bentrok dengan transisi max-height/opacity yang ditambahkan di
+       aturan :hover di bawah (elemen display:none tidak bisa
+       dianimasikan sama sekali -- browser cuma bisa "meloncat" antara
+       none dan block, bukan transisi berangsur). Sekarang dibiarkan
+       tetap 'in flow' tapi mengecil ke max-height:0 (efek visual yang
+       sama persis dengan display:none saat TIDAK di-hover), supaya versi
+       hover di bawah bisa animasikan tinggi & opacity-nya secara mulus. */
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+    transition: max-height .2s cubic-bezier(0.4, 0, 0.2, 1), opacity .15s ease .05s, padding .2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   /* [SIDEBAR-BOOK] Mode icon-only: nama buku penuh diganti inisialnya saja,
      dipusatkan seperti ikon menu lainnya. */
@@ -1873,7 +1913,12 @@ tr:hover td { background: var(--accent-lt); }
      body.sidebar-collapsed itu sendiri -- yang berubah cuma tampilan
      sidebar-nya doang selama di-hover. ---- */
   body.sidebar-collapsed #appSidebar {
-    transition: width .2s ease, padding .2s ease, box-shadow .2s ease;
+    transition: width .2s cubic-bezier(0.4, 0, 0.2, 1), padding .2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow .2s ease;
+    /* [FIX SIDEBAR HOVER-EXPAND JANK] Beritahu browser lebih awal bahwa
+       width akan berubah, supaya browser bisa siapkan layer/optimasinya
+       sebelum animasi mulai (bukan baru dihitung di frame pertama
+       transisi) -- mengurangi "hentakan" di awal hover. */
+    will-change: width;
   }
   body.sidebar-collapsed #appSidebar:hover {
     width: 220px;
@@ -1881,8 +1926,23 @@ tr:hover td { background: var(--accent-lt); }
     padding-right: 14px;
     z-index: 9600; /* di atas .sidebar-collapse-toggle (9500) supaya tombolnya tidak ketutup ujung sidebar yang melebar */
   }
+  /* [FIX SIDEBAR HOVER-EXPAND JANK] Sebelumnya label grup ("MENU UTAMA"
+     dkk) muncul lewat display:none -> block SEKETIKA (tidak bisa
+     dianimasikan) begitu hover mulai -- padahal transisi width sidebar
+     masih berjalan .2s. Karena display:block langsung menambah tinggi
+     baris itu SAAT ITU JUGA (bukan berangsur), semua item nav di
+     bawahnya ikut ter-dorong turun secara MENDADAK di awal hover, baru
+     kemudian sidebar-nya sendiri baru mulai melebar -- dua gerakan yang
+     tidak sinkron ini yang terlihat "patah-patah, geser dari atas ke
+     bawah". Transisi max-height+opacity di atas (durasi & easing SAMA
+     PERSIS dengan transisi width sidebar) menggantikan itu, supaya label
+     muncul berangsur bareng sidebar melebar, bukan meloncat duluan. */
   body.sidebar-collapsed #appSidebar:hover .app-nav-group-label {
     display: block;
+    max-height: 26px;
+    opacity: 1;
+    padding-top: 8px;
+    padding-bottom: 2px;
   }
   body.sidebar-collapsed #appSidebar:hover .app-sidebar-brand {
     padding-left: 10px;
