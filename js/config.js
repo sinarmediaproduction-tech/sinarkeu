@@ -125,11 +125,45 @@ window.currentPage = 1;
 window._lastSyncTime = null;
 window._syncInterval = null;
 window._pushDebounceTimer = null;
-window._lastFullSyncTime = {};
-// [PERF FIX - EGRESS] Cursor incremental untuk window.pullAllSettings (js/db.js),
-// pola sama seperti _lastFullSyncTime di atas (dipakai transaksi). `.global`
-// untuk query tag-scoped (buku sendiri, lintas semua buku), `.shared[bookId]`
-// per buku Bersama. Reset ke kosong tiap reload halaman (session-lifetime),
-// sengaja -- supaya pull PERTAMA di tiap sesi baru selalu full (aman), dan
-// baru tick berikutnya (mis. autosync tiap 30 detik) jadi incremental.
-window._lastSettingsSyncTime = { global: null, shared: {} };
+// [PERF FIX - EGRESS #2] Sebelumnya cursor incremental (_lastFullSyncTime &
+// _lastSettingsSyncTime) HANYA hidup di memori (window.*), sengaja reset ke
+// kosong tiap reload halaman -- efeknya, pull PERTAMA di tiap sesi (buka app,
+// refresh, PWA di-kill lalu dibuka lagi di HP) SELALU full (tarik ulang s/d
+// MAX_LOCAL_TXS baris transaksi + semua settings), bukan cuma yang berubah.
+// Karena reload/buka-ulang app jauh lebih sering terjadi (apalagi di HP)
+// dibanding tick autosync 30 detik, inilah penyumbang egress terbesar,
+// bukan intervalnya. Sekarang cursor ini di-load dari localStorage saat
+// startup dan disimpan lagi tiap kali ter-update (lihat window._saveTxSyncCursor
+// & window._saveSettingsSyncCursor, dipanggil dari js/transaction.js & js/db.js
+// setiap sukses pull) -- supaya reload/buka-ulang app IKUT jadi incremental,
+// bukan cuma tick autosync.
+//
+// [KEAMANAN DATA] Ini TIDAK mengubah cara data disimpan atau logika
+// merge/tombstone sama sekali -- pull incremental tetap query PostgREST yang
+// SAMA persis (`updated_at=gt.<cursor>`, tombstone `is_deleted` tetap ikut
+// tertarik) yang SUDAH dipakai tiap 30 detik selama ini; bedanya cuma cursor
+// itu sekarang "ingat" lewat reload, bukan lupa tiap kali app dibuka ulang.
+// Kalau suatu saat cursor ini dicurigai basi/nyangkut (mis. gara-gara jam
+// device meleset jauh), tombol "Sinkronisasi" manual (forceFullSync, lihat
+// js/app.js) tetap memaksa full pull kapan saja tanpa perlu reset apa pun --
+// jalur itu TIDAK terpengaruh perubahan ini.
+window._lastFullSyncTime = (function() {
+    try { return JSON.parse(localStorage.getItem('sk_last_sync_tx_cursor') || '{}'); }
+    catch (e) { return {}; }
+})();
+window._saveTxSyncCursor = function() {
+    try { localStorage.setItem('sk_last_sync_tx_cursor', JSON.stringify(window._lastFullSyncTime)); }
+    catch (e) { /* localStorage penuh/diblokir -- abaikan, cursor tetap jalan di memori sesi ini */ }
+};
+
+window._lastSettingsSyncTime = (function() {
+    try {
+        var saved = JSON.parse(localStorage.getItem('sk_last_sync_settings_cursor') || 'null');
+        if (saved && typeof saved === 'object') return { global: saved.global || null, shared: saved.shared || {} };
+    } catch (e) {}
+    return { global: null, shared: {} };
+})();
+window._saveSettingsSyncCursor = function() {
+    try { localStorage.setItem('sk_last_sync_settings_cursor', JSON.stringify(window._lastSettingsSyncTime)); }
+    catch (e) { /* localStorage penuh/diblokir -- abaikan, cursor tetap jalan di memori sesi ini */ }
+};

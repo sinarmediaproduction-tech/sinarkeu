@@ -390,6 +390,7 @@ window.pullFromCloudSilently = async function() {
             // yang baru ditarik (jam server), BUKAN new Date() (jam device ini).
             // Lihat window._maxUpdatedAt di atas untuk alasan lengkap.
             window._lastFullSyncTime[window.currentBookId] = window._maxUpdatedAt(cloudData, lastSync);
+            if (window._saveTxSyncCursor) window._saveTxSyncCursor();
             window.render();
             window._lastSyncTime = new Date();
             window.updateSyncTimeBadge();
@@ -457,6 +458,7 @@ window.pullAllBooksFromCloud = async function() {
         // pull incremental berikutnya (pullFromCloudSilently) ikut kebawa salah
         // untuk buku itu juga.
         window._lastFullSyncTime[bookId] = window._maxUpdatedAt(cloudMapped, window._lastFullSyncTime[bookId]);
+        if (window._saveTxSyncCursor) window._saveTxSyncCursor();
         if (bookId === window.currentBookId) {
             window.txs = trimmed;
             window.render();

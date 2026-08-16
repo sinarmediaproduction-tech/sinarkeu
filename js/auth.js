@@ -404,7 +404,11 @@ async function _skRevokeStaleSharedBooks(stillAccessibleIds) {
         localStorage.removeItem('sk_logs_' + b.id);
         localStorage.removeItem('sk_balance_offset_' + b.id);
         localStorage.removeItem('sk_payment_reminders_' + b.id);
+        delete window._lastFullSyncTime[b.id];
+        delete window._lastSettingsSyncTime.shared[b.id];
     });
+    if (window._saveTxSyncCursor) window._saveTxSyncCursor();
+    if (window._saveSettingsSyncCursor) window._saveSettingsSyncCursor();
 
     window.showToast && window.showToast(
         (revoked.length === 1

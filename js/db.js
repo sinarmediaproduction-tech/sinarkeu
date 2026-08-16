@@ -731,6 +731,7 @@ window.pullAllSettings = async function(forceFull) {
     if (forceFull) {
         window._lastSettingsSyncTime.global = null;
         window._lastSettingsSyncTime.shared = {};
+        if (window._saveSettingsSyncCursor) window._saveSettingsSyncCursor();
     }
     const tag = window.getAccountTag();
     // OR filter: baris ber-tag milik akun ini ATAU baris lama tanpa tag (data sebelum
@@ -769,6 +770,7 @@ window.pullAllSettings = async function(forceFull) {
     let allRows = await window.callSupabaseAPI('settings', 'GET', null, _settingsQuery);
     if (allRows && Array.isArray(allRows)) {
         window._lastSettingsSyncTime.global = window._maxUpdatedAt(allRows, _settingsCursor);
+        if (window._saveSettingsSyncCursor) window._saveSettingsSyncCursor();
     }
 
     // [FIX SYNC SHARED BOOK PULL]
@@ -818,6 +820,7 @@ window.pullAllSettings = async function(forceFull) {
                 window.skWarn('[Sync] shared book pull failed', _bookId, _result.reason);
             }
         });
+        if (_sharedBookIds.length && window._saveSettingsSyncCursor) window._saveSettingsSyncCursor();
         if (Array.isArray(allRows)) allRows = allRows.concat(_sharedRows);
         else allRows = _sharedRows;
     }

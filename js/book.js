@@ -414,6 +414,10 @@ window.deleteBook = async function(id) {
     localStorage.removeItem('sk_default_budget_' + id);
     localStorage.removeItem('sk_shopping_list_' + id);
     localStorage.removeItem('sk_electricity_plan_' + id);
+    delete window._lastFullSyncTime[id];
+    delete window._lastSettingsSyncTime.shared[id];
+    if (window._saveTxSyncCursor) window._saveTxSyncCursor();
+    if (window._saveSettingsSyncCursor) window._saveSettingsSyncCursor();
     // [FIX BOOKS LOST-UPDATE] Tandai id ini sebagai "sengaja dihapus lokal"
     // SEBELUM difilter dari window.books, supaya union-merge di
     // pullAllSettings (js/db.js) tidak salah menghidupkannya lagi kalau

@@ -144,6 +144,10 @@ window.archiveAndClearData = async function() {
     localStorage.removeItem('sk_last_auto_backup_' + window.currentBookId);
     localStorage.removeItem('sk_budgets_' + window.currentBookId);
     localStorage.removeItem('sk_default_budget_' + window.currentBookId);
+    delete window._lastFullSyncTime[window.currentBookId];
+    delete window._lastSettingsSyncTime.shared[window.currentBookId];
+    if (window._saveTxSyncCursor) window._saveTxSyncCursor();
+    if (window._saveSettingsSyncCursor) window._saveSettingsSyncCursor();
     window.budgets = {};
     // Push anggaran kosong ke cloud agar tidak ter-restore saat sync berikutnya
     if (window.isOnline()) {
