@@ -31,9 +31,21 @@ User kerja di repo ini lewat upload/download `.zip`, bukan lewat git
 langsung di chat. Pola yang dipakai:
 1. User upload `sinarkeu-main*.zip` → extract ke folder kerja (mis.
    `/home/claude/sinarkeu*/`), baru mulai edit.
-2. Setelah selesai, **zip ulang seluruh folder project** (bukan cuma
-   file yang diubah) dengan nama folder root tetap `sinarkeu-main/` di
-   dalam zip, supaya kalau di-extract user tinggal timpa folder lama.
+2. Setelah selesai, **default-nya zip HANYA file yang berubah** (bukan
+   seluruh folder project), dengan struktur folder di dalam zip PERSIS
+   sama seperti posisi aslinya relatif ke root project (mis. `sw.js` di
+   root zip, `js/transaction.js` di dalam folder `js/`, dst) — supaya
+   user tinggal extract & timpa langsung ke folder project lamanya tanpa
+   pindah-pindah file manual. JANGAN bungkus dengan folder root
+   `sinarkeu-main/` untuk zip "file berubah saja" ini (beda dari poin di
+   bawah).
+   - **Zip FULL project** (seluruh folder, root tetap bernama
+     `sinarkeu-main/` di dalam zip) HANYA dibuat kalau user secara
+     eksplisit minta ("zip semua", "zip full", "kirim seluruh project",
+     dsb) — bukan default lagi.
+   - Prioritaskan juga versi file individual (`create_file`/`present_files`
+     satu per satu) untuk perubahan kecil (1-2 file) tanpa perlu zip sama
+     sekali, kecuali user secara eksplisit minta bentuk zip.
 3. Kirim lewat `present_files` ke `/mnt/user-data/outputs/`.
 4. Sesi berikutnya user kemungkinan besar **upload ulang zip terbaru**
    (bukan lanjut dari state chat sebelumnya) — jangan asumsikan file di
