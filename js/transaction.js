@@ -434,9 +434,77 @@ window.pullAllBooksFromCloud = async function() {
         // violation, cuma baris tersaring WHERE), persis gejala buku bersama
         // "online, tidak ada toast, transaksi kosong" yang dilaporkan user.
         const _fxTagFilter = window.tagOrFilter(_fxTag, bookId);
-        let cloudData = await window.callSupabaseAPI('transactions', 'GET', null,
-            `?book_id=eq.${bookId}&is_deleted=eq.false&order=date.desc&limit=${window.MAX_LOCAL_TXS}${_fxTagFilter}`);
+        // [PERF FIX - EGRESS #3] Sebelumnya fungsi ini SELALU full-pull (limit
+        // MAX_LOCAL_TXS, is_deleted=false) untuk SETIAP buku, SETIAP kali app
+        // dibuka/reload -- karena dipanggil dari continueAppInit() (js/app.js)
+        // tanpa syarat apa pun. Sekarang pakai cursor yang sama persis dengan
+        // window.pullFromCloudSilently (window._lastFullSyncTime[bookId],
+        // persisten lewat localStorage -- lihat js/config.js): kalau buku ini
+        // sudah pernah full-pull sebelumnya, cukup tarik baris yang updated_at-nya
+        // lebih baru dari cursor (termasuk tombstone is_deleted=true, SENGAJA
+        // tidak difilter di jalur ini supaya penghapusan di device lain ikut
+        // tersinkron ke cache buku ini juga).
+        //
+        // forceFullSync() (tombol "Sinkronisasi" manual) me-reset cursor semua
+        // buku ke kosong SEBELUM memanggil fungsi ini -- jadi tombol itu tetap
+        // full-pull sungguhan seperti sebelumnya, tidak terpengaruh perubahan ini.
+        const _fxLastSync = window._lastFullSyncTime[bookId];
+        let cloudData;
+        if (_fxLastSync) {
+            cloudData = await window.callSupabaseAPI('transactions', 'GET', null,
+                `?book_id=eq.${bookId}&order=updated_at.desc&updated_at=gt.${encodeURIComponent(_fxLastSync)}&limit=${window.MAX_LOCAL_TXS}${_fxTagFilter}`);
+        } else {
+            cloudData = await window.callSupabaseAPI('transactions', 'GET', null,
+                `?book_id=eq.${bookId}&is_deleted=eq.false&order=date.desc&limit=${window.MAX_LOCAL_TXS}${_fxTagFilter}`);
+        }
         if (!cloudData || !Array.isArray(cloudData)) return;
+
+        if (_fxLastSync) {
+            // Incremental: array kosong berarti memang tidak ada perubahan sejak
+            // cursor -- jangan sentuh cache lokal sama sekali (localStorage/render),
+            // supaya buku yang memang tidak berubah tidak ikut ditulis ulang tiap
+            // app dibuka.
+            if (cloudData.length === 0) return;
+            // Merge ke cache lokal BUKU INI (bukan window.txs -- itu representasi
+            // buku yang sedang AKTIF saja; buku lain dibaca langsung dari
+            // localStorage 'sk_txs_'+bookId, lihat window.saveTxsLocal/trimAndSaveLocal
+            // di atas). Pola merge di bawah SAMA PERSIS seperti
+            // window.pullFromCloudSilently (baris lokal vs cloud dibandingkan
+            // lewat updated_at, tombstone is_deleted membuang baris, baris dirty
+            // -- diedit lokal tapi belum ter-push -- dilewati supaya tidak
+            // ketiban timpa).
+            let localArr;
+            try { localArr = JSON.parse(localStorage.getItem('sk_txs_' + bookId) || '[]'); }
+            catch (e) { localArr = []; }
+            const localMap = {};
+            localArr.forEach(t => { localMap[t.id] = t; });
+            const decoded = await Promise.all(cloudData.map(c => window.decodeCloudTxRow(c)));
+            cloudData.forEach((c, i) => {
+                if (window._dirtyTxIds && window._dirtyTxIds.has(c.id)) return;
+                const cloudUpdated = c.updated_at || '1970-01-01T00:00:00.000Z';
+                const local = localMap[c.id];
+                const localUpdated = local ? (local.updated_at || '1970-01-01T00:00:00.000Z') : '1970-01-01T00:00:00.000Z';
+                if (!local || cloudUpdated >= localUpdated) {
+                    if (c.is_deleted) {
+                        delete localMap[c.id];
+                    } else {
+                        localMap[c.id] = decoded[i];
+                    }
+                }
+            });
+            const merged = Object.values(localMap).sort((a, b) => window.parseTxDate(b.date) - window.parseTxDate(a.date) || String(b.id).localeCompare(String(a.id)));
+            const trimmed = window.trimAndSaveLocal(bookId, merged);
+            window._lastFullSyncTime[bookId] = window._maxUpdatedAt(cloudData, _fxLastSync);
+            if (window._saveTxSyncCursor) window._saveTxSyncCursor();
+            if (bookId === window.currentBookId) {
+                window.txs = trimmed;
+                window.render();
+            }
+            return;
+        }
+
+        // Full pull (pertama kali untuk buku ini, atau setelah forceFullSync
+        // reset cursor-nya) -- perilaku persis seperti sebelumnya.
         // [SECURITY] Dekripsi field sensitif -- lihat window.decodeCloudTxRow di crypto.js.
         const cloudMapped = await Promise.all(cloudData.map(c => window.decodeCloudTxRow(c)));
         const trimmed = window.trimAndSaveLocal(bookId, cloudMapped);
@@ -452,11 +520,7 @@ window.pullAllBooksFromCloud = async function() {
                 localStorage.setItem('sk_expense_offset_' + bookId, String(trueOffsets.expenseOffset));
             }
         }
-        // [FIX CLOCK SKEW] Sama seperti pullFromCloudSilently: cursor dari jam
-        // server (updated_at baris), bukan jam device. forceFullSync() memanggil
-        // fungsi ini untuk SEMUA buku -- kalau cursor-nya salah pakai jam device,
-        // pull incremental berikutnya (pullFromCloudSilently) ikut kebawa salah
-        // untuk buku itu juga.
+        // [FIX CLOCK SKEW] Cursor dari jam server (updated_at baris), bukan jam device.
         window._lastFullSyncTime[bookId] = window._maxUpdatedAt(cloudMapped, window._lastFullSyncTime[bookId]);
         if (window._saveTxSyncCursor) window._saveTxSyncCursor();
         if (bookId === window.currentBookId) {
@@ -486,6 +550,14 @@ window.forceFullSync = async function() {
     }
     try {
         await window.pullAllSettings(true);
+        // [PERF FIX - EGRESS #3] pullAllBooksFromCloud() sekarang incremental
+        // per buku (lihat cursor window._lastFullSyncTime di atas) -- supaya
+        // tombol "Sinkronisasi" manual ini TETAP full-pull sungguhan untuk
+        // SEMUA buku seperti sebelumnya (itu memang tujuannya, dipakai user
+        // untuk troubleshooting/self-heal kalau curiga ada yang tidak sinkron),
+        // reset dulu cursor semua buku ke kosong sebelum memanggilnya.
+        window.books.forEach(function(b) { delete window._lastFullSyncTime[b.id]; });
+        if (window._saveTxSyncCursor) window._saveTxSyncCursor();
         await window.pullAllBooksFromCloud();
         window.updateBookSelectDropdown();
         window.updateTgStatusBadge();
