@@ -4777,7 +4777,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   font-size: .72rem;
   min-height: 30px;
   padding: 5px 9px 5px 10px;
-  min-width: 120px;
+  min-width: 204px; /* [UI] +70% dari 120px supaya area dropdown buku di top bar lebih lega */
   max-width: none;
 }
 .cs-wrapper.compact .cs-dropdown {
