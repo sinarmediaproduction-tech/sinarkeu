@@ -284,7 +284,7 @@ window._loadReportAISummary = async function(month, year, income, expense, cats)
   if (income === 0 && expense === 0) { box.style.display = 'none'; return; }
 
   box.style.display = 'block';
-  box.innerHTML = `<div style="background:var(--accent-lt); border:1.5px solid var(--rule); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:20px; font-size:.78rem; color:var(--ink-muted);">🤖 AI sedang membuat ringkasan bulan ini...</div>`;
+  box.innerHTML = `<div style="background:var(--accent-lt); border:1.5px solid var(--rule); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:20px; font-size:.78rem; color:var(--ink-muted);">🤖 Sinarkeu sedang membuat ringkasan bulan ini...</div>`;
 
   try {
     let prevMonth = month - 1, prevYear = year;
@@ -326,7 +326,7 @@ INSTRUKSI:
 
     const { text } = await window.callAIEngine(prompt);
     box.innerHTML = `<div style="background:var(--accent-lt); border:1.5px solid var(--rule); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:20px; font-size:.78rem; line-height:1.65; color:var(--ink);">
-      <div style="font-weight:700; margin-bottom:6px;">🤖 Ringkasan AI</div>
+      <div style="font-weight:700; margin-bottom:6px;">🤖 Ringkasan Sinarkeu</div>
       <div>${window.escapeHtml(text)}</div>
     </div>`;
   } catch (e) {

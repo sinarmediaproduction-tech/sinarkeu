@@ -171,7 +171,7 @@
         if (!el) return;
         el.className = 'lock-insight-card status--' + status.color;
         const badgeClass = 'lock-insight-badge lock-insight-badge--' + status.color;
-        const aiTag = opts.fromAI ? '<span class="lock-insight-ai-tag" title="Dibantu Analisis AI">AI</span>' : '';
+        const aiTag = opts.fromAI ? '<span class="lock-insight-ai-tag" title="Dibantu Sinarkeu">Sinarkeu</span>' : '';
         const bodyText = opts.text || (status.kisi + ' ' + status.nasihat);
         const motivasiText = opts.fromAI ? '' : `<div class="lock-insight-motivasi">&ldquo;${window.escapeHtml(_pickMotivasi())}&rdquo;</div>`;
         el.innerHTML =
@@ -259,7 +259,7 @@ ATURAN: Jangan menyebut angka Rupiah spesifik apa pun (tidak ada data itu, hanya
     window.setLockscreenAiEnabled = function (on) {
         localStorage.setItem(AI_TOGGLE_KEY, on ? '1' : '0');
         if (on && typeof window.resolveAIEndpoint === 'function' && !window.resolveAIEndpoint().ok) {
-            if (window.showToast) window.showToast('Atur dulu mesin AI di atas (Worker atau Gemini) supaya AI di layar kunci bisa aktif.', 'error');
+            if (window.showToast) window.showToast('Atur dulu mesin AI di atas (Worker atau Gemini) supaya Sinarkeu di layar kunci bisa aktif.', 'error');
         }
         if (typeof window.renderLockScreenInsight === 'function') window.renderLockScreenInsight();
     };

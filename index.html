@@ -367,18 +367,18 @@ alter table public.settings
                 <li>Laporan bisa diekspor ke <strong>PDF</strong> dengan tombol di dalam modal.</li>
             </ul>
 
-            <h5>7. Analisis AI</h5>
+            <h5>7. Analisis Sinarkeu</h5>
             <ul>
                 <li>Fitur ini membutuhkan <strong>URL Cloudflare Worker</strong> yang Anda deploy sendiri (gratis).</li>
-                <li>Masukkan URL di <strong>Setelan → Analisis AI</strong>.</li>
-                <li>Setelah dikonfigurasi, klik <strong>"Analisis AI"</strong> di dashboard, pilih periode dan jenis analisis, lalu dapatkan wawasan dari Groq AI (LLaMA).</li>
+                <li>Masukkan URL di <strong>Setelan → Analisis Sinarkeu</strong>.</li>
+                <li>Setelah dikonfigurasi, klik <strong>"Analisis Sinarkeu"</strong> di dashboard, pilih periode dan jenis analisis, lalu dapatkan wawasan dari Sinarkeu.</li>
             </ul>
 
-            <h5>7b. Tanya AI</h5>
+            <h5>7b. Tanya Sinarkeu</h5>
             <ul>
-                <li>Pakai Worker URL yang sama dengan Analisis AI (<strong>Setelan → Analisis AI</strong>).</li>
-                <li>Klik <strong>"Tanya AI"</strong> di dashboard, lalu ketik pertanyaan bebas, misalnya: <i>"Pemasukan bulan Juni berapa?"</i> atau <i>"Listrik bulan lalu berapa?"</i>.</li>
-                <li>AI menjawab berdasarkan transaksi yang tersimpan di perangkat ini (maksimal 300 transaksi terbaru) dan akan menunjukkan rincian transaksi yang dipakai untuk menghitung, supaya bisa Anda cek ulang.</li>
+                <li>Pakai Worker URL yang sama dengan Analisis Sinarkeu (<strong>Setelan → Analisis Sinarkeu</strong>).</li>
+                <li>Klik <strong>"Tanya Sinarkeu"</strong> di dashboard, lalu ketik pertanyaan bebas, misalnya: <i>"Pemasukan bulan Juni berapa?"</i> atau <i>"Listrik bulan lalu berapa?"</i>.</li>
+                <li>Sinarkeu menjawab berdasarkan transaksi yang tersimpan di perangkat ini (maksimal 300 transaksi terbaru) dan akan menunjukkan rincian transaksi yang dipakai untuk menghitung, supaya bisa Anda cek ulang.</li>
                 <li>Untuk pertanyaan tentang transaksi yang lebih lama dari 300 transaksi terakhir, gunakan fitur Laporan agar datanya pasti lengkap.</li>
             </ul>
 
@@ -561,7 +561,7 @@ alter table public.settings
             </div>
             <div id="headerAIBar" class="header-ai-bar desktop-only">
                 <span class="header-ai-icon">✦</span>
-                <input type="text" id="headerAIInput" class="header-ai-input" placeholder="Tanya AI keuangan..." data-i18n="ai_placeholder" data-i18n-attr="placeholder" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.submitHeaderAI();}" autocomplete="off">
+                <input type="text" id="headerAIInput" class="header-ai-input" placeholder="Tanya Sinarkeu keuangan..." data-i18n="ai_placeholder" data-i18n-attr="placeholder" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.submitHeaderAI();}" autocomplete="off">
                 <button class="header-ai-btn" onclick="window.submitHeaderAI()" title="Kirim">→</button>
             </div>
             <select id="currentBookSelect" class="book-select" onchange="switchBook(this.value)"></select>
@@ -682,7 +682,7 @@ alter table public.settings
             <div style="font-size:1rem; font-weight:700; margin-top:4px; min-height:20px;" id="fcFaseNama" data-i18n="life_phase_not_set">Belum diatur</div>
             <div style="font-size:.62rem; color:var(--ink-faint); margin-top:4px; line-height:1.5;" id="fcFaseDesc" data-i18n="life_phase_click">Klik untuk mengatur fase kehidupan pernikahan Anda</div>
             <div style="margin-top:8px;">
-                <button onclick="event.stopPropagation(); window.runFaseAIAnalysis()" id="faseAIBtn" class="btn" style="font-size:.65rem; padding:3px 10px; display:none;">Analisis AI</button>
+                <button onclick="event.stopPropagation(); window.runFaseAIAnalysis()" id="faseAIBtn" class="btn" style="font-size:.65rem; padding:3px 10px; display:none;">Analisis Sinarkeu</button>
             </div>
         </div>
         <div class="stat-card" id="cardDanaSalingJaga">
@@ -776,8 +776,8 @@ alter table public.settings
         </div>
         <div class="actions">
             <button class="btn btn-primary" id="tambahTransaksiBtn" onclick="openModal('addModal')" data-i18n="add_transaction">+ Transaksi</button>
-            <button class="btn" style="background:var(--purple); color:#fff; border-color:var(--purple);" onclick="openAIAnalysis()" data-i18n="ai_analysis">Analisis AI</button>
-            <button class="btn" style="background:var(--chat-user); color:#fff; border-color:var(--chat-user);" onclick="window.openAIChatModal()" data-i18n="ask_ai">Tanya AI</button>
+            <button class="btn" style="background:var(--purple); color:#fff; border-color:var(--purple);" onclick="openAIAnalysis()" data-i18n="ai_analysis">Analisis Sinarkeu</button>
+            <button class="btn" style="background:var(--chat-user); color:#fff; border-color:var(--chat-user);" onclick="window.openAIChatModal()" data-i18n="ask_ai">Tanya Sinarkeu</button>
         </div>
     </div>
 
@@ -1021,7 +1021,7 @@ alter table public.settings
             </details>
             <div class="form-group"><label>Bot Token <span style="font-weight:400;color:var(--ink-faint);font-size:.7rem;">dari @BotFather</span></label><input type="text" id="tgBotTokenInput" class="form-control" placeholder="123456789:AAF-contoh-token-dari-botfather" autocomplete="off"></div>
             <div class="form-group"><label>Chat ID <span style="font-weight:400;color:var(--ink-faint);font-size:.7rem;">dari @userinfobot (angka, bisa negatif untuk grup)</span></label><input type="text" id="tgChatIdInput" class="form-control" placeholder="123456789" autocomplete="off"></div>
-            <div class="form-group form-group-checkbox"><label class="checkbox-label"><input type="checkbox" id="tgHumanizeToggle" onchange="window.setTgHumanizeEnabled(this.checked)"> Gaya bahasa natural (AI) <span style="font-weight:400;color:var(--ink-faint);font-size:.7rem;">— tulis ulang notifikasi jadi kalimat santai, bukan template. Butuh mesin AI aktif di Setelan → Analisis AI.</span></label></div>
+            <div class="form-group form-group-checkbox"><label class="checkbox-label"><input type="checkbox" id="tgHumanizeToggle" onchange="window.setTgHumanizeEnabled(this.checked)"> Gaya bahasa natural (Sinarkeu) <span style="font-weight:400;color:var(--ink-faint);font-size:.7rem;">— tulis ulang notifikasi jadi kalimat santai, bukan template. Butuh Sinarkeu aktif di Setelan → Analisis Sinarkeu.</span></label></div>
             <input type="hidden" id="tgEdgeUrlInput" value="">
             <div id="tgTestStatus" style="font-size:.72rem; margin-bottom:12px; min-height:20px; padding: 0 2px;"></div>
             <div class="setelan-actions-row" style="flex-wrap:wrap;">
@@ -1073,11 +1073,11 @@ alter table public.settings
 
         <div class="data-management-panel setelan-tab-panel active" data-tab-panel="ai">
             <div class="panel-title setelan-title--purple">
-                <span data-i18n="ai_analysis_section">Analisis AI</span>
+                <span data-i18n="ai_analysis_section">Analisis Sinarkeu</span>
                 <span id="aiWorkerStatusBadge" class="setelan-badge setelan-badge--neutral">Belum dikonfigurasi</span>
             </div>
             <div class="setelan-desc">
-                Pilih mesin AI yang dipakai untuk Analisis AI, Tanya AI, dan Analisis Fase Kehidupan. Bisa pakai Cloudflare Worker (Groq) seperti sebelumnya, atau mesin baru: Gemini lewat Supabase Edge Function.
+                Pilih mesin AI yang dipakai untuk Analisis Sinarkeu, Tanya Sinarkeu, dan Analisis Fase Kehidupan. Bisa pakai Cloudflare Worker (Groq) seperti sebelumnya, atau mesin baru: Gemini lewat Supabase Edge Function.
             </div>
             <div class="form-group" style="margin-bottom:10px;">
                 <label class="checkbox-label" style="display:flex; align-items:center; gap:8px; margin-bottom:6px; font-weight:600;">
@@ -1092,7 +1092,7 @@ alter table public.settings
 
             <div id="aiEngineWorkerPanel">
                 <div class="setelan-desc">
-                    <span data-i18n="ai_desc">Masukkan URL Cloudflare Worker milik Anda untuk mengaktifkan fitur Analisis Keuangan AI.</span>
+                    <span data-i18n="ai_desc">Masukkan URL Cloudflare Worker milik Anda untuk mengaktifkan fitur Analisis Keuangan Sinarkeu.</span>
                 </div>
                 <div class="form-group" style="margin-bottom:10px;">
                     <label data-i18n="worker_url">Worker URL</label>
@@ -1128,7 +1128,7 @@ alter table public.settings
             <div class="form-group form-group-checkbox" style="margin-bottom:0;">
                 <label class="checkbox-label">
                     <input type="checkbox" id="lockAiInsightToggle" onchange="window.setLockscreenAiEnabled(this.checked)">
-                    Perhalus dengan Analisis AI (pakai Worker URL di atas, dicek ulang tiap 6 jam)
+                    Perhalus dengan Analisis Sinarkeu (pakai Worker URL di atas, dicek ulang tiap 6 jam)
                 </label>
             </div>
         </div>
@@ -1835,7 +1835,7 @@ alter table public.settings
             kalau memang sudah sesuai.
         </div>
         <div style="margin-bottom:12px;">
-            <button type="button" class="btn btn-secondary" style="font-size:.68rem; padding:4px 10px;" onclick="window.runFraudAIInsight()">🤖 Ringkasan AI</button>
+            <button type="button" class="btn btn-secondary" style="font-size:.68rem; padding:4px 10px;" onclick="window.runFraudAIInsight()">🤖 Ringkasan Sinarkeu</button>
             <div id="fraudAIInsightBox" style="margin-top:8px;"></div>
         </div>
         <div id="fraudAlertList"></div>
@@ -1880,7 +1880,7 @@ alter table public.settings
     <div class="modal-content wide" style="max-width:680px; max-height:90vh;">
         <div class="modal-header"><h3>Analisis Keuangan</h3><button class="modal-close" onclick="closeModal('aiAnalysisModal')">×</button></div>
         <div id="aiWorkerWarning" style="display:none; background:var(--warning-lt); border:1px solid color-mix(in srgb, var(--warning) 45%, var(--warning-lt)); border-radius: var(--radius-sm); padding:10px 14px; margin-bottom:14px; font-size:.75rem; color:var(--warning); line-height:1.6;">
-            <strong>Worker URL belum dikonfigurasi.</strong> Buka <a href="#" onclick="closeModal('aiAnalysisModal'); openSetelanModal('ai'); return false;" style="color:var(--warning); font-weight:600;">Setelan → Analisis AI</a> untuk mengisi URL Cloudflare Worker Anda.
+            <strong>Worker URL belum dikonfigurasi.</strong> Buka <a href="#" onclick="closeModal('aiAnalysisModal'); openSetelanModal('ai'); return false;" style="color:var(--warning); font-weight:600;">Setelan → Analisis Sinarkeu</a> untuk mengisi URL Cloudflare Worker Anda.
         </div>
         <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
             <select id="aiAnalysisPeriod" class="budget-select" style="flex:1; min-width:140px;">
@@ -1910,10 +1910,10 @@ alter table public.settings
 <!-- ===== MODAL TANYA AI ===== -->
 <div id="aiChatModal" class="modal">
     <div class="modal-content" style="max-width:560px;">
-        <div class="modal-header"><h3>Tanya AI Keuangan</h3><button class="modal-close" onclick="closeModal('aiChatModal')">×</button></div>
+        <div class="modal-header"><h3>Tanya Sinarkeu Keuangan</h3><button class="modal-close" onclick="closeModal('aiChatModal')">×</button></div>
         <div style="padding:0 22px 18px;">
             <div id="aiChatWorkerWarning" style="display:none; background:var(--danger-lt); border:1px solid color-mix(in srgb, var(--danger) 35%, var(--danger-lt)); border-radius: var(--radius-sm); padding:10px 12px; margin-bottom:12px; font-size:.72rem; color:var(--danger);">
-                <strong>Worker URL belum dikonfigurasi.</strong> Buka <a href="#" onclick="closeModal('aiChatModal'); openSetelanModal('ai'); return false;" style="color:var(--danger); font-weight:600; text-decoration:underline;">Setelan → Analisis AI</a> untuk mengisi URL Cloudflare Worker Anda.
+                <strong>Worker URL belum dikonfigurasi.</strong> Buka <a href="#" onclick="closeModal('aiChatModal'); openSetelanModal('ai'); return false;" style="color:var(--danger); font-weight:600; text-decoration:underline;">Setelan → Analisis Sinarkeu</a> untuk mengisi URL Cloudflare Worker Anda.
             </div>
             <div id="aiChatPresets">
                 <div style="font-size:.68rem; color:var(--ink-faint); margin-bottom:8px;">Tanyakan apa saja soal transaksi Anda, contoh:</div>
@@ -1947,7 +1947,7 @@ alter table public.settings
         </div>
         <div style="padding:0 22px 16px;">
             <div style="font-size:.72rem; color:var(--ink-muted); margin-bottom:14px; line-height:1.6; background:var(--fase-lt); border:1px solid color-mix(in srgb, var(--purple) 35%, var(--purple-lt)); border-radius: var(--radius-sm); padding:10px 12px;">
-                Atur fase kehidupan pernikahan Anda agar analisis AI bisa memberikan rekomendasi keuangan yang lebih relevan dan personal.
+                Atur fase kehidupan pernikahan Anda agar Sinarkeu bisa memberikan rekomendasi keuangan yang lebih relevan dan personal.
             </div>
             <!-- hidden native select for compatibility -->
             <select id="faseSelect" style="display:none;" onchange="window.updateFaseDesc()">
@@ -2042,7 +2042,7 @@ alter table public.settings
 <div id="faseAIModal" class="modal" style="z-index:2000;">
     <div class="modal-content report" style="max-width:620px;">
         <div class="modal-header">
-            <h3>Analisis AI — Fase Kehidupan</h3>
+            <h3>Analisis Sinarkeu — Fase Kehidupan</h3>
             <button class="modal-close" onclick="window.closeModal('faseAIModal')">×</button>
         </div>
         <div style="padding:0 22px 16px;">

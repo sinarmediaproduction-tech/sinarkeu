@@ -44,7 +44,7 @@ window.resolveAIEndpoint = function() {
     }
     const workerUrl = (localStorage.getItem('sk_ai_worker_url') || '').trim();
     if (!workerUrl) {
-        return { ok: false, reason: 'Worker URL belum dikonfigurasi. Buka Setelan → Analisis AI untuk mengisi URL Cloudflare Worker Anda.' };
+        return { ok: false, reason: 'Worker URL belum dikonfigurasi. Buka Setelan → Analisis Sinarkeu untuk mengisi URL Cloudflare Worker Anda.' };
     }
     return { ok: true, url: workerUrl, headers: { 'Content-Type': 'application/json' }, label: 'Groq (Cloudflare Worker)' };
 };
@@ -146,7 +146,7 @@ window._runAiCategorySuggest = async function(descId, catExpenseId, catIncomeId,
             categories.find(c => clean.toLowerCase().includes(c.toLowerCase()));
         if (!matched) return;
 
-        chipEl.innerHTML = `🤖 Saran AI: <b>${window.escapeHtml(matched)}</b> <button type="button" class="btn btn-secondary" style="font-size:.62rem; padding:2px 8px; margin-left:4px;" onclick="window._applyAiCategorySuggest(this)">Pakai</button>`;
+        chipEl.innerHTML = `🤖 Saran Sinarkeu: <b>${window.escapeHtml(matched)}</b> <button type="button" class="btn btn-secondary" style="font-size:.62rem; padding:2px 8px; margin-left:4px;" onclick="window._applyAiCategorySuggest(this)">Pakai</button>`;
         chipEl.dataset.suggestedCategory = matched;
         chipEl.dataset.targetSelect = targetSelectId;
         chipEl.style.display = 'block';
@@ -403,7 +403,7 @@ window.runAIAnalysis = async function() {
     const copyBtn  = document.getElementById('aiCopyBtn');
     const endpointCheck = window.resolveAIEndpoint();
     if (!endpointCheck.ok) {
-        resultEl.innerHTML = `<div style="text-align:center; color:#A13A3A; padding:40px 0;">${window.escapeHtml(endpointCheck.reason)} Buka <a href="#" onclick="window.closeModal('aiAnalysisModal'); window.openSetelanModal('ai'); return false;" style="color:#A13A3A; font-weight:600; text-decoration:underline;">Setelan → Analisis AI</a>.</div>`;
+        resultEl.innerHTML = `<div style="text-align:center; color:#A13A3A; padding:40px 0;">${window.escapeHtml(endpointCheck.reason)} Buka <a href="#" onclick="window.closeModal('aiAnalysisModal'); window.openSetelanModal('ai'); return false;" style="color:#A13A3A; font-weight:600; text-decoration:underline;">Setelan → Analisis Sinarkeu</a>.</div>`;
         return;
     }
     const data = window.getAITransactionData();
@@ -420,7 +420,7 @@ window.runAIAnalysis = async function() {
     try {
         const { text, engineLabel } = await window.callAIEngine(prompt);
         resultEl.innerText = text;
-        footerEl.innerText = `Dianalisis oleh ${engineLabel} · ${new Date().toLocaleString('id-ID')} · ${data.count} transaksi`;
+        footerEl.innerText = `Dianalisis oleh Sinarkeu · ${new Date().toLocaleString('id-ID')} · ${data.count} transaksi`;
         copyBtn.style.display = 'inline-flex';
         document.getElementById('aiExportBtn').style.display = 'inline-flex';
     } catch (e) {
@@ -487,7 +487,7 @@ window.saveAiWorkerUrl = function() {
     st.style.color = '#2E6B4F';
     st.innerText = 'Worker URL berhasil disimpan!';
     window.updateAiWorkerBadge();
-    window.showToast('Worker URL AI disimpan!', 'success');
+    window.showToast('Worker URL Sinarkeu disimpan!', 'success');
     // [SYNC MULTI-DEVICE] Simpan juga ke cloud (tabel `settings`, book_id
     // 'global') supaya URL worker AI ini otomatis muncul di perangkat lain
     // yang login ke backend Supabase yang sama -- konsisten dengan pola
@@ -496,7 +496,7 @@ window.saveAiWorkerUrl = function() {
     if (window.pushSetting) window.pushSetting('ai_worker_url', url, 'global').catch(function() {});
 };
 window.clearAiWorkerUrl = function() {
-    if (!confirm('Hapus Worker URL? Fitur Analisis AI akan dinonaktifkan.')) return;
+    if (!confirm('Hapus Worker URL? Fitur Analisis Sinarkeu akan dinonaktifkan.')) return;
     localStorage.removeItem('sk_ai_worker_url');
     const inp = document.getElementById('aiWorkerUrlInput');
     if (inp) inp.value = '';
@@ -543,7 +543,7 @@ window.exportAIResult = function() {
     const type = document.getElementById('aiAnalysisType')?.value || 'general';
     const periodLabel = { all:'Semua Data', thismonth:'Bulan Ini', lastmonth:'Bulan Lalu', last3months:'3 Bulan Terakhir' }[period];
     const typeLabel = { general:'Ringkasan Umum', expense:'Analisis Pengeluaran', saving:'Tips Hemat', cashflow:'Arus Kas' }[type];
-    const header = `=== Laporan Analisis AI Sinarkeu ===\nPeriode: ${periodLabel}\nJenis: ${typeLabel}\nTanggal: ${new Date().toLocaleString('id-ID')}\n\n`;
+    const header = `=== Laporan Analisis Sinarkeu ===\nPeriode: ${periodLabel}\nJenis: ${typeLabel}\nTanggal: ${new Date().toLocaleString('id-ID')}\n\n`;
     const blob = new Blob([header + text], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -553,7 +553,7 @@ window.exportAIResult = function() {
     a.download = `sinarkeu-ai-${safePeriod}-${safeType}.txt`;
     a.click();
     URL.revokeObjectURL(url);
-    window.showToast('Hasil AI diekspor ke file teks!', 'success');
+    window.showToast('Hasil Sinarkeu diekspor ke file teks!', 'success');
 };
 
 // ==================== TANYA AI (CHAT Q&A) ====================
@@ -649,7 +649,7 @@ window.renderAIChatBubbles = function() {
             return `<div style="display:flex; justify-content:flex-end; margin-bottom:8px;"><div style="background:#2E6B67; color:#fff; padding:8px 12px; border-radius:10px 10px 2px 10px; max-width:82%; font-size:.78rem; white-space:pre-wrap;">${window.escapeHtml(m.text)}</div></div>`;
         }
         if (m.role === 'loading') {
-            return `<div style="display:flex; justify-content:flex-start; margin-bottom:8px;"><div style="background:#fff; border:1px solid #E7E9ED; color:#9AA2AC; padding:8px 12px; border-radius:10px 10px 10px 2px; font-size:.78rem;">AI sedang menghitung dari data transaksi...</div></div>`;
+            return `<div style="display:flex; justify-content:flex-start; margin-bottom:8px;"><div style="background:#fff; border:1px solid #E7E9ED; color:#9AA2AC; padding:8px 12px; border-radius:10px 10px 10px 2px; font-size:.78rem;">Sinarkeu sedang menghitung dari data transaksi...</div></div>`;
         }
         if (m.role === 'error') {
             return `<div style="display:flex; justify-content:flex-start; margin-bottom:8px;"><div style="background:#F5E6E6; border:1px solid #C77A73; color:#7E2E2E; padding:8px 12px; border-radius:10px 10px 10px 2px; max-width:88%; font-size:.78rem; white-space:pre-wrap;">${window.escapeHtml(m.text)}</div></div>`;
@@ -725,7 +725,7 @@ INSTRUKSI WAJIB:
 
 window.clearAIChatHistory = function() {
     if (window._aiChatHistory.length === 0) return;
-    if (!confirm('Hapus seluruh riwayat percakapan Tanya AI?')) return;
+    if (!confirm('Hapus seluruh riwayat percakapan Tanya Sinarkeu?')) return;
     window._aiChatHistory = [];
     localStorage.removeItem('sinarkeu_ai_chat_history');
     window.renderAIChatBubbles();
@@ -747,7 +747,7 @@ window.runFaseAIAnalysis = async function() {
         return;
     }
     if (!endpointCheck.ok) {
-        resultEl.innerHTML = `<div style="text-align:center; color:#A13A3A; padding:40px 0;">${window.escapeHtml(endpointCheck.reason)}<br><a href="#" onclick="window.closeModal('faseAIModal'); window.openSetelanModal('ai'); return false;" style="color:#A13A3A; font-weight:600;">Setelan → Analisis AI</a></div>`;
+        resultEl.innerHTML = `<div style="text-align:center; color:#A13A3A; padding:40px 0;">${window.escapeHtml(endpointCheck.reason)}<br><a href="#" onclick="window.closeModal('faseAIModal'); window.openSetelanModal('ai'); return false;" style="color:#A13A3A; font-weight:600;">Setelan → Analisis Sinarkeu</a></div>`;
         return;
     }
 
@@ -819,7 +819,7 @@ Gunakan bahasa Indonesia yang hangat, to-the-point, dan motivatif. Maksimal 450 
     runBtn.disabled = true;
     runBtn.innerText = 'Menganalisis...';
     copyBtn.style.display = 'none';
-    resultEl.innerHTML = '<div style="text-align:center; color:#8C6B78; padding:40px 0;">AI sedang menganalisis keuangan berdasarkan fase kehidupan Anda...</div>';
+    resultEl.innerHTML = '<div style="text-align:center; color:#8C6B78; padding:40px 0;">Sinarkeu sedang menganalisis keuangan berdasarkan fase kehidupan Anda...</div>';
     footerEl.innerText = '';
 
     try {

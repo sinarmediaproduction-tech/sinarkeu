@@ -57,7 +57,7 @@
             payment_reminder: 'Pengingat Pembayaran',
             switch_account: 'Ganti Akun',
             menu: 'Menu',
-            ai_placeholder: 'Tanya AI keuangan...',
+            ai_placeholder: 'Tanya Sinarkeu keuangan...',
 
             // === DASHBOARD STATS ===
             final_balance: 'Proyeksi Saldo',
@@ -97,8 +97,8 @@
             filter_income: 'Masuk',
             filter_expense: 'Keluar',
             add_transaction: '+ Transaksi',
-            ai_analysis: 'Analisis AI',
-            ask_ai: 'Tanya AI',
+            ai_analysis: 'Analisis Sinarkeu',
+            ask_ai: 'Tanya Sinarkeu',
 
             // === TABEL TRANSAKSI ===
             col_no: 'No',
@@ -142,9 +142,9 @@
 
             // === SETELAN ===
             settings_title: 'Setelan',
-            ai_analysis_section: 'Analisis AI',
+            ai_analysis_section: 'Analisis Sinarkeu',
             ai_not_configured: 'Belum dikonfigurasi',
-            ai_desc: 'Masukkan URL Cloudflare Worker milik Anda untuk mengaktifkan fitur Analisis Keuangan AI.',
+            ai_desc: 'Masukkan URL Cloudflare Worker milik Anda untuk mengaktifkan fitur Analisis Keuangan Sinarkeu.',
             worker_url: 'Worker URL',
             worker_placeholder: 'https://nama-worker-anda.workers.dev',
             test_connection: 'Tes Koneksi',
@@ -250,7 +250,7 @@
             emergency_50pct: '50% dari saldo setelah cadangan wajib',
             life_phase_not_set: 'Belum diatur',
             life_phase_click: 'Klik untuk mengatur fase kehidupan pernikahan Anda',
-            ai_analysis_btn: 'Analisis AI',
+            ai_analysis_btn: 'Analisis Sinarkeu',
             new_receipt: 'Nota baru siap disimpan',
             has_attachment: 'Sudah memiliki lampiran nota.',
             no_attachment: 'Belum ada lampiran.',
@@ -265,7 +265,7 @@
 
             // === AI ===
             ai_worker_not_configured: 'Worker URL belum dikonfigurasi.',
-            ai_open_settings: 'Setelan → Analisis AI',
+            ai_open_settings: 'Setelan → Analisis Sinarkeu',
 
             // === HARGA PANGAN WORKER ===
             harga_pangan_worker_section: 'Proxy Harga Komoditas (Cloudflare Worker)',

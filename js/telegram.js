@@ -72,7 +72,7 @@ window.getTgHumanizeEnabled = function() {
 window.setTgHumanizeEnabled = function(on) {
     localStorage.setItem('sk_tg_humanize', on ? '1' : '0');
     if (on && typeof window.resolveAIEndpoint === 'function' && !window.resolveAIEndpoint().ok) {
-        window.showToast('Atur dulu mesin AI di Setelan → Analisis AI, supaya gaya bahasa notifikasi Telegram bisa dibuat AI.', 'error');
+        window.showToast('Atur dulu mesin AI di Setelan → Analisis Sinarkeu, supaya gaya bahasa notifikasi Telegram bisa dibuat Sinarkeu.', 'error');
     }
 };
 

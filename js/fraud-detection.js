@@ -404,7 +404,7 @@ window.runFraudAIInsight = async function() {
         return;
     }
 
-    box.innerHTML = '<div style="font-size:.72rem; color:var(--ink-faint); padding:8px 0;">🤖 AI sedang merangkai insight dari flag yang aktif...</div>';
+    box.innerHTML = '<div style="font-size:.72rem; color:var(--ink-faint); padding:8px 0;">🤖 Sinarkeu sedang merangkai insight dari flag yang aktif...</div>';
 
     const lines = flags.map(f => {
         const bits = [`[${f.level === 'warning' ? 'PERINGATAN' : 'INFO'}] ${f.code}`];
