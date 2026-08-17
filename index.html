@@ -834,6 +834,7 @@ alter table public.settings
             <div class="form-group"><label>Deskripsi</label><input type="text" id="txDesc" class="form-control" required></div>
             <div id="txCategoryAiSuggest" style="display:none; font-size:.68rem; color:#5C4E72; margin:-6px 0 12px;"></div>
             <div class="form-group"><label>Jumlah (Rp)</label><input type="text" id="txAmount" class="form-control" oninput="formatRupiah(this)" required></div>
+            <div id="txDescAiSuggest" style="display:none; font-size:.68rem; color:#5C4E72; margin:-6px 0 12px;"></div>
             <div class="form-group"><label>Lampiran Nota</label><input type="file" id="txAttachment" accept="image/*" class="form-control" onchange="previewAttachment(this)"><img id="attachmentPreview" class="attachment-preview"></div>
             <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div>
         </form>
@@ -853,6 +854,7 @@ alter table public.settings
             <div class="form-group"><label>Deskripsi</label><input type="text" id="editTxDesc" class="form-control" required></div>
             <div id="editTxCategoryAiSuggest" style="display:none; font-size:.68rem; color:#5C4E72; margin:-6px 0 12px;"></div>
             <div class="form-group"><label>Jumlah (Rp)</label><input type="text" id="editTxAmount" class="form-control" oninput="formatRupiah(this)" required></div>
+            <div id="editTxDescAiSuggest" style="display:none; font-size:.68rem; color:#5C4E72; margin:-6px 0 12px;"></div>
             <div class="form-group"><label>Lampiran Nota</label><input type="file" id="editTxAttachment" accept="image/*" class="form-control" onchange="previewEditAttachment(this)"><div id="editAttachmentInfo" style="font-size:.65rem; color:var(--ink-muted); margin-top:4px;"></div><img id="editAttachmentPreview" class="attachment-preview"></div>
             <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div>
         </form>
@@ -1831,6 +1833,10 @@ alter table public.settings
             Daftar ini murni peringatan lokal (dihitung dari transaksi &amp; log aktivitas buku ini) --
             tidak ada yang otomatis diblokir atau dikirim ke pihak lain. Tinjau lalu tekan "Abaikan"
             kalau memang sudah sesuai.
+        </div>
+        <div style="margin-bottom:12px;">
+            <button type="button" class="btn btn-secondary" style="font-size:.68rem; padding:4px 10px;" onclick="window.runFraudAIInsight()">🤖 Ringkasan AI</button>
+            <div id="fraudAIInsightBox" style="margin-top:8px;"></div>
         </div>
         <div id="fraudAlertList"></div>
     </div>

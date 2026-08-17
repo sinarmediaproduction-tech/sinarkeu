@@ -371,5 +371,62 @@ window.renderFraudAlertListContent = function() {
 
 window.openFraudAlertModal = function() {
     window.renderFraudAlertListContent();
+    // Reset kotak insight AI setiap kali modal dibuka -- tidak auto-run
+    // (beda dari ringkasan laporan bulanan) karena modal ini bisa dibuka
+    // berkali-kali cuma untuk mengecek/meng-"Abaikan" alert, jadi biar user
+    // yang minta insight AI lewat tombol, tidak nembak AI Engine tiap buka.
+    const box = document.getElementById('fraudAIInsightBox');
+    if (box) box.innerHTML = '';
     if (window.openModal) window.openModal('fraudAlertModal');
+};
+
+// ==================== INSIGHT AI (RANGKUM FLAG JADI NARASI) ====================
+// Flag mentah di atas cuma pesan template per-kejadian ("nominal di luar
+// kebiasaan", "kemungkinan duplikat", dst). Kalau ada beberapa flag aktif
+// sekaligus, sering ada polanya (mis. beberapa flag AMOUNT_OUTLIER dari
+// kategori & device yang sama dalam waktu berdekatan) yang lebih kelihatan
+// kalau dirangkai jadi satu cerita, bukan dibaca satu-satu. Fungsi ini
+// mengirim seluruh flag AKTIF (yang sedang tampil, sudah dikurangi yang
+// di-"Abaikan") ke AI Engine yang sedang dipilih user untuk dirangkai jadi
+// satu insight naratif singkat. Dipicu manual lewat tombol (bukan otomatis)
+// supaya tidak boros kuota AI tiap modal ini dibuka.
+window.runFraudAIInsight = async function() {
+    const box = document.getElementById('fraudAIInsightBox');
+    if (!box) return;
+    const endpointCheck = (typeof window.resolveAIEndpoint === 'function') ? window.resolveAIEndpoint() : { ok: false };
+    if (!endpointCheck.ok) {
+        box.innerHTML = `<div style="font-size:.7rem; color:#A13A3A; padding:8px 0; line-height:1.5;">${window.escapeHtml(endpointCheck.reason)}</div>`;
+        return;
+    }
+    const flags = window._fraudActiveFlags || [];
+    if (flags.length === 0) {
+        box.innerHTML = '<div style="font-size:.7rem; color:var(--ink-faint); padding:8px 0;">Tidak ada aktivitas aktif untuk dirangkum.</div>';
+        return;
+    }
+
+    box.innerHTML = '<div style="font-size:.72rem; color:var(--ink-faint); padding:8px 0;">🤖 AI sedang merangkai insight dari flag yang aktif...</div>';
+
+    const lines = flags.map(f => {
+        const bits = [`[${f.level === 'warning' ? 'PERINGATAN' : 'INFO'}] ${f.code}`];
+        if (f.device_id) bits.push(`device: ${f.device_id}`);
+        if (f.timestamp) bits.push(`waktu: ${new Date(f.timestamp).toLocaleString('id-ID')}`);
+        return `- ${bits.join(' | ')} -- ${f.message}`;
+    }).join('\n');
+
+    const prompt = `Kamu adalah asisten keamanan buku kas bersama. Di bawah ini daftar flag/peringatan MENTAH hasil deteksi otomatis berbasis aturan (statistik nominal & pola aktivitas), bukan hasil investigasi manusia:
+
+${lines}
+
+INSTRUKSI:
+1. Rangkai flag-flag di atas jadi SATU insight naratif singkat (maksimal 3-4 kalimat, Bahasa Indonesia) -- kalau beberapa flag berasal dari device, waktu, atau kategori yang sama/berdekatan, hubungkan jadi satu pola cerita (mis. "3 transaksi besar dari device baru dalam 2 hari, pola ini mirip lonjakan aktivitas yang biasanya perlu ditinjau").
+2. Kalau flag-flag itu tidak saling berkaitan, cukup ringkas urut dari yang paling perlu perhatian (level PERINGATAN dulu).
+3. WAJIB pakai bahasa netral seperti "perlu ditinjau", "pola ini mirip", "tidak seperti biasanya" -- JANGAN menuduh atau memastikan ada kecurangan/pelanggaran, karena ini murni pola statistik yang bisa saja penyebabnya wajar (misal belanja bulanan besar yang memang disengaja).
+4. Jangan pakai format daftar/poin dan jangan pakai salam pembuka/penutup -- langsung satu paragraf isi insight-nya.`;
+
+    try {
+        const { text } = await window.callAIEngine(prompt);
+        box.innerHTML = `<div style="background:var(--accent-lt); border:1.5px solid var(--rule); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:4px; font-size:.75rem; line-height:1.6; color:var(--ink);">${window.escapeHtml(text)}</div>`;
+    } catch (e) {
+        box.innerHTML = `<div style="font-size:.7rem; color:#A13A3A; padding:8px 0; line-height:1.5;">Gagal membuat insight: ${window.escapeHtml(e.message)}</div>`;
+    }
 };

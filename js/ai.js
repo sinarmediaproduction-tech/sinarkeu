@@ -176,7 +176,150 @@ document.addEventListener('DOMContentLoaded', function() {
         window.initAiCategorySuggest('txDesc', 'txCategory', 'txIncomeCategory', 'type', 'txCategoryAiSuggest');
         window.initAiCategorySuggest('editTxDesc', 'editTxCategory', 'editTxIncomeCategory', 'editType', 'editTxCategoryAiSuggest');
     }
+    if (typeof window.initAiDescSuggest === 'function') {
+        window.initAiDescSuggest('txAmount', 'txDesc', 'txDate', 'type', 'txDescAiSuggest');
+        window.initAiDescSuggest('editTxAmount', 'editTxDesc', 'editTxDate', 'editType', 'editTxDescAiSuggest');
+    }
 });
+
+// ==================== SARAN DESKRIPSI OTOMATIS (POLA RIWAYAT) ====================
+// Beda dengan saran kategori di atas (yang manggil AI Engine lewat prompt),
+// fitur ini SENGAJA murni pola lokal -- TIDAK memanggil AI Engine sama
+// sekali. Begitu user mengisi NOMINAL tapi Deskripsi masih kosong (mis. isi
+// nominal duluan sebelum deskripsi, atau tempel angka dari nota), dicari
+// transaksi historis (window.txs, buku aktif, sudah terdekripsi di device
+// ini) dengan nominal & jam yang mirip. Kalau polanya cukup meyakinkan
+// (nominal nyaris identik & berulang -- khas tagihan/token/iuran bulanan),
+// tampilkan sebagai chip saran, persis seperti kategori: klik "Pakai" untuk
+// isi, tidak pernah menimpa otomatis. Dibuat murni perhitungan lokal karena
+// tugasnya cuma mencari transaksi historis paling mirip -- lebih cepat,
+// tidak makan kuota AI Engine, dan hasilnya lebih bisa dipercaya
+// dibanding AI menebak teks bebas dari sekadar deskripsi tetangga-tetangganya.
+window._aiDescDebounce = {};
+
+window.initAiDescSuggest = function(amountId, descId, dateId, typeRadioName, chipId) {
+    const amtEl = document.getElementById(amountId);
+    const descEl = document.getElementById(descId);
+    if (!amtEl || amtEl._aiDescBound) return;
+    amtEl._aiDescBound = true;
+    amtEl.addEventListener('input', function() {
+        clearTimeout(window._aiDescDebounce[amountId]);
+        // Debounce 600ms -- formatRupiah() sudah jalan tiap ketikan, tunggu
+        // user berhenti sejenak dulu sebelum mulai mencari pola.
+        window._aiDescDebounce[amountId] = setTimeout(function() {
+            window._runAiDescSuggest(amountId, descId, dateId, typeRadioName, chipId);
+        }, 600);
+    });
+    document.querySelectorAll(`input[name="${typeRadioName}"]`).forEach(r => {
+        r.addEventListener('change', function() {
+            const chipEl = document.getElementById(chipId);
+            if (chipEl) chipEl.style.display = 'none';
+            window._runAiDescSuggest(amountId, descId, dateId, typeRadioName, chipId);
+        });
+    });
+    // Kalau user sempat isi nominal duluan (Deskripsi masih kosong) lalu baru
+    // pindah fokus ke field Deskripsi, tampilkan lagi saran yang relevan --
+    // jaga-jaga kalau urutan pengisian dibalik dari urutan field di form.
+    if (descEl && !descEl._aiDescFocusBound) {
+        descEl._aiDescFocusBound = true;
+        descEl.addEventListener('focus', function() {
+            if ((descEl.value || '').trim() === '') {
+                window._runAiDescSuggest(amountId, descId, dateId, typeRadioName, chipId);
+            }
+        });
+    }
+};
+
+window._runAiDescSuggest = function(amountId, descId, dateId, typeRadioName, chipId) {
+    const chipEl = document.getElementById(chipId);
+    const descEl = document.getElementById(descId);
+    const amtEl  = document.getElementById(amountId);
+    if (chipEl) chipEl.style.display = 'none';
+    // Jangan menyarankan/menimpa kalau Deskripsi sudah mulai diisi user sendiri.
+    if (!descEl || (descEl.value || '').trim().length > 0 || !amtEl) return;
+
+    const amt = Number((amtEl.value || '').replace(/[^0-9]/g, ''));
+    if (!amt || amt < 500) return; // nominal kosong/terlalu kecil, sinyal belum cukup
+
+    const typeInput = document.querySelector(`input[name="${typeRadioName}"]:checked`);
+    const type = typeInput ? typeInput.value : 'expense';
+
+    // Jam referensi: pakai field tanggal&waktu form kalau sudah terisi
+    // (biasanya sudah default ke "sekarang"), fallback ke jam saat ini.
+    const dateEl = document.getElementById(dateId);
+    let refHour = null;
+    if (dateEl && dateEl.value) {
+        const d = new Date(dateEl.value);
+        if (!isNaN(d.getTime())) refHour = d.getHours() + d.getMinutes() / 60;
+    }
+    if (refHour === null) {
+        const now = new Date();
+        refHour = now.getHours() + now.getMinutes() / 60;
+    }
+
+    const txs = (window.txs || []).filter(t => t.type === type && (t.description || '').trim().length > 0);
+    if (txs.length === 0) return;
+
+    // Skor tiap transaksi historis: nominal jadi faktor UTAMA (transaksi
+    // berulang -- tagihan, token listrik, iuran -- biasanya nominalnya
+    // identik/nyaris identik tiap kali), jam cuma penguat sinyal tambahan.
+    // Beda nominal >10% dianggap terlalu jauh, tidak dianggap mirip sama sekali.
+    const TOLERANCE = 0.1;
+    const scored = [];
+    txs.forEach(t => {
+        const tAmt = Number(t.amount) || 0;
+        if (tAmt <= 0) return;
+        const relDiff = Math.abs(tAmt - amt) / Math.max(tAmt, amt);
+        if (relDiff > TOLERANCE) return;
+        let hourScore = 0.5;
+        const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
+        if (d && !isNaN(d.getTime())) {
+            const tHour = d.getHours() + d.getMinutes() / 60;
+            let hourDiff = Math.abs(tHour - refHour);
+            hourDiff = Math.min(hourDiff, 24 - hourDiff); // jarak siklus 24 jam
+            hourScore = Math.max(0, 1 - hourDiff / 12);
+        }
+        const amountScore = 1 - relDiff / TOLERANCE; // 1 = nominal persis sama
+        scored.push({ desc: t.description.trim(), score: amountScore * 0.75 + hourScore * 0.25 });
+    });
+    if (scored.length === 0) return;
+
+    // Kelompokkan berdasarkan teks deskripsi (case-insensitive) supaya
+    // deskripsi yang paling sering & paling mirip nominalnya yang menang.
+    const groups = {};
+    scored.forEach(s => {
+        const key = s.desc.toLowerCase();
+        if (!groups[key]) groups[key] = { desc: s.desc, total: 0, count: 0, best: 0 };
+        groups[key].total += s.score;
+        groups[key].count += 1;
+        groups[key].best = Math.max(groups[key].best, s.score);
+    });
+    const top = Object.values(groups).sort((a, b) => b.total - a.total)[0];
+    if (!top) return;
+
+    // Ambang kepercayaan: minimal 2 transaksi historis yang mirip, ATAU 1
+    // transaksi tapi nominalnya nyaris persis sama -- supaya tidak asal
+    // menyarankan cuma dari satu kebetulan nominal mirip.
+    const confident = top.count >= 2 || top.best >= 0.95;
+    if (!confident || !chipEl) return;
+
+    chipEl.innerHTML = `🤖 Saran deskripsi: <b>${window.escapeHtml(top.desc)}</b> <span style="opacity:.7;">(mirip ${top.count} transaksi lalu)</span> <button type="button" class="btn btn-secondary" style="font-size:.62rem; padding:2px 8px; margin-left:4px;" onclick="window._applyAiDescSuggest(this, '${descId}')">Pakai</button>`;
+    chipEl.dataset.suggestedDesc = top.desc;
+    chipEl.style.display = 'block';
+};
+
+window._applyAiDescSuggest = function(btnEl, descId) {
+    const chipEl = btnEl.closest('[data-suggested-desc]') || btnEl.parentElement;
+    const descEl = document.getElementById(descId);
+    const desc = chipEl ? chipEl.dataset.suggestedDesc : null;
+    if (descEl && desc) {
+        descEl.value = desc;
+        // Trigger 'input' supaya saran kategori (initAiCategorySuggest di atas,
+        // yang listen ke event 'input' pada field Deskripsi) ikut jalan otomatis.
+        descEl.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    if (chipEl) chipEl.style.display = 'none';
+};
 
 // ==================== AI ANALYSIS ====================
 window.openAIAnalysis = function() {

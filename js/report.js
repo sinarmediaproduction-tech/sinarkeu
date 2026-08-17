@@ -188,6 +188,11 @@ async function generateMonthlyReport() {
         </div>
       </div>` : ''}
 
+      <!-- Ringkasan AI -- diisi async oleh window._loadReportAISummary() di
+           bawah, supaya tampilnya laporan (di atas) tidak ikut menunggu
+           respons AI (bisa lambat / bisa gagal kalau AI belum dikonfigurasi). -->
+      <div id="reportAISummaryBox" style="display:none;"></div>
+
       <!-- Kategori -->
       <div style="font-size:.78rem; font-weight:700; margin-bottom:8px; color:${C.inkMuted}; text-transform:uppercase; letter-spacing:.5px;">Pengeluaran per Kategori</div>
       <div class="laporan-table-wrap" style="border:1.5px solid ${C.rule}; border-radius: var(--radius-sm); margin-bottom:20px;">
@@ -236,7 +241,99 @@ async function generateMonthlyReport() {
       </div>
     </div>
   `;
+
+  // 🤖 Ringkasan AI -- dipicu di sini (non-blocking, tidak di-await) supaya
+  // laporan di atas sudah tampil duluan; ringkasan AI menyusul begitu siap
+  // (atau diam-diam tidak muncul kalau AI belum dikonfigurasi/gagal).
+  window._loadReportAISummary(month, year, income, expense, cats);
 }
+
+// Ambil transaksi expense per kategori untuk SATU bulan tertentu (dipakai
+// khusus untuk data pembanding "bulan lalu" di ringkasan AI -- terpisah dari
+// alur render laporan utama supaya tidak ikut menunda tampilnya laporan).
+async function _fetchMonthCategoryTotalsForAI(year, month) {
+  let tx = [];
+  if (window.isOnline() && typeof window.fetchMonthTransactionsFromCloud === 'function') {
+    tx = await window.fetchMonthTransactionsFromCloud(window.currentBookId, year, month).catch(() => null) || [];
+  }
+  if (!tx.length) {
+    tx = (window.txs || []).filter(t => {
+      const d = window.parseTxDate ? window.parseTxDate(t.date) : new Date(t.date);
+      return d.getFullYear() === year && (d.getMonth() + 1) === month;
+    });
+  }
+  const income  = tx.filter(t => t.type === 'income').reduce((s, t) => s + (+t.amount || 0), 0);
+  const expense = tx.filter(t => t.type === 'expense').reduce((s, t) => s + (+t.amount || 0), 0);
+  const catMap = {};
+  tx.filter(t => t.type === 'expense').forEach(t => {
+    const c = t.category || 'Lainnya';
+    catMap[c] = (catMap[c] || 0) + (+t.amount || 0);
+  });
+  return { income, expense, catMap };
+}
+
+// Susun & panggil AI untuk satu paragraf ringkasan laporan bulan ini
+// dibanding bulan sebelumnya. Diam-diam sembunyi (tidak menampilkan error)
+// kalau AI belum dikonfigurasi atau gagal -- ini fitur pelengkap opsional,
+// bukan bagian wajib dari laporan yang sudah tampil lengkap tanpanya.
+window._loadReportAISummary = async function(month, year, income, expense, cats) {
+  const box = document.getElementById('reportAISummaryBox');
+  if (!box) return;
+  const endpointCheck = (typeof window.resolveAIEndpoint === 'function') ? window.resolveAIEndpoint() : { ok: false };
+  if (!endpointCheck.ok) { box.style.display = 'none'; return; }
+  if (income === 0 && expense === 0) { box.style.display = 'none'; return; }
+
+  box.style.display = 'block';
+  box.innerHTML = `<div style="background:var(--accent-lt); border:1.5px solid var(--rule); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:20px; font-size:.78rem; color:var(--ink-muted);">🤖 AI sedang membuat ringkasan bulan ini...</div>`;
+
+  try {
+    let prevMonth = month - 1, prevYear = year;
+    if (prevMonth < 1) { prevMonth = 12; prevYear -= 1; }
+    const prevData = await _fetchMonthCategoryTotalsForAI(prevYear, prevMonth);
+
+    // Bandingkan tiap kategori bulan ini vs bulan lalu, urutkan berdasarkan
+    // perubahan absolut terbesar supaya AI fokus ke pergeseran paling
+    // signifikan (bukan kategori kecil yang kebetulan naik %-nya tinggi).
+    const changes = cats.map(([c, v]) => {
+      const prev = prevData.catMap[c] || 0;
+      const pct = prev > 0 ? Math.round((v - prev) / prev * 100) : null;
+      return { cat: c, current: v, prev, pct, delta: Math.abs(v - prev) };
+    }).sort((a, b) => b.delta - a.delta).slice(0, 6);
+
+    const changeLines = changes.map(c => {
+      const pctTxt = c.pct === null ? (c.current > 0 ? '(baru, tidak ada bulan lalu)' : '') : `${c.pct >= 0 ? '+' : ''}${c.pct}%`;
+      return `  - ${c.cat}: Rp ${c.current.toLocaleString('id-ID')} (bulan lalu Rp ${c.prev.toLocaleString('id-ID')}) ${pctTxt}`;
+    }).join('\n');
+
+    const prompt = `Kamu adalah asisten keuangan pribadi. Buat SATU paragraf ringkasan singkat (maksimal 3-4 kalimat, Bahasa Indonesia, gaya santai tapi jelas, tanpa emoji) tentang laporan keuangan bulan ${monthName(month)} ${year} dibanding bulan sebelumnya.
+
+DATA BULAN INI:
+- Pemasukan: Rp ${income.toLocaleString('id-ID')}
+- Pengeluaran: Rp ${expense.toLocaleString('id-ID')}
+
+DATA BULAN LALU:
+- Pemasukan: Rp ${prevData.income.toLocaleString('id-ID')}
+- Pengeluaran: Rp ${prevData.expense.toLocaleString('id-ID')}
+
+PERUBAHAN PER KATEGORI PALING SIGNIFIKAN (dibanding bulan lalu):
+${changeLines || '  (tidak ada data pembanding bulan lalu)'}
+
+INSTRUKSI:
+1. Sebutkan kategori yang berubah paling signifikan (sebut persentasenya), dan sebutkan kemungkinan penyebab yang UMUM/PLAUSIBEL untuk jenis kategori itu (mis. kategori tagihan listrik naik biasanya karena pemakaian AC/musim panas, kategori pendidikan naik biasanya karena awal semester). WAJIB pakai kata "biasanya"/"kemungkinan" karena kamu tidak benar-benar tahu penyebab pastinya -- JANGAN memastikan penyebab seolah itu fakta.
+2. Kalau tidak ada perubahan signifikan, cukup sampaikan kondisi bulan ini relatif stabil dibanding bulan lalu.
+3. Tulis sebagai satu paragraf mengalir, JANGAN pakai format daftar/poin.
+4. Jangan pakai salam pembuka atau penutup, langsung ke isi ringkasannya.`;
+
+    const { text } = await window.callAIEngine(prompt);
+    box.innerHTML = `<div style="background:var(--accent-lt); border:1.5px solid var(--rule); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:20px; font-size:.78rem; line-height:1.65; color:var(--ink);">
+      <div style="font-weight:700; margin-bottom:6px;">🤖 Ringkasan AI</div>
+      <div>${window.escapeHtml(text)}</div>
+    </div>`;
+  } catch (e) {
+    box.style.display = 'none';
+    if (window.skLog) window.skLog('[Report AI Summary] gagal: ' + e.message);
+  }
+};
 
 // ── Export PDF Profesional ───────────────────────────────────
 async function exportReportAsPDF() {
