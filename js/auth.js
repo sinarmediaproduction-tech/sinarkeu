@@ -254,6 +254,12 @@ window.skSignIn = async function(email, password) {
     }
     window._skAuthUser = data.user ? { id: data.user.id, email: data.user.email } : null;
     window._skInvalidateSessionCache(); // [OPT] jangan pakai cache session lama dari sebelum login ini
+    // [FIX SESI EXPIRED SENYAP] Tandai bahwa device ini PERNAH login akses
+    // Buku Bersama, supaya kalau nanti skRefreshSharedAccess() dapat session
+    // null (refresh token sudah tidak valid), kita bisa bedakan "memang
+    // belum pernah login" (wajar, tidak perlu toast) vs "sudah login tapi
+    // sesinya diam-diam mati" (perlu toast eksplisit, lihat di bawah).
+    if (window._skAuthUser) localStorage.setItem('sk_had_shared_auth', '1');
     await window.skRefreshSharedAccess();
     window.skTouchLastLogin();
     window.showToast && window.showToast('Berhasil login: ' + (window._skAuthUser ? window._skAuthUser.email : ''));
@@ -267,6 +273,10 @@ window.skSignOut = async function() {
     window._skInvalidateSessionCache(); // [OPT] session sudah tidak valid, buang cache-nya
     window._skAuthUser = null;
     window._skSharedRoles = {};
+    // Logout ini disengaja, bukan sesi mati sendiri -- bersihkan marker
+    // supaya kunjungan berikutnya (belum login lagi) tidak dianggap "sesi
+    // expired diam-diam" dan tidak memunculkan toast peringatan yang salah.
+    localStorage.removeItem('sk_had_shared_auth');
     window._skAuthMode = 'login';
     window._skLastLoginTouched = false; // supaya login berikutnya (tab yg sama) tercatat lagi
     if (window.books) {
@@ -455,8 +465,31 @@ window.skRefreshSharedAccess = async function() {
     const client = getSupabaseAuthClient();
     if (!client) return;
     const session = await window.skGetSession();
-    if (!session) { window._skAuthUser = null; window._skSharedRoles = {}; return; }
+    if (!session) {
+        window._skAuthUser = null;
+        window._skSharedRoles = {};
+        // [FIX SESI EXPIRED SENYAP] Sebelumnya baris ini `return` polos --
+        // kalau refresh token Supabase Auth sudah benar-benar tidak valid
+        // lagi (bukan cuma access token dekat kedaluwarsa yang biasanya
+        // auto-refresh), device ini diam-diam kehilangan status "buku ini
+        // shared", skIsSharedBookId() mengira semua buku shared itu privat,
+        // dan transaksi anggota lain tersaring habis dari filter
+        // account_tag -- tanpa notifikasi apa pun, jadi user cuma lihat
+        // transaksi "hilang" tanpa tahu sebabnya. Cuma munculkan toast ini
+        // kalau device ini SEBELUMNYA memang pernah login Buku Bersama
+        // (marker sk_had_shared_auth) -- device yang memang belum pernah
+        // login sama sekali tidak perlu diberi tahu apa-apa, itu kondisi
+        // normal.
+        if (localStorage.getItem('sk_had_shared_auth') === '1') {
+            window.showToast && window.showToast(
+                'Sesi login Buku Bersama sudah berakhir. Login ulang di Setelan supaya transaksi anggota lain muncul kembali.',
+                'warning'
+            );
+        }
+        return;
+    }
     window._skAuthUser = { id: session.user.id, email: session.user.email };
+    localStorage.setItem('sk_had_shared_auth', '1');
     // Sesi Supabase Auth lama berhasil dipulihkan (mis. buka app lagi
     // setelah sebelumnya login) -- ini juga terhitung "login ke aplikasi"
     // dari sudut pandang fitur log terakhir login, walau tidak lewat
