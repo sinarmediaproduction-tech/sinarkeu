@@ -310,6 +310,14 @@ window.refreshFraudAlerts = async function() {
     });
 
     window.renderFraudBanner();
+
+    // Kalau modal daftar alert sedang terbuka (misal user baru saja klik
+    // "Abaikan"), render ulang isinya juga supaya item yang di-dismiss
+    // langsung hilang dari list tanpa perlu tutup-buka modal.
+    const modalEl = document.getElementById('fraudAlertModal');
+    if (modalEl && modalEl.classList.contains('show') && window.renderFraudAlertListContent) {
+        window.renderFraudAlertListContent();
+    }
 };
 
 // ==================== UI ====================
@@ -327,34 +335,41 @@ window.renderFraudBanner = function() {
     banner.style.display = '';
 };
 
-window.openFraudAlertModal = function() {
+// Render ulang isi list di dalam modal saja (tanpa buka/tutup modal).
+// Dipanggil saat modal pertama dibuka, dan juga setiap kali sebuah alert
+// di-dismiss supaya baris yang diabaikan langsung hilang dari tampilan
+// tanpa perlu modal ditutup-buka lagi.
+window.renderFraudAlertListContent = function() {
     const list = document.getElementById('fraudAlertList');
-    if (list) {
-        const flags = window._fraudActiveFlags || [];
-        if (flags.length === 0) {
-            list.innerHTML = '<div style="font-size:.72rem; color:var(--ink-faint); text-align:center; padding:18px 0;">Tidak ada aktivitas mencurigakan saat ini.</div>';
-        } else {
-            const sorted = [...flags].sort((a, b) => (b.level === 'warning') - (a.level === 'warning'));
-            list.innerHTML = sorted.map(f => {
-                const sig = window._fraudSignature(f);
-                const isWarn = f.level === 'warning';
-                const badgeColor = isWarn ? '#dc2626' : '#d97706';
-                return `<div style="border:1.5px solid var(--ink); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:8px;">
-                    <div style="display:flex; justify-content:space-between; gap:8px; align-items:flex-start;">
-                        <span style="font-size:.62rem; font-weight:700; color:#fff; background:${badgeColor}; padding:2px 8px; border-radius:4px; white-space:nowrap;">${isWarn ? 'PERINGATAN' : 'INFO'}</span>
-                        <button type="button" data-sig="${sig}" class="fraud-dismiss-btn" style="font-size:.65rem; background:none; border:1px solid var(--rule); border-radius:4px; padding:2px 8px; cursor:pointer; white-space:nowrap;">Abaikan</button>
-                    </div>
-                    <div style="font-size:.75rem; margin-top:6px; line-height:1.5;">${window.escapeHtml(f.message)}</div>
-                    ${f.timestamp ? `<div style="font-size:.62rem; color:var(--ink-faint); margin-top:4px;">${new Date(f.timestamp).toLocaleString('id-ID')}</div>` : ''}
-                </div>`;
-            }).join('');
-            // Attach event listeners after render
-            list.querySelectorAll('.fraud-dismiss-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    window.dismissFraudAlert(this.getAttribute('data-sig'));
-                });
-            });
-        }
+    if (!list) return;
+    const flags = window._fraudActiveFlags || [];
+    if (flags.length === 0) {
+        list.innerHTML = '<div style="font-size:.72rem; color:var(--ink-faint); text-align:center; padding:18px 0;">Tidak ada aktivitas mencurigakan saat ini.</div>';
+        return;
     }
+    const sorted = [...flags].sort((a, b) => (b.level === 'warning') - (a.level === 'warning'));
+    list.innerHTML = sorted.map(f => {
+        const sig = window._fraudSignature(f);
+        const isWarn = f.level === 'warning';
+        const badgeColor = isWarn ? '#dc2626' : '#d97706';
+        return `<div style="border:1.5px solid var(--ink); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; gap:8px; align-items:flex-start;">
+                <span style="font-size:.62rem; font-weight:700; color:#fff; background:${badgeColor}; padding:2px 8px; border-radius:4px; white-space:nowrap;">${isWarn ? 'PERINGATAN' : 'INFO'}</span>
+                <button type="button" data-sig="${sig}" class="fraud-dismiss-btn" style="font-size:.65rem; background:none; border:1px solid var(--rule); border-radius:4px; padding:2px 8px; cursor:pointer; white-space:nowrap;">Abaikan</button>
+            </div>
+            <div style="font-size:.75rem; margin-top:6px; line-height:1.5;">${window.escapeHtml(f.message)}</div>
+            ${f.timestamp ? `<div style="font-size:.62rem; color:var(--ink-faint); margin-top:4px;">${new Date(f.timestamp).toLocaleString('id-ID')}</div>` : ''}
+        </div>`;
+    }).join('');
+    // Attach event listeners after render
+    list.querySelectorAll('.fraud-dismiss-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            window.dismissFraudAlert(this.getAttribute('data-sig'));
+        });
+    });
+};
+
+window.openFraudAlertModal = function() {
+    window.renderFraudAlertListContent();
     if (window.openModal) window.openModal('fraudAlertModal');
 };
