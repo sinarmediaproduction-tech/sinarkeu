@@ -1,23 +1,25 @@
 // ==================== FOREX & GOLD ====================
 // Free tier emas.maulanar.my.id = 20 hit/bulan, TAPI dibatasi sendiri
-// (EMAS_QUOTA_LIMIT) ke 10/bulan sebagai buffer keamanan supaya tidak
-// pernah mepet/kehabisan kuota upstream -- lihat pengecekan quota SEBELUM
-// fetch di window.fetchGoldPrice di bawah (bukan cuma dicatat/ditampilkan
-// setelah request jalan, tapi benar-benar MEMBLOKIR request begitu limit
-// lokal tercapai).
-// EMAS_CACHE_HOURS=44 -> maksimal 17 panggilan/bulan (floor(31*24/44)+1=17
-// di bulan 31 hari, kasus terburuk -- bulan lebih pendek otomatis lebih
-// sedikit lagi). Sengaja pas di 17, bukan cuma "sekitar", karena refresh
-// manual sudah dihapus (lihat goldRefreshBtn di bawah) jadi ini sekarang
-// SATU-SATUNYA sumber hit ke API, tidak ada lagi buffer kuota yang perlu
-// disisakan untuk tombol refresh. Batas lokal 10/bulan di bawah cache-limit
-// 17/bulan ini, jadi cache 44 jam tetap efektif sebagai pengurang jumlah
-// hit sebelum limit 10 itu sendiri yang menghentikan permintaan lebih lanjut.
-// Harga Antam sendiri biasanya cuma update 1x/hari, jadi cache ~44 jam masih relevan.
-const EMAS_CACHE_HOURS = 44;
+// (EMAS_QUOTA_LIMIT) ke 4/bulan sesuai permintaan (harga Antam cukup
+// dicek ~1x/minggu, tidak perlu lebih sering) -- lihat pengecekan quota
+// SEBELUM fetch di window.fetchGoldPrice di bawah (bukan cuma
+// dicatat/ditampilkan setelah request jalan, tapi benar-benar MEMBLOKIR
+// request begitu limit lokal tercapai).
+// EMAS_CACHE_HOURS=192 (8 hari) -> maksimal 4 panggilan/bulan
+// (floor(31*24/192)+1=4 di bulan 31 hari, kasus terburuk -- bulan lebih
+// pendek otomatis lebih sedikit lagi). EMAS_QUOTA_LIMIT=4 dipasang PAS
+// sama dengan batas alami dari cache ini (bukan cuma buffer di bawahnya
+// seperti sebelumnya) supaya "4x/bulan" ini benar-benar batas keras --
+// bukan cuma kecenderungan dari durasi cache, tapi juga dijaga quota
+// counter kalau suatu saat cache-nya di-clear manual atau API key diganti
+// (yang mereset cache) sebelum bulan berganti.
+// Harga Antam sendiri biasanya cuma update 1x/hari, jadi cache 8 hari
+// jelas jauh lebih longgar dari kebutuhan update harian -- ini murni soal
+// menghemat kuota, bukan soal harga jadi basi.
+const EMAS_CACHE_HOURS = 192;
 const EMAS_CACHE_KEY   = 'sk_emas_price_cache';
 const EMAS_QUOTA_KEY   = 'sk_emas_quota';
-const EMAS_QUOTA_LIMIT = 10;
+const EMAS_QUOTA_LIMIT = 4;
 
 function _emasCurrentMonthKey() {
     const now = new Date();
@@ -223,7 +225,7 @@ window.fetchGoldPrice = async function() {
         // [BATAS KUOTA LOKAL] Sebelum request ini cuma dicatat SETELAH jalan
         // (lewat _emasQuotaTrack di masing-masing cabang respons di bawah) --
         // tidak pernah benar-benar MENCEGAH request baru begitu limit lokal
-        // (EMAS_QUOTA_LIMIT, sekarang 10/bulan) tercapai, cuma menunggu
+        // (EMAS_QUOTA_LIMIT, sekarang 4/bulan) tercapai, cuma menunggu
         // upstream menolak lewat 429. Cek dulu di sini SEBELUM fetch supaya
         // begitu kuota bulan ini habis, tidak ada lagi hit baru ke server --
         // langsung pakai cache lama (walau kadaluarsa) kalau ada, atau jatuh
