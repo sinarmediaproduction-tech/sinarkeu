@@ -169,11 +169,13 @@
         opts = opts || {};
         const el = _ensureCardEl();
         if (!el) return;
+        el.className = 'lock-insight-card status--' + status.color;
         const badgeClass = 'lock-insight-badge lock-insight-badge--' + status.color;
         const aiTag = opts.fromAI ? '<span class="lock-insight-ai-tag" title="Dibantu Analisis AI">AI</span>' : '';
         const bodyText = opts.text || (status.kisi + ' ' + status.nasihat);
         const motivasiText = opts.fromAI ? '' : `<div class="lock-insight-motivasi">&ldquo;${window.escapeHtml(_pickMotivasi())}&rdquo;</div>`;
         el.innerHTML =
+            '<div class="lock-insight-eyebrow">Ringkasan Keuangan</div>' +
             '<div class="lock-insight-head">' +
                 '<span class="' + badgeClass + '">' + window.escapeHtml(status.label) + '</span>' +
                 aiTag +

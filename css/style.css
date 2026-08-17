@@ -3740,54 +3740,92 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
    dihitung dari semua buku -- lihat js/lockscreen-insight.js. Sengaja
    TIDAK pernah menampilkan nominal Rupiah presisi di sini (cuma status
    kualitatif + kalimat template/AI), demi privasi orang yang sekadar lirik
-   layar terkunci. */
+   layar terkunci.
+   [REDESIGN] Sebelumnya kartu ini pakai background var(--paper) polos +
+   border tipis 1.5px -- di layar kunci yang backgroundnya gradasi
+   accent-lt->paper-warm, warnanya nyaris identik dengan var(--paper) di
+   mode terang, jadi kartu terlihat "tidak ke-styling" terutama di hape
+   (viewport sempit membuat porsi gradasi yang terlihat makin dekat ke
+   satu warna solid). Sekarang kartu memakai aksen kop-surat formal: garis
+   tebal di kiri berwarna status (bukan cuma badge kecil) + background
+   tinted var(--{status}-lt) supaya kontras dengan latar layar kunci di
+   ukuran layar manapun, plus eyebrow label huruf kecil berspasi ala memo
+   institusional yang jadi ciri khas desain aplikasi ini. */
 .lock-insight-card {
+  position: relative;
   text-align: left;
   background: var(--paper);
-  border: 1.5px solid var(--rule);
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 16px 18px;
   margin-bottom: 18px;
 }
+.lock-insight-card.status--success { border-left-color: var(--success); background: var(--success-lt); }
+.lock-insight-card.status--info    { border-left-color: var(--info);    background: var(--info-lt); }
+.lock-insight-card.status--warning { border-left-color: var(--warning); background: var(--warning-lt); }
+.lock-insight-card.status--danger  { border-left-color: var(--danger);  background: var(--danger-lt); }
+.lock-insight-card.status--neutral { border-left-color: var(--ink-faint); background: var(--paper-warm); }
+
+.lock-insight-eyebrow {
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 8px;
+}
+
 .lock-insight-head {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 .lock-insight-badge {
   display: inline-block;
-  font-size: .62rem;
-  font-weight: 700;
-  letter-spacing: .02em;
-  text-transform: uppercase;
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
+  font-family: var(--font-display);
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  padding: 0;
+  border-radius: 0;
+  background: none !important;
 }
-.lock-insight-badge--success { background: var(--success-lt); color: var(--success); }
-.lock-insight-badge--info    { background: var(--info-lt);    color: var(--info); }
-.lock-insight-badge--warning { background: var(--warning-lt); color: var(--warning); }
-.lock-insight-badge--danger  { background: var(--danger-lt);  color: var(--danger); }
-.lock-insight-badge--neutral { background: var(--rule);       color: var(--ink-muted); }
+.lock-insight-badge--success { color: var(--success); }
+.lock-insight-badge--info    { color: var(--info); }
+.lock-insight-badge--warning { color: var(--warning); }
+.lock-insight-badge--danger  { color: var(--danger); }
+.lock-insight-badge--neutral { color: var(--ink-muted); }
 .lock-insight-ai-tag {
+  font-family: var(--font-mono);
   font-size: .58rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--ink-faint);
   border: 1px solid var(--rule);
   border-radius: var(--radius-sm);
-  padding: 1px 5px;
+  padding: 1px 6px;
+  flex-shrink: 0;
 }
 .lock-insight-body {
-  font-size: .74rem;
-  line-height: 1.55;
+  font-size: .76rem;
+  line-height: 1.6;
   color: var(--ink);
 }
 .lock-insight-motivasi {
   font-size: .68rem;
   font-style: italic;
-  color: var(--ink-faint);
-  margin-top: 6px;
-  line-height: 1.5;
+  color: var(--ink-muted);
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+  line-height: 1.55;
+}
+
+@media (max-width: 480px) {
+  .lock-insight-card { padding: 14px 15px; margin-bottom: 14px; }
+  .lock-insight-body { font-size: .74rem; }
 }
 
 .lock-account-picker {
