@@ -105,15 +105,15 @@
 
 <!-- ===== MANUAL PENGGUNA MODAL ===== -->
 <div id="manualModal" class="modal" style="z-index:9999;">
-    <div class="modal-content report" style="max-width:780px; max-height:90vh; padding:20px;">
+    <div class="modal-content report" style="max-width:780px; max-height:90vh; padding:var(--space-20);">
         <div class="modal-header">
             <h3>Panduan Lengkap Sinarkeu</h3>
             <button class="modal-close" onclick="closeModal('manualModal')">×</button>
         </div>
-        <div style="overflow-y:auto; max-height:70vh; padding-right:6px; font-size:.82rem; line-height:1.7; color:var(--ink);">
+        <div style="overflow-y:auto; max-height:70vh; padding-right:6px; font-size: var(--text-base); line-height:1.7; color:var(--ink);">
             <h4 style="margin-top:0;">Selamat datang di Sinarkeu!</h4>
             <p>Aplikasi ini adalah asisten keuangan &amp; rumah tangga multi‑akun: mulai dari pencatatan keuangan (buku kas, anggaran, laporan), sampai Daftar Belanja dengan harga komoditas terkini, Daftar Menu (jadwal masak mingguan dengan estimasi belanja), dan pengingat stok bahan pokok — semuanya bisa disinkronkan ke database Supabase milik Anda sendiri. Kredensial koneksi dan seluruh data pengaturan (anggaran, konfigurasi Telegram, dll.) dienkripsi dengan password pribadi Anda sebelum dikirim ke cloud.</p>
-            <hr style="margin:14px 0;">
+            <hr style="margin:var(--space-14) 0;">
 
             <h5>1. Setup Awal</h5>
             <ul>
@@ -124,9 +124,9 @@
 
             <h5>1a. Setup Database Supabase (Sekali Saja, untuk Akun/Project Baru)</h5>
             <p>Sebelum mengisi Supabase URL &amp; Anon Key di atas, siapkan dulu tabel-tabelnya: buat project Supabase baru (kosong), buka <strong>SQL Editor → New query</strong>, tempel skrip di bawah ini, lalu klik <strong>Run</strong>. Setelah berhasil, langsung isi Project URL &amp; Anon Key seperti biasa — tidak ada langkah tambahan lain di dashboard Supabase.</p>
-            <div style="position:relative; margin-bottom:8px;">
+            <div style="position:relative; margin-bottom:var(--space-8);">
                 <button class="btn-mini" style="position:absolute; top:8px; right:8px; background:var(--success); color:var(--ink-inv); border:1px solid color-mix(in srgb, var(--success) 75%, black);" onclick="window.copySupabaseSetupSql()">Copy SQL</button>
-                <pre id="supabaseSetupSqlBlock" style="background:#0d1117; color:#c9d1d9; font-size:.66rem; line-height:1.55; padding:14px; padding-right:80px; border-radius: var(--radius-sm); overflow-x:auto; white-space:pre; max-height:340px; margin:0;">-- ============================================================
+                <pre id="supabaseSetupSqlBlock" style="background:#0d1117; color:#c9d1d9; font-size: var(--text-xs); line-height:1.55; padding:var(--space-14); padding-right:80px; border-radius: var(--radius-sm); overflow-x:auto; white-space:pre; max-height:340px; margin:0;">-- ============================================================
 -- SINARKEU — SETUP SUPABASE UNTUK AKUN/PROJECT BARU
 -- ============================================================
 -- Jalankan SELURUH file ini SEKALI di Supabase Dashboard &gt;
@@ -297,13 +297,13 @@ using (bucket_id = 'attachments');
 -- tidak perlu langkah manual lain di dashboard Supabase.
 -- ============================================================</pre>
             </div>
-            <p style="color:var(--ink-faint); font-size:.7rem;">Catatan: skrip ini sengaja <strong>tidak</strong> mengaktifkan Row Level Security (RLS) karena aplikasi ini tidak memakai Supabase Auth — keamanan data mengandalkan enkripsi AES‑GCM di sisi browser dengan password akun Anda, bukan policy RLS. Jaga URL &amp; Anon Key project agar tidak tersebar ke publik.</p>
+            <p style="color:var(--ink-faint); font-size: var(--text-xs);">Catatan: skrip ini sengaja <strong>tidak</strong> mengaktifkan Row Level Security (RLS) karena aplikasi ini tidak memakai Supabase Auth — keamanan data mengandalkan enkripsi AES‑GCM di sisi browser dengan password akun Anda, bukan policy RLS. Jaga URL &amp; Anon Key project agar tidak tersebar ke publik.</p>
 
             <h5>1b. Migrasi untuk Project Lama (Sudah Pernah Setup Sebelumnya)</h5>
             <p>Kalau project Supabase Anda sudah dipakai <strong>sebelum</strong> kolom <code>account_tag</code> ditambahkan ke aplikasi, tabel <code>settings</code> bisa saja masih menyimpan constraint versi lama (misalnya <code>settings_book_id_key_key</code>, <code>settings_pkey</code>, atau <code>settings_book_id_key_unique</code> — semuanya cuma di kolom <code>book_id, key</code> tanpa <code>account_tag</code>). Ini menyebabkan error <code>409 Conflict</code> / <code>duplicate key value violates unique constraint</code> saat menyimpan data (misalnya anggaran) dari akun/device baru. Jalankan skrip ini <strong>sekali</strong> di SQL Editor untuk membersihkan constraint lama tersebut — aman dijalankan berkali-kali dan tidak menghapus data.</p>
-            <div style="position:relative; margin-bottom:8px;">
+            <div style="position:relative; margin-bottom:var(--space-8);">
                 <button class="btn-mini" style="position:absolute; top:8px; right:8px; background:var(--success); color:var(--ink-inv); border:1px solid color-mix(in srgb, var(--success) 75%, black);" onclick="window.copySqlBlock('settingsMigrationSqlBlock')">Copy SQL</button>
-                <pre id="settingsMigrationSqlBlock" style="background:#0d1117; color:#c9d1d9; font-size:.66rem; line-height:1.55; padding:14px; padding-right:80px; border-radius: var(--radius-sm); overflow-x:auto; white-space:pre; max-height:340px; margin:0;">-- ============================================================
+                <pre id="settingsMigrationSqlBlock" style="background:#0d1117; color:#c9d1d9; font-size: var(--text-xs); line-height:1.55; padding:var(--space-14); padding-right:80px; border-radius: var(--radius-sm); overflow-x:auto; white-space:pre; max-height:340px; margin:0;">-- ============================================================
 -- SINARKEU — MIGRASI CONSTRAINT `settings` UNTUK PROJECT LAMA
 -- ============================================================
 -- Jalankan SEKALI di Supabase SQL Editor kalau muncul error
@@ -325,7 +325,7 @@ drop index if exists public.settings_book_id_key_unique;
 alter table public.settings
     add constraint settings_unique_row unique (book_id, key, account_tag);</pre>
             </div>
-            <p style="color:var(--ink-faint); font-size:.7rem;">Skrip ini aman dijalankan berkali-kali (idempotent) dan tidak menghapus data apa pun — hanya mengganti definisi constraint di tabel <code>settings</code>.</p>
+            <p style="color:var(--ink-faint); font-size: var(--text-xs);">Skrip ini aman dijalankan berkali-kali (idempotent) dan tidak menghapus data apa pun — hanya mengganti definisi constraint di tabel <code>settings</code>.</p>
 
             <h5>2. Manajemen Akun</h5>
             <ul>
@@ -418,11 +418,11 @@ alter table public.settings
                 <li>Tombol <strong>"Sinkronisasi"</strong> di header memicu sinkronisasi penuh manual (pull semua buku &amp; setelan).</li>
             </ul>
 
-            <hr style="margin:14px 0;">
+            <hr style="margin:var(--space-14) 0;">
             <p><strong>Tips:</strong> Gunakan password yang kuat dan simpan di tempat aman. Manfaatkan fitur notifikasi Telegram agar tidak ketinggalan perubahan.</p>
-            <p style="color:var(--ink-faint); font-size:.7rem;">Sinarkeu – v1.0 (Multi Akun &amp; Buku Kas)</p>
+            <p style="color:var(--ink-faint); font-size: var(--text-xs);">Sinarkeu – v1.0 (Multi Akun &amp; Buku Kas)</p>
         </div>
-        <div class="modal-footer" style="border-top:1px solid var(--rule); padding-top:12px; margin-top:12px;">
+        <div class="modal-footer" style="border-top:1px solid var(--rule); padding-top:12px; margin-top:var(--space-12);">
             <button class="btn btn-secondary" onclick="closeModal('manualModal')">Tutup Panduan</button>
         </div>
     </div>
@@ -553,7 +553,7 @@ alter table public.settings
             <!-- [UI] Disembunyikan dari tampilan atas sesuai permintaan (bukan dihapus dari DOM):
                  report.js (baris 62 & 201) dan openMobileDrawer() di app.js masih membaca
                  textContent elemen ini untuk nama akun di laporan & label drawer mobile. -->
-            <span id="activeAccountLabel" style="display:none;font-size:.7rem;font-weight:700;color:var(--ink);padding:4px 10px;background:var(--info-lt);border-radius: var(--radius-sm);"></span>
+            <span id="activeAccountLabel" style="display:none;font-size: var(--text-xs);font-weight:700;color:var(--ink);padding:var(--space-4) var(--space-10);background:var(--info-lt);border-radius: var(--radius-sm);"></span>
             <div id="syncStatusWrapper" class="sync-status-container offline">
                 <span id="syncStatusTag" class="sync-status-badge">CLOUD OFF</span>
                 <span id="deviceIdDisplay" class="device-id-badge">------</span>
@@ -586,15 +586,15 @@ alter table public.settings
     </div>
 
     <!-- ===== PAYMENT REMINDER NOTIFICATION BANNER ===== -->
-    <div id="paymentReminderBanner" class="pr-banner" style="display:none; border-radius: var(--radius); padding:12px 16px; margin-bottom:10px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-            <div style="display:flex; align-items:center; gap:10px;">
+    <div id="paymentReminderBanner" class="pr-banner" style="display:none; border-radius: var(--radius); padding:var(--space-12) var(--space-16); margin-bottom:var(--space-10);">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:var(--space-10); flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:var(--space-10);">
                 <div>
-                    <div class="pr-banner-title" style="font-size:.78rem; font-weight:700;" data-i18n="payment_reminder_banner">Pengingat Pembayaran</div>
-                    <div id="paymentReminderBannerText" class="pr-banner-text" style="font-size:.72rem; line-height:1.6;"></div>
+                    <div class="pr-banner-title" style="font-size: var(--text-sm); font-weight:700;" data-i18n="payment_reminder_banner">Pengingat Pembayaran</div>
+                    <div id="paymentReminderBannerText" class="pr-banner-text" style="font-size: var(--text-xs); line-height:1.6;"></div>
                 </div>
             </div>
-            <button onclick="openPaymentReminderModal()" style="font-size:.7rem; padding:5px 12px; background:var(--warning); color:#fff; border:none; border-radius: var(--radius-sm); cursor:pointer; font-weight:600; white-space:nowrap;" data-i18n="see_all">Lihat Semua</button>
+            <button onclick="openPaymentReminderModal()" style="font-size: var(--text-xs); padding:var(--space-5) var(--space-12); background:var(--warning); color:#fff; border:none; border-radius: var(--radius-sm); cursor:pointer; font-weight:600; white-space:nowrap;" data-i18n="see_all">Lihat Semua</button>
         </div>
     </div>
 
@@ -602,13 +602,13 @@ alter table public.settings
     <!-- Diisi & ditampilkan oleh js/fraud-detection.js (window.renderFraudBanner),
          mengikuti pola paymentReminderBanner di atas -- tersembunyi kalau tidak
          ada flag aktif, tidak pernah memblokir apa pun di dashboard. -->
-    <div id="fraudAlertBanner" class="pr-banner" style="display:none; border-radius: var(--radius); padding:12px 16px; margin-bottom:10px; background:#fff4f4; border:1.5px solid #dc2626;">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+    <div id="fraudAlertBanner" class="pr-banner" style="display:none; border-radius: var(--radius); padding:var(--space-12) var(--space-16); margin-bottom:var(--space-10); background:#fff4f4; border:1.5px solid #dc2626;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:var(--space-10); flex-wrap:wrap;">
             <div>
-                <div style="font-size:.78rem; font-weight:700; color:#dc2626;">⚠️ Deteksi Keuangan Tidak Wajar</div>
-                <div id="fraudAlertBannerText" style="font-size:.72rem; line-height:1.6; color:var(--ink);"></div>
+                <div style="font-size: var(--text-sm); font-weight:700; color:#dc2626;">⚠️ Deteksi Keuangan Tidak Wajar</div>
+                <div id="fraudAlertBannerText" style="font-size: var(--text-xs); line-height:1.6; color:var(--ink);"></div>
             </div>
-            <button onclick="window.openFraudAlertModal()" style="font-size:.7rem; padding:5px 12px; background:#dc2626; color:#fff; border:none; border-radius: var(--radius-sm); cursor:pointer; font-weight:600; white-space:nowrap;">Lihat Semua</button>
+            <button onclick="window.openFraudAlertModal()" style="font-size: var(--text-xs); padding:var(--space-5) var(--space-12); background:#dc2626; color:#fff; border:none; border-radius: var(--radius-sm); cursor:pointer; font-weight:600; white-space:nowrap;">Lihat Semua</button>
         </div>
     </div>
 
@@ -637,58 +637,58 @@ alter table public.settings
         <div class="stat-card" id="forexCard">
             <div class="stat-label" data-i18n="usd_rate">Kurs USD/IDR</div>
             <div class="stat-value" id="forexRate">Memuat...</div>
-            <div style="font-size:.6rem; color:var(--ink-faint); margin-top:4px;" id="forexSource"></div>
+            <div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:var(--space-4);" id="forexSource"></div>
         </div>
         <div class="stat-card" id="goldCard">
             <div class="stat-label" data-i18n="gold_per_gram">Emas / gram</div>
             <div class="stat-value" id="goldPrice">Memuat...</div>
-            <div style="font-size:.6rem; color:var(--ink-faint); margin-top:4px;">
+            <div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:var(--space-4);">
                 <span id="goldSource"></span>
             </div>
-            <div id="goldValueRow" style="display:none; margin-top:6px; padding-top:6px; border-top:1px dashed var(--rule);">
-                <div style="font-size:.6rem; color:var(--ink-muted); font-weight:600;" id="goldValueLabel"></div>
-                <div style="font-size:.85rem; font-weight:700; color:var(--ink);" id="goldValue"></div>
+            <div id="goldValueRow" style="display:none; margin-top:var(--space-6); padding-top:6px; border-top:1px dashed var(--rule);">
+                <div style="font-size: var(--text-2xs); color:var(--ink-muted); font-weight:600;" id="goldValueLabel"></div>
+                <div style="font-size: var(--text-base); font-weight:700; color:var(--ink);" id="goldValue"></div>
             </div>
         </div>
     </div>
 
     <!-- ===== FINANCIAL PLANNING CARDS ===== -->
-    <div class="stats-grid" style="margin-top:10px;">
+    <div class="stats-grid" style="margin-top:var(--space-10);">
         <div class="stat-card" id="cardAnggaranBulanan" style="cursor:pointer;" onclick="window.openDefaultBudgetModal()" title="Klik untuk atur anggaran bulanan">
-            <div class="stat-label"><span data-i18n="monthly_budget">Anggaran Bulanan</span> <span style="font-size:.6rem; background:var(--rule); color:var(--ink-muted); padding:1px 6px; border-radius: var(--radius-sm); margin-left:4px;" data-i18n="set">Atur</span></div>
+            <div class="stat-label"><span data-i18n="monthly_budget">Anggaran Bulanan</span> <span style="font-size: var(--text-2xs); background:var(--rule); color:var(--ink-muted); padding:var(--space-1) var(--space-6); border-radius: var(--radius-sm); margin-left:var(--space-4);" data-i18n="set">Atur</span></div>
             <div class="stat-value" id="fcAnggaranBulanan">Rp 0</div>
-            <div style="font-size:.65rem; color:var(--ink-faint); margin-top:4px;" data-i18n="monthly_template">Template per kategori, berlaku tiap bulan</div>
+            <div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:var(--space-4);" data-i18n="monthly_template">Template per kategori, berlaku tiap bulan</div>
         </div>
         <div class="stat-card" id="cardAnggaranTahunan" style="cursor:pointer;" onclick="openAnnualBudgetModal()" title="Klik untuk atur anggaran tahunan">
-            <div class="stat-label"><span data-i18n="annual_budget">Anggaran Tahunan</span> <span style="font-size:.6rem; background:var(--rule); color:var(--ink-muted); padding:1px 6px; border-radius: var(--radius-sm); margin-left:4px;" data-i18n="set">Atur</span></div>
+            <div class="stat-label"><span data-i18n="annual_budget">Anggaran Tahunan</span> <span style="font-size: var(--text-2xs); background:var(--rule); color:var(--ink-muted); padding:var(--space-1) var(--space-6); border-radius: var(--radius-sm); margin-left:var(--space-4);" data-i18n="set">Atur</span></div>
             <div class="stat-value" id="fcAnggaranTahunan">Rp 0</div>
-            <div style="font-size:.65rem; color:var(--ink-faint); margin-top:4px;" data-i18n="annual_costs">Biaya tahunan: hari raya, pajak, dll</div>
+            <div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:var(--space-4);" data-i18n="annual_costs">Biaya tahunan: hari raya, pajak, dll</div>
         </div>
         <div class="stat-card" id="cardDanaDarurat" style="cursor:pointer;" onclick="window.openEmergencyFundModal()" title="Klik untuk atur target dana darurat">
-            <div class="stat-label"><span data-i18n="emergency_fund">Dana Darurat</span> <span style="font-size:.6rem; background:var(--rule); color:var(--ink-muted); padding:1px 6px; border-radius: var(--radius-sm); margin-left:4px;" data-i18n="set">Atur</span></div>
+            <div class="stat-label"><span data-i18n="emergency_fund">Dana Darurat</span> <span style="font-size: var(--text-2xs); background:var(--rule); color:var(--ink-muted); padding:var(--space-1) var(--space-6); border-radius: var(--radius-sm); margin-left:var(--space-4);" data-i18n="set">Atur</span></div>
             <div class="stat-value" id="fcDanaDarurat">Rp 0</div>
-            <div style="font-size:.65rem; color:var(--ink-faint); margin-top:4px;" id="fcDanaDaruratNote" data-i18n="emergency_ideal">12× anggaran bulanan (target ideal)</div>
+            <div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:var(--space-4);" id="fcDanaDaruratNote" data-i18n="emergency_ideal">12× anggaran bulanan (target ideal)</div>
         </div>
         <!-- ===== CARD CADANGAN WAJIB ===== -->
         <div class="stat-card" id="cardKebutuhanSetahun">
             <div class="stat-label" data-i18n="annual_needs">Cadangan Wajib</div>
             <div class="stat-value" id="fcKebutuhanSetahun">Rp 0</div>
-            <div style="font-size:.65rem; color:var(--ink-faint); margin-top:4px;" data-i18n="annual_need_desc">Dana darurat + anggaran tahunan</div>
-            <div id="fcKSGapInfo" style="display:none; margin-top:7px; padding:4px 8px; border-radius: var(--radius-sm); font-size:.65rem; font-weight:600; line-height:1.4; color:var(--ink-faint);"></div>
+            <div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:var(--space-4);" data-i18n="annual_need_desc">Dana darurat + anggaran tahunan</div>
+            <div id="fcKSGapInfo" style="display:none; margin-top:var(--space-7); padding:var(--space-4) var(--space-8); border-radius: var(--radius-sm); font-size: var(--text-2xs); font-weight:600; line-height:1.4; color:var(--ink-faint);"></div>
         </div>
         <!-- ===== CARD FASE KEHIDUPAN ===== -->
         <div class="stat-card" id="cardFaseKehidupan" style="cursor:pointer;" onclick="window.openFaseKehidupanModal()" title="Klik untuk atur fase kehidupan">
-            <div class="stat-label"><span data-i18n="life_phase">Fase Kehidupan</span> <span style="font-size:.6rem; background:var(--rule); color:var(--ink-muted); padding:1px 6px; border-radius: var(--radius-sm); margin-left:4px;" data-i18n="set">Atur</span></div>
-            <div style="font-size:1rem; font-weight:700; margin-top:4px; min-height:20px;" id="fcFaseNama" data-i18n="life_phase_not_set">Belum diatur</div>
-            <div style="font-size:.62rem; color:var(--ink-faint); margin-top:4px; line-height:1.5;" id="fcFaseDesc" data-i18n="life_phase_click">Klik untuk mengatur fase kehidupan pernikahan Anda</div>
-            <div style="margin-top:8px;">
-                <button onclick="event.stopPropagation(); window.runFaseAIAnalysis()" id="faseAIBtn" class="btn" style="font-size:.65rem; padding:3px 10px; display:none;">Analisis Sinarkeu</button>
+            <div class="stat-label"><span data-i18n="life_phase">Fase Kehidupan</span> <span style="font-size: var(--text-2xs); background:var(--rule); color:var(--ink-muted); padding:var(--space-1) var(--space-6); border-radius: var(--radius-sm); margin-left:var(--space-4);" data-i18n="set">Atur</span></div>
+            <div style="font-size: var(--text-lg); font-weight:700; margin-top:var(--space-4); min-height:20px;" id="fcFaseNama" data-i18n="life_phase_not_set">Belum diatur</div>
+            <div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:var(--space-4); line-height:1.5;" id="fcFaseDesc" data-i18n="life_phase_click">Klik untuk mengatur fase kehidupan pernikahan Anda</div>
+            <div style="margin-top:var(--space-8);">
+                <button onclick="event.stopPropagation(); window.runFaseAIAnalysis()" id="faseAIBtn" class="btn" style="font-size: var(--text-2xs); padding:var(--space-3) var(--space-10); display:none;">Analisis Sinarkeu</button>
             </div>
         </div>
         <div class="stat-card" id="cardDanaSalingJaga">
             <div class="stat-label" data-i18n="mutual_fund">Dana Saling Jaga</div>
             <div class="stat-value" id="fcDanaSalingJaga">Rp 0</div>
-            <div style="font-size:.65rem; color:var(--ink-faint); margin-top:4px;" id="fcDSJNote" data-i18n="dsj_note">30% dari saldo setelah dana darurat</div>
+            <div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:var(--space-4);" id="fcDSJNote" data-i18n="dsj_note">30% dari saldo setelah dana darurat</div>
         </div>
     </div>
 
@@ -719,13 +719,13 @@ alter table public.settings
             <div class="budget-mini-progress">
                 <div class="budget-mini-progress-fill" id="budgetProgressFill"></div>
             </div>
-            <span id="budgetProgressPct" style="font-size:.75rem; font-weight:700; color:var(--ink-muted); min-width:36px;">0%</span>
+            <span id="budgetProgressPct" style="font-size: var(--text-sm); font-weight:700; color:var(--ink-muted); min-width:36px;">0%</span>
         </div>
         <div class="budget-mini-progress-row" style="display:none;">
             <div class="budget-mini-progress">
                 <div class="budget-mini-progress-fill" id="budgetProgressFill2"></div>
             </div>
-            <span id="budgetProgressPct2" style="font-size:.78rem; font-weight:700; color:var(--ink-muted); min-width:38px; text-align:right;">0%</span>
+            <span id="budgetProgressPct2" style="font-size: var(--text-sm); font-weight:700; color:var(--ink-muted); min-width:38px; text-align:right;">0%</span>
         </div>
         <div class="budget-mini-actions">
             <button class="btn-icon" id="anggaranBtn" onclick="openBudgetModal()" data-i18n="budget_btn">Anggarkan</button>
@@ -737,23 +737,23 @@ alter table public.settings
     <!-- ===== FORECAST CARD ===== -->
     <div class="forecast-card" id="forecastCard">
         <div class="fc-header">
-            <div style="display:flex; align-items:center; gap:8px;">
+            <div style="display:flex; align-items:center; gap:var(--space-8);">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.6;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                 <span data-i18n="financial_estimate">Estimasi Keuangan</span>
             </div>
         </div>
-        <div style="padding:18px 0; text-align:center; color:var(--ink-faint); font-size:.72rem;">Memuat data...</div>
+        <div style="padding:var(--space-18) 0; text-align:center; color:var(--ink-faint); font-size: var(--text-xs);">Memuat data...</div>
     </div>
 
     <div class="expense-chart-section" id="expenseChartSection">
         <div class="expense-chart-header" onclick="toggleExpenseChart()" style="cursor:pointer; user-select:none;">
             <span class="expense-chart-title" data-i18n="expense_by_category"> Pengeluaran per Kategori</span>
-            <div style="display:flex; align-items:center; gap:10px;">
+            <div style="display:flex; align-items:center; gap:var(--space-10);">
                 <div class="expense-chart-toggle" id="expenseChartToggleButtons" style="display:none;" onclick="event.stopPropagation()">
                     <button id="expChartBtnAll" class="active" onclick="setExpenseChartMode('all')" data-i18n="chart_all">Semua</button>
                     <button id="expChartBtnMonth" onclick="setExpenseChartMode('month')" data-i18n="chart_month">Bulan Ini</button>
                 </div>
-                <span id="expenseChartArrow" style="font-size:.8rem; color:var(--ink-faint);" data-i18n="show">▼ Tampilkan</span>
+                <span id="expenseChartArrow" style="font-size: var(--text-base); color:var(--ink-faint);" data-i18n="show">▼ Tampilkan</span>
             </div>
         </div>
         <div class="expense-chart-body" id="expenseChartBody" style="display:none;">
@@ -805,7 +805,7 @@ alter table public.settings
                  di render.js yang toggle #paginationWrap vs #transactionCount.
                  Sebelumnya keduanya tampil sekaligus di baris terpisah
                  (dengan border+margin sendiri), duplikat & boros ruang. -->
-            <div id="paginationWrap" style="display:none; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div id="paginationWrap" style="display:none; align-items:center; flex-wrap:wrap; gap:var(--space-12);">
                 <div class="pagination-info" id="paginationInfo"></div>
                 <div class="pagination-controls" id="paginationControls"></div>
             </div>
@@ -816,9 +816,9 @@ alter table public.settings
             <button class="btn" onclick="toggleAuditLogInline()"><span data-i18n="audit_log">Log Audit</span> <span id="auditLogInlineArrow">▼</span></button>
         </div>
     </div>
-    <div id="auditLogInlineBody" style="display:none; padding:10px 14px; border:1.5px solid var(--ink); border-radius: var(--radius-sm); margin-bottom:12px; background:#fff;">
-        <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
-            <button class="btn" style="padding:4px 12px; font-size:.7rem;" onclick="refreshLogsFromCloud()">Refresh</button>
+    <div id="auditLogInlineBody" style="display:none; padding:var(--space-10) var(--space-14); border:1.5px solid var(--ink); border-radius: var(--radius-sm); margin-bottom:var(--space-12); background:#fff;">
+        <div style="display:flex; justify-content:flex-end; margin-bottom:var(--space-8);">
+            <button class="btn" style="padding:var(--space-4) var(--space-12); font-size: var(--text-xs);" onclick="refreshLogsFromCloud()">Refresh</button>
         </div>
         <div id="logSummaryArea" class="log-container-box">Memuat log...</div>
     </div>
@@ -839,9 +839,9 @@ alter table public.settings
             <div class="form-group" id="incomeCategoryGroup"><label>Kategori</label><select id="txIncomeCategory" class="form-control"><option value="">-- Pilih Kategori --</option><option value="Gaji">Gaji</option><option value="Freelance">Freelance</option><option value="Bonus">Bonus</option><option value="THR">THR</option><option value="Hasil Investasi">Hasil Investasi</option><option value="Jual Aset">Jual Aset</option><option value="Hadiah">Hadiah</option><option value="Penjualan">Penjualan</option><option value="Jasa">Jasa</option><option value="Uang Muka">Uang Muka</option><option value="Pelunasan Piutang">Pelunasan Piutang</option><option value="Komisi">Komisi</option><option value="Pinjaman Diterima">Pinjaman Diterima</option><option value="Pengembalian Dana">Pengembalian Dana</option><option value="Subsidi &amp; Bantuan">Subsidi &amp; Bantuan</option><option value="Lainnya">Lainnya</option></select></div>
             <div class="form-group" id="categoryGroup" style="display:none"><label>Kategori</label><select id="txCategory" class="form-control"><option value="">-- Pilih Kategori --</option><option value="Jajan">Jajan</option><option value="Tagihan Bulanan">Tagihan Bulanan</option><option value="Belanja Harian">Belanja Harian</option><option value="Kesehatan">Kesehatan</option><option value="Hiburan">Hiburan</option><option value="Pendidikan">Pendidikan</option><option value="Transport">Transport</option><option value="Investasi">Investasi</option><option value="Perawatan Tubuh">Perawatan Tubuh</option><option value="Bumbu Dapur">Bumbu Dapur</option><option value="Kebersihan Rumah">Kebersihan Rumah</option><option value="Iuran Warga">Iuran Warga</option><option value="Pertanian">Pertanian</option><option value="Sedekah">Sedekah</option><option value="Sumbangan">Sumbangan</option><option value="Pulsa">Pulsa</option><option value="Pakan Peliharaan">Pakan Peliharaan</option><option value="Kosmetik">Kosmetik</option><option value="Token Listrik">Token Listrik</option><option value="Gas Melon">Gas Melon</option><option value="Internet">Internet</option></select></div>
             <div class="form-group"><label>Deskripsi</label><input type="text" id="txDesc" class="form-control" required></div>
-            <div id="txCategoryAiSuggest" style="display:none; font-size:.68rem; color:#5C4E72; margin:-6px 0 12px;"></div>
+            <div id="txCategoryAiSuggest" style="display:none; font-size: var(--text-xs); color:#5C4E72; margin:-6px 0 var(--space-12);"></div>
             <div class="form-group"><label>Jumlah (Rp)</label><input type="text" id="txAmount" class="form-control" oninput="formatRupiah(this)" required></div>
-            <div id="txDescAiSuggest" style="display:none; font-size:.68rem; color:#5C4E72; margin:-6px 0 12px;"></div>
+            <div id="txDescAiSuggest" style="display:none; font-size: var(--text-xs); color:#5C4E72; margin:-6px 0 var(--space-12);"></div>
             <div class="form-group"><label>Lampiran Nota</label><input type="file" id="txAttachment" accept="image/*" class="form-control" onchange="previewAttachment(this)"><img id="attachmentPreview" class="attachment-preview"></div>
             <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('addModal')">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div>
         </form>
@@ -859,10 +859,10 @@ alter table public.settings
             <div class="form-group" id="editIncomeCategoryGroup" style="display:none"><label>Kategori</label><select id="editTxIncomeCategory" class="form-control"><option value="">-- Pilih Kategori --</option><option value="Gaji">Gaji</option><option value="Freelance">Freelance</option><option value="Bonus">Bonus</option><option value="THR">THR</option><option value="Hasil Investasi">Hasil Investasi</option><option value="Jual Aset">Jual Aset</option><option value="Hadiah">Hadiah</option><option value="Penjualan">Penjualan</option><option value="Jasa">Jasa</option><option value="Uang Muka">Uang Muka</option><option value="Pelunasan Piutang">Pelunasan Piutang</option><option value="Komisi">Komisi</option><option value="Pinjaman Diterima">Pinjaman Diterima</option><option value="Pengembalian Dana">Pengembalian Dana</option><option value="Subsidi &amp; Bantuan">Subsidi &amp; Bantuan</option><option value="Lainnya">Lainnya</option></select></div>
             <div class="form-group" id="editCategoryGroup"><label>Kategori</label><select id="editTxCategory" class="form-control"><option value="">-- Pilih Kategori --</option><option value="Jajan">Jajan</option><option value="Tagihan Bulanan">Tagihan Bulanan</option><option value="Belanja Harian">Belanja Harian</option><option value="Kesehatan">Kesehatan</option><option value="Hiburan">Hiburan</option><option value="Pendidikan">Pendidikan</option><option value="Transport">Transport</option><option value="Investasi">Investasi</option><option value="Perawatan Tubuh">Perawatan Tubuh</option><option value="Bumbu Dapur">Bumbu Dapur</option><option value="Kebersihan Rumah">Kebersihan Rumah</option><option value="Iuran Warga">Iuran Warga</option><option value="Pertanian">Pertanian</option><option value="Sedekah">Sedekah</option><option value="Sumbangan">Sumbangan</option><option value="Pulsa">Pulsa</option><option value="Pakan Peliharaan">Pakan Peliharaan</option><option value="Kosmetik">Kosmetik</option><option value="Token Listrik">Token Listrik</option><option value="Gas Melon">Gas Melon</option><option value="Internet">Internet</option></select></div>
             <div class="form-group"><label>Deskripsi</label><input type="text" id="editTxDesc" class="form-control" required></div>
-            <div id="editTxCategoryAiSuggest" style="display:none; font-size:.68rem; color:#5C4E72; margin:-6px 0 12px;"></div>
+            <div id="editTxCategoryAiSuggest" style="display:none; font-size: var(--text-xs); color:#5C4E72; margin:-6px 0 var(--space-12);"></div>
             <div class="form-group"><label>Jumlah (Rp)</label><input type="text" id="editTxAmount" class="form-control" oninput="formatRupiah(this)" required></div>
-            <div id="editTxDescAiSuggest" style="display:none; font-size:.68rem; color:#5C4E72; margin:-6px 0 12px;"></div>
-            <div class="form-group"><label>Lampiran Nota</label><input type="file" id="editTxAttachment" accept="image/*" class="form-control" onchange="previewEditAttachment(this)"><div id="editAttachmentInfo" style="font-size:.65rem; color:var(--ink-muted); margin-top:4px;"></div><img id="editAttachmentPreview" class="attachment-preview"></div>
+            <div id="editTxDescAiSuggest" style="display:none; font-size: var(--text-xs); color:#5C4E72; margin:-6px 0 var(--space-12);"></div>
+            <div class="form-group"><label>Lampiran Nota</label><input type="file" id="editTxAttachment" accept="image/*" class="form-control" onchange="previewEditAttachment(this)"><div id="editAttachmentInfo" style="font-size: var(--text-2xs); color:var(--ink-muted); margin-top:var(--space-4);"></div><img id="editAttachmentPreview" class="attachment-preview"></div>
             <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Batal</button><button type="submit" class="btn btn-primary">Simpan</button></div>
         </form>
     </div>
@@ -870,9 +870,9 @@ alter table public.settings
 
 <!-- [KONFLIK MULTI-DEVICE] Banner muncul kalau ada transaksi yang diedit
      bersamaan di lebih dari satu perangkat -- lihat js/sync-conflict.js. -->
-<div id="conflictBanner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; align-items:center; justify-content:center; gap:10px; background:var(--warning-lt); border-bottom:1px solid var(--warning); padding:9px 14px; font-size:.78rem; color:var(--warning); text-align:center; flex-wrap:wrap;">
+<div id="conflictBanner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; align-items:center; justify-content:center; gap:var(--space-10); background:var(--warning-lt); border-bottom:1px solid var(--warning); padding:var(--space-9) var(--space-14); font-size: var(--text-sm); color:var(--warning); text-align:center; flex-wrap:wrap;">
     <span id="conflictBannerText"></span>
-    <button onclick="window.openConflictReview()" style="background:var(--warning); color:#fff; border:none; border-radius: var(--radius-sm); padding:5px 12px; font-size:.75rem; font-weight:600; cursor:pointer;">Tinjau</button>
+    <button onclick="window.openConflictReview()" style="background:var(--warning); color:#fff; border:none; border-radius: var(--radius-sm); padding:var(--space-5) var(--space-12); font-size: var(--text-sm); font-weight:600; cursor:pointer;">Tinjau</button>
 </div>
 
 <!-- [KONFLIK MULTI-DEVICE] Modal perbandingan versi lokal vs cloud, dengan
@@ -880,8 +880,8 @@ alter table public.settings
      resolveConflictKeepMine / resolveConflictKeepCloud di js/sync-conflict.js. -->
 <div id="conflictModal" class="modal" style="z-index:10000;">
     <div class="modal-content" style="max-width:440px;">
-        <div class="modal-header"><h3>Konflik Data<span id="conflictModalCount" style="font-weight:400; font-size:.75rem; color:var(--ink-faint);"></span></h3></div>
-        <p style="font-size:.78rem; color:var(--ink-muted); margin:0 0 12px; line-height:1.5;">Transaksi ini sempat diubah di dua perangkat sebelum sinkron. Pilih versi mana yang ingin disimpan.</p>
+        <div class="modal-header"><h3>Konflik Data<span id="conflictModalCount" style="font-weight:400; font-size: var(--text-sm); color:var(--ink-faint);"></span></h3></div>
+        <p style="font-size: var(--text-sm); color:var(--ink-muted); margin:0 0 var(--space-12); line-height:1.5;">Transaksi ini sempat diubah di dua perangkat sebelum sinkron. Pilih versi mana yang ingin disimpan.</p>
         <div id="conflictModalBody" class="conflict-compare"></div>
         <div class="modal-footer" style="flex-wrap:wrap;">
             <button type="button" class="btn btn-secondary" id="conflictKeepCloudBtn" onclick="window.resolveConflictKeepCloud()">Pakai versi cloud</button>
@@ -894,7 +894,7 @@ alter table public.settings
 <div id="actionMenuModal" class="modal">
     <div class="modal-content" style="max-width:260px">
         <div class="modal-header"><h3>Pilihan Aksi</h3><button class="modal-close" onclick="closeModal('actionMenuModal')">×</button></div>
-        <ul style="list-style:none"><li style="margin-bottom:10px"><button id="actionEditBtn" style="width:100%; padding:10px; text-align:left; background:none; border:none; cursor:pointer; border-radius: var(--radius-sm); transition:background 0.2s;">Ubah Data</button></li><li><button id="actionDeleteBtn" style="width:100%; padding:10px; text-align:left; background:none; border:none; cursor:pointer; color:var(--danger); border-radius: var(--radius-sm); transition:background 0.2s;">Hapus Transaksi</button></li></ul>
+        <ul style="list-style:none"><li style="margin-bottom:var(--space-10)"><button id="actionEditBtn" style="width:100%; padding:var(--space-10); text-align:left; background:none; border:none; cursor:pointer; border-radius: var(--radius-sm); transition:background 0.2s;">Ubah Data</button></li><li><button id="actionDeleteBtn" style="width:100%; padding:var(--space-10); text-align:left; background:none; border:none; cursor:pointer; color:var(--danger); border-radius: var(--radius-sm); transition:background 0.2s;">Hapus Transaksi</button></li></ul>
     </div>
 </div>
 
@@ -911,10 +911,10 @@ alter table public.settings
 <div id="customConfirmModal" class="modal" style="z-index:10000;">
     <div class="modal-content" style="max-width:400px;">
         <div class="modal-header"><h3 id="customConfirmTitle">Konfirmasi</h3><button class="modal-close" onclick="window._customConfirmResolve(false)">×</button></div>
-        <div style="padding:4px 2px 8px;">
-            <p id="customConfirmMessage" style="white-space:pre-line; font-size:.85rem; color:var(--ink-muted); line-height:1.5; margin:0 0 10px;"></p>
-            <input id="customConfirmInput" type="text" style="display:none; width:100%; padding:9px 10px; border:1.5px solid var(--rule); border-radius: var(--radius-sm); font-size:.85rem; background:var(--bg); color:var(--ink); box-sizing:border-box;" autocomplete="off" oninput="window._customConfirmValidateInput()">
-            <div id="customConfirmInputHint" style="display:none; font-size:.7rem; color:var(--ink-faint); margin-top:5px;"></div>
+        <div style="padding:var(--space-4) var(--space-2) var(--space-8);">
+            <p id="customConfirmMessage" style="white-space:pre-line; font-size: var(--text-base); color:var(--ink-muted); line-height:1.5; margin:0 0 var(--space-10);"></p>
+            <input id="customConfirmInput" type="text" style="display:none; width:100%; padding:var(--space-9) var(--space-10); border:1.5px solid var(--rule); border-radius: var(--radius-sm); font-size: var(--text-base); background:var(--bg); color:var(--ink); box-sizing:border-box;" autocomplete="off" oninput="window._customConfirmValidateInput()">
+            <div id="customConfirmInputHint" style="display:none; font-size: var(--text-xs); color:var(--ink-faint); margin-top:var(--space-5);"></div>
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" id="customConfirmCancelBtn" onclick="window._customConfirmResolve(false)">Batal</button>
@@ -992,29 +992,29 @@ alter table public.settings
             <div class="setelan-desc">
                 <span>Setiap akun terhubung ke database Supabase yang berbeda. Beralih akun akan memuat data dari database tersebut.</span>
             </div>
-            <button type="button" class="btn btn-secondary" style="width:100%; margin-bottom:14px;" onclick="window.toggleManual()">📖 Panduan Pengguna &amp; Setup</button>
+            <button type="button" class="btn btn-secondary" style="width:100%; margin-bottom:var(--space-14);" onclick="window.toggleManual()">📖 Panduan Pengguna &amp; Setup</button>
             <div id="accModalList" class="acc-modal-list"></div>
-            <div style="border-top:1.5px dashed var(--ink); padding-top:16px; margin-top:12px;">
-                <button type="button" class="btn btn-secondary" id="newAccToggleBtn" style="width:100%; display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700;" onclick="window.toggleAddAccountForm()"><span id="newAccToggleBtnLabel">＋ Tambah Akun</span></button>
-                <div id="newAccFormBody" style="display:none; margin-top:14px;">
+            <div style="border-top:1.5px dashed var(--ink); padding-top:16px; margin-top:var(--space-12);">
+                <button type="button" class="btn btn-secondary" id="newAccToggleBtn" style="width:100%; display:flex; align-items:center; justify-content:center; gap:var(--space-6); font-weight:700;" onclick="window.toggleAddAccountForm()"><span id="newAccToggleBtnLabel">＋ Tambah Akun</span></button>
+                <div id="newAccFormBody" style="display:none; margin-top:var(--space-14);">
                 <div class="form-group"><label>Nama Akun</label><input type="text" id="newAccName" class="form-control" placeholder="Contoh: Pribadi, Bisnis, Keluarga..." onkeydown="if(event.key==='Enter') saveNewAccount()"></div>
                 <div class="form-group"><label>Supabase Project URL</label><input type="text" id="newAccUrl" class="form-control" placeholder="https://xxxxxxxx.supabase.co" onkeydown="if(event.key==='Enter') saveNewAccount()"></div>
-                <div class="form-group"><label data-i18n="supabase_key_label">Supabase Anon Key</label><input type="password" id="newAccKey" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." onkeydown="if(event.key==='Enter') saveNewAccount()"><div style="display:flex; align-items:center; gap:6px; margin-top:5px;"><input type="checkbox" id="newAccShowKey" onchange="document.getElementById('newAccKey').type = this.checked ? 'text' : 'password'"><label for="newAccShowKey" style="font-size:.68rem; color:var(--ink-faint); cursor:pointer; text-transform:none; letter-spacing:0;">Tampilkan key</label></div></div>
-                <div class="form-group"><label>Password Enkripsi</label><input type="password" id="newAccPwd" class="form-control" placeholder="Min. 6 karakter — wajib diingat!" onkeydown="if(event.key==='Enter') saveNewAccount()" oninput="(function(){var eg=document.getElementById('editingAccId'),cg=document.getElementById('newAccPwdConfirmGroup');if(eg&&eg.value)cg.style.display=document.getElementById('newAccPwd').value?'':'none';})()"><div style="font-size:.65rem; color:var(--ink-faint); margin-top:4px;">Password digunakan untuk mengenkripsi koneksi akun ini secara terpisah.</div></div>
-                <div class="form-group" id="newAccPwdConfirmGroup"><label>Konfirmasi Password</label><input type="password" id="newAccPwdConfirm" class="form-control" placeholder="Ulangi password enkripsi" onkeydown="if(event.key==='Enter') saveNewAccount()"><div style="font-size:.65rem; color:var(--ink-faint); margin-top:4px;">Pastikan password yang dimasukkan sama persis.</div></div>
+                <div class="form-group"><label data-i18n="supabase_key_label">Supabase Anon Key</label><input type="password" id="newAccKey" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." onkeydown="if(event.key==='Enter') saveNewAccount()"><div style="display:flex; align-items:center; gap:var(--space-6); margin-top:var(--space-5);"><input type="checkbox" id="newAccShowKey" onchange="document.getElementById('newAccKey').type = this.checked ? 'text' : 'password'"><label for="newAccShowKey" style="font-size: var(--text-xs); color:var(--ink-faint); cursor:pointer; text-transform:none; letter-spacing:0;">Tampilkan key</label></div></div>
+                <div class="form-group"><label>Password Enkripsi</label><input type="password" id="newAccPwd" class="form-control" placeholder="Min. 6 karakter — wajib diingat!" onkeydown="if(event.key==='Enter') saveNewAccount()" oninput="(function(){var eg=document.getElementById('editingAccId'),cg=document.getElementById('newAccPwdConfirmGroup');if(eg&&eg.value)cg.style.display=document.getElementById('newAccPwd').value?'':'none';})()"><div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:var(--space-4);">Password digunakan untuk mengenkripsi koneksi akun ini secara terpisah.</div></div>
+                <div class="form-group" id="newAccPwdConfirmGroup"><label>Konfirmasi Password</label><input type="password" id="newAccPwdConfirm" class="form-control" placeholder="Ulangi password enkripsi" onkeydown="if(event.key==='Enter') saveNewAccount()"><div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:var(--space-4);">Pastikan password yang dimasukkan sama persis.</div></div>
                 <input type="hidden" id="editingAccId" value="">
-                <div id="newAccStatus" style="font-size:.72rem; margin-bottom:10px; min-height:16px;"></div>
-                <div style="display:flex; gap:8px;"><button class="btn btn-secondary" id="cancelAccBtn" style="flex:1;" onclick="cancelEditAccount()">Batal</button><button class="btn btn-primary" id="saveAccBtn" style="flex:2;" onclick="saveNewAccount()">Simpan Akun</button></div>
+                <div id="newAccStatus" style="font-size: var(--text-xs); margin-bottom:var(--space-10); min-height:16px;"></div>
+                <div style="display:flex; gap:var(--space-8);"><button class="btn btn-secondary" id="cancelAccBtn" style="flex:1;" onclick="cancelEditAccount()">Batal</button><button class="btn btn-primary" id="saveAccBtn" style="flex:2;" onclick="saveNewAccount()">Simpan Akun</button></div>
                 </div>
             </div>
-            <div id="setelanBackToLockWrap" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--rule);">
+            <div id="setelanBackToLockWrap" style="display:none; margin-top:var(--space-14); padding-top:14px; border-top:1px solid var(--rule);">
                 <button type="button" class="btn btn-secondary" style="width:100%;" onclick="window.backToLockScreenFromAkun()">← Kembali ke Layar Kunci</button>
             </div>
         </div>
 
         <!-- Notifikasi Telegram -- dipindah dari modal terpisah -->
         <div class="data-management-panel setelan-tab-panel" data-tab-panel="telegram">
-            <div class="panel-title" style="display:flex; align-items:center; gap:8px;">
+            <div class="panel-title" style="display:flex; align-items:center; gap:var(--space-8);">
                 <span>Notifikasi Telegram</span>
                 <span id="tgStatusBadge" class="setelan-badge setelan-badge--neutral">Belum dikonfigurasi</span>
             </div>
@@ -1026,18 +1026,18 @@ alter table public.settings
                     <b>3.</b> Buka <a href="https://t.me/userinfobot" target="_blank" style="color:#0088cc;">@userinfobot</a> → kirim pesan apapun → copy angka <b>Id</b> sebagai Chat ID
                 </div>
             </details>
-            <div class="form-group"><label>Bot Token <span style="font-weight:400;color:var(--ink-faint);font-size:.7rem;">dari @BotFather</span></label><input type="text" id="tgBotTokenInput" class="form-control" placeholder="123456789:AAF-contoh-token-dari-botfather" autocomplete="off"></div>
-            <div class="form-group"><label>Chat ID <span style="font-weight:400;color:var(--ink-faint);font-size:.7rem;">dari @userinfobot (angka, bisa negatif untuk grup)</span></label><input type="text" id="tgChatIdInput" class="form-control" placeholder="123456789" autocomplete="off"></div>
-            <div class="form-group form-group-checkbox"><label class="checkbox-label"><input type="checkbox" id="tgHumanizeToggle" onchange="window.setTgHumanizeEnabled(this.checked)"> Gaya bahasa natural (Sinarkeu) <span style="font-weight:400;color:var(--ink-faint);font-size:.7rem;">— tulis ulang notifikasi jadi kalimat santai, bukan template. Butuh Sinarkeu aktif di Setelan → Analisis Sinarkeu.</span></label></div>
+            <div class="form-group"><label>Bot Token <span style="font-weight:400;color:var(--ink-faint);font-size: var(--text-xs);">dari @BotFather</span></label><input type="text" id="tgBotTokenInput" class="form-control" placeholder="123456789:AAF-contoh-token-dari-botfather" autocomplete="off"></div>
+            <div class="form-group"><label>Chat ID <span style="font-weight:400;color:var(--ink-faint);font-size: var(--text-xs);">dari @userinfobot (angka, bisa negatif untuk grup)</span></label><input type="text" id="tgChatIdInput" class="form-control" placeholder="123456789" autocomplete="off"></div>
+            <div class="form-group form-group-checkbox"><label class="checkbox-label"><input type="checkbox" id="tgHumanizeToggle" onchange="window.setTgHumanizeEnabled(this.checked)"> Gaya bahasa natural (Sinarkeu) <span style="font-weight:400;color:var(--ink-faint);font-size: var(--text-xs);">— tulis ulang notifikasi jadi kalimat santai, bukan template. Butuh Sinarkeu aktif di Setelan → Analisis Sinarkeu.</span></label></div>
             <input type="hidden" id="tgEdgeUrlInput" value="">
-            <div id="tgTestStatus" style="font-size:.72rem; margin-bottom:12px; min-height:20px; padding: 0 2px;"></div>
+            <div id="tgTestStatus" style="font-size: var(--text-xs); margin-bottom:var(--space-12); min-height:20px; padding: 0 var(--space-2);"></div>
             <div class="setelan-actions-row" style="flex-wrap:wrap;">
                 <button class="btn btn-secondary" style="flex:1" onclick="testTelegramNotif()">Tes Kirim</button>
                 <button class="btn btn-secondary" style="flex:1; background:#0088cc; color:#fff; border-color:#0088cc;" onclick="sendDailySummaryToTelegram()">Kirim Ringkasan</button>
                 <button class="btn btn-danger" style="flex:1" onclick="clearTelegramConfig()">Hapus</button>
                 <button class="btn btn-primary" style="flex:1" onclick="saveTelegramConfig()">Simpan</button>
             </div>
-            <div style="background:var(--info-lt); border:1px solid var(--info-lt); border-radius: var(--radius-sm); padding:10px 12px; margin-top:12px; font-size:.68rem; color:var(--info); line-height:1.8;">
+            <div style="background:var(--info-lt); border:1px solid var(--info-lt); border-radius: var(--radius-sm); padding:var(--space-10) var(--space-12); margin-top:var(--space-12); font-size: var(--text-xs); color:var(--info); line-height:1.8;">
                 <b>Notifikasi yang dikirim otomatis:</b><br>
                 Transaksi baru · Transaksi diubah · Transaksi dihapus<br>
                 Peringatan anggaran 80% & anggaran habis<br>
@@ -1047,31 +1047,31 @@ alter table public.settings
 
         <!-- Perangkat Terhubung -- dipindah dari modal terpisah -->
         <div class="data-management-panel setelan-tab-panel" data-tab-panel="devices">
-            <div class="panel-title" style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <div class="panel-title" style="display:flex; align-items:center; justify-content:space-between; gap:var(--space-10); flex-wrap:wrap;">
                 <span>Perangkat Terhubung</span>
-                <button class="btn btn-secondary" style="font-size:.65rem; padding:3px 10px; white-space:nowrap;" onclick="window.loadConnectedDevices()">↻ Refresh</button>
+                <button class="btn btn-secondary" style="font-size: var(--text-2xs); padding:var(--space-3) var(--space-10); white-space:nowrap;" onclick="window.loadConnectedDevices()">↻ Refresh</button>
             </div>
-            <div class="setelan-desc" style="margin-bottom:12px;">
+            <div class="setelan-desc" style="margin-bottom:var(--space-12);">
                 Daftar perangkat yang pernah mengakses buku ini, berdasarkan log aktivitas di cloud. Perangkat yang lama tidak aktif bisa diabaikan.
             </div>
-            <div id="devicesLoadStatus" class="setelan-status-text" style="margin-top:0; margin-bottom:8px;"></div>
+            <div id="devicesLoadStatus" class="setelan-status-text" style="margin-top:0; margin-bottom:var(--space-8);"></div>
             <div id="devicesList"></div>
-            <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--rule);">
+            <div style="margin-top:var(--space-16); padding-top:14px; border-top:1px solid var(--rule);">
                 <button class="btn" style="width:100%; background:var(--info-lt); color:var(--info); border:1px solid color-mix(in srgb, var(--info) 35%, var(--info-lt));" onclick="logoutToLockScreen()" data-i18n="switch_account">Ganti Akun</button>
             </div>
         </div>
 
         <!-- Log Error (toast merah) -- direkam otomatis dari window.showToast(msg,'error') di js/utils.js -->
         <div class="data-management-panel setelan-tab-panel" data-tab-panel="errorlog">
-            <div class="panel-title" style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <div class="panel-title" style="display:flex; align-items:center; justify-content:space-between; gap:var(--space-10); flex-wrap:wrap;">
                 <span>Log Error</span>
                 <span id="errorLogCountBadge" class="setelan-badge setelan-badge--neutral">0 tercatat</span>
             </div>
-            <div class="setelan-desc" style="margin-bottom:12px;">
+            <div class="setelan-desc" style="margin-bottom:var(--space-12);">
                 Setiap pesan toast merah (error) otomatis tersimpan di sini, lengkap dengan waktu kejadian, supaya tidak hilang begitu saja setelah 3 detik. Ekspor file-nya lalu upload ke Claude bareng project ini untuk dibantu telusur & perbaiki.
             </div>
-            <div id="errorLogPreview" style="max-height:220px; overflow-y:auto; margin-bottom:12px;"></div>
-            <div style="display:flex; gap:8px;">
+            <div id="errorLogPreview" style="max-height:220px; overflow-y:auto; margin-bottom:var(--space-12);"></div>
+            <div style="display:flex; gap:var(--space-8);">
                 <button class="btn btn-secondary" style="flex:1;" onclick="window.clearToastErrorLog()">Bersihkan</button>
                 <button class="btn btn-primary" style="flex:2;" onclick="window.exportToastErrorLog()">Ekspor Log Error</button>
             </div>
@@ -1086,12 +1086,12 @@ alter table public.settings
             <div class="setelan-desc">
                 Pilih mesin AI yang dipakai untuk Analisis Sinarkeu, Tanya Sinarkeu, dan Analisis Fase Kehidupan. Bisa pakai Cloudflare Worker (Groq) seperti sebelumnya, atau mesin baru: Gemini lewat Supabase Edge Function.
             </div>
-            <div class="form-group" style="margin-bottom:10px;">
-                <label class="checkbox-label" style="display:flex; align-items:center; gap:8px; margin-bottom:6px; font-weight:600;">
+            <div class="form-group" style="margin-bottom:var(--space-10);">
+                <label class="checkbox-label" style="display:flex; align-items:center; gap:var(--space-8); margin-bottom:var(--space-6); font-weight:600;">
                     <input type="radio" name="aiEngineChoice" id="aiEngineRadioWorker" onchange="window.setAIEngine('worker')" checked>
                     Cloudflare Worker (Groq)
                 </label>
-                <label class="checkbox-label" style="display:flex; align-items:center; gap:8px; font-weight:600;">
+                <label class="checkbox-label" style="display:flex; align-items:center; gap:var(--space-8); font-weight:600;">
                     <input type="radio" name="aiEngineChoice" id="aiEngineRadioGemini" onchange="window.setAIEngine('gemini')">
                     Gemini (Supabase Edge Function) — fallback beberapa API key otomatis
                 </label>
@@ -1101,11 +1101,11 @@ alter table public.settings
                 <div class="setelan-desc">
                     <span data-i18n="ai_desc">Masukkan URL Cloudflare Worker milik Anda untuk mengaktifkan fitur Analisis Keuangan Sinarkeu.</span>
                 </div>
-                <div class="form-group" style="margin-bottom:10px;">
+                <div class="form-group" style="margin-bottom:var(--space-10);">
                     <label data-i18n="worker_url">Worker URL</label>
                     <input type="text" id="aiWorkerUrlInput" class="form-control" placeholder="https://nama-worker-anda.workers.dev" data-i18n="worker_placeholder" data-i18n-attr="placeholder" oninput="updateAiWorkerBadge()">
                 </div>
-                <div id="aiWorkerTestStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
+                <div id="aiWorkerTestStatus" style="font-size: var(--text-xs); margin-bottom:var(--space-10); min-height:18px;"></div>
                 <div class="setelan-actions-row">
                     <button class="btn btn-secondary" style="flex:1;" onclick="testAiWorkerUrl()" data-i18n="test_connection">Tes Koneksi</button>
                     <button class="btn btn-danger" style="flex:1;" onclick="clearAiWorkerUrl()">Hapus</button>
@@ -1117,14 +1117,14 @@ alter table public.settings
                 <div class="setelan-desc">
                     Mesin Gemini otomatis memakai URL &amp; kunci project Supabase yang sudah tersambung di <strong>Setelan → Cloud Sync</strong> (tidak perlu isi URL manual). Edge function <code>ai-gemini</code> perlu di-deploy dulu di sisi Supabase Anda — lihat <code>supabase/functions/ai-gemini/README.md</code> di dalam proyek untuk langkah deploy &amp; pengisian beberapa API key Gemini (untuk fallback otomatis kalau satu key kena limit).
                 </div>
-                <div id="aiGeminiTestStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
+                <div id="aiGeminiTestStatus" style="font-size: var(--text-xs); margin-bottom:var(--space-10); min-height:18px;"></div>
                 <div class="setelan-actions-row">
                     <button class="btn btn-secondary" style="flex:1;" onclick="window.testAiGeminiEngine()">Tes Koneksi</button>
                 </div>
             </div>
 
-            <hr style="margin:16px 0; border-color:var(--rule);">
-            <div class="panel-title" style="font-size:.82rem;">Kisi-Kisi Keuangan di Layar Kunci</div>
+            <hr style="margin:var(--space-16) 0; border-color:var(--rule);">
+            <div class="panel-title" style="font-size: var(--text-base);">Kisi-Kisi Keuangan di Layar Kunci</div>
             <div class="setelan-desc">Ringkasan singkat, nasihat, dan motivasi keuangan berdasarkan SEMUA buku, tampil otomatis di layar kunci -- tanpa menyebut nominal Rupiah, supaya tetap sopan dilihat orang lain yang lewat.</div>
             <div class="form-group form-group-checkbox">
                 <label class="checkbox-label">
@@ -1148,7 +1148,7 @@ alter table public.settings
                 <span id="hargaPanganWorkerBadge" class="setelan-badge"></span>
             </div>
             <input type="text" id="hargaPanganWorkerUrlInput" class="form-control" placeholder="https://sinarkeu-harga-pangan.nama-subdomain.workers.dev" oninput="updateHargaPanganWorkerBadge()">
-            <div id="hargaPanganWorkerStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
+            <div id="hargaPanganWorkerStatus" style="font-size: var(--text-xs); margin-bottom:var(--space-10); min-height:18px;"></div>
             <div class="setelan-actions-row">
                 <button class="btn btn-secondary" style="flex:1;" onclick="testHargaPanganWorkerUrl()" data-i18n="test_connection">Tes Koneksi</button>
                 <button class="btn btn-danger" style="flex:1;" onclick="clearHargaPanganWorkerUrl()">Hapus</button>
@@ -1165,17 +1165,17 @@ alter table public.settings
             <div class="setelan-desc">
                 <span data-i18n="gold_api_desc">Masukkan API key dari <strong>emas.maulanar.my.id</strong> untuk menampilkan harga emas Antam terkini.</span>
             </div>
-            <div id="emasQuotaInfo" style="font-size:.68rem; color:var(--warning); background:var(--warning-lt); border:1px solid color-mix(in srgb, var(--warning) 45%, var(--warning-lt)); border-radius: var(--radius-sm); padding:6px 8px; margin-bottom:10px;"></div>
-            <div class="form-group" style="margin-bottom:10px;">
+            <div id="emasQuotaInfo" style="font-size: var(--text-xs); color:var(--warning); background:var(--warning-lt); border:1px solid color-mix(in srgb, var(--warning) 45%, var(--warning-lt)); border-radius: var(--radius-sm); padding:var(--space-6) var(--space-8); margin-bottom:var(--space-10);"></div>
+            <div class="form-group" style="margin-bottom:var(--space-10);">
                 <label data-i18n="api_key_label">API Key</label>
                 <input type="text" id="emasApiKeyInput" class="form-control" placeholder="Masukkan API key dari emas.maulanar.my.id" oninput="updateEmasApiBadge()">
             </div>
-            <div class="form-group" style="margin-bottom:10px;">
+            <div class="form-group" style="margin-bottom:var(--space-10);">
                 <label data-i18n="gold_amount_label">Jumlah Emas yang Dimiliki (gram)</label>
                 <input type="number" id="emasGramInput" class="form-control" placeholder="Contoh: 5.5" min="0" step="0.01" oninput="updateEmasGramPreview()">
                 <div id="emasGramPreview" class="setelan-preview--amber"></div>
             </div>
-            <div id="emasApiTestStatus" style="font-size:.72rem; margin-bottom:10px; min-height:18px;"></div>
+            <div id="emasApiTestStatus" style="font-size: var(--text-xs); margin-bottom:var(--space-10); min-height:18px;"></div>
             <div class="setelan-actions-row">
                 <button class="btn btn-secondary" style="flex:1;" onclick="testEmasApiKey()">Tes</button>
                 <button class="btn btn-danger" style="flex:1;" onclick="clearEmasApiKey()">Hapus</button>
@@ -1204,13 +1204,13 @@ alter table public.settings
              (window.editAccount), yang sudah melalui alur aman rotasi
              password (lihat catatan di js/account.js). -->
         <div class="data-management-panel setelan-tab-panel" data-tab-panel="supabase">
-            <div id="storageEstimPanel" style="background:var(--info-lt); border:1px solid var(--info); border-radius: var(--radius-sm); padding:14px 16px; margin-bottom:16px;">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                    <span style="font-size:.75rem; font-weight:700; color:var(--info);">Estimasi Storage Supabase</span>
-                    <button onclick="refreshStorageEstimate()" id="storageRefreshBtn" style="font-size:.65rem; padding:2px 10px; border:1px solid var(--info); border-radius: var(--radius-sm); background:var(--info-lt); color:var(--info); cursor:pointer; font-weight:600;">Refresh</button>
+            <div id="storageEstimPanel" style="background:var(--info-lt); border:1px solid var(--info); border-radius: var(--radius-sm); padding:var(--space-14) var(--space-16); margin-bottom:var(--space-16);">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--space-10);">
+                    <span style="font-size: var(--text-sm); font-weight:700; color:var(--info);">Estimasi Storage Supabase</span>
+                    <button onclick="refreshStorageEstimate()" id="storageRefreshBtn" style="font-size: var(--text-2xs); padding:var(--space-2) var(--space-10); border:1px solid var(--info); border-radius: var(--radius-sm); background:var(--info-lt); color:var(--info); cursor:pointer; font-weight:600;">Refresh</button>
                 </div>
                 <div id="storageEstimContent">
-                    <div style="font-size:.7rem; color:var(--ink-faint); text-align:center; padding:8px 0;">Memuat estimasi storage...</div>
+                    <div style="font-size: var(--text-xs); color:var(--ink-faint); text-align:center; padding:var(--space-8) 0;">Memuat estimasi storage...</div>
                 </div>
             </div>
             <div class="form-group" style="margin-bottom:0;">
@@ -1218,7 +1218,7 @@ alter table public.settings
                     <span data-i18n="supabase_section">Koneksi Supabase</span>
                     <span class="setelan-badge setelan-badge--success"><span data-i18n="supabase_all_books">Berlaku untuk semua buku</span></span>
                 </div>
-                <div style="font-size:.72rem; color:var(--ink-faint); background:var(--panel-alt, #F4F4F1); border:1px solid var(--rule); border-radius: var(--radius-sm); padding:8px 10px; margin-bottom:10px; word-break:break-all;">
+                <div style="font-size: var(--text-xs); color:var(--ink-faint); background:var(--panel-alt, #F4F4F1); border:1px solid var(--rule); border-radius: var(--radius-sm); padding:var(--space-8) var(--space-10); margin-bottom:var(--space-10); word-break:break-all;">
                     <span id="supabaseCurrentUrlDisplay">–</span>
                 </div>
                 <details class="setelan-collapse">
@@ -1229,11 +1229,11 @@ alter table public.settings
                         berbeda yang menyimpan kredensial yang sama.
                     </div>
                 </details>
-                <div class="cloud-connect-row" style="display:flex; gap:8px;">
+                <div class="cloud-connect-row" style="display:flex; gap:var(--space-8);">
                     <button class="btn btn-secondary" style="flex:1;" onclick="window.switchSetelanTab('akun'); var activeId=window.getActiveAccountId ? window.getActiveAccountId() : null; if (activeId && window.editAccount) window.editAccount(activeId);">Kelola di Panel Akun</button>
                     <button class="btn btn-primary" style="flex:1;" onclick="testCloudConnection()" data-i18n="connect_sync">Tes Koneksi</button>
                 </div>
-                <div id="connectionStatus" style="margin-top:8px"></div>
+                <div id="connectionStatus" style="margin-top:var(--space-8)"></div>
                 <div class="setelan-divider"></div>
                 <label class="setelan-label-strong">Nama Perangkat Ini</label>
                 <div class="setelan-device-row">
@@ -1241,7 +1241,7 @@ alter table public.settings
                     <button class="btn btn-secondary" onclick="window.saveDeviceName()" style="white-space:nowrap;">Simpan</button>
                 </div>
                 <div class="setelan-hint">Tampil di log sinkronisasi &amp; notifikasi Telegram. Kosongkan dan simpan untuk reset ke ID acak.</div>
-                <div id="deviceNameStatus" style="font-size:.7rem; min-height:16px; margin-top:6px;"></div>
+                <div id="deviceNameStatus" style="font-size: var(--text-xs); min-height:16px; margin-top:var(--space-6);"></div>
             </div>
         </div>
 
@@ -1251,10 +1251,10 @@ alter table public.settings
             <div class="setelan-desc">
                 <span data-i18n="change_pwd_desc">Ganti password yang digunakan untuk mengenkripsi koneksi Supabase Anda.</span>
             </div>
-            <input type="password" id="changePwdOld" class="form-control" placeholder="Password saat ini" data-i18n="current_pwd" data-i18n-attr="placeholder" style="margin-bottom:8px;">
-            <input type="password" id="changePwdNew" class="form-control" placeholder="Password baru (min. 6 karakter)" data-i18n="new_pwd" data-i18n-attr="placeholder" style="margin-bottom:8px;">
-            <input type="password" id="changePwdNew2" class="form-control" placeholder="Konfirmasi password baru" data-i18n="confirm_pwd" data-i18n-attr="placeholder" style="margin-bottom:10px;">
-            <div id="changePwdStatus" style="font-size:.7rem; min-height:16px; margin-bottom:8px;"></div>
+            <input type="password" id="changePwdOld" class="form-control" placeholder="Password saat ini" data-i18n="current_pwd" data-i18n-attr="placeholder" style="margin-bottom:var(--space-8);">
+            <input type="password" id="changePwdNew" class="form-control" placeholder="Password baru (min. 6 karakter)" data-i18n="new_pwd" data-i18n-attr="placeholder" style="margin-bottom:var(--space-8);">
+            <input type="password" id="changePwdNew2" class="form-control" placeholder="Konfirmasi password baru" data-i18n="confirm_pwd" data-i18n-attr="placeholder" style="margin-bottom:var(--space-10);">
+            <div id="changePwdStatus" style="font-size: var(--text-xs); min-height:16px; margin-bottom:var(--space-8);"></div>
             <button class="btn btn-primary" style="width:100%;" onclick="changePassword()" data-i18n="change_pwd_btn">Ganti Password</button>
         </div>
 
@@ -1274,26 +1274,26 @@ alter table public.settings
         <!-- Reset Aplikasi Total -->
         <div class="data-management-panel setelan-tab-panel" data-tab-panel="reset">
             <div class="panel-title setelan-title--red" data-i18n="reset_app_section">Reset Total Aplikasi</div>
-            <div class="setelan-desc" style="margin-bottom:12px;">
+            <div class="setelan-desc" style="margin-bottom:var(--space-12);">
                 Hapus <b>semua buku, transaksi, dan setelan</b> baik di Supabase maupun di penyimpanan lokal. Aplikasi akan kembali ke kondisi <b>bersih seperti baru dipasang</b>. Gunakan saat ingin memulai dari awal atau berpindah akun Supabase.
             </div>
-            <div id="resetAppStatus" style="font-size:.7rem; padding:6px 10px; border-radius: var(--radius-sm); margin-bottom:10px; display:none;"></div>
-            <button class="btn btn-primary" style="width:100%; margin-bottom:8px;" onclick="window.exportAllDataOnly()" data-i18n="export_all_json">Ekspor Semua Data (JSON)</button>
-            <label class="btn btn-success" style="width:100%; margin-bottom:8px; cursor:pointer; display:block; text-align:center; box-sizing:border-box;">
+            <div id="resetAppStatus" style="font-size: var(--text-xs); padding:var(--space-6) var(--space-10); border-radius: var(--radius-sm); margin-bottom:var(--space-10); display:none;"></div>
+            <button class="btn btn-primary" style="width:100%; margin-bottom:var(--space-8);" onclick="window.exportAllDataOnly()" data-i18n="export_all_json">Ekspor Semua Data (JSON)</button>
+            <label class="btn btn-success" style="width:100%; margin-bottom:var(--space-8); cursor:pointer; display:block; text-align:center; box-sizing:border-box;">
                 Import dari File JSON
                 <input type="file" id="importJsonFile" accept=".json" style="display:none;" onchange="window.importAllDataFromFile(this)">
             </label>
-            <div id="importStatus" style="font-size:.7rem; padding:6px 10px; border-radius: var(--radius-sm); margin-bottom:10px; display:none;"></div>
+            <div id="importStatus" style="font-size: var(--text-xs); padding:var(--space-6) var(--space-10); border-radius: var(--radius-sm); margin-bottom:var(--space-10); display:none;"></div>
             <button class="btn btn-danger" style="width:100%;" onclick="window.resetAllApplication()">Reset Total — Hapus Semua Data</button>
         </div>
 
         <!-- Arsipkan JSON -->
         <div class="data-management-panel setelan-tab-panel" data-tab-panel="archive">
             <div class="panel-title setelan-title--red" data-i18n="archive_section">Arsipkan & Kosongkan Database</div>
-            <div class="setelan-desc" style="margin-bottom:12px;">
+            <div class="setelan-desc" style="margin-bottom:var(--space-12);">
                 Export semua transaksi buku ini ke file JSON sebagai arsip, lalu <b>hapus permanen</b> seluruh data dari Supabase dan lokal. Gunakan saat storage hampir penuh.
             </div>
-            <div id="archiveStatus" style="font-size:.7rem; padding:6px 10px; border-radius: var(--radius-sm); margin-bottom:10px; display:none;"></div>
+            <div id="archiveStatus" style="font-size: var(--text-xs); padding:var(--space-6) var(--space-10); border-radius: var(--radius-sm); margin-bottom:var(--space-10); display:none;"></div>
             <button class="btn btn-danger" style="width:100%;" onclick="archiveAndClearData()">Arsipkan JSON & Kosongkan Database</button>
         </div>
 
@@ -1319,14 +1319,14 @@ alter table public.settings
                 <button class="btn btn-secondary" onclick="triggerJsonImport()">Impor</button>
             </div>
             <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)">
-            <div style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--rule);">
+            <div style="margin-top:var(--space-16); padding-top:14px; border-top:1px dashed var(--rule);">
                 <label class="setelan-label-strong" data-i18n="sheets_url_label">Google Sheets Web App URL</label>
                 <div class="setelan-sheets-row">
                     <input type="text" id="googleSheetsUrlInput" class="form-control" style="flex:2; min-width:200px;" placeholder="https://script.google.com/macros/s/.../exec">
                     <button class="btn btn-secondary" onclick="saveGoogleSheetsUrl()" style="flex:0 0 auto;" data-i18n="save_url">Simpan URL</button>
                     <button class="btn btn-success" onclick="backupToGoogleSheets()" style="flex:0 0 auto;" data-i18n="backup_to_sheets">Backup ke Google Sheets</button>
                 </div>
-                <div id="googleSheetsStatus" style="font-size:.7rem; margin-top:6px; min-height:16px;"></div>
+                <div id="googleSheetsStatus" style="font-size: var(--text-xs); margin-top:var(--space-6); min-height:16px;"></div>
                 <div id="googleSheetsLastBackup" class="setelan-hint"></div>
             </div>
             <!-- [FITUR DIHAPUS] Backup manual (lokal+cloud, tombol "Buat Cadangan")
@@ -1340,7 +1340,7 @@ alter table public.settings
              dihapus, lihat catatan di js/backup.js) -->
         <div class="data-management-panel setelan-tab-panel" data-tab-panel="snapshot">
             <div class="panel-title">Snapshot Keamanan</div>
-            <div class="setelan-desc" style="margin-bottom:12px;">
+            <div class="setelan-desc" style="margin-bottom:var(--space-12);">
                 Snapshot di sini dibuat <b>otomatis</b> oleh aplikasi tanpa perlu diklik — baik <b>1x per hari</b> (snapshot harian), maupun tepat sebelum aksi berisiko dijalankan (hapus buku, hapus akun, reset total aplikasi, arsipkan &amp; kosongkan database, restore data, atau impor JSON). Gunakan untuk berjaga-jaga kalau ada error atau hasil aksi tersebut ternyata keliru.
                 <br><br>
                 Menyimpan <b>seluruh data lokal akun ini</b> (semua buku, anggaran, pengingat pembayaran, setelan) pada perangkat ini saja — maksimal 10 snapshot terbaru disimpan (snapshot tertua otomatis dihapus kalau sudah penuh). <b>Catatan:</b> jika aksi terkait sudah menghapus data secara permanen di cloud/Supabase, snapshot ini hanya memulihkan salinan lokal, bukan data di cloud.
@@ -1377,11 +1377,11 @@ alter table public.settings
 <div id="budgetModal" class="modal">
     <div class="modal-content wide">
         <div class="modal-header"><h3>Anggaran Bulanan</h3><button class="modal-close" onclick="closeModal('budgetModal')">×</button></div>
-        <div style="background:var(--info-lt); border:1px solid var(--info-lt); border-radius: var(--radius-sm); padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:var(--info);">
+        <div style="background:var(--info-lt); border:1px solid var(--info-lt); border-radius: var(--radius-sm); padding:var(--space-10) var(--space-14); margin-bottom:var(--space-16); font-size: var(--text-xs); color:var(--info);">
             <b>Otomatis:</b> Anggaran yang disimpan di sini berlaku <b>khusus untuk bulan ini</b>.
             Bulan berikutnya akan kembali ke <b>Anggaran Dasar</b>.
         </div>
-        <div class="form-group"><label>Bulan & Tahun</label><div style="display:flex; gap:10px"><select id="budgetModalMonth" class="form-control" style="flex:1"></select><input type="number" id="budgetModalYear" class="form-control" style="flex:1"></div></div>
+        <div class="form-group"><label>Bulan & Tahun</label><div style="display:flex; gap:var(--space-10)"><select id="budgetModalMonth" class="form-control" style="flex:1"></select><input type="number" id="budgetModalYear" class="form-control" style="flex:1"></div></div>
         <div id="budgetCategoriesContainer"></div>
         <div id="budgetSummary" class="budget-summary-row"></div>
         <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('budgetModal')">Batal</button><button class="btn btn-primary" onclick="saveBudget()">Simpan</button></div>
@@ -1392,7 +1392,7 @@ alter table public.settings
 <div id="defaultBudgetModal" class="modal fullview-modal">
     <div class="modal-content wide">
         <div class="modal-header"><h3>Anggaran Dasar</h3><button class="modal-close" onclick="window.openMobileDrawer()" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button></div>
-        <div style="background:var(--info-lt); border:1px solid color-mix(in srgb, var(--info) 35%, var(--info-lt)); border-radius: var(--radius-sm); padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:var(--info);">
+        <div style="background:var(--info-lt); border:1px solid color-mix(in srgb, var(--info) 35%, var(--info-lt)); border-radius: var(--radius-sm); padding:var(--space-10) var(--space-14); margin-bottom:var(--space-16); font-size: var(--text-xs); color:var(--info);">
             <b>Anggaran Dasar</b> adalah template per kategori yang berlaku <b>secara otomatis</b> di setiap bulan
             yang belum memiliki anggaran khusus. Untuk mengatur anggaran bulan tertentu saja, gunakan tombol <b>Anggarkan</b>.
         </div>
@@ -1632,8 +1632,8 @@ alter table public.settings
             </div>
             <div id="hkAutoCardList" class="hk-card-list"></div>
         </div>
-        <div id="hkManualSection" style="margin-top:18px;">
-            <div class="hk-section-label" style="margin-bottom:8px;">Komoditas Lain (input manual)</div>
+        <div id="hkManualSection" style="margin-top:var(--space-18);">
+            <div class="hk-section-label" style="margin-bottom:var(--space-8);">Komoditas Lain (input manual)</div>
             <div class="table-container hk-table-desktop">
                 <table>
                     <thead><tr><th>Komoditas</th><th>Satuan</th><th>Harga</th><th>Update</th><th class="col-action">Aksi</th></tr></thead>
@@ -1705,8 +1705,8 @@ alter table public.settings
             <h3>Target Dana Darurat</h3>
             <button class="modal-close" onclick="window.closeModal('emergencyFundModal')">×</button>
         </div>
-        <div style="padding:0 22px 16px;">
-            <div style="font-size:.72rem; color:var(--warning); margin-bottom:14px; line-height:1.6; background:var(--warning-lt); border:1px solid color-mix(in srgb, var(--warning) 45%, var(--warning-lt)); border-radius: var(--radius-sm); padding:10px 12px;">
+        <div style="padding:0 var(--space-22) var(--space-16);">
+            <div style="font-size: var(--text-xs); color:var(--warning); margin-bottom:var(--space-14); line-height:1.6; background:var(--warning-lt); border:1px solid color-mix(in srgb, var(--warning) 45%, var(--warning-lt)); border-radius: var(--radius-sm); padding:var(--space-10) var(--space-12);">
                 Dana darurat dihitung sebagai <b>N × Anggaran Bulanan</b>. Standar umum 12 bulan, tapi bisa disesuaikan
                 lebih rendah (misal saat penghasilan belum stabil) atau lebih tinggi sesuai kondisi ekonomi Anda.
             </div>
@@ -1714,13 +1714,13 @@ alter table public.settings
                 <label>Jumlah Bulan</label>
                 <input type="number" id="efMonthsInput" class="form-control" min="1" max="60" step="1" placeholder="Contoh: 12">
             </div>
-            <div style="display:flex; gap:6px; margin-bottom:4px;">
-                <button type="button" class="btn btn-secondary" style="flex:1; font-size:.72rem; padding:6px;" onclick="window.setEfMonthsPreset(3)">3 bln</button>
-                <button type="button" class="btn btn-secondary" style="flex:1; font-size:.72rem; padding:6px;" onclick="window.setEfMonthsPreset(6)">6 bln</button>
-                <button type="button" class="btn btn-secondary" style="flex:1; font-size:.72rem; padding:6px;" onclick="window.setEfMonthsPreset(9)">9 bln</button>
-                <button type="button" class="btn btn-secondary" style="flex:1; font-size:.72rem; padding:6px;" onclick="window.setEfMonthsPreset(12)">12 bln</button>
+            <div style="display:flex; gap:var(--space-6); margin-bottom:var(--space-4);">
+                <button type="button" class="btn btn-secondary" style="flex:1; font-size: var(--text-xs); padding:var(--space-6);" onclick="window.setEfMonthsPreset(3)">3 bln</button>
+                <button type="button" class="btn btn-secondary" style="flex:1; font-size: var(--text-xs); padding:var(--space-6);" onclick="window.setEfMonthsPreset(6)">6 bln</button>
+                <button type="button" class="btn btn-secondary" style="flex:1; font-size: var(--text-xs); padding:var(--space-6);" onclick="window.setEfMonthsPreset(9)">9 bln</button>
+                <button type="button" class="btn btn-secondary" style="flex:1; font-size: var(--text-xs); padding:var(--space-6);" onclick="window.setEfMonthsPreset(12)">12 bln</button>
             </div>
-            <div style="display:flex; gap:8px; margin-top:14px;">
+            <div style="display:flex; gap:var(--space-8); margin-top:var(--space-14);">
                 <button class="btn btn-secondary" style="flex:1;" onclick="window.closeModal('emergencyFundModal')">Batal</button>
                 <button class="btn btn-primary" style="flex:2; background:var(--warning); border-color:var(--warning);" onclick="window.saveEmergencyFundMonths()">Simpan</button>
             </div>
@@ -1735,12 +1735,12 @@ alter table public.settings
             <h3>Tampilan Card · <span id="cardVisibilityBookName" style="color:var(--warning);"></span></h3>
             <button class="modal-close" onclick="window.closeModal('cardVisibilityModal')">×</button>
         </div>
-        <div style="padding:0 22px 16px;">
-            <div style="font-size:.7rem; color:var(--ink-faint); margin-bottom:10px; line-height:1.6;">
+        <div style="padding:0 var(--space-22) var(--space-16);">
+            <div style="font-size: var(--text-xs); color:var(--ink-faint); margin-bottom:var(--space-10); line-height:1.6;">
                 Pilih card perencanaan keuangan yang ingin ditampilkan untuk buku ini. Card yang dicentang akan tampil, yang tidak dicentang akan disembunyikan — pengaturan ini khusus untuk buku ini saja.
             </div>
             <div id="cardVisibilityList"></div>
-            <div style="display:flex; gap:8px; margin-top:16px;">
+            <div style="display:flex; gap:var(--space-8); margin-top:var(--space-16);">
                 <button class="btn btn-secondary" style="flex:1;" onclick="window.closeModal('cardVisibilityModal')">Batal</button>
                 <button class="btn btn-primary" style="flex:2; background:var(--warning); border-color:var(--warning);" onclick="window.saveCardVisibility()">Simpan</button>
             </div>
@@ -1752,10 +1752,10 @@ alter table public.settings
 <div id="annualBudgetModal" class="modal fullview-modal">
     <div class="modal-content wide slist-modal">
         <div class="modal-header"><h3>Anggaran Tahunan</h3><button class="modal-close" onclick="window.openMobileDrawer()" aria-label="Menu">☰</button></div>
-        <div style="background:var(--purple-lt); border:1px solid color-mix(in srgb, var(--purple) 35%, var(--purple-lt)); border-radius: var(--radius-sm); padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:var(--purple);">
+        <div style="background:var(--purple-lt); border:1px solid color-mix(in srgb, var(--purple) 35%, var(--purple-lt)); border-radius: var(--radius-sm); padding:var(--space-10) var(--space-14); margin-bottom:var(--space-16); font-size: var(--text-xs); color:var(--purple);">
             <b>Anggaran Tahunan</b> adalah rencana biaya yang terjadi <b>tidak setiap bulan</b> — seperti hari raya, pajak, servis kendaraan, liburan, dll. Total anggaran ini membantu menghitung kebutuhan cadangan dana Anda.
         </div>
-        <div class="slist-summary-grid annual-budget-summary-grid" style="margin-bottom:14px;">
+        <div class="slist-summary-grid annual-budget-summary-grid" style="margin-bottom:var(--space-14);">
             <div class="slist-summary-card">
                 <span class="slist-summary-label">Total Anggaran Tahunan</span>
                 <span class="slist-summary-value" id="annualBudgetTotalCard">Rp 0</span>
@@ -1763,7 +1763,7 @@ alter table public.settings
             </div>
         </div>
         <!-- Form inline lama disembunyikan: di ponsel lima kolom membuat input terpotong.
-        <div class="slist-add-wrap" style="display:grid; grid-template-columns:2fr .65fr 1fr 1fr auto; gap:8px; margin-bottom:12px;">
+        <div class="slist-add-wrap" style="display:grid; grid-template-columns:2fr .65fr 1fr 1fr auto; gap:var(--space-8); margin-bottom:var(--space-12);">
             <input id="annualNewName" type="text" class="form-control" placeholder="Nama kebutuhan (mis. Pajak kendaraan)">
             <input id="annualNewQty" type="number" min="1" step="1" class="form-control" inputmode="numeric" placeholder="QTY">
             <select id="annualNewCategory" class="form-control"></select>
@@ -1771,9 +1771,9 @@ alter table public.settings
             <button class="btn btn-primary" type="button" onclick="window.addAnnualBudgetRow()">Tambah</button>
         </div>
         -->
-        <button class="btn btn-primary" type="button" style="width:100%; margin-bottom:12px;" onclick="window.openAddAnnualBudgetItemModal()">+ Tambah Kebutuhan</button>
+        <button class="btn btn-primary" type="button" style="width:100%; margin-bottom:var(--space-12);" onclick="window.openAddAnnualBudgetItemModal()">+ Tambah Kebutuhan</button>
         <div id="annualBudgetItemsContainer" class="slist-list"></div>
-        <div style="display:none; margin:10px 0;">
+        <div style="display:none; margin:var(--space-10) 0;">
             <button class="btn btn-secondary" style="width:100%;" onclick="addAnnualBudgetRow()">＋ Tambah Item</button>
         </div>
         <div id="annualBudgetSummary" class="budget-summary-row"></div>
@@ -1817,7 +1817,7 @@ alter table public.settings
 <div id="monthlyReportModal" class="modal fullview-modal">
     <div class="modal-content report">
         <div class="modal-header"><h3 id="reportModalTitle">Laporan Bulanan</h3><button class="modal-close" onclick="window.openMobileDrawer()" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button></div>
-        <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+        <div style="display: flex; gap: var(--space-12); margin-bottom: var(--space-20); flex-wrap: wrap;">
             <select id="reportMonth" class="form-control" style="width: auto; flex: 1;">
                 <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
                 <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
@@ -1828,7 +1828,7 @@ alter table public.settings
             <button class="btn btn-primary" onclick="generateMonthlyReport()">Tampilkan</button>
             <button class="btn btn-secondary" onclick="exportReportAsPDF()">Export PDF</button>
         </div>
-        <div id="reportContent"><div style="text-align: center; padding: 50px;">Pilih bulan dan tahun, lalu klik Tampilkan</div></div>
+        <div id="reportContent"><div style="text-align: center; padding: var(--space-50);">Pilih bulan dan tahun, lalu klik Tampilkan</div></div>
     </div>
 </div>
 
@@ -1836,14 +1836,14 @@ alter table public.settings
 <div id="fraudAlertModal" class="modal">
     <div class="modal-content" style="max-width:520px;">
         <div class="modal-header"><h3>⚠️ Deteksi Keuangan Tidak Wajar</h3><button class="modal-close" onclick="closeModal('fraudAlertModal')">×</button></div>
-        <div style="font-size:.7rem; color:var(--ink-faint); margin-bottom:10px; line-height:1.5;">
+        <div style="font-size: var(--text-xs); color:var(--ink-faint); margin-bottom:var(--space-10); line-height:1.5;">
             Daftar ini murni peringatan lokal (dihitung dari transaksi &amp; log aktivitas buku ini) --
             tidak ada yang otomatis diblokir atau dikirim ke pihak lain. Tinjau lalu tekan "Abaikan"
             kalau memang sudah sesuai.
         </div>
-        <div style="margin-bottom:12px;">
-            <button type="button" class="btn btn-secondary" style="font-size:.68rem; padding:4px 10px;" onclick="window.runFraudAIInsight()">🤖 Ringkasan Sinarkeu</button>
-            <div id="fraudAIInsightBox" style="margin-top:8px;"></div>
+        <div style="margin-bottom:var(--space-12);">
+            <button type="button" class="btn btn-secondary" style="font-size: var(--text-xs); padding:var(--space-4) var(--space-10);" onclick="window.runFraudAIInsight()">🤖 Ringkasan Sinarkeu</button>
+            <div id="fraudAIInsightBox" style="margin-top:var(--space-8);"></div>
         </div>
         <div id="fraudAlertList"></div>
     </div>
@@ -1861,24 +1861,24 @@ alter table public.settings
 <!-- First Time Setup Modal -->
 <div id="firstTimeSetupModal" class="modal" style="z-index:2000;">
     <div class="modal-content" style="max-width:460px;">
-        <div style="text-align:center; margin-bottom:24px;">
-            <div style="font-size:2.5rem; margin-bottom:8px;"></div>
-            <div style="font-size:1rem; font-weight:700; margin-bottom:4px;">Setup Sinarkeu</div>
-            <div style="font-size:.75rem; color:var(--ink-faint);">Masukkan kredensial Supabase dan buat password keamanan</div>
+        <div style="text-align:center; margin-bottom:var(--space-24);">
+            <div style="font-size: var(--text-6xl); margin-bottom:var(--space-8);"></div>
+            <div style="font-size: var(--text-lg); font-weight:700; margin-bottom:var(--space-4);">Setup Sinarkeu</div>
+            <div style="font-size: var(--text-sm); color:var(--ink-faint);">Masukkan kredensial Supabase dan buat password keamanan</div>
         </div>
-        <button type="button" class="btn btn-secondary" style="width:100%; margin-bottom:16px;" onclick="window.toggleManual()">📖 Panduan Pengguna &amp; Setup</button>
+        <button type="button" class="btn btn-secondary" style="width:100%; margin-bottom:var(--space-16);" onclick="window.toggleManual()">📖 Panduan Pengguna &amp; Setup</button>
         <div class="form-group"><label>Supabase Project URL</label><input type="text" id="setupUrlInput" class="form-control" placeholder="https://xxxxxxxx.supabase.co" onblur="window._skCheckSetupBackendStatus && window._skCheckSetupBackendStatus()"></div>
-        <div class="form-group"><label data-i18n="supabase_key_label">Supabase Anon Key</label><input type="password" id="setupKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." onblur="window._skCheckSetupBackendStatus && window._skCheckSetupBackendStatus()"><div style="display:flex; align-items:center; gap:6px; margin-top:6px;"><input type="checkbox" id="showKeyToggle" onchange="document.getElementById('setupKeyInput').type = this.checked ? 'text' : 'password'"><label for="showKeyToggle" style="font-size:.7rem; color:var(--ink-faint); cursor:pointer; text-transform:none; letter-spacing:0;">Tampilkan key</label></div></div>
-        <div id="setupBackendStatusMsg" class="setup-status" style="display:none; margin-bottom:12px;"></div>
-        <div style="border-top:1px dashed var(--rule); margin: 16px 0;"></div>
-        <div class="form-group"><label>Nama Perangkat Ini <span style="font-weight:400; color:var(--ink-faint); font-size:.7rem;">(opsional)</span></label><input type="text" id="setupDeviceNameInput" class="form-control" placeholder="cth: HP Saya, Laptop Kantor" maxlength="24" autocomplete="off"><div style="font-size:.65rem; color:var(--ink-faint); margin-top:4px;">Tampil di log sinkronisasi &amp; notifikasi Telegram. Maks 24 karakter.</div></div>
-        <div style="border-top:1px dashed var(--rule); margin: 16px 0;"></div>
-        <div class="form-group" id="setupAdminEmailGroup"><label>Email Admin Utama</label><input type="email" id="setupAdminEmailInput" class="form-control" placeholder="admin@email-anda.com" autocomplete="username"><div style="font-size:.65rem; color:var(--ink-faint); margin-top:4px;">Dipakai sebagai akun login "Buku Bersama" pertama (role admin) -- password akun ini sama dengan Password Keamanan di bawah. Anggota lain nanti dibuatkan admin lewat Setelan → Kelola Anggota, bukan daftar sendiri.</div></div>
-        <div class="form-group"><label id="setupPwdLabel">Buat Password Keamanan</label><div style="position:relative; margin-bottom:8px;"><input type="password" id="setupPwdInput" class="form-control" placeholder="Buat password (min. 6 karakter)" oninput="evalSetupPwdStrength()"></div><div class="pwd-strength"><div class="pwd-strength-fill" id="setupPwdStrengthFill"></div></div><div style="font-size:.65rem; color:var(--ink-faint); margin-top:4px;" id="setupPwdStrengthLabel"></div></div>
+        <div class="form-group"><label data-i18n="supabase_key_label">Supabase Anon Key</label><input type="password" id="setupKeyInput" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." onblur="window._skCheckSetupBackendStatus && window._skCheckSetupBackendStatus()"><div style="display:flex; align-items:center; gap:var(--space-6); margin-top:var(--space-6);"><input type="checkbox" id="showKeyToggle" onchange="document.getElementById('setupKeyInput').type = this.checked ? 'text' : 'password'"><label for="showKeyToggle" style="font-size: var(--text-xs); color:var(--ink-faint); cursor:pointer; text-transform:none; letter-spacing:0;">Tampilkan key</label></div></div>
+        <div id="setupBackendStatusMsg" class="setup-status" style="display:none; margin-bottom:var(--space-12);"></div>
+        <div style="border-top:1px dashed var(--rule); margin: var(--space-16) 0;"></div>
+        <div class="form-group"><label>Nama Perangkat Ini <span style="font-weight:400; color:var(--ink-faint); font-size: var(--text-xs);">(opsional)</span></label><input type="text" id="setupDeviceNameInput" class="form-control" placeholder="cth: HP Saya, Laptop Kantor" maxlength="24" autocomplete="off"><div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:var(--space-4);">Tampil di log sinkronisasi &amp; notifikasi Telegram. Maks 24 karakter.</div></div>
+        <div style="border-top:1px dashed var(--rule); margin: var(--space-16) 0;"></div>
+        <div class="form-group" id="setupAdminEmailGroup"><label>Email Admin Utama</label><input type="email" id="setupAdminEmailInput" class="form-control" placeholder="admin@email-anda.com" autocomplete="username"><div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:var(--space-4);">Dipakai sebagai akun login "Buku Bersama" pertama (role admin) -- password akun ini sama dengan Password Keamanan di bawah. Anggota lain nanti dibuatkan admin lewat Setelan → Kelola Anggota, bukan daftar sendiri.</div></div>
+        <div class="form-group"><label id="setupPwdLabel">Buat Password Keamanan</label><div style="position:relative; margin-bottom:var(--space-8);"><input type="password" id="setupPwdInput" class="form-control" placeholder="Buat password (min. 6 karakter)" oninput="evalSetupPwdStrength()"></div><div class="pwd-strength"><div class="pwd-strength-fill" id="setupPwdStrengthFill"></div></div><div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:var(--space-4);" id="setupPwdStrengthLabel"></div></div>
         <div class="form-group" id="setupPwdConfirmGroup"><label>Konfirmasi Password</label><input type="password" id="setupPwdConfirm" class="form-control" placeholder="Ulangi password"></div>
-        <div style="background:var(--warning-lt); border:1px solid color-mix(in srgb, var(--warning) 45%, var(--warning-lt)); border-radius: var(--radius-sm); padding:10px 12px; font-size:.7rem; color:var(--warning); margin-bottom:16px; line-height:1.6;">Password ini <strong>tidak bisa dipulihkan</strong>. Jika lupa, seluruh data akan terhapus. Simpan di tempat yang aman.</div>
+        <div style="background:var(--warning-lt); border:1px solid color-mix(in srgb, var(--warning) 45%, var(--warning-lt)); border-radius: var(--radius-sm); padding:var(--space-10) var(--space-12); font-size: var(--text-xs); color:var(--warning); margin-bottom:var(--space-16); line-height:1.6;">Password ini <strong>tidak bisa dipulihkan</strong>. Jika lupa, seluruh data akan terhapus. Simpan di tempat yang aman.</div>
         <div id="setupStatusMsg" class="setup-status"></div>
-        <button id="setupConnectBtn" class="btn btn-primary" style="width:100%; margin-bottom:16px;" onclick="doFirstTimeSetup()">Simpan & Mulai</button>
+        <button id="setupConnectBtn" class="btn btn-primary" style="width:100%; margin-bottom:var(--space-16);" onclick="doFirstTimeSetup()">Simpan & Mulai</button>
     </div>
 </div>
 
@@ -1886,10 +1886,10 @@ alter table public.settings
 <div id="aiAnalysisModal" class="modal">
     <div class="modal-content wide" style="max-width:680px; max-height:90vh;">
         <div class="modal-header"><h3>Analisis Keuangan</h3><button class="modal-close" onclick="closeModal('aiAnalysisModal')">×</button></div>
-        <div id="aiWorkerWarning" style="display:none; background:var(--warning-lt); border:1px solid color-mix(in srgb, var(--warning) 45%, var(--warning-lt)); border-radius: var(--radius-sm); padding:10px 14px; margin-bottom:14px; font-size:.75rem; color:var(--warning); line-height:1.6;">
+        <div id="aiWorkerWarning" style="display:none; background:var(--warning-lt); border:1px solid color-mix(in srgb, var(--warning) 45%, var(--warning-lt)); border-radius: var(--radius-sm); padding:var(--space-10) var(--space-14); margin-bottom:var(--space-14); font-size: var(--text-sm); color:var(--warning); line-height:1.6;">
             <strong>Worker URL belum dikonfigurasi.</strong> Buka <a href="#" onclick="closeModal('aiAnalysisModal'); openSetelanModal('ai'); return false;" style="color:var(--warning); font-weight:600;">Setelan → Analisis Sinarkeu</a> untuk mengisi URL Cloudflare Worker Anda.
         </div>
-        <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+        <div style="display:flex; gap:var(--space-10); margin-bottom:var(--space-16); flex-wrap:wrap; align-items:center;">
             <select id="aiAnalysisPeriod" class="budget-select" style="flex:1; min-width:140px;">
                 <option value="all">Semua Data</option>
                 <option value="thismonth">Bulan Ini</option>
@@ -1904,12 +1904,12 @@ alter table public.settings
             </select>
             <button id="aiAnalysisRunBtn" class="btn btn-primary" style="background:var(--purple); border-color:var(--purple);" onclick="runAIAnalysis()">Analisis Sekarang</button>
         </div>
-        <div id="aiAnalysisResult" style="min-height:200px; background:var(--paper-warm); border:1.5px solid var(--rule); border-radius: var(--radius-sm); padding:18px 20px; font-size:.82rem; line-height:1.75; color:var(--ink); white-space:pre-wrap; overflow-y:auto; max-height:420px;">
-            <div style="text-align:center; color:var(--ink-faint); padding:40px 0;">Pilih periode dan jenis analisis, lalu klik <strong>Analisis Sekarang</strong>.</div>
+        <div id="aiAnalysisResult" style="min-height:200px; background:var(--paper-warm); border:1.5px solid var(--rule); border-radius: var(--radius-sm); padding:var(--space-18) var(--space-20); font-size: var(--text-base); line-height:1.75; color:var(--ink); white-space:pre-wrap; overflow-y:auto; max-height:420px;">
+            <div style="text-align:center; color:var(--ink-faint); padding:var(--space-40) 0;">Pilih periode dan jenis analisis, lalu klik <strong>Analisis Sekarang</strong>.</div>
         </div>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:8px;">
-            <span id="aiAnalysisFooter" style="font-size:.65rem; color:var(--ink-faint);"></span>
-            <div style="display:flex; gap:8px;"><button id="aiCopyBtn" class="btn btn-secondary" style="display:none;" onclick="copyAIResult()">Salin</button><button id="aiExportBtn" class="btn btn-secondary" style="display:none; background:var(--purple-lt); border-color:var(--purple);" onclick="exportAIResult()">📥 Export</button><button class="btn btn-secondary" onclick="closeModal('aiAnalysisModal')">Tutup</button></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:var(--space-12); flex-wrap:wrap; gap:var(--space-8);">
+            <span id="aiAnalysisFooter" style="font-size: var(--text-2xs); color:var(--ink-faint);"></span>
+            <div style="display:flex; gap:var(--space-8);"><button id="aiCopyBtn" class="btn btn-secondary" style="display:none;" onclick="copyAIResult()">Salin</button><button id="aiExportBtn" class="btn btn-secondary" style="display:none; background:var(--purple-lt); border-color:var(--purple);" onclick="exportAIResult()">📥 Export</button><button class="btn btn-secondary" onclick="closeModal('aiAnalysisModal')">Tutup</button></div>
         </div>
     </div>
 </div>
@@ -1918,28 +1918,28 @@ alter table public.settings
 <div id="aiChatModal" class="modal">
     <div class="modal-content" style="max-width:560px;">
         <div class="modal-header"><h3>Tanya Sinarkeu Keuangan</h3><button class="modal-close" onclick="closeModal('aiChatModal')">×</button></div>
-        <div style="padding:0 22px 18px;">
-            <div id="aiChatWorkerWarning" style="display:none; background:var(--danger-lt); border:1px solid color-mix(in srgb, var(--danger) 35%, var(--danger-lt)); border-radius: var(--radius-sm); padding:10px 12px; margin-bottom:12px; font-size:.72rem; color:var(--danger);">
+        <div style="padding:0 var(--space-22) var(--space-18);">
+            <div id="aiChatWorkerWarning" style="display:none; background:var(--danger-lt); border:1px solid color-mix(in srgb, var(--danger) 35%, var(--danger-lt)); border-radius: var(--radius-sm); padding:var(--space-10) var(--space-12); margin-bottom:var(--space-12); font-size: var(--text-xs); color:var(--danger);">
                 <strong>Worker URL belum dikonfigurasi.</strong> Buka <a href="#" onclick="closeModal('aiChatModal'); openSetelanModal('ai'); return false;" style="color:var(--danger); font-weight:600; text-decoration:underline;">Setelan → Analisis Sinarkeu</a> untuk mengisi URL Cloudflare Worker Anda.
             </div>
             <div id="aiChatPresets">
-                <div style="font-size:.68rem; color:var(--ink-faint); margin-bottom:8px;">Tanyakan apa saja soal transaksi Anda, contoh:</div>
-                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
-                    <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.useAIChatExample('Pemasukan bulan ini berapa?')">Pemasukan bulan ini?</button>
-                    <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.useAIChatExample('Pengeluaran bulan lalu berapa?')">Pengeluaran bulan lalu?</button>
-                    <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.useAIChatExample('Kategori apa yang paling besar pengeluarannya bulan ini?')">Kategori terbesar bulan ini?</button>
+                <div style="font-size: var(--text-xs); color:var(--ink-faint); margin-bottom:var(--space-8);">Tanyakan apa saja soal transaksi Anda, contoh:</div>
+                <div style="display:flex; flex-wrap:wrap; gap:var(--space-6); margin-bottom:var(--space-12);">
+                    <button type="button" class="btn btn-secondary" style="font-size: var(--text-2xs); padding:var(--space-4) var(--space-10);" onclick="window.useAIChatExample('Pemasukan bulan ini berapa?')">Pemasukan bulan ini?</button>
+                    <button type="button" class="btn btn-secondary" style="font-size: var(--text-2xs); padding:var(--space-4) var(--space-10);" onclick="window.useAIChatExample('Pengeluaran bulan lalu berapa?')">Pengeluaran bulan lalu?</button>
+                    <button type="button" class="btn btn-secondary" style="font-size: var(--text-2xs); padding:var(--space-4) var(--space-10);" onclick="window.useAIChatExample('Kategori apa yang paling besar pengeluarannya bulan ini?')">Kategori terbesar bulan ini?</button>
                 </div>
             </div>
-            <div id="aiChatHistory" style="max-height:340px; overflow-y:auto; border:1px solid var(--rule); border-radius: var(--radius-sm); padding:12px; margin-bottom:10px; background:var(--paper-warm);">
-                <div style="text-align:center; color:var(--ink-faint); font-size:.72rem; padding:20px 0;" id="aiChatEmptyState">Belum ada percakapan. Coba tanyakan sesuatu di bawah.</div>
+            <div id="aiChatHistory" style="max-height:340px; overflow-y:auto; border:1px solid var(--rule); border-radius: var(--radius-sm); padding:var(--space-12); margin-bottom:var(--space-10); background:var(--paper-warm);">
+                <div style="text-align:center; color:var(--ink-faint); font-size: var(--text-xs); padding:var(--space-20) 0;" id="aiChatEmptyState">Belum ada percakapan. Coba tanyakan sesuatu di bawah.</div>
             </div>
-            <div style="display:flex; gap:8px;">
+            <div style="display:flex; gap:var(--space-8);">
                 <input type="text" id="aiChatInput" class="form-control" placeholder="Misal: listrik bulan Juni berapa?" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.sendAIChatMessage();}">
                 <button class="btn btn-primary" id="aiChatSendBtn" style="background:var(--chat-user); border-color:var(--chat-user); white-space:nowrap;" onclick="window.sendAIChatMessage()">Tanya</button>
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-                <button type="button" class="btn btn-secondary" style="font-size:.65rem; padding:4px 10px;" onclick="window.clearAIChatHistory()">Hapus Riwayat</button>
-                <span style="font-size:.6rem; color:var(--ink-faint);">Berdasarkan transaksi tersimpan di perangkat ini (maks. 300 terbaru)</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:var(--space-10);">
+                <button type="button" class="btn btn-secondary" style="font-size: var(--text-2xs); padding:var(--space-4) var(--space-10);" onclick="window.clearAIChatHistory()">Hapus Riwayat</button>
+                <span style="font-size: var(--text-2xs); color:var(--ink-faint);">Berdasarkan transaksi tersimpan di perangkat ini (maks. 300 terbaru)</span>
             </div>
         </div>
     </div>
@@ -1952,8 +1952,8 @@ alter table public.settings
             <h3>Fase Kehidupan Pernikahan</h3>
             <button class="modal-close" onclick="window.closeModal('faseKehidupanModal')">×</button>
         </div>
-        <div style="padding:0 22px 16px;">
-            <div style="font-size:.72rem; color:var(--ink-muted); margin-bottom:14px; line-height:1.6; background:var(--fase-lt); border:1px solid color-mix(in srgb, var(--purple) 35%, var(--purple-lt)); border-radius: var(--radius-sm); padding:10px 12px;">
+        <div style="padding:0 var(--space-22) var(--space-16);">
+            <div style="font-size: var(--text-xs); color:var(--ink-muted); margin-bottom:var(--space-14); line-height:1.6; background:var(--fase-lt); border:1px solid color-mix(in srgb, var(--purple) 35%, var(--purple-lt)); border-radius: var(--radius-sm); padding:var(--space-10) var(--space-12);">
                 Atur fase kehidupan pernikahan Anda agar Sinarkeu bisa memberikan rekomendasi keuangan yang lebih relevan dan personal.
             </div>
             <!-- hidden native select for compatibility -->
@@ -2028,16 +2028,16 @@ alter table public.settings
                     </div>
                 </div>
             </div>
-            <div id="faseDescBox" style="font-size:.72rem; color:var(--ink-muted); background:var(--paper-warm); border:1px solid var(--rule); border-radius: var(--radius-sm); padding:10px 12px; margin-bottom:14px; line-height:1.7; display:none;"></div>
+            <div id="faseDescBox" style="font-size: var(--text-xs); color:var(--ink-muted); background:var(--paper-warm); border:1px solid var(--rule); border-radius: var(--radius-sm); padding:var(--space-10) var(--space-12); margin-bottom:var(--space-14); line-height:1.7; display:none;"></div>
             <div class="form-group">
                 <label>Jumlah Tanggungan (anak / anggota keluarga non-penghasilan)</label>
                 <input type="number" id="faseTanggungan" class="form-control" placeholder="Contoh: 2" min="0" max="20" step="1">
             </div>
             <div class="form-group">
-                <label>Target Keuangan Utama Fase Ini <span style="font-weight:400; color:var(--ink-faint); font-size:.68rem;">(opsional)</span></label>
+                <label>Target Keuangan Utama Fase Ini <span style="font-weight:400; color:var(--ink-faint); font-size: var(--text-xs);">(opsional)</span></label>
                 <input type="text" id="faseTarget" class="form-control" placeholder="Contoh: Beli rumah, Dana pendidikan anak, Cicilan KPR...">
             </div>
-            <div style="display:flex; gap:8px; margin-top:4px;">
+            <div style="display:flex; gap:var(--space-8); margin-top:var(--space-4);">
                 <button class="btn btn-secondary" style="flex:1;" onclick="window.closeModal('faseKehidupanModal')">Batal</button>
                 <button class="btn btn-primary" style="flex:2; background:var(--fase); border-color:var(--fase);" onclick="window.saveFaseKehidupan()">Simpan</button>
             </div>
@@ -2052,13 +2052,13 @@ alter table public.settings
             <h3>Analisis Sinarkeu — Fase Kehidupan</h3>
             <button class="modal-close" onclick="window.closeModal('faseAIModal')">×</button>
         </div>
-        <div style="padding:0 22px 16px;">
-            <div id="faseAIResult" style="min-height:200px; background:var(--paper-warm); border:1.5px solid var(--rule); border-radius: var(--radius-sm); padding:18px 20px; font-size:.82rem; line-height:1.75; color:var(--ink); white-space:pre-wrap; overflow-y:auto; max-height:420px;">
-                <div style="text-align:center; color:var(--ink-faint); padding:40px 0;">Klik <strong>Analisis Sekarang</strong> untuk mulai.</div>
+        <div style="padding:0 var(--space-22) var(--space-16);">
+            <div id="faseAIResult" style="min-height:200px; background:var(--paper-warm); border:1.5px solid var(--rule); border-radius: var(--radius-sm); padding:var(--space-18) var(--space-20); font-size: var(--text-base); line-height:1.75; color:var(--ink); white-space:pre-wrap; overflow-y:auto; max-height:420px;">
+                <div style="text-align:center; color:var(--ink-faint); padding:var(--space-40) 0;">Klik <strong>Analisis Sekarang</strong> untuk mulai.</div>
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:8px;">
-                <span id="faseAIFooter" style="font-size:.65rem; color:var(--ink-faint);"></span>
-                <div style="display:flex; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:var(--space-12); flex-wrap:wrap; gap:var(--space-8);">
+                <span id="faseAIFooter" style="font-size: var(--text-2xs); color:var(--ink-faint);"></span>
+                <div style="display:flex; gap:var(--space-8);">
                     <button id="faseAICopyBtn" class="btn btn-secondary" style="display:none;" onclick="window.copyFaseAIResult()">Salin</button>
                     <button id="faseAIRunBtn" class="btn btn-primary" style="background:var(--fase); border-color:var(--fase);" onclick="window.runFaseAIAnalysis()">Analisis Sekarang</button>
                     <button class="btn btn-secondary" onclick="window.closeModal('faseAIModal')">Tutup</button>
@@ -2072,10 +2072,10 @@ alter table public.settings
 <div id="accountUnlockModal" class="modal" style="z-index:2200;">
     <div class="modal-content" style="max-width:360px; text-align:center;">
         <div class="modal-header"><h3 id="accUnlockTitle">Buka Akun</h3><button class="modal-close" onclick="closeModal('accountUnlockModal')">×</button></div>
-        <div style="padding:20px 22px 22px;">
-            <div style="font-size:.75rem; color:var(--ink-muted); margin-bottom:16px;" id="accUnlockSubtitle">Masukkan password untuk akun ini</div>
-            <div style="position:relative; margin-bottom:14px;"><input type="password" id="accUnlockPwdInput" class="form-control" placeholder="Password akun" onkeydown="if(event.key==='Enter') submitAccountUnlock()"></div>
-            <div id="accUnlockStatus" style="font-size:.72rem; color:var(--danger); margin-bottom:12px; min-height:16px;"></div>
+        <div style="padding:var(--space-20) var(--space-22) var(--space-22);">
+            <div style="font-size: var(--text-sm); color:var(--ink-muted); margin-bottom:var(--space-16);" id="accUnlockSubtitle">Masukkan password untuk akun ini</div>
+            <div style="position:relative; margin-bottom:var(--space-14);"><input type="password" id="accUnlockPwdInput" class="form-control" placeholder="Password akun" onkeydown="if(event.key==='Enter') submitAccountUnlock()"></div>
+            <div id="accUnlockStatus" style="font-size: var(--text-xs); color:var(--danger); margin-bottom:var(--space-12); min-height:16px;"></div>
             <button class="btn btn-primary" style="width:100%;" onclick="submitAccountUnlock()">Buka & Beralih</button>
         </div>
     </div>
@@ -2091,32 +2091,32 @@ alter table public.settings
             <h3>Jadwal Pembayaran</h3>
             <button class="modal-close" onclick="window.openMobileDrawer()" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
         </div>
-        <div style="padding:0 0 16px;">
+        <div style="padding:0 0 var(--space-16);">
 
             <!-- Notif segera jatuh tempo -->
-            <div id="prUpcomingAlert" class="pr-upcoming-alert" style="display:none; border-radius: var(--radius-sm); padding:10px 14px; margin-bottom:14px; font-size:.75rem; line-height:1.8;"></div>
+            <div id="prUpcomingAlert" class="pr-upcoming-alert" style="display:none; border-radius: var(--radius-sm); padding:var(--space-10) var(--space-14); margin-bottom:var(--space-14); font-size: var(--text-sm); line-height:1.8;"></div>
 
             <!-- Form tambah/edit -->
             <div class="pr-form-divider" style="padding-top:0; border-top:none;">
-                <div style="font-size:.75rem; font-weight:700; margin-bottom:10px;" id="prFormTitle">＋ Tambah Jadwal Baru</div>
+                <div style="font-size: var(--text-sm); font-weight:700; margin-bottom:var(--space-10);" id="prFormTitle">＋ Tambah Jadwal Baru</div>
                 <input type="hidden" id="prEditId" value="">
-                <div class="form-group" style="margin-bottom:10px;">
+                <div class="form-group" style="margin-bottom:var(--space-10);">
                     <label>Jenis Pembayaran</label>
                     <input type="text" id="prName" class="form-control" placeholder="Contoh: Listrik, BPJS, Pajak Kendaraan...">
                 </div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <div class="form-group" style="flex:1; min-width:120px; margin-bottom:10px;">
+                <div style="display:flex; gap:var(--space-10); flex-wrap:wrap;">
+                    <div class="form-group" style="flex:1; min-width:120px; margin-bottom:var(--space-10);">
                         <label>Tanggal Jatuh Tempo</label>
                         <input type="number" id="prDay" class="form-control" min="1" max="31" placeholder="Tanggal (1–31)">
                     </div>
-                    <div class="form-group" style="flex:1; min-width:120px; margin-bottom:10px;">
+                    <div class="form-group" style="flex:1; min-width:120px; margin-bottom:var(--space-10);">
                         <label>Pengulangan</label>
                         <select id="prRecurrence" class="form-control" onchange="togglePrMonthField()">
                             <option value="monthly">Bulanan</option>
                             <option value="yearly">Tahunan</option>
                         </select>
                     </div>
-                    <div class="form-group" id="prMonthGroup" style="flex:1; min-width:120px; margin-bottom:10px; display:none;">
+                    <div class="form-group" id="prMonthGroup" style="flex:1; min-width:120px; margin-bottom:var(--space-10); display:none;">
                         <label>Bulan</label>
                         <select id="prMonth" class="form-control">
                             <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
@@ -2126,22 +2126,22 @@ alter table public.settings
                         </select>
                     </div>
                 </div>
-                <div class="form-group" style="margin-bottom:12px;">
+                <div class="form-group" style="margin-bottom:var(--space-12);">
                     <label>Catatan <span style="font-weight:400; color:var(--ink-faint);">(opsional)</span></label>
                     <input type="text" id="prNote" class="form-control" placeholder="Contoh: Via m-banking, estimasi Rp 150.000...">
                 </div>
-                <div id="prFormStatus" style="font-size:.72rem; color:var(--danger); margin-bottom:8px; min-height:16px;"></div>
-                <div style="display:flex; gap:8px;">
+                <div id="prFormStatus" style="font-size: var(--text-xs); color:var(--danger); margin-bottom:var(--space-8); min-height:16px;"></div>
+                <div style="display:flex; gap:var(--space-8);">
                     <button class="btn btn-secondary" style="flex:1;" onclick="cancelPrEdit()">Batal</button>
                     <button class="btn btn-primary" style="flex:2; background:var(--warning); border-color:var(--warning);" onclick="savePaymentReminderHandler()">Simpan Jadwal</button>
                 </div>
             </div>
 
             <!-- Daftar pengingat aktif -->
-            <div class="pr-form-divider" style="margin-top:14px; padding-top:14px;">
-                <div style="font-size:.75rem; font-weight:700; color:var(--ink); margin-bottom:8px;">Daftar Jadwal</div>
-                <div id="prList" style="display:flex; flex-direction:column; gap:8px; padding-right:4px;">
-                    <div id="prEmptyMsg" style="font-size:.72rem; color:var(--ink-faint); text-align:center; padding:18px 0;">Belum ada jadwal pembayaran. Tambahkan di atas.</div>
+            <div class="pr-form-divider" style="margin-top:var(--space-14); padding-top:14px;">
+                <div style="font-size: var(--text-sm); font-weight:700; color:var(--ink); margin-bottom:var(--space-8);">Daftar Jadwal</div>
+                <div id="prList" style="display:flex; flex-direction:column; gap:var(--space-8); padding-right:4px;">
+                    <div id="prEmptyMsg" style="font-size: var(--text-xs); color:var(--ink-faint); text-align:center; padding:var(--space-18) 0;">Belum ada jadwal pembayaran. Tambahkan di atas.</div>
                 </div>
             </div>
         </div>
@@ -2171,7 +2171,7 @@ alter table public.settings
   statis sebelumnya, jadi urutan dependency antar file tidak berubah.
 -->
 <script>
-    var APP_JS_VERSION = 'v57'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
+    var APP_JS_VERSION = 'v59'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
     // [LAZY-LOAD] 'js/report.js', 'js/nutrisi.js', 'js/electricity-plan.js', dan
     // 'js/fraud-detection.js' SENGAJA TIDAK ada di daftar eager di bawah ini lagi --
     // keempatnya modul berat & jarang dipakai (Laporan PDF, Estimasi Gizi, Rencana
@@ -2775,12 +2775,12 @@ if (document.readyState === 'complete') {
             <h3>Tutup & Kirim ke Buku Induk</h3>
             <button class="modal-close" onclick="closeModal('tutupAnakBukuModal')">×</button>
         </div>
-        <div id="tutupAnakBukuInfo" style="margin-bottom:14px;"></div>
+        <div id="tutupAnakBukuInfo" style="margin-bottom:var(--space-14);"></div>
         <div class="form-group">
-            <label style="font-size:.75rem; font-weight:600;">Deskripsi transaksi di buku induk</label>
+            <label style="font-size: var(--text-sm); font-weight:600;">Deskripsi transaksi di buku induk</label>
             <input type="text" id="tutupAnakBukuDesc" class="form-control"
                    placeholder="Contoh: Ringkasan Renovasi Dapur"
-                   style="margin-top:6px;">
+                   style="margin-top:var(--space-6);">
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="closeModal('tutupAnakBukuModal')">Batal</button>
