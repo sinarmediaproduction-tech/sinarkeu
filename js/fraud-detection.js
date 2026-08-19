@@ -344,7 +344,7 @@ window.renderFraudAlertListContent = function() {
     if (!list) return;
     const flags = window._fraudActiveFlags || [];
     if (flags.length === 0) {
-        list.innerHTML = '<div style="font-size:.72rem; color:var(--ink-faint); text-align:center; padding:18px 0;">Tidak ada aktivitas mencurigakan saat ini.</div>';
+        list.innerHTML = '<div style="font-size: var(--text-xs); color:var(--ink-faint); text-align:center; padding:18px 0;">Tidak ada aktivitas mencurigakan saat ini.</div>';
         return;
     }
     const sorted = [...flags].sort((a, b) => (b.level === 'warning') - (a.level === 'warning'));
@@ -354,11 +354,11 @@ window.renderFraudAlertListContent = function() {
         const badgeColor = isWarn ? '#dc2626' : '#d97706';
         return `<div style="border:1.5px solid var(--ink); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:8px;">
             <div style="display:flex; justify-content:space-between; gap:8px; align-items:flex-start;">
-                <span style="font-size:.62rem; font-weight:700; color:#fff; background:${badgeColor}; padding:2px 8px; border-radius:4px; white-space:nowrap;">${isWarn ? 'PERINGATAN' : 'INFO'}</span>
-                <button type="button" data-sig="${sig}" class="fraud-dismiss-btn" style="font-size:.65rem; background:none; border:1px solid var(--rule); border-radius:4px; padding:2px 8px; cursor:pointer; white-space:nowrap;">Abaikan</button>
+                <span style="font-size: var(--text-2xs); font-weight:700; color:#fff; background:${badgeColor}; padding:2px 8px; border-radius:4px; white-space:nowrap;">${isWarn ? 'PERINGATAN' : 'INFO'}</span>
+                <button type="button" data-sig="${sig}" class="fraud-dismiss-btn" style="font-size: var(--text-2xs); background:none; border:1px solid var(--rule); border-radius:4px; padding:2px 8px; cursor:pointer; white-space:nowrap;">Abaikan</button>
             </div>
-            <div style="font-size:.75rem; margin-top:6px; line-height:1.5;">${window.escapeHtml(f.message)}</div>
-            ${f.timestamp ? `<div style="font-size:.62rem; color:var(--ink-faint); margin-top:4px;">${new Date(f.timestamp).toLocaleString('id-ID')}</div>` : ''}
+            <div style="font-size: var(--text-sm); margin-top:6px; line-height:1.5;">${window.escapeHtml(f.message)}</div>
+            ${f.timestamp ? `<div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:4px;">${new Date(f.timestamp).toLocaleString('id-ID')}</div>` : ''}
         </div>`;
     }).join('');
     // Attach event listeners after render
@@ -395,16 +395,16 @@ window.runFraudAIInsight = async function() {
     if (!box) return;
     const endpointCheck = (typeof window.resolveAIEndpoint === 'function') ? window.resolveAIEndpoint() : { ok: false };
     if (!endpointCheck.ok) {
-        box.innerHTML = `<div style="font-size:.7rem; color:#A13A3A; padding:8px 0; line-height:1.5;">${window.escapeHtml(endpointCheck.reason)}</div>`;
+        box.innerHTML = `<div style="font-size: var(--text-xs); color:#A13A3A; padding:8px 0; line-height:1.5;">${window.escapeHtml(endpointCheck.reason)}</div>`;
         return;
     }
     const flags = window._fraudActiveFlags || [];
     if (flags.length === 0) {
-        box.innerHTML = '<div style="font-size:.7rem; color:var(--ink-faint); padding:8px 0;">Tidak ada aktivitas aktif untuk dirangkum.</div>';
+        box.innerHTML = '<div style="font-size: var(--text-xs); color:var(--ink-faint); padding:8px 0;">Tidak ada aktivitas aktif untuk dirangkum.</div>';
         return;
     }
 
-    box.innerHTML = '<div style="font-size:.72rem; color:var(--ink-faint); padding:8px 0;">🤖 Sinarkeu sedang merangkai insight dari flag yang aktif...</div>';
+    box.innerHTML = '<div style="font-size: var(--text-xs); color:var(--ink-faint); padding:8px 0;">🤖 Sinarkeu sedang merangkai insight dari flag yang aktif...</div>';
 
     const lines = flags.map(f => {
         const bits = [`[${f.level === 'warning' ? 'PERINGATAN' : 'INFO'}] ${f.code}`];
@@ -425,8 +425,8 @@ INSTRUKSI:
 
     try {
         const { text } = await window.callAIEngine(prompt);
-        box.innerHTML = `<div style="background:var(--accent-lt); border:1.5px solid var(--rule); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:4px; font-size:.75rem; line-height:1.6; color:var(--ink);">${window.escapeHtml(text)}</div>`;
+        box.innerHTML = `<div style="background:var(--accent-lt); border:1.5px solid var(--rule); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:4px; font-size: var(--text-sm); line-height:1.6; color:var(--ink);">${window.escapeHtml(text)}</div>`;
     } catch (e) {
-        box.innerHTML = `<div style="font-size:.7rem; color:#A13A3A; padding:8px 0; line-height:1.5;">Gagal membuat insight: ${window.escapeHtml(e.message)}</div>`;
+        box.innerHTML = `<div style="font-size: var(--text-xs); color:#A13A3A; padding:8px 0; line-height:1.5;">Gagal membuat insight: ${window.escapeHtml(e.message)}</div>`;
     }
 };

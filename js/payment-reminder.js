@@ -402,7 +402,7 @@ window.renderPaymentReminders = async function() {
     if (!container) return;
     
     if (list.length === 0) {
-        container.innerHTML = '<div id="prEmptyMsg" style="font-size:.72rem; color:var(--ink-faint); text-align:center; padding:18px 0;">Belum ada jadwal pembayaran. Tambahkan di bawah.</div>';
+        container.innerHTML = '<div id="prEmptyMsg" style="font-size: var(--text-xs); color:var(--ink-faint); text-align:center; padding:18px 0;">Belum ada jadwal pembayaran. Tambahkan di bawah.</div>';
         if (upcomingAlert) upcomingAlert.style.display = 'none';
         return;
     }
@@ -440,22 +440,22 @@ window.renderPaymentReminders = async function() {
         // payment_reminders.sql, CATATAN DESAIN).
         const isFromOtherBook = item.book_id && item.book_id !== bookId;
         const actionsHtml = isFromOtherBook
-            ? `<span style="font-size:.63rem; color:var(--ink-faint); font-style:italic; white-space:nowrap;" title="Ikut tim, dikelola dari buku asalnya">dari buku lain</span>`
+            ? `<span style="font-size: var(--text-2xs); color:var(--ink-faint); font-style:italic; white-space:nowrap;" title="Ikut tim, dikelola dari buku asalnya">dari buku lain</span>`
             : `<div style="display:flex; gap:4px;">
-                   <button onclick="window.editPaymentReminder('${item.id}')" style="background:none; border:1px solid var(--rule); border-radius: var(--radius-sm); padding:3px 7px; cursor:pointer; font-size:.7rem; color:var(--ink-muted);" title="Edit">Edit</button>
-                   <button onclick="window.deletePaymentReminderHandler('${item.id}')" style="background:none; border:1px solid var(--danger-lt); border-radius: var(--radius-sm); padding:3px 7px; cursor:pointer; font-size:.7rem; color:var(--danger);" title="Hapus">Hapus</button>
+                   <button onclick="window.editPaymentReminder('${item.id}')" style="background:none; border:1px solid var(--rule); border-radius: var(--radius-sm); padding:3px 7px; cursor:pointer; font-size: var(--text-xs); color:var(--ink-muted);" title="Edit">Edit</button>
+                   <button onclick="window.deletePaymentReminderHandler('${item.id}')" style="background:none; border:1px solid var(--danger-lt); border-radius: var(--radius-sm); padding:3px 7px; cursor:pointer; font-size: var(--text-xs); color:var(--danger);" title="Hapus">Hapus</button>
                </div>`;
 
         const el = document.createElement('div');
         el.style.cssText = `display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px; background:${isUrgent ? 'var(--warning-lt)' : 'var(--paper-warm)'}; border:1.5px solid ${isUrgent ? 'var(--warning)' : 'var(--rule)'}; border-radius: var(--radius-sm); padding:10px 12px;`;
         el.innerHTML = `
             <div style="flex:1 1 180px; min-width:0;">
-                <div style="font-size:.8rem; font-weight:700; color:var(--ink);">${window.escapeHtml(item.name)}</div>
-                <div style="font-size:.68rem; color:var(--ink-muted); margin-top:2px;">${recLabel} &nbsp;·&nbsp; Berikutnya: ${window.formatNextDate(item)}</div>
-                ${item.note ? `<div style="font-size:.65rem; color:var(--ink-faint); margin-top:2px; font-style:italic;">${window.escapeHtml(item.note)}</div>` : ''}
+                <div style="font-size: var(--text-base); font-weight:700; color:var(--ink);">${window.escapeHtml(item.name)}</div>
+                <div style="font-size: var(--text-xs); color:var(--ink-muted); margin-top:2px;">${recLabel} &nbsp;·&nbsp; Berikutnya: ${window.formatNextDate(item)}</div>
+                ${item.note ? `<div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:2px; font-style:italic;">${window.escapeHtml(item.note)}</div>` : ''}
             </div>
             <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
-                <div style="font-size:.68rem; font-weight:700; white-space:nowrap; color:${isUrgent ? 'var(--warning)' : 'var(--ink-muted)'};">${dayLabel}</div>
+                <div style="font-size: var(--text-xs); font-weight:700; white-space:nowrap; color:${isUrgent ? 'var(--warning)' : 'var(--ink-muted)'};">${dayLabel}</div>
                 ${actionsHtml}
             </div>
         `;

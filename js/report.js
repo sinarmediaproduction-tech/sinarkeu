@@ -148,43 +148,43 @@ async function generateMonthlyReport() {
     <div style="font-family:'Plus Jakarta Sans',sans-serif; color:${C.ink}; background:${C.bg};">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
         <div>
-          <div style="font-size:.75rem; color:${C.inkFaint};">${accName} · ${bookName}</div>
-          <div style="font-size:1.05rem; font-weight:700; color:${C.ink};">${monthName(month)} ${year}</div>
+          <div style="font-size: var(--text-sm); color:${C.inkFaint};">${accName} · ${bookName}</div>
+          <div style="font-size: var(--text-lg); font-weight:700; color:${C.ink};">${monthName(month)} ${year}</div>
         </div>
-        <div style="font-size:.7rem; color:${C.inkFaint};">Dibuat: ${nowStr()}</div>
+        <div style="font-size: var(--text-xs); color:${C.inkFaint};">Dibuat: ${nowStr()}</div>
       </div>
 
       ${allTxIsFallback ? `
-      <div style="background:${C.budgetBg}; border:1.5px solid ${C.budgetBd}; border-radius: var(--radius-sm); padding:10px 14px; margin-bottom:16px; font-size:.72rem; color:${C.budgetTxt}; display:flex; align-items:center; gap:8px;">
-        <span style="font-size:1rem; line-height:1;">⚠️</span>
+      <div style="background:${C.budgetBg}; border:1.5px solid ${C.budgetBd}; border-radius: var(--radius-sm); padding:10px 14px; margin-bottom:16px; font-size: var(--text-xs); color:${C.budgetTxt}; display:flex; align-items:center; gap:8px;">
+        <span style="font-size: var(--text-lg); line-height:1;">⚠️</span>
         <span>${window.isOnline() ? 'Gagal ambil data lengkap dari server (koneksi lambat/timeout). Laporan ini dari data tersimpan di perangkat dan mungkin tidak lengkap untuk bulan lama.' : 'Sedang offline. Laporan ini dari data tersimpan di perangkat dan mungkin tidak lengkap untuk bulan lama.'}</span>
       </div>` : ''}
 
       <!-- Summary cards -->
       <div class="laporan-summary-grid" style="margin-bottom:20px;">
         <div style="background:${C.incBg}; border:1.5px solid ${C.incBd}; border-radius: var(--radius-sm); padding:14px 16px;">
-          <div style="font-size:.65rem; color:${C.incTxt}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Total Pemasukan</div>
-          <div style="font-size:1rem; font-weight:700; font-family:${FM}; color:${C.incTxt}; margin-top:4px;">${fmtRp(income)}</div>
+          <div style="font-size: var(--text-2xs); color:${C.incTxt}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Total Pemasukan</div>
+          <div style="font-size: var(--text-lg); font-weight:700; font-family:${FM}; color:${C.incTxt}; margin-top:4px;">${fmtRp(income)}</div>
         </div>
         <div style="background:${C.expBg}; border:1.5px solid ${C.expBd}; border-radius: var(--radius-sm); padding:14px 16px;">
-          <div style="font-size:.65rem; color:${C.expTxt}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Total Pengeluaran</div>
-          <div style="font-size:1rem; font-weight:700; font-family:${FM}; color:${C.expTxt}; margin-top:4px;">${fmtRp(expense)}</div>
+          <div style="font-size: var(--text-2xs); color:${C.expTxt}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Total Pengeluaran</div>
+          <div style="font-size: var(--text-lg); font-weight:700; font-family:${FM}; color:${C.expTxt}; margin-top:4px;">${fmtRp(expense)}</div>
         </div>
         <div style="background:${balance >= 0 ? C.balPosBg : C.expBg}; border:1.5px solid ${balance >= 0 ? C.balPosBd : C.expBd}; border-radius: var(--radius-sm); padding:14px 16px;">
-          <div style="font-size:.65rem; color:${balance >= 0 ? C.balPosTxt : C.expTxt}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Saldo Bersih</div>
-          <div style="font-size:1rem; font-weight:700; font-family:${FM}; color:${balance >= 0 ? C.balPosTxt : C.expTxt}; margin-top:4px;">${fmtRp(balance)}</div>
+          <div style="font-size: var(--text-2xs); color:${balance >= 0 ? C.balPosTxt : C.expTxt}; font-weight:600; text-transform:uppercase; letter-spacing:.5px;">Saldo Bersih</div>
+          <div style="font-size: var(--text-lg); font-weight:700; font-family:${FM}; color:${balance >= 0 ? C.balPosTxt : C.expTxt}; margin-top:4px;">${fmtRp(balance)}</div>
         </div>
       </div>
 
       ${totalBudget > 0 ? `
       <div style="background:${C.budgetBg}; border:1.5px solid ${C.budgetBd}; border-radius: var(--radius-sm); padding:12px 16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
         <div>
-          <div style="font-size:.65rem; color:${C.budgetTxt}; font-weight:600;">Total Anggaran Bulan Ini</div>
-          <div style="font-size:.95rem; font-weight:700; font-family:${FM}; color:${C.budgetTxt};">${fmtRp(totalBudget)}</div>
+          <div style="font-size: var(--text-2xs); color:${C.budgetTxt}; font-weight:600;">Total Anggaran Bulan Ini</div>
+          <div style="font-size: var(--text-md); font-weight:700; font-family:${FM}; color:${C.budgetTxt};">${fmtRp(totalBudget)}</div>
         </div>
         <div style="text-align:right;">
-          <div style="font-size:.65rem; color:${C.budgetTxt}; font-weight:600;">Sisa Anggaran</div>
-          <div style="font-size:.95rem; font-weight:700; font-family:${FM}; color:${totalBudget - expense >= 0 ? C.incTxt : C.expTxt};">${fmtRp(totalBudget - expense)}</div>
+          <div style="font-size: var(--text-2xs); color:${C.budgetTxt}; font-weight:600;">Sisa Anggaran</div>
+          <div style="font-size: var(--text-md); font-weight:700; font-family:${FM}; color:${totalBudget - expense >= 0 ? C.incTxt : C.expTxt};">${fmtRp(totalBudget - expense)}</div>
         </div>
       </div>` : ''}
 
@@ -194,9 +194,9 @@ async function generateMonthlyReport() {
       <div id="reportAISummaryBox" style="display:none;"></div>
 
       <!-- Kategori -->
-      <div style="font-size:.78rem; font-weight:700; margin-bottom:8px; color:${C.inkMuted}; text-transform:uppercase; letter-spacing:.5px;">Pengeluaran per Kategori</div>
+      <div style="font-size: var(--text-sm); font-weight:700; margin-bottom:8px; color:${C.inkMuted}; text-transform:uppercase; letter-spacing:.5px;">Pengeluaran per Kategori</div>
       <div class="laporan-table-wrap" style="border:1.5px solid ${C.rule}; border-radius: var(--radius-sm); margin-bottom:20px;">
-        <table style="width:100%; min-width:380px; border-collapse:collapse; font-size:.78rem;">
+        <table style="width:100%; min-width:380px; border-collapse:collapse; font-size: var(--text-sm);">
           <thead>
             <tr style="background:${C.thead}; text-align:left;">
               <th style="padding:8px 10px; font-weight:600; color:${C.inkMuted};">Kategori</th>
@@ -210,9 +210,9 @@ async function generateMonthlyReport() {
       </div>
 
       <!-- Daftar transaksi -->
-      <div style="font-size:.78rem; font-weight:700; margin-bottom:8px; color:${C.inkMuted}; text-transform:uppercase; letter-spacing:.5px;">Daftar Transaksi (${allTx.length} transaksi)</div>
+      <div style="font-size: var(--text-sm); font-weight:700; margin-bottom:8px; color:${C.inkMuted}; text-transform:uppercase; letter-spacing:.5px;">Daftar Transaksi (${allTx.length} transaksi)</div>
       <div class="laporan-table-wrap" style="border:1.5px solid ${C.rule}; border-radius: var(--radius-sm);">
-        <table style="width:100%; min-width:480px; border-collapse:collapse; font-size:.75rem;">
+        <table style="width:100%; min-width:480px; border-collapse:collapse; font-size: var(--text-sm);">
           <thead>
             <tr style="background:${C.thead};">
               <th style="padding:8px 10px; text-align:left; font-weight:600; color:${C.inkMuted};">Tanggal</th>
@@ -284,7 +284,7 @@ window._loadReportAISummary = async function(month, year, income, expense, cats)
   if (income === 0 && expense === 0) { box.style.display = 'none'; return; }
 
   box.style.display = 'block';
-  box.innerHTML = `<div style="background:var(--accent-lt); border:1.5px solid var(--rule); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:20px; font-size:.78rem; color:var(--ink-muted);">🤖 Sinarkeu sedang membuat ringkasan bulan ini...</div>`;
+  box.innerHTML = `<div style="background:var(--accent-lt); border:1.5px solid var(--rule); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:20px; font-size: var(--text-sm); color:var(--ink-muted);">🤖 Sinarkeu sedang membuat ringkasan bulan ini...</div>`;
 
   try {
     let prevMonth = month - 1, prevYear = year;
@@ -325,7 +325,7 @@ INSTRUKSI:
 4. Jangan pakai salam pembuka atau penutup, langsung ke isi ringkasannya.`;
 
     const { text } = await window.callAIEngine(prompt);
-    box.innerHTML = `<div style="background:var(--accent-lt); border:1.5px solid var(--rule); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:20px; font-size:.78rem; line-height:1.65; color:var(--ink);">
+    box.innerHTML = `<div style="background:var(--accent-lt); border:1.5px solid var(--rule); border-radius:var(--radius-sm); padding:12px 14px; margin-bottom:20px; font-size: var(--text-sm); line-height:1.65; color:var(--ink);">
       <div style="font-weight:700; margin-bottom:6px;">🤖 Ringkasan Sinarkeu</div>
       <div>${window.escapeHtml(text)}</div>
     </div>`;

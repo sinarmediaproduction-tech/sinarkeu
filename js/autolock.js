@@ -49,7 +49,7 @@
             'color:#fff',
             'padding:10px 18px',
             'border-radius: var(--radius-sm)',
-            'font-size:.78rem',
+            'font-size: var(--text-sm)',
             'font-weight:600',
             'z-index:9999',
             'opacity:0',

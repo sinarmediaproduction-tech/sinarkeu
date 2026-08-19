@@ -183,7 +183,7 @@ window.openCardVisibilityModal = function(bookId) {
             const labelKey = window.FINANCIAL_CARD_LABELS[id];
             const label = (typeof window.t === 'function') ? window.t(labelKey) : labelKey;
             const row = document.createElement('label');
-            row.style.cssText = 'display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--rule); cursor:pointer; font-size:.85rem;';
+            row.style.cssText = 'display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--rule); cursor:pointer; font-size: var(--text-base);';
             row.innerHTML = `<input type="checkbox" data-card-id="${id}" ${hidden.includes(id) ? '' : 'checked'} style="width:16px; height:16px;"> <span>${window.escapeHtml(label)}</span>`;
             list.appendChild(row);
         });

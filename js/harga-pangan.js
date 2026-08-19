@@ -588,7 +588,7 @@ window.renderHargaKomoditasModal = function() {
         }
         const hasHistory = window._hargaPanganHistory && (window._hargaPanganHistory.get(c.slug) || []).length >= 2;
         const trendBtn = hasHistory
-            ? '<button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:.8rem;" onclick="window.openHargaKomoditasTrend(\'' + c.slug + '\')">Tren</button>'
+            ? '<button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size: var(--text-base);" onclick="window.openHargaKomoditasTrend(\'' + c.slug + '\')">Tren</button>'
             : '<span style="color:var(--text-secondary)">-</span>';
 
         return '<tr><td>' + window.escapeHtml(c.name) + '</td><td>' + window.escapeHtml(c.unit) + '</td><td>' + price + '</td><td>' + region + '</td><td>' + changeHtml + '</td><td class="col-action">' + trendBtn + '</td></tr>';
@@ -599,7 +599,7 @@ window.renderHargaKomoditasModal = function() {
         const price = hit ? window.rp(hit.price) : '<span style="color:var(--text-secondary)">Belum ada data</span>';
         const date = hit ? window.escapeHtml(hit.date) : '-';
         return '<tr><td>' + window.escapeHtml(c.name) + '</td><td>' + window.escapeHtml(c.unit) + '</td><td>' + price + '</td><td>' + date + '</td>' +
-            '<td class="col-action"><button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size:.8rem;" onclick="window.openEditHargaKomoditasManual(\'' + c.slug + '\')">Ubah</button></td></tr>';
+            '<td class="col-action"><button type="button" class="btn btn-secondary" style="padding:4px 10px;font-size: var(--text-base);" onclick="window.openEditHargaKomoditasManual(\'' + c.slug + '\')">Ubah</button></td></tr>';
     };
 
     // [KARTU MOBILE] Versi non-tabel untuk layar sempit (lihat .hk-card-list
@@ -637,7 +637,7 @@ window.renderHargaKomoditasModal = function() {
         const hit = cache.get(c.slug);
         const priceHtml = hit
             ? ('<span class="hk-card-price">' + window.rp(hit.price) + '</span><span class="hk-card-unit">/ ' + window.escapeHtml(c.unit) + '</span>')
-            : '<span style="color:var(--ink-faint);font-size:.75rem;">Belum ada data</span>';
+            : '<span style="color:var(--ink-faint);font-size: var(--text-sm);">Belum ada data</span>';
 
         const change = _hkPctChange(c.slug);
         let changeColor = 'var(--ink-faint)';
@@ -668,7 +668,7 @@ window.renderHargaKomoditasModal = function() {
         const hit = cache.get(c.slug);
         const priceHtml = hit
             ? ('<span class="hk-card-price">' + window.rp(hit.price) + '</span><span class="hk-card-unit">/ ' + window.escapeHtml(c.unit) + '</span>')
-            : '<span style="color:var(--ink-faint);font-size:.75rem;">Belum ada data</span>';
+            : '<span style="color:var(--ink-faint);font-size: var(--text-sm);">Belum ada data</span>';
         const dateHtml = hit ? ('<span class="hk-card-meta">Update: ' + window.escapeHtml(hit.date) + '</span>') : '';
 
         return '<div class="hk-card">' +
@@ -684,8 +684,8 @@ window.renderHargaKomoditasModal = function() {
 
     autoBody.innerHTML = autoRows.map(renderAutoRow).join('') || '<tr><td colspan="6">Tidak ada data.</td></tr>';
     manualBody.innerHTML = manualRows.map(renderManualRow).join('') || '<tr><td colspan="5">Tidak ada data.</td></tr>';
-    if (autoCardList) autoCardList.innerHTML = autoRows.map(renderAutoCard).join('') || '<div style="font-size:.75rem;color:var(--ink-faint);">Tidak ada data.</div>';
-    if (manualCardList) manualCardList.innerHTML = manualRows.map(renderManualCard).join('') || '<div style="font-size:.75rem;color:var(--ink-faint);">Tidak ada data.</div>';
+    if (autoCardList) autoCardList.innerHTML = autoRows.map(renderAutoCard).join('') || '<div style="font-size: var(--text-sm);color:var(--ink-faint);">Tidak ada data.</div>';
+    if (manualCardList) manualCardList.innerHTML = manualRows.map(renderManualCard).join('') || '<div style="font-size: var(--text-sm);color:var(--ink-faint);">Tidak ada data.</div>';
 };
 
 window.openEditHargaKomoditasManual = function(slug) {

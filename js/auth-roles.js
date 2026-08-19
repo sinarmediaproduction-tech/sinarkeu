@@ -170,7 +170,7 @@ window.skBuildMenuVisibilityHtml = function(bookId) {
     return (
         '<div id="mvPanelWrap" class="um-panel">' +
             '<div class="um-panel-header"><span class="um-panel-title">ATUR TAMPILAN MENU PER PERAN</span></div>' +
-            '<div style="font-size:.66rem; color:var(--ink-faint); margin-bottom:10px; line-height:1.5;">Admin selalu bisa lihat semua menu (tidak bisa dikunci sendiri lewat sini). Centang menu yang boleh dilihat Editor / Viewer khusus di buku ini.</div>' +
+            '<div style="font-size: var(--text-xs); color:var(--ink-faint); margin-bottom:10px; line-height:1.5;">Admin selalu bisa lihat semua menu (tidak bisa dikunci sendiri lewat sini). Centang menu yang boleh dilihat Editor / Viewer khusus di buku ini.</div>' +
             '<div class="um-menu-table-wrap">' +
                 '<table class="um-menu-table">' +
                     '<thead><tr>' +
@@ -181,7 +181,7 @@ window.skBuildMenuVisibilityHtml = function(bookId) {
                     '<tbody>' + rows + '</tbody>' +
                 '</table>' +
             '</div>' +
-            '<div style="font-size:.64rem; color:var(--ink-faint); margin-top:8px; line-height:1.5;">Catatan: kalau proteksi database tambahan (sql/harden_shared_book_data_rls.sql) sudah dijalankan, Viewer tetap ditolak database saat menyimpan perubahan walau menu "Tambah Transaksi"/"Setelan" dinyalakan di sini. Kalau proteksi itu <b>belum</b> dijalankan, menyalakannya beneran memberi Viewer akses tulis -- pertimbangkan baik-baik sebelum mengaktifkan untuk Viewer.</div>' +
+            '<div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:8px; line-height:1.5;">Catatan: kalau proteksi database tambahan (sql/harden_shared_book_data_rls.sql) sudah dijalankan, Viewer tetap ditolak database saat menyimpan perubahan walau menu "Tambah Transaksi"/"Setelan" dinyalakan di sini. Kalau proteksi itu <b>belum</b> dijalankan, menyalakannya beneran memberi Viewer akses tulis -- pertimbangkan baik-baik sebelum mengaktifkan untuk Viewer.</div>' +
             '<button type="button" class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="window.skSaveMenuVisibility(\'' + esc(bookId) + '\')">Simpan Pengaturan Menu</button>' +
         '</div>'
     );

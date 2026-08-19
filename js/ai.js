@@ -146,7 +146,7 @@ window._runAiCategorySuggest = async function(descId, catExpenseId, catIncomeId,
             categories.find(c => clean.toLowerCase().includes(c.toLowerCase()));
         if (!matched) return;
 
-        chipEl.innerHTML = `🤖 Saran Sinarkeu: <b>${window.escapeHtml(matched)}</b> <button type="button" class="btn btn-secondary" style="font-size:.62rem; padding:2px 8px; margin-left:4px;" onclick="window._applyAiCategorySuggest(this)">Pakai</button>`;
+        chipEl.innerHTML = `🤖 Saran Sinarkeu: <b>${window.escapeHtml(matched)}</b> <button type="button" class="btn btn-secondary" style="font-size: var(--text-2xs); padding:2px 8px; margin-left:4px;" onclick="window._applyAiCategorySuggest(this)">Pakai</button>`;
         chipEl.dataset.suggestedCategory = matched;
         chipEl.dataset.targetSelect = targetSelectId;
         chipEl.style.display = 'block';
@@ -303,7 +303,7 @@ window._runAiDescSuggest = function(amountId, descId, dateId, typeRadioName, chi
     const confident = top.count >= 2 || top.best >= 0.95;
     if (!confident || !chipEl) return;
 
-    chipEl.innerHTML = `🤖 Saran deskripsi: <b>${window.escapeHtml(top.desc)}</b> <span style="opacity:.7;">(mirip ${top.count} transaksi lalu)</span> <button type="button" class="btn btn-secondary" style="font-size:.62rem; padding:2px 8px; margin-left:4px;" onclick="window._applyAiDescSuggest(this, '${descId}')">Pakai</button>`;
+    chipEl.innerHTML = `🤖 Saran deskripsi: <b>${window.escapeHtml(top.desc)}</b> <span style="opacity:.7;">(mirip ${top.count} transaksi lalu)</span> <button type="button" class="btn btn-secondary" style="font-size: var(--text-2xs); padding:2px 8px; margin-left:4px;" onclick="window._applyAiDescSuggest(this, '${descId}')">Pakai</button>`;
     chipEl.dataset.suggestedDesc = top.desc;
     chipEl.style.display = 'block';
 };
@@ -608,11 +608,11 @@ window.updateAIChatPresets = function() {
     const topCat = sorted[0]?.[0] || 'pengeluaran';
     const topCatLower = topCat.toLowerCase();
     presetContainer.innerHTML = `
-        <div style="font-size:.68rem; color:var(--ink-faint); margin-bottom:8px;">Tanyakan apa saja, contoh:</div>
+        <div style="font-size: var(--text-xs); color:var(--ink-faint); margin-bottom:8px;">Tanyakan apa saja, contoh:</div>
         <div style="display:flex; flex-wrap:wrap; gap:6px;">
-            <button type="button" class="btn btn-secondary" style="font-size:.62rem; padding:3px 8px;" onclick="window.useAIChatExample('Pemasukan bulan ini berapa?')">Pemasukan bulan ini?</button>
-            <button type="button" class="btn btn-secondary" style="font-size:.62rem; padding:3px 8px;" onclick="window.useAIChatExample('Pengeluaran ${topCatLower} bulan ini berapa?')">${topCat} bulan ini?</button>
-            <button type="button" class="btn btn-secondary" style="font-size:.62rem; padding:3px 8px;" onclick="window.useAIChatExample('Kategori apa yang paling besar pengeluarannya?')">Kategori terbesar?</button>
+            <button type="button" class="btn btn-secondary" style="font-size: var(--text-2xs); padding:3px 8px;" onclick="window.useAIChatExample('Pemasukan bulan ini berapa?')">Pemasukan bulan ini?</button>
+            <button type="button" class="btn btn-secondary" style="font-size: var(--text-2xs); padding:3px 8px;" onclick="window.useAIChatExample('Pengeluaran ${topCatLower} bulan ini berapa?')">${topCat} bulan ini?</button>
+            <button type="button" class="btn btn-secondary" style="font-size: var(--text-2xs); padding:3px 8px;" onclick="window.useAIChatExample('Kategori apa yang paling besar pengeluarannya?')">Kategori terbesar?</button>
         </div>
     `;
 };
@@ -641,20 +641,20 @@ window.renderAIChatBubbles = function() {
     const box = document.getElementById('aiChatHistory');
     if (!box) return;
     if (window._aiChatHistory.length === 0) {
-        box.innerHTML = '<div style="text-align:center; color:#9AA2AC; font-size:.72rem; padding:20px 0;" id="aiChatEmptyState">Belum ada percakapan. Coba tanyakan sesuatu di bawah.</div>';
+        box.innerHTML = '<div style="text-align:center; color:#9AA2AC; font-size: var(--text-xs); padding:20px 0;" id="aiChatEmptyState">Belum ada percakapan. Coba tanyakan sesuatu di bawah.</div>';
         return;
     }
     box.innerHTML = window._aiChatHistory.map(m => {
         if (m.role === 'user') {
-            return `<div style="display:flex; justify-content:flex-end; margin-bottom:8px;"><div style="background:#2E6B67; color:#fff; padding:8px 12px; border-radius:10px 10px 2px 10px; max-width:82%; font-size:.78rem; white-space:pre-wrap;">${window.escapeHtml(m.text)}</div></div>`;
+            return `<div style="display:flex; justify-content:flex-end; margin-bottom:8px;"><div style="background:#2E6B67; color:#fff; padding:8px 12px; border-radius:10px 10px 2px 10px; max-width:82%; font-size: var(--text-sm); white-space:pre-wrap;">${window.escapeHtml(m.text)}</div></div>`;
         }
         if (m.role === 'loading') {
-            return `<div style="display:flex; justify-content:flex-start; margin-bottom:8px;"><div style="background:#fff; border:1px solid #E7E9ED; color:#9AA2AC; padding:8px 12px; border-radius:10px 10px 10px 2px; font-size:.78rem;">Sinarkeu sedang menghitung dari data transaksi...</div></div>`;
+            return `<div style="display:flex; justify-content:flex-start; margin-bottom:8px;"><div style="background:#fff; border:1px solid #E7E9ED; color:#9AA2AC; padding:8px 12px; border-radius:10px 10px 10px 2px; font-size: var(--text-sm);">Sinarkeu sedang menghitung dari data transaksi...</div></div>`;
         }
         if (m.role === 'error') {
-            return `<div style="display:flex; justify-content:flex-start; margin-bottom:8px;"><div style="background:#F5E6E6; border:1px solid #C77A73; color:#7E2E2E; padding:8px 12px; border-radius:10px 10px 10px 2px; max-width:88%; font-size:.78rem; white-space:pre-wrap;">${window.escapeHtml(m.text)}</div></div>`;
+            return `<div style="display:flex; justify-content:flex-start; margin-bottom:8px;"><div style="background:#F5E6E6; border:1px solid #C77A73; color:#7E2E2E; padding:8px 12px; border-radius:10px 10px 10px 2px; max-width:88%; font-size: var(--text-sm); white-space:pre-wrap;">${window.escapeHtml(m.text)}</div></div>`;
         }
-        return `<div style="display:flex; justify-content:flex-start; margin-bottom:8px;"><div style="background:#fff; border:1px solid #E7E9ED; color:#1C2430; padding:8px 12px; border-radius:10px 10px 10px 2px; max-width:88%; font-size:.78rem; white-space:pre-wrap; line-height:1.65;">${window.escapeHtml(m.text)}</div></div>`;
+        return `<div style="display:flex; justify-content:flex-start; margin-bottom:8px;"><div style="background:#fff; border:1px solid #E7E9ED; color:#1C2430; padding:8px 12px; border-radius:10px 10px 10px 2px; max-width:88%; font-size: var(--text-sm); white-space:pre-wrap; line-height:1.65;">${window.escapeHtml(m.text)}</div></div>`;
     }).join('');
     box.scrollTop = box.scrollHeight;
 };

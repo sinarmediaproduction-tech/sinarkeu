@@ -121,11 +121,11 @@ window.renderSafetySnapshotList = function() {
     if (!container) return;
     const list = window.getSafetySnapshots();
     if (list.length === 0) {
-        container.innerHTML = '<div style="color:var(--ink-faint); font-size:.7rem; text-align:center; padding:14px 0;">Belum ada snapshot keamanan. Snapshot akan otomatis dibuat sebelum aksi berisiko seperti hapus buku, hapus akun, reset total aplikasi, arsipkan & kosongkan database, restore Cadangan Data, atau impor JSON.</div>';
+        container.innerHTML = '<div style="color:var(--ink-faint); font-size: var(--text-xs); text-align:center; padding:14px 0;">Belum ada snapshot keamanan. Snapshot akan otomatis dibuat sebelum aksi berisiko seperti hapus buku, hapus akun, reset total aplikasi, arsipkan & kosongkan database, restore Cadangan Data, atau impor JSON.</div>';
         return;
     }
     container.innerHTML = list.map((s) => `
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:.7rem; padding:8px 0; border-bottom:1px solid var(--rule);">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; font-size: var(--text-xs); padding:8px 0; border-bottom:1px solid var(--rule);">
             <div>
                 <div style="font-weight:600;">${window.escapeHtml(window.formatDateTime(s.timestamp))}</div>
                 <div style="color:var(--ink-faint);">${window.escapeHtml(s.reason)} · ${s.sizeKB} KB</div>

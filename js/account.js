@@ -160,7 +160,7 @@ window.renderAccModalList = function(highlightId) {
     const accounts = window.getAllAccounts();
     const activeId = window.getActiveAccountId();
     const el = document.getElementById('accModalList');
-    if (!accounts.length) { el.innerHTML = '<div style="text-align:center;color:#9AA2AC;font-size:.75rem;padding:10px 0;">Belum ada akun tersimpan.</div>'; return; }
+    if (!accounts.length) { el.innerHTML = '<div style="text-align:center;color:#9AA2AC;font-size: var(--text-sm);padding:10px 0;">Belum ada akun tersimpan.</div>'; return; }
     el.innerHTML = accounts.map(acc => {
         const isActive  = acc.id === activeId;
         const hasConfig = window.isAccountConfigured(acc.id);

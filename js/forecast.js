@@ -207,7 +207,7 @@ function _renderForecastFromMonthMap(card, txsForSaldo, monthMap, txsForTopCat) 
 
     // ── Render ──
     const trenHTML = tren !== null
-        ? `<span style="font-size:.65rem; font-weight:600; color:${tren > 0 ? '#7E2E2E' : '#1F4A38'};">
+        ? `<span style="font-size: var(--text-2xs); font-weight:600; color:${tren > 0 ? '#7E2E2E' : '#1F4A38'};">
             ${tren > 0 ? '▲' : '▼'} ${Math.abs(tren).toFixed(0)}% vs bln lalu
            </span>`
         : '';
@@ -276,7 +276,7 @@ function _forecastEmpty() {
                 <span>Estimasi Keuangan</span>
             </div>
         </div>
-        <div style="padding:18px 0; text-align:center; color:var(--ink-faint); font-size:.72rem;">
+        <div style="padding:18px 0; text-align:center; color:var(--ink-faint); font-size: var(--text-xs);">
             Belum cukup data untuk estimasi
         </div>
     `;

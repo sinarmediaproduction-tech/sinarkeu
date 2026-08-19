@@ -782,9 +782,9 @@ window.skRenderUserManagerPage = function(selectedBookId) {
     const selectorHtml =
         '<div class="um-select-wrap">' +
         (adminBookIds.length > 1
-            ? '<div class="form-group" style="margin-bottom:0;"><label style="font-size:.7rem; font-weight:700; color:var(--ink-muted);">Buku Bersama</label>' +
+            ? '<div class="form-group" style="margin-bottom:0;"><label style="font-size: var(--text-xs); font-weight:700; color:var(--ink-muted);">Buku Bersama</label>' +
               '<select id="umBookSelect" class="form-control" onchange="window.skRenderUserManagerPage(this.value)">' + options + '</select></div>'
-            : '<div style="font-size:.72rem; color:var(--ink-muted);">Buku: <b>' + window.escapeHtml((window.books || []).find(function(b) { return b.id === selectedBookId; }) ? window.books.find(function(b) { return b.id === selectedBookId; }).name : selectedBookId) + '</b></div>'
+            : '<div style="font-size: var(--text-xs); color:var(--ink-muted);">Buku: <b>' + window.escapeHtml((window.books || []).find(function(b) { return b.id === selectedBookId; }) ? window.books.find(function(b) { return b.id === selectedBookId; }).name : selectedBookId) + '</b></div>'
         ) +
         '</div>';
 

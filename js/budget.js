@@ -229,7 +229,7 @@ window.renderBudgetFormFields = function() {
     const currentBudget = effective.budget;
     const source = effective.source;
     const infoDiv = document.createElement('div');
-    infoDiv.style.cssText = 'font-size:.72rem; color:#5B6472; margin-bottom:12px; padding:8px 12px; border-radius: var(--radius-sm); background:#F4F5F7;';
+    infoDiv.style.cssText = 'font-size: var(--text-xs); color:#5B6472; margin-bottom:12px; padding:8px 12px; border-radius: var(--radius-sm); background:#F4F5F7;';
     if (source === 'default') {
         infoDiv.innerHTML = '<b>Menggunakan Anggaran Bulanan</b> — Anda dapat mengubahnya di sini untuk membuat versi khusus bulan ini.';
         infoDiv.style.background = '#E3F0E9';

@@ -698,7 +698,7 @@ window.loadConnectedDevices = async function() {
 
         if (!logs || !Array.isArray(logs) || logs.length === 0) {
             if (statusEl) statusEl.innerText = '';
-            listEl.innerHTML = '<div style="font-size:.72rem; color:#9AA2AC; text-align:center; padding:20px 0;">Belum ada log aktivitas di cloud.</div>';
+            listEl.innerHTML = '<div style="font-size: var(--text-xs); color:#9AA2AC; text-align:center; padding:20px 0;">Belum ada log aktivitas di cloud.</div>';
             return;
         }
 
@@ -747,7 +747,7 @@ window.loadConnectedDevices = async function() {
         }
 
         if (!devices.length) {
-            listEl.innerHTML = '<div style="font-size:.72rem; color:#9AA2AC; text-align:center; padding:20px 0;">Tidak ada perangkat yang aktif dalam 30 hari terakhir.</div>';
+            listEl.innerHTML = '<div style="font-size: var(--text-xs); color:#9AA2AC; text-align:center; padding:20px 0;">Tidak ada perangkat yang aktif dalam 30 hari terakhir.</div>';
             return;
         }
 
@@ -767,14 +767,14 @@ window.loadConnectedDevices = async function() {
 
             html += '<div style="border:1px solid var(--rule); border-radius: var(--radius-sm); padding:10px 12px; margin-bottom:8px; background:var(--paper);">';
             html += '<div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px 8px; margin-bottom:4px;">';
-            html += '<span style="font-size:.78rem; font-weight:700; color:var(--ink); word-break:break-word;">';
+            html += '<span style="font-size: var(--text-sm); font-weight:700; color:var(--ink); word-break:break-word;">';
             html += '<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:' + dotColor + '; margin-right:5px; vertical-align:middle;"></span>';
             html += window.escapeHtml(d.device_id);
-            if (isMe) html += ' <span style="font-size:.6rem; background:#E3F0E9; color:#1F5138; padding:1px 7px; border-radius: var(--radius-sm); font-weight:600; vertical-align:middle;">Perangkat ini</span>';
+            if (isMe) html += ' <span style="font-size: var(--text-2xs); background:#E3F0E9; color:#1F5138; padding:1px 7px; border-radius: var(--radius-sm); font-weight:600; vertical-align:middle;">Perangkat ini</span>';
             html += '</span>';
-            html += '<span style="font-size:.65rem; color:#9AA2AC;">' + d.count + ' aksi</span>';
+            html += '<span style="font-size: var(--text-2xs); color:#9AA2AC;">' + d.count + ' aksi</span>';
             html += '</div>';
-            html += '<div style="font-size:.65rem; color:#9AA2AC; line-height:1.7;">';
+            html += '<div style="font-size: var(--text-2xs); color:#9AA2AC; line-height:1.7;">';
             html += 'Terakhir aktif: <b style="color:var(--ink-mid);">' + lastLabel + '</b> &nbsp;&middot;&nbsp; ';
             html += lastDate.toLocaleDateString("id-ID", {day:"numeric", month:"short", year:"numeric"}) + ' ' + lastDate.toLocaleTimeString("id-ID", {hour:"2-digit", minute:"2-digit"});
             html += '<br>Aktivitas: ' + window.escapeHtml(topActions);
@@ -806,7 +806,7 @@ window._refreshToastErrorLogPanel = function() {
     if (!preview) return;
 
     if (!log.length) {
-        preview.innerHTML = '<div style="font-size:.72rem; color:#9AA2AC; text-align:center; padding:16px 0;">Belum ada error tercatat.</div>';
+        preview.innerHTML = '<div style="font-size: var(--text-xs); color:#9AA2AC; text-align:center; padding:16px 0;">Belum ada error tercatat.</div>';
         return;
     }
 
@@ -818,12 +818,12 @@ window._refreshToastErrorLogPanel = function() {
         var d = new Date(entry.timestamp);
         var dateLabel = d.toLocaleDateString('id-ID', {day:'2-digit', month:'short'}) + ' ' + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
         html += '<div style="border-left:2px solid var(--danger); padding:6px 10px; margin-bottom:6px; background:var(--paper);">';
-        html += '<div style="font-size:.65rem; color:#9AA2AC; margin-bottom:2px;">' + dateLabel + '</div>';
-        html += '<div style="font-size:.72rem; color:var(--ink);">' + window.escapeHtml(entry.message) + '</div>';
+        html += '<div style="font-size: var(--text-2xs); color:#9AA2AC; margin-bottom:2px;">' + dateLabel + '</div>';
+        html += '<div style="font-size: var(--text-xs); color:var(--ink);">' + window.escapeHtml(entry.message) + '</div>';
         html += '</div>';
     });
     if (log.length > 10) {
-        html += '<div style="font-size:.65rem; color:#9AA2AC; text-align:center; padding-top:4px;">+ ' + (log.length - 10) + ' lainnya (ikut ke ekspor)</div>';
+        html += '<div style="font-size: var(--text-2xs); color:#9AA2AC; text-align:center; padding-top:4px;">+ ' + (log.length - 10) + ' lainnya (ikut ke ekspor)</div>';
     }
     preview.innerHTML = html;
 };

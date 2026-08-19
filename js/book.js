@@ -297,7 +297,7 @@ window.renderBookList = function() {
     // akun baru yang belum pernah punya buku), tampilkan pesan ramah supaya
     // jelas ini kondisi valid, bukan error/loading macet.
     if (!Array.isArray(window.books) || window.books.length === 0) {
-        container.innerHTML = '<div style="padding:1.25rem 1rem; text-align:center; color:#9AA2AC; font-size:.8rem;">Belum ada buku kas sama sekali.<br>Buat buku pertama Anda lewat form di atas.</div>';
+        container.innerHTML = '<div style="padding:1.25rem 1rem; text-align:center; color:#9AA2AC; font-size: var(--text-base);">Belum ada buku kas sama sekali.<br>Buat buku pertama Anda lewat form di atas.</div>';
         return;
     }
     // [FIX BUKU TAMPIL 0 TRANSAKSI] Kalau ada buku yang cache-nya belum
@@ -330,25 +330,25 @@ window.renderBookList = function() {
         const didFail = window._bookLoadFailed && window._bookLoadFailed.has(b.id);
         let statsLabel;
         if (txCount !== null) {
-            statsLabel = `<span style="font-size:.6rem; color:#5C6470;">${txCount.toLocaleString('id-ID')} transaksi${balanceLabel ? ' · Saldo ' + window.escapeHtml(balanceLabel) : ''}</span>`;
+            statsLabel = `<span style="font-size: var(--text-2xs); color:#5C6470;">${txCount.toLocaleString('id-ID')} transaksi${balanceLabel ? ' · Saldo ' + window.escapeHtml(balanceLabel) : ''}</span>`;
         } else if (didFail) {
             // [FIX "MEMUAT DATA..." TANPA HENTI] Cache masih null SETELAH
             // dicoba ditarik (bukan lagi loading pertama kali) -- tampilkan
             // status gagal yang jelas + tombol coba lagi, jangan biarkan
             // pengguna mengira buku ini memang tidak punya transaksi.
-            statsLabel = `<span style="font-size:.6rem; color:#B23B3B;">Gagal memuat data</span> <button type="button" class="btn-mini" style="font-size:.6rem; padding:1px 6px;" onclick="window.retryLoadBook('${b.id}')">Coba lagi</button>`;
+            statsLabel = `<span style="font-size: var(--text-2xs); color:#B23B3B;">Gagal memuat data</span> <button type="button" class="btn-mini" style="font-size: var(--text-2xs); padding:1px 6px;" onclick="window.retryLoadBook('${b.id}')">Coba lagi</button>`;
         } else {
-            statsLabel = '<span style="font-size:.6rem; color:#9AA2AC; font-style:italic;">Memuat data…</span>';
+            statsLabel = '<span style="font-size: var(--text-2xs); color:#9AA2AC; font-style:italic;">Memuat data…</span>';
         }
         // [FIX BUG #1 & #2] Buku bersama cuma boleh dihapus/diganti nama
         // oleh admin buku itu. Sebelumnya tombol ini muncul untuk semua
         // role (viewer/editor termasuk) tanpa pengecekan apa pun.
         const canManageThisBook = !b._isShared || (typeof window.skGetRoleForBook === 'function' && window.skGetRoleForBook(b.id) === 'admin');
         let delBtn = (window.books.length > 1 && canManageThisBook) ? `<button class="btn-mini btn-mini-danger" onclick="window.deleteBook('${b.id}')">Hapus</button>` : '';
-        if (isCurrent) delBtn = '<span style="font-size:.65rem; color:#2E6B4F; font-weight:bold;">SEDANG AKTIF</span>';
+        if (isCurrent) delBtn = '<span style="font-size: var(--text-2xs); color:#2E6B4F; font-weight:bold;">SEDANG AKTIF</span>';
         const parentBook = b.parentId ? window.books.find(x => x.id === b.parentId) : null;
-        const parentLabel = parentBook ? `<div style="font-size:.6rem; color:#5C4E72; margin-top:2px;">↳ Anak dari: <b>${window.escapeHtml(parentBook.name)}</b></div>` : '';
-        const sharedLabel = b._isShared ? `<div style="font-size:.6rem; color:var(--success); margin-top:2px;">🔗 Buku bersama · peran kamu: <b>${window.escapeHtml(b._role || '?')}</b></div>` : '';
+        const parentLabel = parentBook ? `<div style="font-size: var(--text-2xs); color:#5C4E72; margin-top:2px;">↳ Anak dari: <b>${window.escapeHtml(parentBook.name)}</b></div>` : '';
+        const sharedLabel = b._isShared ? `<div style="font-size: var(--text-2xs); color:var(--success); margin-top:2px;">🔗 Buku bersama · peran kamu: <b>${window.escapeHtml(b._role || '?')}</b></div>` : '';
         const makeSharedBtn = (!b._isShared && typeof window.skMakeBookShared === 'function') ?
             `<button class="btn-mini" style="background:var(--success-lt); color:var(--success); border:1px solid var(--rule);" onclick="window.skMakeBookShared('${b.id}')" title="Undang orang lain untuk ikut mengelola buku ini">Jadikan Bersama</button>` : '';
         // Kebalikan dari makeSharedBtn -- cuma admin buku ini yang boleh
@@ -798,13 +798,13 @@ window.renderStorageBar = function(usedBytes, totalBytes, label) {
     return `
         <div style="margin-bottom:10px;">
             <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
-                <span style="font-size:.7rem; font-weight:600; color:var(--ink);">${label}</span>
-                <span style="font-size:.68rem; color:var(--ink-muted);">${window.formatBytes(usedBytes)} / ${window.formatBytes(totalBytes)} &nbsp;·&nbsp; <b style="color:${colorClass}">${pct.toFixed(1)}%</b></span>
+                <span style="font-size: var(--text-xs); font-weight:600; color:var(--ink);">${label}</span>
+                <span style="font-size: var(--text-xs); color:var(--ink-muted);">${window.formatBytes(usedBytes)} / ${window.formatBytes(totalBytes)} &nbsp;·&nbsp; <b style="color:${colorClass}">${pct.toFixed(1)}%</b></span>
             </div>
             <div style="height:8px; background:var(--rule); border-radius: var(--radius-sm); overflow:hidden;">
                 <div style="height:100%; width:${pct}%; background:${colorClass}; border-radius: var(--radius-sm); transition:width .4s;"></div>
             </div>
-            <div style="font-size:.63rem; color:var(--ink-faint); margin-top:3px; text-align:right;">Sisa: ${window.formatBytes(totalBytes - usedBytes)}</div>
+            <div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:3px; text-align:right;">Sisa: ${window.formatBytes(totalBytes - usedBytes)}</div>
         </div>`;
 };
 
@@ -812,12 +812,12 @@ window.refreshStorageEstimate = async function() {
     const el  = document.getElementById('storageEstimContent');
     const btn = document.getElementById('storageRefreshBtn');
     if (!el) return;
-    el.innerHTML = '<div style="font-size:.7rem; color:var(--ink-faint); text-align:center; padding:8px 0;">Menghitung...</div>';
+    el.innerHTML = '<div style="font-size: var(--text-xs); color:var(--ink-faint); text-align:center; padding:8px 0;">Menghitung...</div>';
     if (btn) btn.disabled = true;
     const data = await window.estimateSupabaseStorage();
     if (btn) btn.disabled = false;
     if (!data) {
-        el.innerHTML = '<div style="font-size:.7rem; color:var(--danger); text-align:center; padding:8px 0;">Tidak dapat memuat — pastikan koneksi Supabase aktif.</div>';
+        el.innerHTML = '<div style="font-size: var(--text-xs); color:var(--danger); text-align:center; padding:8px 0;">Tidak dapat memuat — pastikan koneksi Supabase aktif.</div>';
         return;
     }
     const { txCount, logCount, settCount, estimatedBytes } = data;
@@ -832,7 +832,7 @@ window.refreshStorageEstimate = async function() {
                                        'Kapasitas masih aman.';
     el.innerHTML = `
         ${dbBar}
-        <div style="background:var(--paper-warm); border-radius: var(--radius-sm); padding:10px 12px; font-size:.68rem; color:var(--ink); line-height:1.8; margin-bottom:10px;">
+        <div style="background:var(--paper-warm); border-radius: var(--radius-sm); padding:10px 12px; font-size: var(--text-xs); color:var(--ink); line-height:1.8; margin-bottom:10px;">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px 16px;">
                 <span>Transaksi</span><b>${txCount.toLocaleString('id-ID')} baris</b>
                 <span>Log Aktivitas</span><b>${logCount.toLocaleString('id-ID')} baris</b>
@@ -840,10 +840,10 @@ window.refreshStorageEstimate = async function() {
                 <span>Total Baris</span><b>${totalRows.toLocaleString('id-ID')} baris</b>
             </div>
         </div>
-        <div style="font-size:.68rem; color:${statusColor}; font-weight:600; text-align:center; padding:4px 8px; background:${statusBg}; border-radius: var(--radius-sm);">
+        <div style="font-size: var(--text-xs); color:${statusColor}; font-weight:600; text-align:center; padding:4px 8px; background:${statusBg}; border-radius: var(--radius-sm);">
             ${statusText}
         </div>
-        <div style="font-size:.6rem; color:var(--ink-faint); margin-top:8px; text-align:right;">
+        <div style="font-size: var(--text-2xs); color:var(--ink-faint); margin-top:8px; text-align:right;">
             * Estimasi berdasarkan jumlah baris × rata-rata ukuran baris. Free tier Supabase: DB 500 MB, File Storage 1 GB.
         </div>
     `;
@@ -984,7 +984,7 @@ window.openTutupAnakBuku = async function() {
     // (paginated) supaya totalnya lengkap -- lihat catatan [FIX LOGIKA
     // KEUANGAN] di window._getUnclosedChildTxs untuk alasannya.
     const elLoading = document.getElementById('tutupAnakBukuInfo');
-    if (elLoading) elLoading.innerHTML = `<div style="padding:12px 14px; font-size:.78rem; color:var(--ink-faint);">Menghitung total transaksi...</div>`;
+    if (elLoading) elLoading.innerHTML = `<div style="padding:12px 14px; font-size: var(--text-sm); color:var(--ink-faint);">Menghitung total transaksi...</div>`;
     const submitBtnLoading = document.getElementById('tutupAnakBukuSubmitBtn');
     if (submitBtnLoading) submitBtnLoading.disabled = true;
     window.openModal('tutupAnakBukuModal');
@@ -1003,16 +1003,16 @@ window.openTutupAnakBuku = async function() {
     if (el) {
         if (txCount === 0) {
             el.innerHTML = `
-                <div style="background:#F1EBDA; border:1px solid #B99A4E; border-radius: var(--radius-sm); padding:12px 14px; font-size:.78rem; line-height:1.8; color:#6B5320;">
+                <div style="background:#F1EBDA; border:1px solid #B99A4E; border-radius: var(--radius-sm); padding:12px 14px; font-size: var(--text-sm); line-height:1.8; color:#6B5320;">
                     Tidak ada transaksi baru ${window.escapeHtml(sinceLabel)}. Tidak ada yang perlu dikirim ke buku induk.
                 </div>
             `;
         } else {
             el.innerHTML = `
-                <div style="background:#E9EBF2; border:1px solid #A6AFC9; border-radius: var(--radius-sm); padding:12px 14px; font-size:.78rem; line-height:1.8;">
+                <div style="background:#E9EBF2; border:1px solid #A6AFC9; border-radius: var(--radius-sm); padding:12px 14px; font-size: var(--text-sm); line-height:1.8;">
                     <div><b>Anak Buku:</b> ${window.escapeHtml(book.name)}</div>
                     <div><b>Kirim ke Induk:</b> ${window.escapeHtml(parentBook.name)}</div>
-                    <div style="font-size:.68rem; color:#5C4E72; margin-top:2px;">Dihitung ${window.escapeHtml(sinceLabel)}</div>
+                    <div style="font-size: var(--text-xs); color:#5C4E72; margin-top:2px;">Dihitung ${window.escapeHtml(sinceLabel)}</div>
                     <hr style="margin:8px 0; border-color:#DCE0E6;">
                     <div>Jumlah transaksi: <b>${txCount}</b></div>
                     <div>Total pemasukan: <b style="color:#2E6B4F">${window.rp(totalInc)}</b></div>
@@ -1020,7 +1020,7 @@ window.openTutupAnakBuku = async function() {
                     <div><b>Net yang dikirim: <span style="color:${netTotal >= 0 ? '#2E6B4F' : '#A13A3A'}">${window.rp(Math.abs(netTotal))}</span></b>
                         ${netTotal < 0 ? ' (pengeluaran)' : ' (pemasukan)'}</div>
                 </div>
-                <div style="margin-top:10px; font-size:.72rem; color:#5B6472;">
+                <div style="margin-top:10px; font-size: var(--text-xs); color:#5B6472;">
                     Satu transaksi ringkasan akan ditambahkan ke buku <b>${window.escapeHtml(parentBook.name)}</b>.<br>
                     Anak buku ini <b>tidak dihapus</b> — tetap bisa dibuka sebagai arsip. Penutupan berikutnya hanya akan menghitung transaksi baru setelah ini.
                 </div>
