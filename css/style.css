@@ -76,6 +76,7 @@
   --paper-inv:  #1C2620;  /* bg di atas ink terang */
   --row-alt:    #F7FAF8;
   /* Shape & elevation — radius diperkecil, shadow lebih tipis untuk kesan formal */
+  --radius-xs:  1px;
   --radius-sm:  4px;
   --radius:     6px;
   --radius-lg:  10px;
@@ -789,7 +790,7 @@ h1, h2, h3, h4,
 }
 .legend-dot {
   width: 8px; height: 8px;
-  border-radius: 1px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
 }
 .legend-label {
@@ -2280,7 +2281,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
   margin: var(--space-8) 0 var(--space-14);
   border: 1px solid var(--rule);
   border-radius: var(--radius-sm);
-  background: var(--panel-alt, #F4F4F1);
+  background: var(--paper-warm);
 }
 .setelan-collapse summary {
   list-style: none;
@@ -2473,7 +2474,7 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 .log-line:last-child { border-bottom: none; }
 .log-tag {
   padding: var(--space-1) var(--space-6);
-  border-radius: 1px;
+  border-radius: var(--radius-xs);
   font-size: var(--text-2xs);
   margin-right: var(--space-8);
   color: #fff;
@@ -2575,8 +2576,8 @@ input[type="file"]::file-selector-button:hover { background: var(--ink-muted); }
 .annual-budget-row .annual-budget-amount { flex: 1; }
 .annual-budget-row .annual-budget-remove-btn {
   background: none;
-  border: 1.5px solid #A13A3A;
-  color: #A13A3A;
+  border: 1.5px solid var(--danger);
+  color: var(--danger);
   border-radius: var(--radius-sm);
   padding: var(--space-4) var(--space-10);
   cursor: pointer;
@@ -4458,7 +4459,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 
 /* Account bar stays dark — slightly deeper in dark mode */
 [data-theme="dark"] .account-bar {
-  background: #1C2128;
+  background: var(--row-alt);
   border-bottom-color: rgba(255,255,255,0.05);
 }
 [data-theme="dark"] .account-tab { border-right-color: rgba(255,255,255,0.05); }
@@ -4577,7 +4578,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 [data-theme="dark"] select.form-control {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239A9A96' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
 }
-[data-theme="dark"] select.form-control option { background: #2D333B; color: #ADBAC7; }
+[data-theme="dark"] select.form-control option { background: var(--paper); color: var(--ink); }
 
 /* Fase dropdown */
 [data-theme="dark"] .fase-dropdown-trigger { background: var(--paper); border-color: var(--rule); }
@@ -4871,7 +4872,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 .cs-opt-strip {
   width: 3px;
   height: 16px;
-  border-radius: 1px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
 }
 
