@@ -21,6 +21,54 @@ window.getBookBalanceLabel = function(bookId) {
     }
 };
 
+// [FIX BUKU TAMPIL 0 TRANSAKSI] Jumlah transaksi sebuah buku dari cache lokal
+// (sk_txs_<id>), TANPA perlu berpindah/membuka buku tsb -- pasangan dari
+// window.getBookBalanceLabel di atas, dipakai window.renderBookList supaya
+// modal "Kelola Buku" bisa menampilkan jumlah transaksi tiap buku. PENTING:
+// kembalikan null (bukan 0) kalau cache buku ini belum pernah ada sama sekali
+// di device ini -- sama seperti getBookBalanceLabel, supaya pemanggil tahu
+// bedanya antara "buku ini betul-betul kosong" vs "datanya belum sempat
+// dimuat" dan tidak salah menampilkan "0 transaksi" utk kasus kedua.
+// Catatan: ini menghitung baris di CACHE LOKAL saja, yang dibatasi
+// MAX_LOCAL_TXS transaksi terbaru (lihat trimAndSaveLocal di transaction.js)
+// -- untuk buku dengan riwayat sangat panjang, angka ini adalah jumlah
+// transaksi TERBARU yang tersimpan di device ini, bukan jumlah total
+// sepanjang sejarah buku itu di cloud.
+window.getBookTxCount = function(bookId) {
+    try {
+        const raw = localStorage.getItem('sk_txs_' + bookId);
+        if (raw === null) return null;
+        const txs = JSON.parse(raw || '[]');
+        return Array.isArray(txs) ? txs.length : null;
+    } catch (e) {
+        return null;
+    }
+};
+
+// [FIX BUKU TAMPIL 0 TRANSAKSI] Pastikan cache lokal SETIAP buku di
+// window.books sudah pernah ditarik minimal sekali sebelum modal "Kelola
+// Buku" menampilkan info saldo/jumlah transaksinya -- sebelumnya modal itu
+// (dan komponen lain yang memakai getBookBalanceLabel/getBookTxCount) diam-
+// diam mengandalkan cache yang kebetulan SUDAH ada dari sesi buka-buku
+// sebelumnya; buku yang belum pernah dibuka sama sekali di device ini (mis.
+// buku bersama yang baru diterima, atau anak buku yang baru dibuat di device
+// lain) cache-nya kosong sama sekali. Tanpa fungsi ini, kondisi itu terlihat
+// SAMA seperti buku yang memang benar-benar tidak punya transaksi -- padahal
+// dua hal itu beda ("belum dimuat" vs "memang kosong"). Fungsi ini menarik
+// (via window.pullOneBookFromCloud) hanya buku-buku yang cache-nya masih
+// null, lalu memanggil onLoaded() supaya UI bisa render ulang begitu data
+// yang tadinya hilang itu selesai dimuat.
+window.ensureAllBooksLoaded = async function(onLoaded) {
+    if (!Array.isArray(window.books) || window.books.length === 0) return;
+    if (!window.isOnline || !window.isOnline()) return;
+    const unloaded = window.books.filter(b => localStorage.getItem('sk_txs_' + b.id) === null);
+    if (unloaded.length === 0) return;
+    if (typeof window.pullOneBookFromCloud !== 'function') return;
+    const results = await Promise.allSettled(unloaded.map(b => window.pullOneBookFromCloud(b.id)));
+    const anyLoaded = results.some(r => r.status === 'fulfilled');
+    if (anyLoaded && typeof onLoaded === 'function') onLoaded();
+};
+
 // [SIDEBAR-BOOK] Isi nama buku aktif di elemen paling atas sidebar
 // (#sidebarActiveBook). Nama lengkap dipakai saat sidebar normal; inisialnya
 // (maks. 2 huruf, dari 2 kata pertama nama buku) dipakai saat sidebar
@@ -168,6 +216,12 @@ window.switchBook = async function(id) {
 window.openBookManager = function() {
     if (!window.requireOnline('mengelola buku')) return;
     window.openModal('bookManagerModal');
+    // [FIX BUKU TAMPIL 0 TRANSAKSI] Reset guard tiap modal ini dibuka ulang,
+    // supaya buku yang cache-nya masih kosong (mis. baru selesai dihapus lalu
+    // dibuat lagi, atau baru diterima sbg anggota buku bersama sejak modal
+    // terakhir dibuka) tetap dicoba ditarik lagi -- bukan cuma sekali seumur
+    // sesi app. Lihat window.renderBookList untuk pemakaiannya.
+    window._bookListLoadingTriggered = false;
     window.renderBookList();
     window.renderBookParentOptions();
     if (typeof window.skRenderAuthPanel === 'function') window.skRenderAuthPanel();
@@ -198,10 +252,36 @@ window.renderBookList = function() {
         container.innerHTML = '<div style="padding:1.25rem 1rem; text-align:center; color:#9AA2AC; font-size:.8rem;">Belum ada buku kas sama sekali.<br>Buat buku pertama Anda lewat form di atas.</div>';
         return;
     }
+    // [FIX BUKU TAMPIL 0 TRANSAKSI] Kalau ada buku yang cache-nya belum
+    // pernah dimuat di device ini, tarik datanya di background lalu render
+    // ulang daftar ini begitu selesai -- supaya baris "0 transaksi" yang
+    // muncul SEBELUM data sungguhan sempat ditarik tidak dikira final.
+    // Guard _bookListLoadingTriggered mencegah pemanggilan berulang tiap
+    // renderBookList() dipanggil ulang (mis. dari onLoaded() di bawah)
+    // memicu tarikan baru lagi selama modal masih terbuka.
+    if (!window._bookListLoadingTriggered) {
+        window._bookListLoadingTriggered = true;
+        window.ensureAllBooksLoaded(() => {
+            window._bookListLoadingTriggered = false;
+            window.renderBookList();
+            window.updateBookSelectDropdown();
+        });
+    }
     window.books.forEach(b => {
         let div = document.createElement('div');
         div.className = 'book-list-item';
         let isCurrent = b.id === window.currentBookId;
+        // [FIX BUKU TAMPIL 0 TRANSAKSI] Saldo & jumlah transaksi per buku.
+        // null artinya cache buku ini belum ada sama sekali di device ini
+        // (belum pernah dibuka/ditarik) -- BUKAN berarti buku itu kosong,
+        // jadi jangan tampilkan "0 transaksi" untuk kasus ini. Selagi
+        // window.ensureAllBooksLoaded() di atas menariknya di background,
+        // tampilkan label "Memuat data…" supaya jelas ini kondisi sementara.
+        const balanceLabel = window.getBookBalanceLabel(b.id);
+        const txCount = window.getBookTxCount(b.id);
+        const statsLabel = (txCount === null)
+            ? '<span style="font-size:.6rem; color:#9AA2AC; font-style:italic;">Memuat data…</span>'
+            : `<span style="font-size:.6rem; color:#5C6470;">${txCount.toLocaleString('id-ID')} transaksi${balanceLabel ? ' · Saldo ' + window.escapeHtml(balanceLabel) : ''}</span>`;
         // [FIX BUG #1 & #2] Buku bersama cuma boleh dihapus/diganti nama
         // oleh admin buku itu. Sebelumnya tombol ini muncul untuk semua
         // role (viewer/editor termasuk) tanpa pengecekan apa pun.
@@ -230,6 +310,7 @@ window.renderBookList = function() {
                 ${window.escapeHtml(b.name)}
                 ${parentLabel}
                 ${sharedLabel}
+                <div style="margin-top:2px;">${statsLabel}</div>
             </span>
             <div class="book-list-actions">
                 ${!isCurrent ? `<button class="btn-mini" onclick="window.switchBook('${b.id}')">Buka</button>` : ''}
