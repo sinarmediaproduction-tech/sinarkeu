@@ -29,6 +29,19 @@
 -- harden_transactions_encryption.sql), bukan oleh RLS scoping per
 -- book_id. Policy `anon_full_access` pada tabel lain justru DIBATASI
 -- (NOT sk_is_shared_book(book_id)) dan itu benar, jangan disentuh.
+--
+-- [KOREKSI 19 Agu 2026] Baris di atas KELIRU untuk `transactions` dan
+-- `payment_reminders`: anon_full_access di kedua tabel itu TIDAK
+-- dibatasi apa pun (USING true polos, bukan NOT sk_is_shared_book(...)
+-- seperti yang disebut di atas) -- itu policy TERPISAH dari
+-- transactions_legacy_anon/payment_reminders_legacy_anon yang memang
+-- dibatasi. Karena RLS permissive-OR, anon_full_access yang longgar itu
+-- membatalkan pembatasan buku bersama di kedua tabel ini. Lihat
+-- sql/fix_transactions_anon_full_access.sql untuk fix-nya (drop
+-- anon_full_access di transactions & payment_reminders, TIDAK di
+-- backups). Daftar "VERIFIKASI" di bawah ini juga sudah usang untuk
+-- kedua tabel itu -- setelah fix, anon_full_access seharusnya TIDAK
+-- lagi muncul di sana.
 -- ============================================================
 
 -- ── transactions ──────────────────────────────────────────────
