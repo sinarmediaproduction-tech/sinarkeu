@@ -263,6 +263,35 @@ window.continueAppInit = async function() {
     if (!window.getCloudUrl() || !window.getSupabaseKey()) {
         setTimeout(() => window.openSetupModal(), 400);
     } else {
+        // [FIX "REFRESH/HARD REFRESH TIDAK MUNCUL, SINKRON MANUAL BARU MUNCUL"]
+        // Sebelumnya window.loadTransactions() (isi window.txs dari cache lokal
+        // sk_txs_<bookId> + render()) CUMA dipanggil di cabang OFFLINE (else) di
+        // bawah -- saat online, window.txs dianggap akan terisi lewat
+        // window.pullAllBooksFromCloud() saja. TAPI window.pullOneBookFromCloud
+        // (dipanggil pullAllBooksFromCloud utk tiap buku) punya jalur INCREMENTAL:
+        // kalau cursor sinkron (_lastFullSyncTime[bookId], persisten lewat
+        // localStorage -- lihat js/config.js) sudah ada DAN tidak ada baris yang
+        // berubah di cloud sejak cursor itu (kasus PALING UMUM untuk refresh biasa
+        // -- tidak ada perubahan baru), fungsi itu me-return LEBIH AWAL TANPA
+        // PERNAH mengisi window.txs atau memanggil window.render() sama sekali
+        // (lihat komentar "Incremental: array kosong berarti memang tidak ada
+        // perubahan..." di js/transaction.js). Karena window.txs defaultnya []
+        // (js/config.js) di setiap load halaman, itu berarti buku aktif tampil
+        // 0 transaksi SELAMANYA sampai ada perubahan baru masuk (memicu jalur
+        // yang benar-benar mengisi window.txs) ATAU tombol "Sinkronisasi" manual
+        // dipakai (window.forceFullSync menghapus SEMUA cursor dulu -- lihat
+        // js/transaction.js -- sehingga MEMAKSA full pull yang pasti mengisi
+        // window.txs). Ini PERSIS gejala "refresh/hard refresh tidak muncul,
+        // sinkron manual baru muncul" yang dilaporkan user.
+        //
+        // Perbaikan: isi window.txs dari cache lokal buku aktif (+ render sekali)
+        // DI SINI, SEBELUM mencoba pull online -- supaya UI langsung benar dari
+        // cache lokal terlepas dari online/offline atau ada/tidaknya perubahan
+        // baru di cloud. Kalau pull online berhasil membawa data lebih baru,
+        // window.txs & render() akan ditimpa lagi dengan yang lebih baru seperti
+        // biasa (tidak ada perubahan perilaku untuk kasus itu).
+        window.loadTransactions();
+        window.render();
         if (window.isOnline()) {
             // [FIX RACE MULTI-TAB/SESSION] Push dulu sisa dirty ids dari sesi/tab
             // sebelumnya yang mungkin belum sempat ter-sync (tab ditutup, koneksi
@@ -327,9 +356,11 @@ window.continueAppInit = async function() {
             // data sekarang sepenuhnya lewat Snapshot Keamanan harian (lihat
             // window.checkAndRunDailySafetySnapshot, dijadwalkan di bawah fungsi ini).
             setTimeout(window.scheduleDailySummary, 5000);
-        } else {
-            window.loadTransactions();
         }
+        // [FIX] Cabang "else { window.loadTransactions(); }" yang dulu di sini
+        // (khusus offline) sudah tidak diperlukan -- window.loadTransactions()
+        // sekarang dipanggil TANPA SYARAT di atas (lihat komentar "[FIX
+        // REFRESH/HARD REFRESH...]"), mencakup baik online maupun offline.
     }
     // [REALTIME] Kalau buku aktif adalah Buku Bersama, sambungkan channel
     // realtime SEBELUM startAutoSync() di bawah -- lihat js/realtime-sync.js.
