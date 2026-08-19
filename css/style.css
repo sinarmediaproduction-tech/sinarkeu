@@ -4209,7 +4209,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
     padding: var(--space-4) var(--space-22) var(--space-4) var(--space-8);
     background-position: right 6px center;
   }
-  .stats-grid { grid-template-columns: 1fr 1fr; gap: var(--space-1); }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: var(--space-10); }
   .stat-card { padding: var(--space-12) var(--space-14); }
   .stat-value { font-size: var(--text-md); }
   .stat-label { font-size: var(--text-2xs); }
