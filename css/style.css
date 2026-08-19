@@ -585,7 +585,7 @@ h1, h2, h3, h4,
 
 .stat-value {
   font-family: var(--font-mono);
-  font-size: var(--text-lg);
+  font-size: calc(var(--text-lg) * 2);
   font-weight: 700;
   margin-top: var(--space-6);
   letter-spacing: -0.01em;
