@@ -1220,6 +1220,11 @@ tr:hover td { background: var(--accent-lt); }
 .text-right  { text-align: right; font-family: var(--font-mono); }
 .col-saldo   { font-family: var(--font-mono); }
 .text-center { text-align: center; }
+/* [UI] Isi kolom nominal (Pemasukan/Pengeluaran/Saldo) & kolom
+   Nota/Aksi sebelumnya rata kanan/tengah sementara headernya rata
+   kiri, jadi terlihat tidak sejajar. .num-mono dipakai supaya
+   angka tetap pakai font monospace tapi rata kiri mengikuti header. */
+.num-mono { text-align: left; font-family: var(--font-mono); }
 
 .action-btn {
   background: none;

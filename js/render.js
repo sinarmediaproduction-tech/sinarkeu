@@ -103,15 +103,15 @@ window.render = function() {
         const globalIndex = startIdx + index + 1;
         const actionBtnDisabled = online ? '' : 'disabled';
         tr.innerHTML = `
-            <td class="text-center col-no">${globalIndex}</td>
+            <td class="col-no">${globalIndex}</td>
             <td><span class="date-full">${window.formatDateTime(t.date)}</span><span class="date-short">${window.formatDateShort(t.date)}</span></td>
             <td class="col-category">${badge}</td>
             <td>${window.escapeHtml(t.description)}</td>
-            <td class="text-right" style="color:var(--success); font-weight:500;">${incText}</td>
-            <td class="text-right" style="color:var(--danger); font-weight:500;">${expText}</td>
-            <td class="text-right col-saldo" style="font-weight:600;">${window.rp(balanceMap[t.id] || 0)}</td>
-            <td class="text-center col-nota">${attCell}</td>
-            <td class="text-center col-action"><button class="action-btn" onclick="window.openActionMenu('${t.id}')" ${actionBtnDisabled}>⋮</button></td>
+            <td class="num-mono" style="color:var(--success); font-weight:500;">${incText}</td>
+            <td class="num-mono" style="color:var(--danger); font-weight:500;">${expText}</td>
+            <td class="num-mono col-saldo" style="font-weight:600;">${window.rp(balanceMap[t.id] || 0)}</td>
+            <td class="col-nota">${attCell}</td>
+            <td class="col-action"><button class="action-btn" onclick="window.openActionMenu('${t.id}')" ${actionBtnDisabled}>⋮</button></td>
         `;
         // [UI] Di hape kolom Aksi disembunyikan (lihat CSS .col-action di
         // media query max-width:640px), jadi baris sendiri jadi area tap
