@@ -296,6 +296,39 @@ window.fetchMonthTransactionsFromCloud = async function(bookId, year, month) {
     return decoded;
 };
 
+// [FIX "DAFTAR TRANSAKSI TAMPIL 0 TAPI LAPORAN BULANAN ADA"] Sama seperti
+// window.fetchMonthTransactionsFromCloud di atas (query LANGSUNG ke cloud,
+// TANPA batas MAX_LOCAL_TXS), tapi untuk rentang tanggal BEBAS -- dipakai
+// oleh filter tanggal di daftar transaksi utama (window.applyDateFilter,
+// js/render.js), bukan cuma laporan bulanan.
+//
+// KENAPA INI PERLU: window.render() (js/render.js) memfilter dari window.txs,
+// yang cuma berisi MAX_LOCAL_TXS (1000) transaksi TERBARU per buku (lihat
+// trimAndSaveLocal). Untuk buku dengan riwayat panjang, kalau user memfilter
+// ke rentang tanggal yang lebih tua dari cakupan cache lokal itu, daftar
+// tampil "Tidak ada transaksi" / hitungan 0 -- padahal transaksinya BENAR ADA
+// di cloud (gejala PERSIS sama seperti yang report.js sudah tangani utk
+// laporan bulanan, cuma belum ditangani di sini). window.render() memanggil
+// fungsi ini sebagai verifikasi kalau filtered.length === 0 sementara ada
+// filter tanggal aktif -- lihat window._verifyFilteredRangeAgainstCloud.
+window.fetchDateRangeTransactionsFromCloud = async function(bookId, startDate, endDate) {
+    if (!window.isOnline() || !bookId) return null;
+    // Tanpa rentang sama sekali (filter "semua tanggal") sengaja TIDAK
+    // ditarik dari sini -- itu domainnya window.pullOneBookFromCloud/
+    // MAX_LOCAL_TXS, bukan verifikasi filter kosong ini (menghindari query
+    // "ambil semua transaksi tanpa batas" yang bisa sangat besar & mahal).
+    if (!startDate && !endDate) return null;
+    const tag = window.getAccountTag ? window.getAccountTag() : null;
+    const tagFilter = window.tagOrFilter(tag, bookId);
+    let query = `?book_id=eq.${bookId}&is_deleted=eq.false&order=date.asc${tagFilter}`;
+    if (startDate) query += `&date=gte.${startDate}`;
+    if (endDate) query += `&date=lte.${endDate}T23:59:59`;
+    const rows = await window.callSupabaseAPI('transactions', 'GET', null, query);
+    if (!rows || !Array.isArray(rows)) return null;
+    // [SECURITY] Dekripsi field sensitif -- lihat window.decodeCloudTxRow di crypto.js.
+    return await Promise.all(rows.map(c => window.decodeCloudTxRow(c)));
+};
+
 window.pullFromCloudSilently = async function() {
     if (!window.isOnline()) return;
     // [BUG FIX 3] Guard concurrent pull: jika pull sebelumnya masih berjalan

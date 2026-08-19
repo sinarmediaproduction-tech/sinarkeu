@@ -190,6 +190,12 @@ window.switchBook = async function(id) {
     if (id === window.currentBookId) return;
     window.currentBookId = id;
     localStorage.setItem('sk_current_book_id', window.currentBookId);
+    // [FIX "DAFTAR TRANSAKSI TAMPIL 0 TAPI LAPORAN BULANAN ADA"] Override
+    // rentang filter (js/render.js) cuma valid untuk buku yang menghasilkannya
+    // -- buang begitu pindah buku supaya buku baru tidak sekilas menampilkan
+    // hasil verifikasi cloud milik buku SEBELUMNYA (window.render sendiri
+    // sudah mengecek bookId cocok, tapi ini mencegah kedip data buku lama).
+    window._cloudFilterOverride = null;
 
     // Muat data lokal buku baru terlebih dahulu agar UI tidak kosong
     window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');

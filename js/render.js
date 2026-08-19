@@ -3,7 +3,25 @@ window.render = function() {
     let body = document.getElementById('transactionTableBody');
     body.innerHTML = '';
     let search = document.getElementById('searchInput').value.toLowerCase();
-    let filtered = window.txs.filter(t => {
+    const hasDateFilter = !!(window.filterStartDate || window.filterEndDate);
+    // [FIX "DAFTAR TRANSAKSI TAMPIL 0 TAPI LAPORAN BULANAN ADA"] window.txs
+    // cuma berisi MAX_LOCAL_TXS (1000) transaksi TERBARU per buku (lihat
+    // trimAndSaveLocal di transaction.js) -- kalau filter tanggal aktif
+    // menunjuk ke rentang yang lebih tua dari cakupan cache lokal itu,
+    // memfilter dari window.txs saja akan salah tampil 0/kosong padahal
+    // transaksinya BENAR ADA di cloud (report.js sudah menangani gejala
+    // yang sama untuk laporan bulanan lewat fetchMonthTransactionsFromCloud
+    // -- ini pasangannya utk daftar transaksi + filter tanggal bebas).
+    // window._cloudFilterOverride diisi oleh window._verifyFilteredRangeAgainstCloud
+    // di bawah SETELAH verifikasi ke cloud menemukan data yang tidak ada di
+    // cache lokal, untuk kombinasi buku+rentang tanggal yang SAMA PERSIS
+    // dengan filter yang sedang aktif sekarang -- kalau bukan, abaikan
+    // (mis. filter sudah diganti sebelum hasil verifikasi lama itu tiba).
+    const ov = window._cloudFilterOverride;
+    const useOverride = ov && ov.bookId === window.currentBookId
+        && ov.start === window.filterStartDate && ov.end === window.filterEndDate;
+    const sourceTxs = useOverride ? ov.data : window.txs;
+    let filtered = sourceTxs.filter(t => {
         if (window.currentFilter === 'income' && t.type !== 'income') return false;
         if (window.currentFilter === 'expense' && t.type !== 'expense') return false;
         if (window.filterStartDate && t.date < window.filterStartDate) return false;
@@ -18,6 +36,14 @@ window.render = function() {
         }
         return true;
     });
+    // Verifikasi ke cloud HANYA kalau: filter tanggal aktif, hasil dari cache
+    // lokal kosong, kita belum sedang memakai override (supaya tidak infinite
+    // loop verifikasi), dan online. Lihat window._verifyFilteredRangeAgainstCloud
+    // untuk detail guard anti-duplikat/anti-race-condition-nya.
+    if (!useOverride && hasDateFilter && filtered.length === 0 && window.isOnline()
+        && typeof window._verifyFilteredRangeAgainstCloud === 'function') {
+        window._verifyFilteredRangeAgainstCloud(window.currentBookId, window.filterStartDate, window.filterEndDate);
+    }
     document.getElementById('transactionCount').innerText = filtered.length + window.t('transaction_count');
     let totalInc = 0, totalExp = 0;
     window.txs.forEach(t => {
@@ -836,6 +862,13 @@ window.applyDateFilter = function() {
     window.currentPage = 1;
     window.filterStartDate = document.getElementById('dateFilterStart').value;
     window.filterEndDate = document.getElementById('dateFilterEnd').value;
+    // [FIX "DAFTAR TRANSAKSI TAMPIL 0 TAPI LAPORAN BULANAN ADA"] Buang
+    // override rentang lama (kalau ada) begitu filter berganti -- override
+    // itu cuma valid untuk kombinasi buku+rentang tanggal PERSIS yang
+    // menghasilkannya (lihat pengecekan di window.render). Tanpa ini, filter
+    // baru akan sekilas menunjukkan hasil verifikasi rentang LAMA sebelum
+    // window.render() sendiri sadar rentangnya sudah tidak cocok lagi.
+    window._cloudFilterOverride = null;
     let btn = document.querySelector('.date-clear-btn');
     if (window.filterStartDate || window.filterEndDate) btn.style.display = 'inline-block';
     window.render();
@@ -846,6 +879,42 @@ window.resetDateFilter = function() {
     document.getElementById('dateFilterEnd').value = '';
     window.filterStartDate = '';
     window.filterEndDate = '';
+    window._cloudFilterOverride = null;
     document.querySelector('.date-clear-btn').style.display = 'none';
     window.render();
+};
+
+// [FIX "DAFTAR TRANSAKSI TAMPIL 0 TAPI LAPORAN BULANAN ADA"] Dipanggil dari
+// window.render() saat filter tanggal aktif tapi hasilnya kosong dari cache
+// lokal (window.txs, dibatasi MAX_LOCAL_TXS) -- verifikasi ke cloud langsung
+// (window.fetchDateRangeTransactionsFromCloud, js/transaction.js) apakah
+// rentang ini SUNGGUH kosong atau cuma tidak ada di cache lokal. Kalau
+// ternyata ADA data di cloud, simpan sebagai override sementara lalu
+// render ulang -- tanpa menyentuh window.txs/cache lokal permanen (buku
+// tetap dibatasi MAX_LOCAL_TXS seperti biasa untuk tampilan default/tanpa
+// filter, ini murni utk kebutuhan tampilan filter yang sedang aktif).
+//
+// Guard _verifyingRangeKey mencegah dua verifikasi identik berjalan
+// berbarengan (mis. render() terpanggil berkali-kali cepat berurutan saat
+// sync); dicek ulang SETELAH await supaya hasil verifikasi yang sudah basi
+// (buku/filter sudah berubah sebelum request selesai) tidak dipakai.
+window._verifyFilteredRangeAgainstCloud = async function(bookId, start, end) {
+    const key = bookId + '|' + (start || '') + '|' + (end || '');
+    if (window._verifyingRangeKey === key) return;
+    window._verifyingRangeKey = key;
+    try {
+        const data = await window.fetchDateRangeTransactionsFromCloud(bookId, start, end);
+        const stillRelevant = data && data.length > 0
+            && bookId === window.currentBookId
+            && start === window.filterStartDate && end === window.filterEndDate;
+        if (stillRelevant) {
+            window._cloudFilterOverride = { bookId, start, end, data };
+            window.showToast(`Menemukan ${data.length} transaksi lama di cloud yang tidak ada di cache perangkat ini.`, 'info');
+            window.render();
+        }
+    } catch (e) {
+        window.skWarn('[render] Gagal verifikasi rentang filter ke cloud:', e);
+    } finally {
+        if (window._verifyingRangeKey === key) window._verifyingRangeKey = null;
+    }
 };
