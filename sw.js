@@ -14,7 +14,7 @@
      kepakai duluan, dengan fallback ke cache saat offline.
    ============================================================ */
 
-const CACHE_VERSION = 'v55';
+const CACHE_VERSION = 'v56';
 const CACHE_NAME = `sinarkeu-shell-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -42,6 +42,14 @@ const APP_SHELL = [
 // device WAJIB fetch dari network dulu di kunjungan pertama pasca-update
 // (tetap benar, cuma kehilangan manfaat precache-nya). Menjaga APP_JS_VERSION
 // (index.html) & CACHE_VERSION (sini) tetap SAMA memastikan keduanya cocok.
+// [LAZY-LOAD] 'js/report.js', 'js/nutrisi.js', 'js/electricity-plan.js', dan
+// 'js/fraud-detection.js' SENGAJA MASIH ada di daftar precache ini walau tidak
+// lagi eager-loaded lewat SK_JS_FILES di index.html (lihat window.skLoadModule
+// di js/utils.js) -- supaya tetap bisa dimuat dari cache saat fitur terkait
+// dibuka pertama kali dalam kondisi OFFLINE. Precache & lazy-load adalah dua hal
+// terpisah: precache urus KETERSEDIAAN file di cache, lazy-load urus KAPAN file
+// itu diminta browser. Jangan hapus dari sini walau sudah dihapus dari
+// SK_JS_FILES.
 const APP_SHELL_JS = [
   'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js', 'js/db.js',
   'js/telegram.js', 'js/account.js', 'js/book.js', 'js/transaction.js',

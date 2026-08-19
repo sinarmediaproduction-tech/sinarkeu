@@ -141,7 +141,23 @@ window._mplanBlockIfViewer = function() {
     return false;
 };
 
+// [LAZY-LOAD] js/nutrisi.js (prefetchNutrisiOFFUntukMenuPlan, renderMenuPlanGizi,
+// dst) tidak lagi eager-loaded (lihat SK_JS_FILES di index.html) -- dimuat lewat
+// window.skLoadModule di sini SEBELUM logic asli (_skOpenMenuPlanViewImpl) jalan,
+// supaya semua pemanggilan window.prefetchNutrisiOFFUntukMenuPlan/
+// window.renderMenuPlanGizi di bawah (masih dijaga typeof/truthy check sebagai
+// lapis aman tambahan) sudah pasti tersedia sejak pembukaan pertama, bukan cuma
+// di kunjungan berikutnya. Kalau modul gagal dimuat (mis. offline), halaman tetap
+// dibuka -- cuma kartu Estimasi Gizi yang tidak terisi.
 window.openMenuPlanView = function() {
+    window.skLoadModule('nutrisi').catch(function(e) {
+        window.skWarn('[MenuPlan] Gagal memuat modul gizi (nutrisi.js), fitur Estimasi Gizi mungkin tidak tersedia:', e);
+    }).then(function() {
+        window._skOpenMenuPlanViewImpl();
+    });
+};
+
+window._skOpenMenuPlanViewImpl = function() {
     // Setiap kali halaman dibuka, defaultkan tab ke minggu yang cocok
     // dengan minggu kalender berjalan -- supaya "harus masak apa hari ini"
     // langsung kelihatan tanpa perlu pindah tab dulu. User tetap bisa

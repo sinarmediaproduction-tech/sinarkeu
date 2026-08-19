@@ -996,7 +996,9 @@ window.loadTransactions = function() {
     // [FRAUD-DETECTION] Pindai ulang saat buku dimuat (app start / ganti
     // buku) supaya banner peringatan langsung akurat tanpa perlu user
     // membuka panel Log Audit dulu.
-    if (typeof window.refreshFraudAlerts === 'function') window.refreshFraudAlerts();
+    // [LAZY-LOAD] window.skRefreshFraudAlerts (js/utils.js) otomatis
+    // memuat js/fraud-detection.js dulu kalau belum ada.
+    window.skRefreshFraudAlerts();
 };
 
 window.saveTransactions = function(forceFullPush) {

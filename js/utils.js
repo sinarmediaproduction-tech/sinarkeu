@@ -644,3 +644,58 @@ window.animateValue = function(id, toVal, duration, onComplete) {
     }
     requestAnimationFrame(step);
 };
+
+// ==================== LAZY MODULE LOADER (efisiensi load awal) ====================
+// [LAZY-LOAD] Modul berat & jarang dipakai (Laporan PDF, Estimasi Gizi, Rencana
+// Listrik, Fraud Detection) TIDAK ikut dimuat eager lewat SK_JS_FILES lagi
+// (lihat index.html) -- baru di-<script>-inject on-demand lewat window.skLoadModule
+// tepat sebelum fitur terkait dipakai. Tujuannya murni performa: setiap page load
+// tidak perlu lagi parse+eksekusi ~2.400 baris modul yang belum tentu dipakai user
+// di sesi itu. Modul-modul ini TETAP ada di APP_SHELL_JS (sw.js) supaya tetap
+// ter-precache untuk kebutuhan offline -- cuma urutan pemuatannya yang berubah dari
+// "selalu di awal" jadi "saat dibutuhkan".
+// Kalau menambah modul lazy baru: (1) hapus dari SK_JS_FILES di index.html, (2)
+// daftarkan di SK_LAZY_MODULES di bawah ini (nama modul -> path file), (3) di titik
+// pemanggilan pertama fungsi modul itu, panggil `await window.skLoadModule('nama')`
+// (kalau pemanggilnya async) atau `window.skLoadModule('nama').then(...)` (kalau
+// bukan) SEBELUM memakai fungsi dari modul tsb -- jangan andalkan `typeof fn ===
+// 'function'` doang, karena modul lazy belum tentu sudah selesai di-load.
+window.SK_LAZY_MODULES = {
+    'report': 'js/report.js',
+    'nutrisi': 'js/nutrisi.js',
+    'electricity-plan': 'js/electricity-plan.js',
+    'fraud-detection': 'js/fraud-detection.js',
+};
+window._skLoadedLazyModules = new Set();
+window._skLazyModuleLoadPromises = {};
+window.skLoadModule = function(name) {
+    if (window._skLoadedLazyModules.has(name)) return Promise.resolve();
+    if (window._skLazyModuleLoadPromises[name]) return window._skLazyModuleLoadPromises[name];
+    const src = window.SK_LAZY_MODULES[name];
+    if (!src) return Promise.reject(new Error('[LazyLoad] Modul tidak dikenal: ' + name));
+    const p = new Promise(function(resolve, reject) {
+        const el = document.createElement('script');
+        el.src = src + '?v=' + (window.APP_JS_VERSION || 'v1');
+        el.onload = function() {
+            window._skLoadedLazyModules.add(name);
+            resolve();
+        };
+        el.onerror = function() {
+            delete window._skLazyModuleLoadPromises[name];
+            reject(new Error('[LazyLoad] Gagal memuat modul: ' + name));
+        };
+        document.head.appendChild(el);
+    });
+    window._skLazyModuleLoadPromises[name] = p;
+    return p;
+};
+// Shortcut khusus fraud-detection: dipanggil dari banyak titik non-async
+// (book.js, transaction.js, app.js, render.js) yang murni "refresh badge
+// peringatan" -- aman kalau ternyata belum sempat termuat (silent no-op).
+window.skRefreshFraudAlerts = function() {
+    window.skLoadModule('fraud-detection').then(function() {
+        if (typeof window.refreshFraudAlerts === 'function') window.refreshFraudAlerts();
+    }).catch(function(e) {
+        window.skWarn && window.skWarn('[LazyLoad] Gagal memuat fraud-detection.js:', e);
+    });
+};

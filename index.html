@@ -476,7 +476,7 @@ alter table public.settings
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
             <span>Harga Komoditas</span>
         </button>
-        <button type="button" class="app-nav-item" id="navElectricityPlanBtn" onclick="window.closeMobileDrawer(); window.openElectricityPlanModal()" title="Rencana Listrik">
+        <button type="button" class="app-nav-item" id="navElectricityPlanBtn" onclick="window.closeMobileDrawer(); window.skLoadModule('electricity-plan').then(function(){ window.openElectricityPlanModal(); })" title="Rencana Listrik">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
             <span>Rencana Listrik</span>
         </button>
@@ -2164,16 +2164,23 @@ alter table public.settings
   statis sebelumnya, jadi urutan dependency antar file tidak berubah.
 -->
 <script>
-    var APP_JS_VERSION = 'v53'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
+    var APP_JS_VERSION = 'v56'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
+    // [LAZY-LOAD] 'js/report.js', 'js/nutrisi.js', 'js/electricity-plan.js', dan
+    // 'js/fraud-detection.js' SENGAJA TIDAK ada di daftar eager di bawah ini lagi --
+    // keempatnya modul berat & jarang dipakai (Laporan PDF, Estimasi Gizi, Rencana
+    // Listrik, Fraud Detection), sekarang di-load on-demand lewat
+    // window.skLoadModule('nama') (lihat js/utils.js) tepat sebelum fitur terkait
+    // dipakai, bukan di setiap page load. Tetap ada di APP_SHELL_JS (sw.js) untuk
+    // precache offline. Kalau menambah modul lazy baru, JANGAN taruh di sini --
+    // daftarkan di window.SK_LAZY_MODULES (js/utils.js) saja.
     var SK_JS_FILES = [
         'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js', 'js/db.js',
         'js/telegram.js', 'js/account.js', 'js/book.js', 'js/transaction.js',
-        'js/sync-conflict.js', 'js/budget.js', 'js/harga-pangan.js', 'js/nutrisi.js',
-        'js/shopping-list.js', 'js/menu-plan.js', 'js/electricity-plan.js', 'js/payment-reminder.js', 'js/expense-chart.js',
-        'js/render.js', 'js/report.js', 'js/forecast.js', 'js/report-shortcuts.js',
+        'js/sync-conflict.js', 'js/budget.js', 'js/harga-pangan.js',
+        'js/shopping-list.js', 'js/menu-plan.js', 'js/payment-reminder.js', 'js/expense-chart.js',
+        'js/render.js', 'js/forecast.js', 'js/report-shortcuts.js',
         'js/backup.js', 'js/safety-snapshot.js', 'js/forex.js', 'js/ai.js',
         'js/lockscreen-insight.js',
-        'js/fraud-detection.js',
         'js/settings.js', 'js/auth.js', 'js/autolock.js', 'js/app.js',
         'js/custom-select.js'
     ];

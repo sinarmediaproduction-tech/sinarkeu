@@ -153,7 +153,9 @@ window.switchBook = async function(id) {
     }
     // [FRAUD-DETECTION] Buku aktif berganti -- pindai ulang & ambil log buku
     // baru (cache log fraud lama milik buku sebelumnya tidak relevan lagi).
-    if (typeof window.refreshFraudAlerts === 'function') window.refreshFraudAlerts();
+    // [LAZY-LOAD] window.skRefreshFraudAlerts (js/utils.js) otomatis
+    // memuat js/fraud-detection.js dulu kalau belum ada.
+    window.skRefreshFraudAlerts();
 };
 
 window.openBookManager = function() {

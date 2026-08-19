@@ -457,12 +457,19 @@ window.handleSubmit = async function(e) {
     // [FRAUD-DETECTION] Cek anomali (nominal janggal/duplikat/beruntun) atas
     // transaksi yang baru saja disimpan -- murni peringatan, tidak pernah
     // membatalkan simpan yang sudah terjadi di atas.
+    // [LAZY-LOAD] js/fraud-detection.js tidak lagi eager-loaded (lihat
+    // SK_JS_FILES di index.html) -- pastikan sudah termuat dulu sebelum
+    // dipakai (bukan cuma dicek typeof, karena bisa saja belum sempat
+    // termuat sama sekali pada transaksi PERTAMA di sesi ini).
+    await window.skLoadModule('fraud-detection').catch(function(e) {
+        window.skWarn('[Fraud] Gagal memuat modul fraud-detection.js:', e);
+    });
     if (typeof window.checkTransactionAnomaly === 'function') {
         const anomalies = window.checkTransactionAnomaly(newTx, window.txs, newTx.id);
         const warn = anomalies.find(a => a.level === 'warning');
         if (warn) setTimeout(() => window.showToast('⚠️ ' + warn.message, 'warning'), 900);
     }
-    if (typeof window.refreshFraudAlerts === 'function') window.refreshFraudAlerts();
+    window.skRefreshFraudAlerts();
 };
 window.openActionMenu = function(id) {
     // [FIX UX] Sama seperti handleSubmit -- edit & hapus transaksi sudah
@@ -555,6 +562,10 @@ window.handleEditSubmit = async function(e) {
     window.sendTelegramNotif(window.buildTxNotifMessage('UBAH', window.txs[idx], window.getCurrentBookName()));
     // [FRAUD-DETECTION] Cek lonjakan nominal janggal dari edit ini + anomali
     // umum lain (outlier/duplikat) -- murni peringatan, tidak membatalkan.
+    // [LAZY-LOAD] Lihat catatan di handleSubmit soal window.skLoadModule.
+    await window.skLoadModule('fraud-detection').catch(function(e) {
+        window.skWarn('[Fraud] Gagal memuat modul fraud-detection.js:', e);
+    });
     if (typeof window.checkEditAnomaly === 'function') {
         const editFlags = window.checkEditAnomaly(_fraudOldTx, window.txs[idx]);
         const anomFlags = typeof window.checkTransactionAnomaly === 'function'
@@ -562,7 +573,7 @@ window.handleEditSubmit = async function(e) {
         const warn = [...editFlags, ...anomFlags].find(a => a.level === 'warning');
         if (warn) setTimeout(() => window.showToast('⚠️ ' + warn.message, 'warning'), 900);
     }
-    if (typeof window.refreshFraudAlerts === 'function') window.refreshFraudAlerts();
+    window.skRefreshFraudAlerts();
 };
 window.confirmDelete = async function(id) {
     // [FIX UX] Lihat catatan di handleSubmit -- hapus juga aman offline
@@ -605,7 +616,7 @@ window.confirmDelete = async function(id) {
         window.sendTelegramNotif(window.buildTxNotifMessage('HAPUS', t, window.getCurrentBookName()));
         // [FRAUD-DETECTION] Perbarui status alert (mis. outlier yg baru saja
         // dihapus jadi hilang dari daftar, atau pola hapus beruntun mulai terdeteksi).
-        if (typeof window.refreshFraudAlerts === 'function') window.refreshFraudAlerts();
+        window.skRefreshFraudAlerts();
     }
 };
 window.viewAttachment = function(id) {

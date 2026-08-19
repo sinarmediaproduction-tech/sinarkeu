@@ -338,7 +338,12 @@ window.continueAppInit = async function() {
     // [FRAUD-DETECTION] Pindai anomali pribadi + tarik log buku (utk cek
     // aktivitas anggota) tak lama setelah app siap -- diberi jeda supaya
     // tidak rebutan dgn proses startup lain di atas (pull transaksi/settings dll).
-    if (typeof window.refreshFraudAlerts === 'function') setTimeout(window.refreshFraudAlerts, 3500);
+    // [LAZY-LOAD] js/fraud-detection.js tidak lagi eager-loaded -- ini
+    // sekaligus jadi titik "preload" utama: modul akan sudah termuat dalam
+    // beberapa detik setelah app siap, jauh sebelum user sempat menambah
+    // transaksi pertamanya. window.skRefreshFraudAlerts (js/utils.js)
+    // otomatis memuat modulnya dulu kalau belum ada.
+    setTimeout(window.skRefreshFraudAlerts, 3500);
     // Mulai auto-lock: kunci otomatis setelah tidak ada aktivitas
     if (typeof window.autoLock !== 'undefined') window.autoLock.start();
     // [BUG FIX 1] Event listener online/offline/visibilitychange hanya boleh

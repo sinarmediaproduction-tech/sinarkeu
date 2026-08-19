@@ -605,6 +605,17 @@ window.pushSettingTelegram = async function() {
 window.reEncryptAllCloudSettings = async function() {
     if (!window.isOnline() || !window._sessionCryptoKey) return;
     try {
+        // [LAZY-LOAD] js/electricity-plan.js tidak lagi eager-loaded. Fungsi
+        // ini mem-push ULANG semua setting termasuk 'electricity_plan' --
+        // kalau window.getElectricityPlan belum ada saat baris di bawah
+        // jalan, nilai fallback { meters: [] } akan MENIMPA data asli di
+        // cloud (lihat komentar "[FIX SETTINGS BUKU BERSAMA]" di bawah soal
+        // kenapa push kosong di sini berbahaya). Pastikan modulnya sudah
+        // termuat dulu -- gagal load pun tidak fatal, cuma balik ke
+        // perilaku fallback lama.
+        await window.skLoadModule('electricity-plan').catch(function(e) {
+            window.skWarn('[Sync] Gagal memuat electricity-plan.js sebelum re-enkripsi setting:', e);
+        });
         // [FIX RACE CONDITION -- TOAST RLS 42501 BERULANG UTK BUKU BERSAMA]
         // Fungsi ini bisa terpicu OTOMATIS oleh hasStaleRows di
         // pullAllSettings() (lihat pemanggilnya di bawah), termasuk lewat
