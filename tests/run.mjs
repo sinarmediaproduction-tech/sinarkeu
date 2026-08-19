@@ -122,8 +122,14 @@ if (W) {
 // ---------- pemeriksaan statis lintas file (murah, menangkap regresi nyata) ----------
 test('tidak ada console.log/console.warn langsung di luar js/utils.js (harus lewat skLog/skWarn)', () => {
     const files = [
-        'js/account.js', 'js/app.js', 'js/auth.js', 'js/autolock.js', 'js/book.js',
-        'js/budget.js', 'js/crypto.js', 'js/db.js', 'js/electricity-plan.js',
+        'js/account.js', 'js/app.js',
+        'js/auth-core.js', 'js/auth-roles.js', 'js/auth-shared-book.js',
+        'js/auth-members.js', 'js/auth-ui.js',
+        'js/autolock.js', 'js/book.js',
+        'js/budget.js', 'js/crypto.js',
+        'js/db-api.js', 'js/db-crypto-sync.js', 'js/db-settings-push.js',
+        'js/db-settings-pull.js', 'js/db-books-sync.js', 'js/db-payment-reminder.js',
+        'js/electricity-plan.js',
         'js/harga-pangan.js', 'js/menu-plan.js', 'js/payment-reminder.js',
         'js/render.js', 'js/safety-snapshot.js', 'js/settings.js',
         'js/shopping-list.js', 'js/telegram.js', 'js/transaction.js'
@@ -140,7 +146,13 @@ test('index.html memuat semua js/*.js yang ada (tidak ada file yatim tak sengaja
 });
 
 test('tidak ada eval() di kode aplikasi', () => {
-    const files = ['js/utils.js', 'js/auth.js', 'js/db.js', 'js/app.js'];
+    const files = [
+        'js/utils.js', 'js/app.js',
+        'js/auth-core.js', 'js/auth-roles.js', 'js/auth-shared-book.js',
+        'js/auth-members.js', 'js/auth-ui.js',
+        'js/db-api.js', 'js/db-crypto-sync.js', 'js/db-settings-push.js',
+        'js/db-settings-pull.js', 'js/db-books-sync.js', 'js/db-payment-reminder.js'
+    ];
     for (const f of files) {
         const src = readFileSync(join(ROOT, f), 'utf8');
         assert(!/[^.\w]eval\s*\(/.test(src), 'eval ditemukan di ' + f);
