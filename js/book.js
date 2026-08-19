@@ -64,9 +64,51 @@ window.ensureAllBooksLoaded = async function(onLoaded) {
     const unloaded = window.books.filter(b => localStorage.getItem('sk_txs_' + b.id) === null);
     if (unloaded.length === 0) return;
     if (typeof window.pullOneBookFromCloud !== 'function') return;
-    const results = await Promise.allSettled(unloaded.map(b => window.pullOneBookFromCloud(b.id)));
+    // [FIX "MEMUAT DATA..." TANPA HENTI] window.pullOneBookFromCloud() bisa
+    // gagal diam-diam (mis. error RLS/auth 42501 untuk buku bersama yang
+    // status keanggotaannya belum termuat, atau timeout jaringan -- lihat
+    // window.callSupabaseAPI di js/db-api.js yang me-return null pada error
+    // TANPA melempar exception). Kalau itu terjadi, cache buku ybs TETAP
+    // null selamanya, dan sebelumnya UI cuma diam menampilkan "Memuat
+    // data..." tanpa pernah mencoba lagi ATAU memberi tahu penggunanya ada
+    // yang gagal. window._bookLoadFailed menandai buku mana yang gagal,
+    // supaya window.renderBookList bisa menampilkan status "Gagal memuat"
+    // dengan tombol coba lagi, bukan status loading yang menggantung.
+    if (!window._bookLoadFailed) window._bookLoadFailed = new Set();
+    const results = await Promise.allSettled(unloaded.map(async b => {
+        await window.pullOneBookFromCloud(b.id);
+        // callSupabaseAPI mengembalikan null pada error TANPA melempar --
+        // jadi sukses/gagalnya ditentukan dari APAKAH cache akhirnya
+        // benar-benar terisi, bukan dari ada/tidaknya exception di sini.
+        if (localStorage.getItem('sk_txs_' + b.id) === null) throw new Error('load-failed');
+    }));
+    unloaded.forEach((b, i) => {
+        if (results[i].status === 'fulfilled') window._bookLoadFailed.delete(b.id);
+        else window._bookLoadFailed.add(b.id);
+    });
     const anyLoaded = results.some(r => r.status === 'fulfilled');
     if (anyLoaded && typeof onLoaded === 'function') onLoaded();
+};
+
+// [FIX "MEMUAT DATA..." TANPA HENTI] Coba tarik ulang SATU buku yang gagal
+// dimuat, dipicu manual lewat tombol "Coba lagi" di window.renderBookList
+// (bukan otomatis -- supaya tidak spam retry sendiri kalau memang lagi ada
+// masalah koneksi/RLS yang butuh user melakukan sesuatu dulu, mis. login
+// ulang Supabase Auth untuk buku bersama).
+window.retryLoadBook = async function(bookId) {
+    if (!window.requireOnline || !window.requireOnline('memuat data buku')) return;
+    if (typeof window.pullOneBookFromCloud !== 'function') return;
+    if (!window._bookLoadFailed) window._bookLoadFailed = new Set();
+    try {
+        await window.pullOneBookFromCloud(bookId);
+        if (localStorage.getItem('sk_txs_' + bookId) === null) throw new Error('load-failed');
+        window._bookLoadFailed.delete(bookId);
+    } catch (e) {
+        window._bookLoadFailed.add(bookId);
+        window.showToast('Masih gagal memuat data buku ini. Periksa koneksi, atau coba sinkronisasi ulang lewat Setelan.', 'warning');
+    }
+    window.renderBookList();
+    window.updateBookSelectDropdown();
 };
 
 // [SIDEBAR-BOOK] Isi nama buku aktif di elemen paling atas sidebar
@@ -279,9 +321,19 @@ window.renderBookList = function() {
         // tampilkan label "Memuat data…" supaya jelas ini kondisi sementara.
         const balanceLabel = window.getBookBalanceLabel(b.id);
         const txCount = window.getBookTxCount(b.id);
-        const statsLabel = (txCount === null)
-            ? '<span style="font-size:.6rem; color:#9AA2AC; font-style:italic;">Memuat data…</span>'
-            : `<span style="font-size:.6rem; color:#5C6470;">${txCount.toLocaleString('id-ID')} transaksi${balanceLabel ? ' · Saldo ' + window.escapeHtml(balanceLabel) : ''}</span>`;
+        const didFail = window._bookLoadFailed && window._bookLoadFailed.has(b.id);
+        let statsLabel;
+        if (txCount !== null) {
+            statsLabel = `<span style="font-size:.6rem; color:#5C6470;">${txCount.toLocaleString('id-ID')} transaksi${balanceLabel ? ' · Saldo ' + window.escapeHtml(balanceLabel) : ''}</span>`;
+        } else if (didFail) {
+            // [FIX "MEMUAT DATA..." TANPA HENTI] Cache masih null SETELAH
+            // dicoba ditarik (bukan lagi loading pertama kali) -- tampilkan
+            // status gagal yang jelas + tombol coba lagi, jangan biarkan
+            // pengguna mengira buku ini memang tidak punya transaksi.
+            statsLabel = `<span style="font-size:.6rem; color:#B23B3B;">Gagal memuat data</span> <button type="button" class="btn-mini" style="font-size:.6rem; padding:1px 6px;" onclick="window.retryLoadBook('${b.id}')">Coba lagi</button>`;
+        } else {
+            statsLabel = '<span style="font-size:.6rem; color:#9AA2AC; font-style:italic;">Memuat data…</span>';
+        }
         // [FIX BUG #1 & #2] Buku bersama cuma boleh dihapus/diganti nama
         // oleh admin buku itu. Sebelumnya tombol ini muncul untuk semua
         // role (viewer/editor termasuk) tanpa pengecekan apa pun.
