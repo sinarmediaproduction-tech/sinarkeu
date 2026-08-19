@@ -763,14 +763,21 @@ alter table public.settings
 
     <div class="controls">
         <div class="filters">
-            <input type="text" id="searchInput" class="search-input" placeholder="Cari..." data-i18n="search" data-i18n-attr="placeholder" oninput="currentPage=1; render();">
+            <input type="text" id="searchInput" class="search-input" placeholder="Cari..." data-i18n="search" data-i18n-attr="placeholder" oninput="window._debouncedSearchRender()">
             <button class="filter-btn active" onclick="setFilter('all')" data-i18n="filter_all">Semua</button>
             <button class="filter-btn" onclick="setFilter('income')" data-i18n="filter_income">Masuk</button>
             <button class="filter-btn" onclick="setFilter('expense')" data-i18n="filter_expense">Keluar</button>
+            <select id="dateQuickPreset" class="date-quick-preset" onchange="window.applyDatePreset(this.value)">
+                <option value="">Rentang cepat</option>
+                <option value="today">Hari ini</option>
+                <option value="7days">7 hari terakhir</option>
+                <option value="month">Bulan ini</option>
+                <option value="lastmonth">Bulan lalu</option>
+            </select>
             <div class="date-filter-box">
-                <input type="date" id="dateFilterStart" onchange="applyDateFilter()">
+                <input type="date" id="dateFilterStart" onchange="window.applyDateFilter(); window._clearDateQuickPreset();">
                 <span>-</span>
-                <input type="date" id="dateFilterEnd" onchange="applyDateFilter()">
+                <input type="date" id="dateFilterEnd" onchange="window.applyDateFilter(); window._clearDateQuickPreset();">
                 <button class="date-clear-btn" style="display:none;" onclick="resetDateFilter()">×</button>
             </div>
         </div>

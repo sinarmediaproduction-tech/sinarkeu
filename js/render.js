@@ -1,4 +1,12 @@
 // ==================== RENDER ====================
+// [FIX UX] Dipanggil dari oninput #searchInput (index.html) -- ditunda
+// 250ms lewat window.debounce (js/utils.js) supaya render() ulang cuma
+// jalan sekali setelah user berhenti mengetik, bukan tiap karakter.
+window._debouncedSearchRender = window.debounce(function() {
+    window.currentPage = 1;
+    window.render();
+}, 250);
+
 window.render = function() {
     let body = document.getElementById('transactionTableBody');
     body.innerHTML = '';
@@ -108,7 +116,7 @@ window.render = function() {
             <td class="col-category">${badge}</td>
             <td>${window.escapeHtml(t.description)}</td>
             <td class="num-mono" style="color:var(--success); font-weight:500;">${incText}</td>
-            <td class="num-mono" style="color:var(--danger); font-weight:500;">${expText}</td>
+            <td class="num-mono col-expense" style="color:var(--danger); font-weight:500;">${expText}</td>
             <td class="num-mono col-saldo" style="font-weight:600;">${window.rp(balanceMap[t.id] || 0)}</td>
             <td class="col-nota">${attCell}</td>
             <td class="col-action"><button class="action-btn" onclick="window.openActionMenu('${t.id}')" ${actionBtnDisabled}>⋮</button></td>
@@ -606,7 +614,18 @@ window.confirmDelete = async function(id) {
     // lewat window.markTxPendingDelete + window.flushPendingDeletesOnStart.
     let t = window.txs.find(x => x.id === id);
     if (!t) return;
-    if (confirm(`Apakah Anda yakin ingin menghapus transaksi "${t.description}"?`)) {
+    // [FIX UX] Sebelumnya pakai confirm() bawaan browser -- dialog native
+    // tidak bisa distyle & mengagetkan di HP. Sekarang pakai
+    // window.customConfirm (js/utils.js), modal yang sama dipakai untuk
+    // aksi permanen lain (hapus buku, reset app) supaya konsisten.
+    const ok = await window.customConfirm({
+        title: 'Hapus transaksi?',
+        message: `"${t.description}" akan dihapus dan tidak bisa dikembalikan.`,
+        confirmLabel: 'Hapus',
+        cancelLabel: 'Batal',
+        danger: true
+    });
+    if (ok) {
         // SOFT DELETE: jangan DELETE baris cloud, cukup tandai is_deleted=true.
         // Alasan: pullFromCloudSilently() hanya menarik baris dengan
         // updated_at > lastSync (incremental). Baris yang benar-benar di-DELETE
@@ -631,8 +650,8 @@ window.confirmDelete = async function(id) {
         window.saveTransactions();
         window.showToast("Transaksi dihapus", "warning");
         if (window.isOnline()) {
-            const ok = await window.pushDeleteToCloud(id, bookIdAtDelete);
-            if (ok) {
+            const pushed = await window.pushDeleteToCloud(id, bookIdAtDelete);
+            if (pushed) {
                 window.clearTxPendingDelete(id);
             } else {
                 window.skWarn('[Delete] Gagal PATCH is_deleted ke cloud, akan dicoba lagi otomatis:', id);
@@ -881,7 +900,50 @@ window.resetDateFilter = function() {
     window.filterEndDate = '';
     window._cloudFilterOverride = null;
     document.querySelector('.date-clear-btn').style.display = 'none';
+    const preset = document.getElementById('dateQuickPreset');
+    if (preset) preset.value = '';
     window.render();
+};
+
+// [FIX UX] Preset rentang tanggal cepat (dropdown #dateQuickPreset di
+// index.html) -- sebelumnya user harus buka date picker dua kali (mulai +
+// selesai) walau cuma mau lihat "bulan ini" atau "7 hari terakhir". Preset
+// ini cukup isi kedua input tanggal otomatis lalu panggil applyDateFilter()
+// yang sudah ada, jadi logika filter/verifikasi cloud tidak diduplikasi.
+window._toDateInputValue = function(d) {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+};
+window.applyDatePreset = function(kind) {
+    if (!kind) return;
+    const now = new Date();
+    let start, end;
+    if (kind === 'today') {
+        start = end = now;
+    } else if (kind === '7days') {
+        start = new Date(now); start.setDate(start.getDate() - 6);
+        end = now;
+    } else if (kind === 'month') {
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        end = now;
+    } else if (kind === 'lastmonth') {
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        end = new Date(now.getFullYear(), now.getMonth(), 0);
+    } else {
+        return;
+    }
+    document.getElementById('dateFilterStart').value = window._toDateInputValue(start);
+    document.getElementById('dateFilterEnd').value = window._toDateInputValue(end);
+    window.applyDateFilter();
+};
+// Dipanggil saat user edit manual salah satu input tanggal -- preset yang
+// lagi kepilih jadi tidak relevan lagi (rentangnya sudah beda), jadi
+// dropdown dikembalikan ke "Rentang cepat" supaya tidak menyesatkan.
+window._clearDateQuickPreset = function() {
+    const preset = document.getElementById('dateQuickPreset');
+    if (preset) preset.value = '';
 };
 
 // [FIX "DAFTAR TRANSAKSI TAMPIL 0 TAPI LAPORAN BULANAN ADA"] Dipanggil dari

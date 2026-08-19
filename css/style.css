@@ -844,6 +844,18 @@ canvas { max-height: 260px; width: 100%; }
 .filter-btn:hover { background: var(--paper-warm); border-color: var(--ink-faint); }
 .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
 
+.date-quick-preset {
+  background: var(--paper);
+  border: 1.5px solid var(--rule);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: .72rem;
+  font-family: inherit;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+.date-quick-preset:hover { border-color: var(--ink-faint); }
+
 .date-filter-box {
   display: flex;
   align-items: center;
@@ -3970,6 +3982,25 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 
   /* [UI] Tabel transaksi di hape: tampilkan hanya kolom Tanggal, Deskripsi,
      Pemasukan, Pengeluaran. Sembunyikan No, Kategori, Saldo, Nota, Aksi. */
+  /* [FIX UX] Seluruh baris jadi area tap (lihat listener di render.js)
+     untuk buka menu Ubah/Hapus, tapi tidak ada penanda visual bahwa baris
+     bisa disentuh sejak kolom Aksi disembunyikan di hape. Chevron redup
+     ini ditaruh di kolom terakhir yang masih tampil (Pengeluaran) sebagai
+     affordance -- bukan tombol, cuma isyarat "baris ini bisa di-tap". */
+  #transactionTableBody tr { position: relative; }
+  #transactionTableBody td.col-expense { padding-right: 22px; }
+  #transactionTableBody td.col-expense::after {
+    content: "";
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    border-right: 1.5px solid var(--ink-faint);
+    border-bottom: 1.5px solid var(--ink-faint);
+    transform: translateY(-50%) rotate(-45deg);
+  }
+
   table .col-no,
   table .col-category,
   table .col-saldo,
@@ -4160,6 +4191,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   .filters { width: 100%; flex-wrap: wrap; gap: 6px; }
   .search-input { width: 100%; }
   .filter-btn { flex: 1; justify-content: center; text-align: center; padding: 7px 4px; }
+  .date-quick-preset { width: 100%; padding: 6px 10px; }
   .date-filter-box { width: 100%; padding: 3px 10px; gap: 4px; }
   .date-filter-box input { flex: 1; min-width: 0; font-size: .7rem; padding: 6px 2px; }
   .actions { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; gap: 6px; }
@@ -4486,6 +4518,7 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
 [data-theme="dark"] .search-input { background: var(--paper); border-color: var(--rule); color: var(--ink); }
 [data-theme="dark"] .filter-btn { background: var(--paper); border-color: var(--rule); color: var(--ink-muted); }
 [data-theme="dark"] .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
+[data-theme="dark"] .date-quick-preset { background: var(--paper); border-color: var(--rule); color: var(--ink-muted); }
 [data-theme="dark"] .date-filter-box { background: var(--paper); border-color: var(--rule); }
 [data-theme="dark"] .date-filter-box input { color: var(--ink); }
 [data-theme="dark"] .date-filter-box input[type="date"] { border: none; background: transparent; }

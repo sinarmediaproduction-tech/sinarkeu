@@ -1,3 +1,16 @@
+// ==================== DEBOUNCE ====================
+// [FIX UX] Util generik: tunda eksekusi fn sampai user berhenti memicu
+// selama `wait` ms. Dipakai pertama kali untuk #searchInput (sebelumnya
+// oninput langsung render() ulang tiap ketikan -- berat untuk buku dengan
+// ribuan transaksi). Bisa dipakai ulang di input lain yang serupa.
+window.debounce = function(fn, wait) {
+    let timer = null;
+    return function(...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), wait);
+    };
+};
+
 // ==================== LOGGER TERPUSAT (console) ====================
 // Sebelumnya console.log/console.warn dipakai langsung tersebar di semua
 // file (100+ pemanggilan) -- selalu tampil ke SEMUA user tiap kali app
