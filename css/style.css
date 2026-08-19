@@ -1,13 +1,13 @@
 /* ===================================================
-   SINARKEU — Institutional Formal Redesign
-   Palette: Navy Formal #1B2A4A, Abu Netral #F4F5F7/#DCE0E6,
-            Ink #1C2430, Aksen Emas tipis #A9832E (highlight only),
-            Deep Green #2E6B4F, Brick #A13A3A
-   Signature: a navy sidebar that stays constant across
-   light & dark mode, a navy balance hero, tight cool-toned
+   SINARKEU — Emerald Trust Redesign
+   Palette: Emerald Deep #0F5C4E, Abu Netral Hangat #F3F6F4/#DCE6E1,
+            Ink #1C2620, Aksen Emas tipis #B8912E (highlight only),
+            Success Green #2E7D5B, Brick #A83E3E
+   Signature: an emerald sidebar that stays constant across
+   light & dark mode, an emerald balance hero, tight warm-toned
    shadows, tighter corner radius, and a single thin gold
    accent reserved for active nav state and key highlights —
-   the rest of the interface stays quiet, formal, functional.
+   the rest of the interface stays quiet, trustworthy, functional.
    Font: IBM Plex Sans (display/headings), Inter (body/UI),
    JetBrains Mono (angka)
 =================================================== */
@@ -15,40 +15,40 @@
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  /* Institutional palette: Navy Formal #1B2A4A, Abu Netral #F4F5F7,
-     Aksen Emas tipis #A9832E — dipakai sangat terbatas untuk highlight. */
-  --ink:        #1C2430;
-  --ink-muted:  #5B6472;
-  --ink-faint:  #9AA2AC;
+  /* Emerald Trust palette: Emerald Deep #0F5C4E, Abu Netral Hangat #F3F6F4,
+     Aksen Emas tipis #B8912E — dipakai sangat terbatas untuk highlight. */
+  --ink:        #1C2620;
+  --ink-muted:  #55645D;
+  --ink-faint:  #93A29A;
   --paper:      #FFFFFF;
-  --paper-warm: #F4F5F7;
-  --rule:       #DCE0E6;
-  --accent:     #1B2A4A;
-  --accent-lt:  #E8EBF1;
-  --success:    #2E6B4F;
-  --success-lt: #E3F0E9;
-  --danger:     #A13A3A;
+  --paper-warm: #F3F6F4;
+  --rule:       #DCE6E1;
+  --accent:     #0F5C4E;
+  --accent-lt:  #E1EFE9;
+  --success:    #2E7D5B;
+  --success-lt: #E3F3EA;
+  --danger:     #A83E3E;
   --danger-lt:  #F5E6E6;
-  --warning:    #9C7A2E;
+  --warning:    #B8912E;
   --warning-lt: #F1EBDA;
-  --purple:     #4A5578;
-  --purple-lt:  #E9EBF2;
-  --brand:      #1B2A4A; /* dipakai tombol utama & badge peran */
-  --brand-dark: #101A2E;
-  /* Sidebar & title bar — navy formal konsisten di light & dark mode.
-     Aksen aktif memakai putih solid dengan teks navy, kontras tegas di
+  --purple:     #3F6B66;
+  --purple-lt:  #E3EEEC;
+  --brand:      #0F5C4E; /* dipakai tombol utama & badge peran */
+  --brand-dark: #0A3A30;
+  /* Sidebar & title bar — emerald formal konsisten di light & dark mode.
+     Aksen aktif memakai putih solid dengan teks emerald, kontras tegas di
      atas sidebar gelap. */
-  --topbar-bg:          linear-gradient(160deg, #16233F 0%, #0A1220 100%);
-  --topbar-text:        #F2F4F7;
-  --topbar-text-muted:  rgba(242,244,247,0.66);
-  --topbar-border:      rgba(242,244,247,0.12);
-  --topbar-btn-bg:      rgba(242,244,247,0.08);
-  --topbar-btn-hover-bg: rgba(242,244,247,0.16);
-  --topbar-item-color:  rgba(242,244,247,.78);
-  --topbar-item-hover-bg: rgba(242,244,247,.12);
+  --topbar-bg:          linear-gradient(160deg, #12463C 0%, #0A2620 100%);
+  --topbar-text:        #EAF3EF;
+  --topbar-text-muted:  rgba(234,243,239,0.66);
+  --topbar-border:      rgba(234,243,239,0.12);
+  --topbar-btn-bg:      rgba(234,243,239,0.08);
+  --topbar-btn-hover-bg: rgba(234,243,239,0.16);
+  --topbar-item-color:  rgba(234,243,239,.78);
+  --topbar-item-hover-bg: rgba(234,243,239,.12);
   --topbar-item-active-bg: #FFFFFF;
-  --topbar-item-active-color: #16233F;
-  --topbar-footer-border: rgba(242,244,247,.12);
+  --topbar-item-active-color: #12463C;
+  --topbar-footer-border: rgba(234,243,239,.12);
   /* [FLAT] Semua efek shadow dimatikan (diset none) supaya tampilan flat
      total -- variabel ini masih dipertahankan (bukan dihapus) supaya
      semua selector yang mereferensikannya (.header, .modal-content,
@@ -67,14 +67,14 @@
   --hero-text:       var(--ink);
   --hero-text-muted: var(--ink-muted);
   /* Extended palette */
-  --fase:       #4A5578;
-  --fase-lt:    #E9EBF2;
-  --info:       #2E5C82;
-  --info-lt:    #E3ECF3;
+  --fase:       #3F6B66;
+  --fase-lt:    #E3EEEC;
+  --info:       #2E6B82;
+  --info-lt:    #E3EEF3;
   --chat-user:  #2E6B67;
-  --ink-inv:    #F2F4F7;   /* teks di atas background gelap (btn-primary dark) */
-  --paper-inv:  #1C2430;  /* bg di atas ink terang */
-  --row-alt:    #F7F8FA;
+  --ink-inv:    #EAF3EF;   /* teks di atas background gelap (btn-primary dark) */
+  --paper-inv:  #1C2620;  /* bg di atas ink terang */
+  --row-alt:    #F7FAF8;
   /* Shape & elevation — radius diperkecil, shadow lebih tipis untuk kesan formal */
   --radius-sm:  4px;
   --radius:     6px;
@@ -4321,13 +4321,14 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
    Palette: GitHub "Dark dimmed" (soft dark) untuk permukaan netral --
    canvas abu-biru lembut #22272E/#2D333B, border #444C56, teks #ADBAC7.
    [DIUBAH] Variasi warna aksen/semantik SENGAJA disempitkan jadi cuma
-   nuansa hijau lembut (beberapa shade, bukan satu hijau rata) supaya
-   dark mode terasa lebih tenang/minim warna -- SATU pengecualian:
-   danger/pengeluaran tetap merah (soft, bukan merah terang) karena itu
-   pembeda visual penting pemasukan vs pengeluaran di aplikasi keuangan
-   ini. Jangan tambah hue baru (biru/ungu/kuning) di token dark mode --
-   kalau butuh varian baru, turunkan dari salah satu hijau di bawah
-   (beda lightness/saturasi), bukan hue baru.
+   nuansa emerald lembut (beberapa shade, bukan satu hijau rata) supaya
+   dark mode terasa lebih tenang/minim warna, selaras dengan aksen
+   Emerald Trust di mode terang -- SATU pengecualian: danger/pengeluaran
+   tetap merah (soft, bukan merah terang) karena itu pembeda visual
+   penting pemasukan vs pengeluaran di aplikasi keuangan ini. Jangan
+   tambah hue baru (biru/ungu/kuning) di token dark mode -- kalau butuh
+   varian baru, turunkan dari salah satu emerald di bawah (beda
+   lightness/saturasi), bukan hue baru.
 ====================================================== */
 [data-theme="dark"] {
   --ink:        #ADBAC7;
@@ -4336,22 +4337,22 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   --paper:      #2D333B;
   --paper-warm: #22272E;
   --rule:       #444C56;
-  --accent:     #57AB5A;
-  --accent-lt:  #1C2E1C;
-  --success:    #57AB5A;
-  --success-lt: #1C2E1C;
+  --accent:     #3FBF93;
+  --accent-lt:  #16291F;
+  --success:    #3FBF93;
+  --success-lt: #16291F;
   --danger:     #C9726B;
   --danger-lt:  #2E201F;
-  --warning:    #8FBF62;
-  --warning-lt: #263019;
-  --purple:     #4FA66C;
-  --purple-lt:  #17291C;
-  /* Brand (tombol utama) -- hijau lembut, bukan biru lagi */
-  --brand:      #57AB5A;
-  --brand-dark: #3E7F41;
+  --warning:    #7FC9A0;
+  --warning-lt: #1B2E24;
+  --purple:     #4FC79E;
+  --purple-lt:  #14291F;
+  /* Brand (tombol utama) -- emerald lembut, bukan biru lagi */
+  --brand:      #3FBF93;
+  --brand-dark: #2C8F6D;
   /* Sidebar & title bar -- permukaan tetap abu gelap netral (bukan
      ikut hijau -- itu domain warna aksen/semantik), hanya state aktif
-     yang pakai hijau supaya konsisten dengan aksen di tempat lain. */
+     yang pakai emerald supaya konsisten dengan aksen di tempat lain. */
   --topbar-bg:          linear-gradient(160deg, #2D333B 0%, #1C2128 100%);
   --topbar-text:        #CDD9E5;
   --topbar-text-muted:  rgba(205,217,229,0.66);
@@ -4360,8 +4361,8 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
   --topbar-btn-hover-bg: rgba(205,217,229,0.16);
   --topbar-item-color:  rgba(205,217,229,.78);
   --topbar-item-hover-bg: rgba(205,217,229,.12);
-  --topbar-item-active-bg: #57AB5A;
-  --topbar-item-active-color: #0E1F0F;
+  --topbar-item-active-bg: #3FBF93;
+  --topbar-item-active-color: #0E201A;
   --topbar-footer-border: rgba(205,217,229,.12);
   /* [FLAT] Sama seperti mode terang -- lihat catatan di :root paling atas. */
   --topbar-active-shadow: none;
@@ -4370,13 +4371,13 @@ body.lockscreen-restricted #setelanModal .setelan-tab-panel:not([data-tab-panel=
      paling atas file & catatan di .balance-hero). */
   --hero-text:       var(--ink);
   --hero-text-muted: var(--ink-muted);
-  /* Extended palette — dark overrides (ikut hijau, lihat catatan atas) */
-  --fase:       #4FA66C;
-  --fase-lt:    #17291C;
-  --info:       #7BC97E;
-  --info-lt:    #1B2E1C;
-  --chat-user:  #57AB5A;
-  --ink-inv:    #F0F6FC;
+  /* Extended palette — dark overrides (ikut emerald, lihat catatan atas) */
+  --fase:       #4FC79E;
+  --fase-lt:    #14291F;
+  --info:       #7BD9B8;
+  --info-lt:    #16291F;
+  --chat-user:  #3FBF93;
+  --ink-inv:    #F0FCF6;
   --paper-inv:  #ADBAC7;
   --row-alt:    #1C2128;
   --shadow-sm:  none;
