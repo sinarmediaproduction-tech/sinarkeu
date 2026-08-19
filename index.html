@@ -93,7 +93,7 @@
 
 <!-- ===== LOGIN GATE (Buku Bersama) -- wajib login sebelum masuk app kalau =====
      ===== cloud sudah pernah di-setup & lagi online. Tidak ada tombol tutup/ =====
-     ===== skip -- lihat window.skShowLoginGate di js/auth.js. ===== -->
+     ===== skip -- lihat window.skShowLoginGate di js/auth-ui.js. ===== -->
 <div id="skLoginGateScreen" style="display:none;">
     <div class="lock-card-wrap">
         <div class="lock-card">
@@ -514,7 +514,7 @@ alter table public.settings
         </button>
         <!-- [MULTIROLE] Dipindah dari panel "Kelola Buku" (skRenderAuthPanel) ke
              sini supaya bisa logout dari mana saja tanpa buka modal dulu.
-             Visibilitasnya diatur window.skApplyRoleUI (js/auth.js) -- cuma
+             Visibilitasnya diatur window.skApplyRoleUI (js/auth-roles.js) -- cuma
              tampil kalau window._skAuthUser ada (sedang login Buku Bersama). -->
         <button type="button" class="app-nav-item" id="navSkLogoutBtn" onclick="window.closeMobileDrawer(); window.skSignOut()" style="display:none;" title="Logout">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
@@ -2164,7 +2164,7 @@ alter table public.settings
   statis sebelumnya, jadi urutan dependency antar file tidak berubah.
 -->
 <script>
-    var APP_JS_VERSION = 'v56'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
+    var APP_JS_VERSION = 'v57'; // <-- SAMAKAN dengan CACHE_VERSION di sw.js
     // [LAZY-LOAD] 'js/report.js', 'js/nutrisi.js', 'js/electricity-plan.js', dan
     // 'js/fraud-detection.js' SENGAJA TIDAK ada di daftar eager di bawah ini lagi --
     // keempatnya modul berat & jarang dipakai (Laporan PDF, Estimasi Gizi, Rencana
@@ -2173,15 +2173,32 @@ alter table public.settings
     // dipakai, bukan di setiap page load. Tetap ada di APP_SHELL_JS (sw.js) untuk
     // precache offline. Kalau menambah modul lazy baru, JANGAN taruh di sini --
     // daftarkan di window.SK_LAZY_MODULES (js/utils.js) saja.
+    //
+    // [v57] js/db.js (1.503 baris) & js/auth.js (2.513 baris) dipecah jadi
+    // sub-modul per tanggung jawab supaya lebih gampang di-maintain --
+    // masih vanilla window.*, TIDAK ada perubahan perilaku. Urutan di
+    // bawah ini PENTING (tiap file db-*/auth-* memakai window.* yang
+    // didefinisikan file sebelumnya -- lihat komentar header tiap file):
+    //   js/db.js         -> js/db-api.js, js/db-crypto-sync.js,
+    //                       js/db-settings-push.js, js/db-settings-pull.js,
+    //                       js/db-books-sync.js, js/db-payment-reminder.js
+    //   js/auth.js        -> js/auth-core.js, js/auth-roles.js,
+    //                       js/auth-shared-book.js, js/auth-members.js,
+    //                       js/auth-ui.js
     var SK_JS_FILES = [
-        'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js', 'js/db.js',
+        'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js',
+        'js/db-api.js', 'js/db-crypto-sync.js', 'js/db-settings-push.js',
+        'js/db-settings-pull.js', 'js/db-books-sync.js', 'js/db-payment-reminder.js',
         'js/telegram.js', 'js/account.js', 'js/book.js', 'js/transaction.js',
         'js/sync-conflict.js', 'js/budget.js', 'js/harga-pangan.js',
         'js/shopping-list.js', 'js/menu-plan.js', 'js/payment-reminder.js', 'js/expense-chart.js',
         'js/render.js', 'js/forecast.js', 'js/report-shortcuts.js',
         'js/backup.js', 'js/safety-snapshot.js', 'js/forex.js', 'js/ai.js',
         'js/lockscreen-insight.js',
-        'js/settings.js', 'js/auth.js', 'js/autolock.js', 'js/app.js',
+        'js/settings.js',
+        'js/auth-core.js', 'js/auth-roles.js', 'js/auth-shared-book.js',
+        'js/auth-members.js', 'js/auth-ui.js',
+        'js/autolock.js', 'js/app.js',
         'js/custom-select.js'
     ];
     SK_JS_FILES.forEach(function(src) {
@@ -2240,13 +2257,13 @@ function _getSupabase() {
   if (!url || !key) return null;
 
   // [FIX] Sebelumnya patch ini bikin instance supabase-js SENDIRI lewat
-  // window.supabase.createClient(url, key) di bawah -- karena js/auth.js
+  // window.supabase.createClient(url, key) di bawah -- karena js/auth-core.js
   // (fitur Buku Bersama) JUGA bikin client-nya sendiri untuk url+key yang
   // SAMA PERSIS (sama-sama project Supabase yang sama), keduanya jadi dua
   // GoTrueClient terpisah yang berbagi storage key sesi yang sama persis
   // (`sb-<project-ref>-auth-token`) -- itu sumber warning "Multiple
   // GoTrueClient instances detected" di console. Fix-nya: pakai ULANG
-  // client yang sudah dikelola js/auth.js (window.getSupabaseAuthClient(),
+  // client yang sudah dikelola js/auth-core.js (window.getSupabaseAuthClient(),
   // yang sendiri sudah punya guard __skAuthJsInitialized + cache
   // window.__skSupabaseAuthClient supaya tidak dobel) selama url-nya
   // cocok, alih-alih bikin GoTrueClient kedua untuk project yang sama.
@@ -2270,7 +2287,7 @@ function _getSupabase() {
   if (window._supabaseClient && window._syncPatchClientUrl === url) return window._supabaseClient;
   if (window.supabaseClient && window._syncPatchClientUrl === url) return window.supabaseClient;
 
-  // Fallback terakhir kalau js/auth.js belum ter-load sama sekali (mis.
+  // Fallback terakhir kalau js/auth-core.js belum ter-load sama sekali (mis.
   // urutan script berubah suatu saat nanti) -- baru di sini bikin client
   // baru sendiri, supaya fitur sinkronisasi tetap jalan meski tidak ideal.
   try {

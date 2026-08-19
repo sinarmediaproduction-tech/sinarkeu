@@ -14,7 +14,7 @@
      kepakai duluan, dengan fallback ke cache saat offline.
    ============================================================ */
 
-const CACHE_VERSION = 'v56';
+const CACHE_VERSION = 'v57';
 const CACHE_NAME = `sinarkeu-shell-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -51,14 +51,19 @@ const APP_SHELL = [
 // itu diminta browser. Jangan hapus dari sini walau sudah dihapus dari
 // SK_JS_FILES.
 const APP_SHELL_JS = [
-  'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js', 'js/db.js',
+  'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js',
+  'js/db-api.js', 'js/db-crypto-sync.js', 'js/db-settings-push.js',
+  'js/db-settings-pull.js', 'js/db-books-sync.js', 'js/db-payment-reminder.js',
   'js/telegram.js', 'js/account.js', 'js/book.js', 'js/transaction.js',
   'js/sync-conflict.js', 'js/budget.js', 'js/harga-pangan.js', 'js/nutrisi.js',
   'js/shopping-list.js', 'js/menu-plan.js', 'js/electricity-plan.js', 'js/payment-reminder.js', 'js/expense-chart.js',
   'js/render.js', 'js/report.js', 'js/forecast.js', 'js/report-shortcuts.js',
   'js/backup.js', 'js/safety-snapshot.js', 'js/forex.js', 'js/ai.js', 'js/lockscreen-insight.js',
   'js/fraud-detection.js',
-  'js/settings.js', 'js/auth.js', 'js/autolock.js', 'js/app.js',
+  'js/settings.js',
+  'js/auth-core.js', 'js/auth-roles.js', 'js/auth-shared-book.js',
+  'js/auth-members.js', 'js/auth-ui.js',
+  'js/autolock.js', 'js/app.js',
   'js/custom-select.js',
 ].map((f) => `./${f}?v=${CACHE_VERSION}`);
 
