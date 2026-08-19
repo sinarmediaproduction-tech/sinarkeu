@@ -101,14 +101,22 @@ window.initCustomSelect = function(selectEl, opts) {
   opts = opts || {};
   var compact   = opts.compact   || false;
   var formStyle = opts.formStyle || false;
+  var mini      = opts.mini      || false;
   var colorMap  = opts.colorMap  || null;
   var showDot   = opts.showDot   || false;
   var searchable = opts.searchable !== false; // default true
 
   // Wrap
   var wrapper = document.createElement('div');
-  wrapper.className = 'cs-wrapper' + (compact ? ' compact' : '') + (formStyle ? ' form-style' : '');
+  wrapper.className = 'cs-wrapper' + (compact ? ' compact' : '') + (formStyle ? ' form-style' : '') + (mini ? ' mini' : '');
   wrapper.setAttribute('data-cs-for', selectEl.id);
+
+  // Pindahkan style layout inline dari <select> asli (mis. flex:1,
+  // min-width, width) ke wrapper supaya susunan flex/grid di sekitarnya
+  // tidak berubah begitu select native digantikan elemen ini.
+  var inlineStyle = selectEl.getAttribute('style');
+  if (inlineStyle) wrapper.setAttribute('style', inlineStyle);
+
   selectEl.parentNode.insertBefore(wrapper, selectEl);
   wrapper.appendChild(selectEl);
   selectEl.style.display = 'none';
@@ -290,6 +298,19 @@ window.initCustomSelect = function(selectEl, opts) {
   // Juga saat value berubah dari luar
   selectEl.addEventListener('change', updateTrigger);
 
+  // Banyak kode lama set `select.value = ...` langsung tanpa memicu event
+  // 'change' (mis. document.getElementById('budgetMonth').value = ...).
+  // Timpa property 'value' supaya trigger custom ikut ter-update setiap
+  // kali nilai select native diubah lewat cara apa pun.
+  var nativeValueDesc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+  if (nativeValueDesc && nativeValueDesc.configurable) {
+    Object.defineProperty(selectEl, 'value', {
+      get: function() { return nativeValueDesc.get.call(selectEl); },
+      set: function(v) { nativeValueDesc.set.call(selectEl, v); updateTrigger(); },
+      configurable: true
+    });
+  }
+
   buildOptions();
   updateTrigger();
 
@@ -335,6 +356,84 @@ function initAllCustomSelects() {
   var slistCat = document.getElementById('slistNewCategory');
   if (slistCat && !slistCat.closest('.cs-wrapper')) {
     window.initCustomSelect(slistCat, { formStyle: true, colorMap: EXPENSE_COLORS });
+  }
+
+  // 7. Kategori barang — edit item Belanja Bulanan
+  var slistEditCat = document.getElementById('slistEditCategory');
+  if (slistEditCat && !slistEditCat.closest('.cs-wrapper')) {
+    window.initCustomSelect(slistEditCat, { formStyle: true, colorMap: EXPENSE_COLORS, searchable: false });
+  }
+
+  // 8. Kategori — tambah kebutuhan Anggaran Tahunan
+  var annualNewCat = document.getElementById('annualNewCategory');
+  if (annualNewCat && !annualNewCat.closest('.cs-wrapper')) {
+    window.initCustomSelect(annualNewCat, { formStyle: true, colorMap: EXPENSE_COLORS, searchable: false });
+  }
+
+  // 9. Kategori — ubah kebutuhan Anggaran Tahunan
+  var annualEditCat = document.getElementById('annualEditCategory');
+  if (annualEditCat && !annualEditCat.closest('.cs-wrapper')) {
+    window.initCustomSelect(annualEditCat, { formStyle: true, colorMap: EXPENSE_COLORS, searchable: false });
+  }
+
+  // 10. Bulan & Tahun — mini widget Anggaran Bulanan (header)
+  var budgetMonthSel = document.getElementById('budgetMonth');
+  if (budgetMonthSel && !budgetMonthSel.closest('.cs-wrapper')) {
+    window.initCustomSelect(budgetMonthSel, { mini: true, searchable: false });
+  }
+  var budgetYearSel = document.getElementById('budgetYear');
+  if (budgetYearSel && !budgetYearSel.closest('.cs-wrapper')) {
+    window.initCustomSelect(budgetYearSel, { mini: true, searchable: false });
+  }
+
+  // 11. Bulan & Tahun — modal atur Anggaran Bulanan
+  var budgetModalMonthSel = document.getElementById('budgetModalMonth');
+  if (budgetModalMonthSel && !budgetModalMonthSel.closest('.cs-wrapper')) {
+    window.initCustomSelect(budgetModalMonthSel, { formStyle: true, searchable: false });
+  }
+
+  // 12. Rentang tanggal cepat — filter transaksi
+  var dateQuickPresetSel = document.getElementById('dateQuickPreset');
+  if (dateQuickPresetSel && !dateQuickPresetSel.closest('.cs-wrapper')) {
+    window.initCustomSelect(dateQuickPresetSel, { mini: true, searchable: false });
+  }
+
+  // 13. Induk buku — buat buku baru
+  var newBookParentSel = document.getElementById('newBookParent');
+  if (newBookParentSel && !newBookParentSel.closest('.cs-wrapper')) {
+    window.initCustomSelect(newBookParentSel, { formStyle: true, searchable: false });
+  }
+
+  // 14. Waktu makan — Rencana Menu
+  var mplanWaktuSel = document.getElementById('mplanMealWaktu');
+  if (mplanWaktuSel && !mplanWaktuSel.closest('.cs-wrapper')) {
+    window.initCustomSelect(mplanWaktuSel, { formStyle: true, searchable: false });
+  }
+
+  // 15. Bulan — Laporan Bulanan
+  var reportMonthSel = document.getElementById('reportMonth');
+  if (reportMonthSel && !reportMonthSel.closest('.cs-wrapper')) {
+    window.initCustomSelect(reportMonthSel, { formStyle: true, searchable: false });
+  }
+
+  // 16. Periode & Jenis — Analisis Keuangan AI
+  var aiPeriodSel = document.getElementById('aiAnalysisPeriod');
+  if (aiPeriodSel && !aiPeriodSel.closest('.cs-wrapper')) {
+    window.initCustomSelect(aiPeriodSel, { mini: true, searchable: false });
+  }
+  var aiTypeSel = document.getElementById('aiAnalysisType');
+  if (aiTypeSel && !aiTypeSel.closest('.cs-wrapper')) {
+    window.initCustomSelect(aiTypeSel, { mini: true, searchable: false });
+  }
+
+  // 17. Pengulangan & Bulan — Pengingat Pembayaran
+  var prRecurrenceSel = document.getElementById('prRecurrence');
+  if (prRecurrenceSel && !prRecurrenceSel.closest('.cs-wrapper')) {
+    window.initCustomSelect(prRecurrenceSel, { formStyle: true, searchable: false });
+  }
+  var prMonthSel = document.getElementById('prMonth');
+  if (prMonthSel && !prMonthSel.closest('.cs-wrapper')) {
+    window.initCustomSelect(prMonthSel, { formStyle: true, searchable: false });
   }
 }
 
