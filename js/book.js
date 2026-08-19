@@ -197,68 +197,85 @@ window.switchBook = async function(id) {
     // sudah mengecek bookId cocok, tapi ini mencegah kedip data buku lama).
     window._cloudFilterOverride = null;
 
-    // Muat data lokal buku baru terlebih dahulu agar UI tidak kosong
-    window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
-    const cached = localStorage.getItem('sk_txs_' + window.currentBookId);
-    window.txs = cached ? JSON.parse(cached) : [];
-    window.render();
-    window.updateBookSelectDropdown();
-    if (document.getElementById('bookManagerModal').classList.contains('show')) window.renderBookList();
-    if (document.getElementById('shoppingListModal').classList.contains('show') && typeof window.renderShoppingList === 'function') window.renderShoppingList();
-    window.showToast("Berhasil beralih ke: " + (window.books.find(b => b.id === id)?.name || id));
+    // [SMOOTH BOOK SWITCH] Tandai body sedang berpindah buku (lihat
+    // css/style.css: body.sk-book-switching) supaya konten yang sedang
+    // tampil meredup halus alih-alih tiba-tiba "meloncat" berganti isi, dan
+    // titik denyut kecil muncul di sebelah nama buku aktif di sidebar.
+    // Dropdown pilih buku juga dikunci sementara supaya tidak bisa diklik
+    // ganda selagi proses (lokal + tarik cloud) masih berjalan. Dibungkus
+    // try/finally supaya SELALU dilepas lagi apa pun hasilnya (termasuk
+    // kalau offline dan fungsi berhenti lebih awal, atau pull cloud gagal).
+    document.body.classList.add('sk-book-switching');
+    const _bookSelectEl = document.getElementById('currentBookSelect');
+    if (_bookSelectEl) _bookSelectEl.disabled = true;
 
-    // [REALTIME] Alihkan channel realtime (js/realtime-sync.js) ke buku
-    // baru ini -- no-op aman kalau buku ini bukan Buku Bersama (channel
-    // lama, kalau ada, tetap dilepas supaya tidak nyangkut ke buku
-    // sebelumnya). Dipanggil sebelum guard offline di bawah karena
-    // fungsinya sendiri sudah aman dipanggil saat offline (langsung return).
-    if (typeof window.skStartRealtimeSync === 'function') window.skStartRealtimeSync(id);
-
-    if (!window.isOnline()) return;
-
-    // Pastikan session crypto key sudah ada sebelum pull cloud.
-    // Setelah reload, _sessionCryptoKey hilang (in-memory only) —
-    // tanpa ini, _decryptSettingValue() gagal decrypt dan data cloud tidak terbaca.
-    if (!window._sessionCryptoKey) {
-        await window.restoreSessionCryptoKey();
-    }
-
-    // ── PULL SEMUA DATA CLOUD UNTUK BUKU BARU ──
     try {
-        // 1. Transaksi + settings sekaligus (parallel)
-        await Promise.all([
-            window.pullFromCloudSilently(),
-            window.pullAllSettings(),
-        ]);
+        // Muat data lokal buku baru terlebih dahulu agar UI tidak kosong
+        window.budgets = JSON.parse(localStorage.getItem('sk_budgets_' + window.currentBookId) || '{}');
+        const cached = localStorage.getItem('sk_txs_' + window.currentBookId);
+        window.txs = cached ? JSON.parse(cached) : [];
+        window.render();
+        window.updateBookSelectDropdown();
+        if (document.getElementById('bookManagerModal').classList.contains('show')) window.renderBookList();
+        if (document.getElementById('shoppingListModal').classList.contains('show') && typeof window.renderShoppingList === 'function') window.renderShoppingList();
+        window.showToast("Berhasil beralih ke: " + (window.books.find(b => b.id === id)?.name || id));
 
-        // 2. Payment reminders (per-buku, tidak dicakup pullAllSettings)
-        try {
-            const reminders = await window.loadPaymentReminders(window.currentBookId);
-            if (reminders && reminders.length > 0) {
-                localStorage.setItem('sk_payment_reminders_' + window.currentBookId, JSON.stringify(reminders));
-            }
-            if (typeof window.renderPaymentReminders === 'function') await window.renderPaymentReminders();
-            if (typeof window.updatePaymentReminderBanner === 'function') window.updatePaymentReminderBanner();
-        } catch (e) {
-            window.skWarn('[switchBook] Gagal pull payment reminders:', e);
+        // [REALTIME] Alihkan channel realtime (js/realtime-sync.js) ke buku
+        // baru ini -- no-op aman kalau buku ini bukan Buku Bersama (channel
+        // lama, kalau ada, tetap dilepas supaya tidak nyangkut ke buku
+        // sebelumnya). Dipanggil sebelum guard offline di bawah karena
+        // fungsinya sendiri sudah aman dipanggil saat offline (langsung return).
+        if (typeof window.skStartRealtimeSync === 'function') window.skStartRealtimeSync(id);
+
+        if (!window.isOnline()) return;
+
+        // Pastikan session crypto key sudah ada sebelum pull cloud.
+        // Setelah reload, _sessionCryptoKey hilang (in-memory only) —
+        // tanpa ini, _decryptSettingValue() gagal decrypt dan data cloud tidak terbaca.
+        if (!window._sessionCryptoKey) {
+            await window.restoreSessionCryptoKey();
         }
 
-        // Render ulang semua card keuangan setelah semua data per-buku selesai dimuat
-        if (typeof window.updateFinancialCards === 'function') window.updateFinancialCards();
-        if (typeof window.updateFaseCard === 'function') window.updateFaseCard();
-        if (typeof window.renderForecastCard === 'function') window.renderForecastCard();
+        // ── PULL SEMUA DATA CLOUD UNTUK BUKU BARU ──
+        try {
+            // 1. Transaksi + settings sekaligus (parallel)
+            await Promise.all([
+                window.pullFromCloudSilently(),
+                window.pullAllSettings(),
+            ]);
 
-        window._lastSyncTime = new Date();
-        if (typeof window.updateSyncTimeBadge === 'function') window.updateSyncTimeBadge();
-    } catch (e) {
-        console.error('[switchBook] Gagal pull data cloud:', e);
-        window.showToast('Sebagian data cloud gagal dimuat', 'warning');
+            // 2. Payment reminders (per-buku, tidak dicakup pullAllSettings)
+            try {
+                const reminders = await window.loadPaymentReminders(window.currentBookId);
+                if (reminders && reminders.length > 0) {
+                    localStorage.setItem('sk_payment_reminders_' + window.currentBookId, JSON.stringify(reminders));
+                }
+                if (typeof window.renderPaymentReminders === 'function') await window.renderPaymentReminders();
+                if (typeof window.updatePaymentReminderBanner === 'function') window.updatePaymentReminderBanner();
+            } catch (e) {
+                window.skWarn('[switchBook] Gagal pull payment reminders:', e);
+            }
+
+            // Render ulang semua card keuangan setelah semua data per-buku selesai dimuat
+            if (typeof window.updateFinancialCards === 'function') window.updateFinancialCards();
+            if (typeof window.updateFaseCard === 'function') window.updateFaseCard();
+            if (typeof window.renderForecastCard === 'function') window.renderForecastCard();
+
+            window._lastSyncTime = new Date();
+            if (typeof window.updateSyncTimeBadge === 'function') window.updateSyncTimeBadge();
+        } catch (e) {
+            console.error('[switchBook] Gagal pull data cloud:', e);
+            window.showToast('Sebagian data cloud gagal dimuat', 'warning');
+        }
+        // [FRAUD-DETECTION] Buku aktif berganti -- pindai ulang & ambil log buku
+        // baru (cache log fraud lama milik buku sebelumnya tidak relevan lagi).
+        // [LAZY-LOAD] window.skRefreshFraudAlerts (js/utils.js) otomatis
+        // memuat js/fraud-detection.js dulu kalau belum ada.
+        window.skRefreshFraudAlerts();
+    } finally {
+        document.body.classList.remove('sk-book-switching');
+        if (_bookSelectEl) _bookSelectEl.disabled = false;
     }
-    // [FRAUD-DETECTION] Buku aktif berganti -- pindai ulang & ambil log buku
-    // baru (cache log fraud lama milik buku sebelumnya tidak relevan lagi).
-    // [LAZY-LOAD] window.skRefreshFraudAlerts (js/utils.js) otomatis
-    // memuat js/fraud-detection.js dulu kalau belum ada.
-    window.skRefreshFraudAlerts();
 };
 
 window.openBookManager = function() {

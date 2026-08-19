@@ -370,10 +370,14 @@ h1, h2, h3, h4,
   border-radius: var(--radius-sm);
   cursor: pointer;
   color: var(--ink);
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, opacity .15s ease;
   font-family: inherit;
 }
 .book-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-lt); }
+/* [SMOOTH BOOK SWITCH] Dropdown dikunci sesaat selagi window.switchBook()
+   memuat data buku baru (lihat js/book.js) -- opacity turun & kursor
+   berubah supaya user tahu prosesnya sedang berjalan, bukan macet. */
+.book-select:disabled { opacity: .6; cursor: wait; }
 
 .manage-books-btn {
   padding: var(--space-6) var(--space-14);
@@ -1426,6 +1430,43 @@ tr:hover td { background: var(--accent-lt); }
    memaksa browser menghitung ulang layout Dashboard/sidebar secara luas. */
 .fullview-modal { contain: layout paint style; }
 
+/* ── [SMOOTH PAGE TRANSITION] Perpindahan antar menu sidebar & Dashboard ──
+   Sebelumnya .fullview-modal.show/.container muncul SEKETIKA (cuma toggle
+   display:none<->flex, tanpa transisi apa pun) -- terasa "patah" tiap
+   klik menu. Animasi fade+naik tipis ini otomatis terpicu browser setiap
+   kali selector di bawah BARU cocok (class .show ditambahkan, atau class
+   body.view-fullpage/.view-settings dilepas), tanpa perlu logic JS
+   tambahan -- dan otomatis dimatikan oleh aturan prefers-reduced-motion
+   global di bawah untuk pengguna yang sensitif terhadap animasi. */
+@keyframes skViewFadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fullview-modal.show .modal-content,
+#setelanModal.show .modal-content,
+body:not(.view-fullpage):not(.view-settings) #dashboardView {
+  animation: skViewFadeIn .2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── [SMOOTH BOOK SWITCH] Redupkan halus konten yang sedang tampil selagi
+   window.switchBook() memuat data buku baru (js/book.js menambah/melepas
+   class ini) -- daripada angka saldo/daftar transaksi tiba-tiba "meloncat"
+   berganti isi tanpa aba-aba, konten meredup sesaat lalu pulih normal
+   begitu data buku baru selesai dipasang. Dikecualikan dari transisi
+   reduced-motion supaya tidak mengunci opacity rendah pada pengguna yang
+   mematikan animasi (aturan global di bawah tetap membuat transisinya
+   instan, bukan macet redup). ── */
+#dashboardView,
+.fullview-modal.show .modal-content {
+  transition: opacity .18s ease, filter .18s ease;
+}
+body.sk-book-switching #dashboardView,
+body.sk-book-switching .fullview-modal.show .modal-content {
+  opacity: .55;
+  filter: saturate(.75);
+  pointer-events: none;
+}
+
 .modal-content {
   background: var(--paper);
   border: 1.5px solid var(--rule);
@@ -1543,6 +1584,31 @@ tr:hover td { background: var(--accent-lt); }
 .app-sidebar-brand-initial {
   display: none;
 }
+/* [SMOOTH BOOK SWITCH] Titik berdenyut di sebelah nama buku aktif selagi
+   window.switchBook() menarik data buku baru (body.sk-book-switching,
+   ditambah/dilepas di js/book.js) -- penanda kecil supaya perpindahan
+   buku tidak terasa seperti "diam saja" selama beberapa saat sebelum
+   angka-angka di layar berubah. */
+.app-sidebar-brand { position: relative; }
+.app-sidebar-brand::after {
+  content: '';
+  display: none;
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-8);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+body.sk-book-switching .app-sidebar-brand::after {
+  display: block;
+  animation: skSyncPulse .9s ease-in-out infinite;
+}
+@keyframes skSyncPulse {
+  0%, 100% { opacity: .35; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1); }
+}
 .app-nav-group {
   display: flex;
   flex-direction: column;
@@ -1579,7 +1645,7 @@ tr:hover td { background: var(--accent-lt); }
   border-radius: var(--radius-sm);
   color: var(--topbar-item-color);
   cursor: pointer;
-  transition: background .15s, color .15s;
+  transition: background .15s, color .15s, box-shadow .15s, transform .1s ease;
   /* [FIX SIDEBAR HOVER-EXPAND JANK] Tanpa ini, saat sidebar mode icon-only
      (68px) di-hover, teks label (display:none -> inline) muncul SEKETIKA
      di frame pertama transisi width -- sebelum sidebar sempat melebar.
@@ -1599,6 +1665,10 @@ tr:hover td { background: var(--accent-lt); }
 .app-nav-item svg { stroke: currentColor; }
 .app-nav-item:hover { background: var(--topbar-item-hover-bg); color: var(--topbar-text); }
 .app-nav-item.active { background: var(--topbar-item-active-bg); color: var(--topbar-item-active-color); font-weight: 700; box-shadow: var(--topbar-active-shadow); }
+/* [SMOOTH NAV] Feedback tekan halus saat pindah menu -- item sedikit
+   mengecil sesaat saat ditekan, memberi kesan responsif sebelum halaman
+   baru selesai tampil. */
+.app-nav-item:active { transform: scale(0.97); }
 .app-nav-badge {
   display: none;
   margin-left: auto;
