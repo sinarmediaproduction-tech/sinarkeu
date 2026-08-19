@@ -105,6 +105,10 @@ window.skSignIn = async function(email, password) {
 };
 
 window.skSignOut = async function() {
+    // [REALTIME] Lepas channel realtime (js/realtime-sync.js) SEBELUM
+    // signOut() -- JWT yang dipakai channel bakal invalid begitu sesi
+    // ditutup, jadi tidak ada gunanya menunggu channel itu gagal sendiri.
+    if (typeof window.skStopRealtimeSync === 'function') window.skStopRealtimeSync();
     const client = window.getSupabaseAuthClient();
     if (client) { try { await client.auth.signOut(); } catch (e) { /* abaikan */ } }
     window._skInvalidateSessionCache(); // [OPT] session sudah tidak valid, buang cache-nya

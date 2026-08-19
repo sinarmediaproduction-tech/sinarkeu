@@ -111,6 +111,13 @@ window.switchBook = async function(id) {
     if (document.getElementById('shoppingListModal').classList.contains('show') && typeof window.renderShoppingList === 'function') window.renderShoppingList();
     window.showToast("Berhasil beralih ke: " + (window.books.find(b => b.id === id)?.name || id));
 
+    // [REALTIME] Alihkan channel realtime (js/realtime-sync.js) ke buku
+    // baru ini -- no-op aman kalau buku ini bukan Buku Bersama (channel
+    // lama, kalau ada, tetap dilepas supaya tidak nyangkut ke buku
+    // sebelumnya). Dipanggil sebelum guard offline di bawah karena
+    // fungsinya sendiri sudah aman dipanggil saat offline (langsung return).
+    if (typeof window.skStartRealtimeSync === 'function') window.skStartRealtimeSync(id);
+
     if (!window.isOnline()) return;
 
     // Pastikan session crypto key sudah ada sebelum pull cloud.

@@ -14,7 +14,7 @@
      kepakai duluan, dengan fallback ke cache saat offline.
    ============================================================ */
 
-const CACHE_VERSION = 'v54';
+const CACHE_VERSION = 'v58';
 const CACHE_NAME = `sinarkeu-shell-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -42,15 +42,32 @@ const APP_SHELL = [
 // device WAJIB fetch dari network dulu di kunjungan pertama pasca-update
 // (tetap benar, cuma kehilangan manfaat precache-nya). Menjaga APP_JS_VERSION
 // (index.html) & CACHE_VERSION (sini) tetap SAMA memastikan keduanya cocok.
+// [FIX] Sebelumnya daftar ini masih menyebut 'js/db.js' & 'js/auth.js'
+// sebagai satu file utuh -- keduanya SUDAH DIPECAH jadi sub-modul sejak
+// index.html v57 (lihat SK_JS_FILES di index.html), jadi kedua path lama
+// itu 404 dan MEMBUAT cache.addAll() DI BAWAH GAGAL TOTAL (satu 404 saja
+// membatalkan seluruh precache 'install', bukan cuma dua file itu) --
+// akibatnya app offline-first jadi tidak ter-precache sama sekali sejak
+// v57 sampai fix ini. Daftar di bawah sekarang disamakan persis dengan
+// SK_JS_FILES (index.html) + 4 modul lazy (report/nutrisi/electricity-plan/
+// fraud-detection, lihat window.SK_LAZY_MODULES di js/utils.js) yang
+// SENGAJA tetap diprecache di sini walau tidak eager-loaded, supaya tetap
+// tersedia offline begitu user pertama kali membuka fitur terkait.
 const APP_SHELL_JS = [
-  'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js', 'js/db.js',
+  'js/i18n.js', 'js/config.js', 'js/utils.js', 'js/crypto.js',
+  'js/db-api.js', 'js/db-crypto-sync.js', 'js/db-settings-push.js',
+  'js/db-settings-pull.js', 'js/db-books-sync.js', 'js/db-payment-reminder.js',
   'js/telegram.js', 'js/account.js', 'js/book.js', 'js/transaction.js',
   'js/sync-conflict.js', 'js/budget.js', 'js/harga-pangan.js', 'js/nutrisi.js',
   'js/shopping-list.js', 'js/menu-plan.js', 'js/electricity-plan.js', 'js/payment-reminder.js', 'js/expense-chart.js',
   'js/render.js', 'js/report.js', 'js/forecast.js', 'js/report-shortcuts.js',
   'js/backup.js', 'js/safety-snapshot.js', 'js/forex.js', 'js/ai.js', 'js/lockscreen-insight.js',
   'js/fraud-detection.js',
-  'js/settings.js', 'js/auth.js', 'js/autolock.js', 'js/app.js',
+  'js/settings.js',
+  'js/auth-core.js', 'js/auth-roles.js', 'js/auth-shared-book.js',
+  'js/auth-members.js', 'js/auth-ui.js',
+  'js/realtime-sync.js',
+  'js/autolock.js', 'js/app.js',
   'js/custom-select.js',
 ].map((f) => `./${f}?v=${CACHE_VERSION}`);
 

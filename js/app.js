@@ -81,7 +81,18 @@ window.startAutoSync = function() {
                 try { await window.skRefreshSharedAccess(); } catch (e) { window.skWarn('[AutoSync] Self-heal skRefreshSharedAccess gagal:', e); }
             }
             await window.pullAllSettings();
-            await window.pullFromCloudSilently();
+            // [REALTIME] Kalau buku aktif adalah Buku Bersama DAN channel
+            // realtime-nya sedang tersambung (lihat js/realtime-sync.js),
+            // lewati pull transaksi lewat polling di sini -- perubahan buku
+            // ini sudah ditangani event realtime (debounced trigger ke
+            // window.pullFromCloudSilently sendiri). Buku PRIBADI (bukan
+            // shared) atau saat channel realtime belum/tidak tersambung
+            // TETAP polling seperti sebelumnya, tidak ada perubahan.
+            const _rtCoversCurrent = window._skRealtimeCoveredBookIds &&
+                window._skRealtimeCoveredBookIds.has(window.currentBookId);
+            if (!_rtCoversCurrent) {
+                await window.pullFromCloudSilently();
+            }
             window.updateBookSelectDropdown();
             // Catatan: window.renderBudget() TIDAK dipanggil di sini karena
             // pullAllSettings() sudah memanggil renderBudget() sendiri apabila
@@ -320,6 +331,11 @@ window.continueAppInit = async function() {
             window.loadTransactions();
         }
     }
+    // [REALTIME] Kalau buku aktif adalah Buku Bersama, sambungkan channel
+    // realtime SEBELUM startAutoSync() di bawah -- lihat js/realtime-sync.js.
+    // No-op aman (langsung return) kalau buku aktif bukan Buku Bersama atau
+    // sedang offline.
+    if (typeof window.skStartRealtimeSync === 'function') window.skStartRealtimeSync(window.currentBookId);
     window.startAutoSync();
     // Checklist belanja adalah daftar rutin: ketika sesi pertama dibuka di
     // bulan baru, buka kembali semua centang tanpa menghapus transaksi bulan
@@ -352,8 +368,17 @@ window.continueAppInit = async function() {
     // listener menumpuk dan forceFullSync() dipanggil berkali-kali.
     if (!window._globalListenersRegistered) {
         window._globalListenersRegistered = true;
-        window.addEventListener('online', () => { window.updateSyncStatusBadge(); window.updateUIForOnlineStatus(); Promise.all([window.flushPendingDeletesOnStart(), window.flushPendingBookDeletesOnStart ? window.flushPendingBookDeletesOnStart() : Promise.resolve(), window.flushPendingPaymentReminders(), window.flushPendingAuditLogs()]).then(() => window.forceFullSync()); });
-        window.addEventListener('offline', () => { window.updateSyncStatusBadge(); window.updateUIForOnlineStatus(); });
+        window.addEventListener('online', () => { window.updateSyncStatusBadge(); window.updateUIForOnlineStatus(); Promise.all([window.flushPendingDeletesOnStart(), window.flushPendingBookDeletesOnStart ? window.flushPendingBookDeletesOnStart() : Promise.resolve(), window.flushPendingPaymentReminders(), window.flushPendingAuditLogs()]).then(() => { window.forceFullSync(); if (typeof window.skStartRealtimeSync === 'function') window.skStartRealtimeSync(window.currentBookId); }); });
+        window.addEventListener('offline', () => {
+            window.updateSyncStatusBadge();
+            window.updateUIForOnlineStatus();
+            // [REALTIME] Kosongkan status "covered" begitu offline -- channel
+            // realtime akan putus sendiri di sisi socket, dan kita tidak mau
+            // window.startAutoSync/pullAllSettings salah kira buku ini masih
+            // ditangani realtime begitu koneksi balik lagi sebelum channel-nya
+            // sungguhan tersambung ulang (lihat listener 'online' di atas).
+            if (window._skRealtimeCoveredBookIds) window._skRealtimeCoveredBookIds.clear();
+        });
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden && window.isOnline()) {
                 const secondsSinceSync = window._lastSyncTime ? (Date.now() - window._lastSyncTime.getTime()) / 1000 : Infinity;

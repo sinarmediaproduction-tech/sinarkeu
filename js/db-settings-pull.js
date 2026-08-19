@@ -97,6 +97,13 @@ window.pullAllSettings = async function(forceFull) {
         for (const _b of _localBooks) {
             const _id = _b.id || _b.book_id;
             if (_id && window.skIsSharedBookId && window.skIsSharedBookId(_id)) {
+                // [REALTIME] Kalau buku ini sudah ditangani channel realtime
+                // yang sedang tersambung (js/realtime-sync.js), lewati polling
+                // settings-nya di sini -- event realtime sendiri sudah men-
+                // debounce-trigger window.pullAllSettings() setiap ada
+                // perubahan. Buku bersama lain yang BELUM/TIDAK tersambung
+                // realtime tetap masuk daftar ini seperti biasa (fallback).
+                if (window._skRealtimeCoveredBookIds && window._skRealtimeCoveredBookIds.has(_id)) continue;
                 _sharedBookIds.push(_id);
             }
         }
